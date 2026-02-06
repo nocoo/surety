@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Surety
 
-## Getting Started
+家庭风险管理急救包。极简、本地化、隐私安全。
 
-First, run the development server:
+## 快速开始
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install          # 安装依赖
+bun dev              # 启动开发服务器 (localhost:7015)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 项目结构
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+surety/
+├── docs/                       # 项目文档
+│   └── 01-architecture.md      # 系统架构与数据模型研究
+├── src/
+│   ├── __tests__/              # 单元测试
+│   ├── app/                    # Next.js App Router
+│   │   ├── api/                # API 路由
+│   │   ├── globals.css         # 全局样式
+│   │   ├── layout.tsx          # 根布局
+│   │   └── page.tsx            # 首页
+│   ├── components/             # UI 组件
+│   ├── db/                     # 数据库层
+│   │   ├── index.ts            # 数据库连接
+│   │   └── schema.ts           # Drizzle schema
+│   └── lib/                    # 工具函数
+├── CLAUDE.md                   # AI 协作指南
+├── drizzle.config.ts           # Drizzle ORM 配置
+└── package.json
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 技术栈
 
-## Learn More
+| 组件 | 选型 |
+|------|------|
+| Runtime | Bun |
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (严格模式) |
+| Database | SQLite + Drizzle ORM |
+| UI | Tailwind CSS + shadcn/ui |
 
-To learn more about Next.js, take a look at the following resources:
+## 常用命令
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+bun dev              # 开发服务器 (7015)
+bun run build        # 生产构建
+bun test             # 单元测试
+bun test --coverage  # 测试覆盖率
+bun run lint         # ESLint
+bun run db:push      # 推送 schema
+bun run db:studio    # 数据库可视化
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
