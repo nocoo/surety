@@ -18,6 +18,8 @@ surety/
 │   └── 02-database-design.md     # 数据库设计
 ├── drizzle/                      # 数据库迁移
 │   └── 0000_flimsy_cloak.sql     # 初始化 SQL
+├── scripts/
+│   └── seed.ts                   # 测试数据生成脚本
 ├── src/
 │   ├── __tests__/                # 单元测试
 │   │   ├── db/                   # Repository 测试
@@ -59,6 +61,7 @@ bun test --coverage  # 测试覆盖率
 bun run lint         # ESLint
 bun run db:push      # 推送 schema
 bun run db:studio    # 数据库可视化
+bun run db:seed      # 填充测试数据
 ```
 
 ## License
