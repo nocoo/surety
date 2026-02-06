@@ -14,7 +14,8 @@ bun dev              # 启动开发服务器 (localhost:7015)
 ```
 surety/
 ├── docs/                       # 项目文档
-│   └── 01-design-overview.md   # 整体设计研究报告
+│   ├── 01-design-overview.md   # 整体设计研究报告
+│   └── 02-database-design.md   # 数据库设计
 ├── src/
 │   ├── __tests__/              # 单元测试
 │   ├── app/                    # Next.js App Router
