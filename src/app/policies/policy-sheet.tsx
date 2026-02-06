@@ -126,7 +126,7 @@ function PolicyForm({
         </SheetDescription>
       </SheetHeader>
 
-      <form onSubmit={onSubmit} className="space-y-6 py-6">
+      <form onSubmit={onSubmit} className="flex-1 space-y-6 overflow-y-auto px-4 py-6">
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="productName">产品名称</Label>
@@ -266,7 +266,7 @@ function PolicyForm({
 export function PolicySheet({ open, onOpenChange, policy }: PolicySheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="flex w-full flex-col sm:max-w-lg">
         <PolicyForm
           key={policy?.id ?? "new"}
           policy={policy}
