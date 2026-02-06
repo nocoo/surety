@@ -1,0 +1,258 @@
+"use client";
+
+import { useState } from "react";
+import { MoreHorizontal, Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { AppShell } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MemberSheet } from "./member-sheet";
+
+type Relation = "Self" | "Spouse" | "Child" | "Parent";
+
+interface MockMember {
+  id: number;
+  name: string;
+  relation: Relation;
+  gender: "M" | "F" | null;
+  birthDate: string;
+  idCard: string | null;
+  phone: string | null;
+  policyCount: number;
+}
+
+const mockMembers: MockMember[] = [
+  {
+    id: 1,
+    name: "张伟",
+    relation: "Self",
+    gender: "M",
+    birthDate: "1985-03-15",
+    idCard: "110101198503150011",
+    phone: "13800138001",
+    policyCount: 4,
+  },
+  {
+    id: 2,
+    name: "李娜",
+    relation: "Spouse",
+    gender: "F",
+    birthDate: "1987-08-22",
+    idCard: "110101198708220022",
+    phone: "13800138002",
+    policyCount: 2,
+  },
+  {
+    id: 3,
+    name: "张小明",
+    relation: "Child",
+    gender: "M",
+    birthDate: "2015-06-01",
+    idCard: null,
+    phone: null,
+    policyCount: 1,
+  },
+  {
+    id: 4,
+    name: "李建国",
+    relation: "Parent",
+    gender: "M",
+    birthDate: "1958-12-10",
+    idCard: "110101195812100033",
+    phone: "13800138003",
+    policyCount: 1,
+  },
+  {
+    id: 5,
+    name: "王秀英",
+    relation: "Parent",
+    gender: "F",
+    birthDate: "1960-04-18",
+    idCard: "110101196004180044",
+    phone: null,
+    policyCount: 1,
+  },
+  {
+    id: 6,
+    name: "张国强",
+    relation: "Parent",
+    gender: "M",
+    birthDate: "1955-09-25",
+    idCard: "110101195509250055",
+    phone: null,
+    policyCount: 0,
+  },
+  {
+    id: 7,
+    name: "刘桂芳",
+    relation: "Parent",
+    gender: "F",
+    birthDate: "1957-11-08",
+    idCard: "110101195711080066",
+    phone: null,
+    policyCount: 0,
+  },
+];
+
+const relationLabels: Record<Relation, string> = {
+  Self: "本人",
+  Spouse: "配偶",
+  Child: "子女",
+  Parent: "父母",
+};
+
+const relationVariants: Record<Relation, "default" | "secondary" | "outline"> = {
+  Self: "default",
+  Spouse: "secondary",
+  Child: "outline",
+  Parent: "outline",
+};
+
+function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+export default function MembersPage() {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<MockMember | null>(null);
+
+  const handleAdd = () => {
+    setEditingMember(null);
+    setSheetOpen(true);
+  };
+
+  const handleEdit = (member: MockMember) => {
+    setEditingMember(member);
+    setSheetOpen(true);
+  };
+
+  return (
+    <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">家庭成员</h1>
+            <p className="text-sm text-muted-foreground">
+              管理需要保障的家庭成员信息
+            </p>
+          </div>
+          <Button onClick={handleAdd}>
+            <Plus className="mr-2 h-4 w-4" />
+            添加成员
+          </Button>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>姓名</TableHead>
+                <TableHead>关系</TableHead>
+                <TableHead>性别</TableHead>
+                <TableHead>年龄</TableHead>
+                <TableHead>出生日期</TableHead>
+                <TableHead>手机号</TableHead>
+                <TableHead className="text-center">保单数</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {mockMembers.map((member) => (
+                <TableRow key={member.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-sm">
+                          {member.name[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{member.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={relationVariants[member.relation]}>
+                      {relationLabels[member.relation]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {member.gender === "M" ? "男" : member.gender === "F" ? "女" : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium">{calculateAge(member.birthDate)}</span>
+                    <span className="text-muted-foreground"> 岁</span>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">
+                    {member.birthDate}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {member.phone ?? "-"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {member.policyCount > 0 ? (
+                      <div className="flex items-center justify-center gap-1">
+                        <Shield className="h-3 w-3 text-green-600" />
+                        <span className="text-sm">{member.policyCount}</span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">操作菜单</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(member)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          编辑
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          disabled={member.relation === "Self"}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          删除
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      <MemberSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        member={editingMember}
+      />
+    </AppShell>
+  );
+}
