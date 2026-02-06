@@ -45,3 +45,4 @@ bun run db:studio    # 数据库可视化
 
 ## Retrospective
 
+- **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。
