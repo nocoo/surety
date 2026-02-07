@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoreHorizontal, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -24,93 +24,32 @@ import { PolicySheet } from "./policy-sheet";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
 
-interface MockPolicy {
+interface Policy {
   id: number;
   policyNumber: string;
   productName: string;
   insurerName: string;
   insuredName: string;
   category: string;
+  subCategory: string | null;
   status: PolicyStatus;
   premium: number;
   sumAssured: number;
-  nextDueDate: string;
+  nextDueDate: string | null;
+  effectiveDate: string;
+  expiryDate: string | null;
+  channel: string | null;
+  archived: boolean | null;
 }
 
-const mockPolicies: MockPolicy[] = [
-  {
-    id: 1,
-    policyNumber: "P2024010001",
-    productName: "国寿福终身寿险",
-    insurerName: "中国人寿",
-    insuredName: "张伟",
-    category: "寿险",
-    status: "Active",
-    premium: 12000,
-    sumAssured: 1000000,
-    nextDueDate: "2025-01-15",
-  },
-  {
-    id: 2,
-    policyNumber: "P2024010002",
-    productName: "平安福重疾险",
-    insurerName: "平安保险",
-    insuredName: "李娜",
-    category: "重疾险",
-    status: "Active",
-    premium: 8500,
-    sumAssured: 500000,
-    nextDueDate: "2025-02-01",
-  },
-  {
-    id: 3,
-    policyNumber: "P2024010003",
-    productName: "尊享e生百万医疗险",
-    insurerName: "众安保险",
-    insuredName: "张小明",
-    category: "医疗险",
-    status: "Active",
-    premium: 1200,
-    sumAssured: 6000000,
-    nextDueDate: "2025-01-01",
-  },
-  {
-    id: 4,
-    policyNumber: "P2024010004",
-    productName: "安行宝综合意外险",
-    insurerName: "太平洋保险",
-    insuredName: "张伟",
-    category: "意外险",
-    status: "Active",
-    premium: 360,
-    sumAssured: 1000000,
-    nextDueDate: "2025-03-01",
-  },
-  {
-    id: 5,
-    policyNumber: "P2024010005",
-    productName: "泰康鑫享人生年金险",
-    insurerName: "泰康人寿",
-    insuredName: "张伟",
-    category: "年金险",
-    status: "Active",
-    premium: 50000,
-    sumAssured: 500000,
-    nextDueDate: "2025-01-01",
-  },
-  {
-    id: 6,
-    policyNumber: "P2024010008",
-    productName: "微医保长期医疗险",
-    insurerName: "泰康在线",
-    insuredName: "王秀英",
-    category: "医疗险",
-    status: "Lapsed",
-    premium: 2800,
-    sumAssured: 2000000,
-    nextDueDate: "2024-12-31",
-  },
-];
+const categoryLabels: Record<string, string> = {
+  Life: "寿险",
+  CriticalIllness: "重疾险",
+  Medical: "医疗险",
+  Accident: "意外险",
+  Annuity: "年金险",
+  Property: "财产险",
+};
 
 const statusConfig: Record<PolicyStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   Active: { label: "生效中", variant: "default" },
@@ -120,6 +59,9 @@ const statusConfig: Record<PolicyStatus, { label: string; variant: "default" | "
 };
 
 function formatCurrency(value: number): string {
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
+  }
   return new Intl.NumberFormat("zh-CN", {
     style: "currency",
     currency: "CNY",
@@ -129,18 +71,40 @@ function formatCurrency(value: number): string {
 }
 
 export default function PoliciesPage() {
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingPolicy, setEditingPolicy] = useState<MockPolicy | null>(null);
+  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
+
+  useEffect(() => {
+    fetch("/api/policies")
+      .then((res) => res.json())
+      .then((data: Policy[]) => {
+        setPolicies(data.filter((p) => !p.archived));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const handleAdd = () => {
     setEditingPolicy(null);
     setSheetOpen(true);
   };
 
-  const handleEdit = (policy: MockPolicy) => {
+  const handleEdit = (policy: Policy) => {
     setEditingPolicy(policy);
     setSheetOpen(true);
   };
+
+  if (loading) {
+    return (
+      <AppShell breadcrumbs={[{ label: "保单" }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">加载中...</div>
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell breadcrumbs={[{ label: "保单" }]}>
@@ -149,7 +113,7 @@ export default function PoliciesPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
-              管理您家庭的所有保险保单
+              共 {policies.length} 份保单
             </p>
           </div>
           <Button onClick={handleAdd}>
@@ -168,13 +132,14 @@ export default function PoliciesPage() {
                 <TableHead>被保人</TableHead>
                 <TableHead className="text-right">保额</TableHead>
                 <TableHead className="text-right">年保费</TableHead>
-                <TableHead className="font-mono">下次缴费</TableHead>
+                <TableHead className="font-mono">生效日期</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockPolicies.map((policy) => {
+              {policies.map((policy) => {
                 const status = statusConfig[policy.status];
+                const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                 return (
                   <TableRow key={policy.id} className="hover:bg-muted/50">
                     <TableCell>
@@ -184,7 +149,8 @@ export default function PoliciesPage() {
                       <div>
                         <div className="font-medium">{policy.productName}</div>
                         <div className="text-xs text-muted-foreground">
-                          {policy.category} · {policy.policyNumber}
+                          {policy.subCategory ?? categoryLabel}
+                          {policy.policyNumber && ` · ${policy.policyNumber}`}
                         </div>
                       </div>
                     </TableCell>
@@ -195,20 +161,20 @@ export default function PoliciesPage() {
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="text-xs">
-                            {policy.insuredName[0]}
+                            {policy.insuredName?.[0] ?? "?"}
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{policy.insuredName}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(policy.sumAssured)}
+                      {policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {formatCurrency(policy.premium)}
+                      {policy.premium > 0 ? formatCurrency(policy.premium) : "-"}
                     </TableCell>
                     <TableCell className="font-mono text-sm">
-                      {policy.nextDueDate}
+                      {policy.effectiveDate}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -239,15 +205,6 @@ export default function PoliciesPage() {
               })}
             </TableBody>
           </Table>
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" size="sm" disabled>
-            上一页
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            下一页
-          </Button>
         </div>
       </div>
 
