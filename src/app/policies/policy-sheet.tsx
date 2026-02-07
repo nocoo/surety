@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +25,8 @@ interface PolicyFormData {
   insurerName: string;
   policyNumber: string;
   category: string;
-  insuredName: string;
+  applicantId: string;
+  insuredMemberId: string;
   sumAssured: string;
   premium: string;
   effectiveDate: string;
@@ -41,12 +42,23 @@ interface Policy {
   insuredName: string;
   sumAssured: number;
   premium: number;
+  applicantId?: number;
+  insuredMemberId?: number;
+  effectiveDate?: string;
+  expiryDate?: string;
+}
+
+interface Member {
+  id: number;
+  name: string;
+  relation: string;
 }
 
 interface PolicySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   policy?: Policy | null;
+  onSuccess?: () => void;
 }
 
 const categories = [
@@ -58,16 +70,6 @@ const categories = [
   { value: "Property", label: "财产险" },
 ];
 
-const familyMembers = [
-  { value: "张伟", label: "张伟 (本人)" },
-  { value: "李娜", label: "李娜 (配偶)" },
-  { value: "张小明", label: "张小明 (儿子)" },
-  { value: "李建国", label: "李建国 (姥爷)" },
-  { value: "王秀英", label: "王秀英 (姥姥)" },
-  { value: "张国强", label: "张国强 (爷爷)" },
-  { value: "刘桂芳", label: "刘桂芳 (奶奶)" },
-];
-
 function createFormData(policy: Policy | null | undefined): PolicyFormData {
   if (policy) {
     return {
@@ -75,11 +77,14 @@ function createFormData(policy: Policy | null | undefined): PolicyFormData {
       insurerName: policy.insurerName,
       policyNumber: policy.policyNumber,
       category: policy.category,
-      insuredName: policy.insuredName,
+      applicantId: policy.applicantId ? String(policy.applicantId) : "",
+      insuredMemberId: policy.insuredMemberId
+        ? String(policy.insuredMemberId)
+        : "",
       sumAssured: String(policy.sumAssured),
       premium: String(policy.premium),
-      effectiveDate: "",
-      expiryDate: "",
+      effectiveDate: policy.effectiveDate ?? "",
+      expiryDate: policy.expiryDate ?? "",
     };
   }
   return {
@@ -87,7 +92,8 @@ function createFormData(policy: Policy | null | undefined): PolicyFormData {
     insurerName: "",
     policyNumber: "",
     category: "",
-    insuredName: "",
+    applicantId: "",
+    insuredMemberId: "",
     sumAssured: "",
     premium: "",
     effectiveDate: "",
@@ -98,23 +104,72 @@ function createFormData(policy: Policy | null | undefined): PolicyFormData {
 function PolicyForm({
   policy,
   onClose,
+  onSuccess,
 }: {
   policy: Policy | null | undefined;
   onClose: () => void;
+  onSuccess?: (() => void) | undefined;
 }) {
   const isEditing = !!policy;
   const [formData, setFormData] = useState<PolicyFormData>(() =>
     createFormData(policy)
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    fetch("/api/members")
+      .then((res) => res.json())
+      .then((data) => setMembers(data))
+      .catch(console.error);
+  }, []);
 
   const handleChange = (field: keyof PolicyFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      const url = isEditing ? `/api/policies/${policy.id}` : "/api/policies";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: formData.productName,
+          insurerName: formData.insurerName,
+          policyNumber: formData.policyNumber,
+          category: formData.category,
+          applicantId: formData.applicantId
+            ? Number(formData.applicantId)
+            : null,
+          insuredType: "Member",
+          insuredMemberId: formData.insuredMemberId
+            ? Number(formData.insuredMemberId)
+            : null,
+          sumAssured: formData.sumAssured ? Number(formData.sumAssured) : 0,
+          premium: formData.premium ? Number(formData.premium) : 0,
+          paymentFrequency: "Yearly",
+          effectiveDate: formData.effectiveDate || null,
+          expiryDate: formData.expiryDate || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save policy");
+      }
+
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Error saving policy:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -183,18 +238,37 @@ function PolicyForm({
           </div>
 
           <div className="space-y-2">
+            <Label>投保人</Label>
+            <Select
+              value={formData.applicantId}
+              onValueChange={(value) => handleChange("applicantId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择投保人" />
+              </SelectTrigger>
+              <SelectContent>
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={String(member.id)}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>被保险人</Label>
             <Select
-              value={formData.insuredName}
-              onValueChange={(value) => handleChange("insuredName", value)}
+              value={formData.insuredMemberId}
+              onValueChange={(value) => handleChange("insuredMemberId", value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择家庭成员" />
               </SelectTrigger>
               <SelectContent>
-                {familyMembers.map((member) => (
-                  <SelectItem key={member.value} value={member.value}>
-                    {member.label}
+                {members.map((member) => (
+                  <SelectItem key={member.id} value={String(member.id)}>
+                    {member.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -251,11 +325,20 @@ function PolicyForm({
         </div>
 
         <SheetFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             取消
           </Button>
-          <Button type="submit">
-            {isEditing ? "保存修改" : "创建保单"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "保存中..."
+              : isEditing
+                ? "保存修改"
+                : "创建保单"}
           </Button>
         </SheetFooter>
       </form>
@@ -263,7 +346,12 @@ function PolicyForm({
   );
 }
 
-export function PolicySheet({ open, onOpenChange, policy }: PolicySheetProps) {
+export function PolicySheet({
+  open,
+  onOpenChange,
+  policy,
+  onSuccess,
+}: PolicySheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-lg">
@@ -271,6 +359,7 @@ export function PolicySheet({ open, onOpenChange, policy }: PolicySheetProps) {
           key={policy?.id ?? "new"}
           policy={policy}
           onClose={() => onOpenChange(false)}
+          onSuccess={onSuccess}
         />
       </SheetContent>
     </Sheet>
