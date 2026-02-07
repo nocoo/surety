@@ -11,6 +11,10 @@ let dbInstance: any;
 // Detect if running in Bun runtime
 const isBun = typeof globalThis.Bun !== "undefined";
 
+// Database file paths
+const DB_FILE = process.env.SURETY_DB || "surety.db";
+const E2E_DB_FILE = "surety.e2e.db";
+
 function createDatabase(filename: string): DbInstance {
   if (isBun) {
     // Bun runtime: use bun:sqlite
@@ -34,7 +38,7 @@ function createDatabase(filename: string): DbInstance {
 
 export function getDb(): DbInstance {
   if (!dbInstance) {
-    createDatabase("surety.db");
+    createDatabase(DB_FILE);
   }
   return dbInstance;
 }
@@ -43,6 +47,51 @@ export function createTestDb(): DbInstance {
   createDatabase(":memory:");
   initSchema();
   return dbInstance;
+}
+
+/**
+ * Creates or resets the E2E test database.
+ * Returns the database file path for the dev server to use.
+ */
+export function createE2EDb(): string {
+  // Close existing connection if any
+  if (sqlite) {
+    sqlite.close();
+    sqlite = null;
+    dbInstance = null;
+  }
+  
+  createDatabase(E2E_DB_FILE);
+  initSchema();
+  return E2E_DB_FILE;
+}
+
+/**
+ * Resets E2E database by clearing all data.
+ */
+export function resetE2EDb(): void {
+  if (!sqlite) {
+    createDatabase(E2E_DB_FILE);
+    initSchema();
+  }
+  
+  sqlite!.exec(`
+    DELETE FROM policy_extensions;
+    DELETE FROM cash_values;
+    DELETE FROM payments;
+    DELETE FROM beneficiaries;
+    DELETE FROM policies;
+    DELETE FROM assets;
+    DELETE FROM members;
+    DELETE FROM settings;
+  `);
+}
+
+/**
+ * Get the E2E database file path.
+ */
+export function getE2EDbPath(): string {
+  return E2E_DB_FILE;
 }
 
 export function resetTestDb(): void {
@@ -56,6 +105,13 @@ export function resetTestDb(): void {
     DELETE FROM members;
     DELETE FROM settings;
   `);
+}
+
+/**
+ * Check if using E2E database.
+ */
+export function isE2EMode(): boolean {
+  return DB_FILE === E2E_DB_FILE || process.env.SURETY_E2E === "true";
 }
 
 export function initSchema(): void {
