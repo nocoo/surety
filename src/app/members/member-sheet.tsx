@@ -34,8 +34,8 @@ interface Member {
   name: string;
   relation: string;
   gender: string | null;
-  birthDate: string;
-  idCard: string | null;
+  birthDate: string | null;
+  idCard?: string | null;
   phone: string | null;
 }
 
@@ -63,7 +63,7 @@ function createFormData(member: Member | null | undefined): MemberFormData {
       name: member.name,
       relation: member.relation,
       gender: member.gender ?? "",
-      birthDate: member.birthDate,
+      birthDate: member.birthDate ?? "",
       idCard: member.idCard ?? "",
       phone: member.phone ?? "",
     };
