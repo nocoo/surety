@@ -10,7 +10,7 @@ export const members = sqliteTable("members", {
     enum: ["Self", "Spouse", "Child", "Parent"],
   }).notNull(),
   gender: text("gender", { enum: ["M", "F"] }),
-  birthDate: text("birth_date").notNull(),
+  birthDate: text("birth_date"),
   idCard: text("id_card"),
   phone: text("phone"),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -70,9 +70,11 @@ export const policies = sqliteTable("policies", {
       "Property",
     ],
   }).notNull(),
+  subCategory: text("sub_category"), // 子类别: 综合意外险、百万医疗险等
   insurerName: text("insurer_name").notNull(),
   productName: text("product_name").notNull(),
   policyNumber: text("policy_number").notNull().unique(),
+  channel: text("channel"), // 渠道: 关哥说险、支付宝等
 
   // 保障信息
   sumAssured: real("sum_assured").notNull(),
@@ -82,8 +84,11 @@ export const policies = sqliteTable("policies", {
   paymentFrequency: text("payment_frequency", {
     enum: ["Single", "Monthly", "Yearly"],
   }).notNull(),
-  paymentYears: integer("payment_years").notNull(),
-  totalPayments: integer("total_payments").notNull(),
+  paymentYears: integer("payment_years"),
+  totalPayments: integer("total_payments"),
+  renewalType: text("renewal_type", { enum: ["Manual", "Auto", "Yearly"] }),
+  paymentAccount: text("payment_account"),
+  nextDueDate: text("next_due_date"),
 
   // 时间维度
   effectiveDate: text("effective_date").notNull(),
@@ -97,6 +102,8 @@ export const policies = sqliteTable("policies", {
   })
     .notNull()
     .default("Active"),
+  deathBenefit: text("death_benefit"),
+  archived: integer("archived", { mode: "boolean" }).default(false),
 
   // 附加
   policyFilePath: text("policy_file_path"),
