@@ -1,13 +1,17 @@
-import { Database } from "bun:sqlite";
 import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import * as schema from "./schema";
 
 export type DbInstance = BunSQLiteDatabase<typeof schema>;
 
-let sqlite: Database;
+// Use `any` to avoid static import of bun:sqlite
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sqlite: any;
 let dbInstance: DbInstance;
 
 function createDatabase(filename: string): DbInstance {
+  // Dynamic require to avoid static analysis by bundlers
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Database } = require("bun:sqlite");
   sqlite = new Database(filename);
   dbInstance = drizzle(sqlite, { schema });
   return dbInstance;
