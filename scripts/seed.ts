@@ -239,8 +239,9 @@ interface PaymentRecord {
 function generatePayments(policyId: number, policy: PolicySeed["policy"]): PaymentRecord[] {
   const records: PaymentRecord[] = [];
   const startDate = new Date(policy.effectiveDate);
+  const totalPayments = policy.totalPayments ?? 1;
 
-  for (let i = 0; i < policy.totalPayments; i++) {
+  for (let i = 0; i < totalPayments; i++) {
     const dueDate = new Date(startDate);
     if (policy.paymentFrequency === "Monthly") {
       dueDate.setMonth(dueDate.getMonth() + i);
