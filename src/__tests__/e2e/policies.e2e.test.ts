@@ -147,6 +147,44 @@ describe("Policies API E2E", () => {
       expect(data.error).toBeDefined();
     });
 
+    test("POST /api/policies with missing applicantId returns 400", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            category: "Life",
+            insurerName: "测试公司",
+            productName: "测试产品",
+            policyNumber: "TEST-001",
+            effectiveDate: "2026-01-01",
+          }),
+        }
+      );
+
+      expect(status).toBe(400);
+      expect(data.error).toBeDefined();
+    });
+
+    test("POST /api/policies with missing effectiveDate returns 400", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            applicantId: testMemberId,
+            category: "Life",
+            insurerName: "测试公司",
+            productName: "测试产品",
+            policyNumber: "TEST-002",
+          }),
+        }
+      );
+
+      expect(status).toBe(400);
+      expect(data.error).toBeDefined();
+    });
+
     test("GET /api/policies/:id with invalid id returns 400", async () => {
       const { status } = await apiRequest<{ error: string }>(
         "/api/policies/invalid"
@@ -154,11 +192,29 @@ describe("Policies API E2E", () => {
       expect(status).toBe(400);
     });
 
+    test("GET /api/policies/:id with negative id returns 404", async () => {
+      const { status } = await apiRequest<{ error: string }>(
+        "/api/policies/-5"
+      );
+      expect(status).toBe(404);
+    });
+
     test("GET /api/policies/:id with non-existent id returns 404", async () => {
       const { status } = await apiRequest<{ error: string }>(
         "/api/policies/99999"
       );
       expect(status).toBe(404);
+    });
+
+    test("PUT /api/policies/:id with invalid id returns 400", async () => {
+      const { status } = await apiRequest<{ error: string }>(
+        "/api/policies/abc",
+        {
+          method: "PUT",
+          body: JSON.stringify({ productName: "测试" }),
+        }
+      );
+      expect(status).toBe(400);
     });
 
     test("PUT /api/policies/:id with non-existent id returns 404", async () => {
@@ -172,12 +228,113 @@ describe("Policies API E2E", () => {
       expect(status).toBe(404);
     });
 
+    test("DELETE /api/policies/:id with invalid id returns 400", async () => {
+      const { status } = await apiRequest<{ error: string }>(
+        "/api/policies/xyz",
+        { method: "DELETE" }
+      );
+      expect(status).toBe(400);
+    });
+
     test("DELETE /api/policies/:id with non-existent id returns 404", async () => {
       const { status } = await apiRequest<{ error: string }>(
         "/api/policies/99999",
         { method: "DELETE" }
       );
       expect(status).toBe(404);
+    });
+  });
+
+  describe("Edge cases", () => {
+    let edgeCasePolicyId: number;
+
+    test("POST /api/policies with all categories", async () => {
+      const categories = [
+        "Life",
+        "CriticalIllness",
+        "Medical",
+        "Accident",
+        "Annuity",
+        "Property",
+      ];
+
+      for (const category of categories) {
+        const { status, data } = await apiRequest<PolicyCreated>(
+          "/api/policies",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              applicantId: testMemberId,
+              insuredType: "Member",
+              insuredMemberId: testMemberId,
+              category,
+              insurerName: `${category}测试公司`,
+              productName: `${category}测试产品`,
+              policyNumber: `CAT-${category}-${Date.now()}`,
+              sumAssured: 100000,
+              premium: 1000,
+              paymentFrequency: "Yearly",
+              effectiveDate: "2026-01-01",
+            }),
+          }
+        );
+
+        expect(status).toBe(201);
+        expect(data.category).toBe(category);
+
+        await apiRequest<{ success: boolean }>(`/api/policies/${data.id}`, {
+          method: "DELETE",
+        });
+      }
+    });
+
+    test("POST /api/policies with optional fields", async () => {
+      const { status, data } = await apiRequest<PolicyCreated>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            applicantId: testMemberId,
+            insuredType: "Member",
+            insuredMemberId: testMemberId,
+            category: "Life",
+            insurerName: "可选字段测试公司",
+            productName: "可选字段测试产品",
+            policyNumber: `OPT-${Date.now()}`,
+            sumAssured: 0,
+            premium: 0,
+            paymentFrequency: "Yearly",
+            effectiveDate: "2026-01-01",
+            expiryDate: null,
+            notes: null,
+          }),
+        }
+      );
+
+      expect(status).toBe(201);
+      edgeCasePolicyId = data.id;
+    });
+
+    test("PUT /api/policies/:id with partial update", async () => {
+      const { status } = await apiRequest<PolicyCreated>(
+        `/api/policies/${edgeCasePolicyId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            premium: 5000,
+          }),
+        }
+      );
+
+      expect(status).toBe(200);
+    });
+
+    test("cleanup: delete edge case policy", async () => {
+      const { status } = await apiRequest<{ success: boolean }>(
+        `/api/policies/${edgeCasePolicyId}`,
+        { method: "DELETE" }
+      );
+      expect(status).toBe(200);
     });
   });
 });

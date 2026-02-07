@@ -12,8 +12,10 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun run scripts/seed.ts",
-    "test": "bun test",
-    "test:coverage": "bun test --coverage",
+    "test": "bun test --ignore '**/*.e2e.test.ts'",
+    "test:coverage": "bun test --coverage --ignore '**/*.e2e.test.ts'",
+    "test:e2e": "bun test src/__tests__/e2e --timeout 60000",
+    "test:all": "bun test --ignore '**/*.e2e.test.ts' && bun test src/__tests__/e2e --timeout 60000",
     "prepare": "husky"
   },
   "dependencies": {

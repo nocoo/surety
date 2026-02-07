@@ -4,17 +4,31 @@ import * as schema from "./schema";
 export type DbInstance = any;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sqlite: any;
+let sqlite: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let dbInstance: any;
 
+// Detect if running in Bun runtime
+const isBun = typeof globalThis.Bun !== "undefined";
+
 function createDatabase(filename: string): DbInstance {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Database } = require("bun:sqlite");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/bun-sqlite");
-  sqlite = new Database(filename);
-  dbInstance = drizzle(sqlite, { schema });
+  if (isBun) {
+    // Bun runtime: use bun:sqlite
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { Database } = require("bun:sqlite");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { drizzle } = require("drizzle-orm/bun-sqlite");
+    sqlite = new Database(filename);
+    dbInstance = drizzle(sqlite, { schema });
+  } else {
+    // Node.js runtime: use better-sqlite3
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Database = require("better-sqlite3");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { drizzle } = require("drizzle-orm/better-sqlite3");
+    sqlite = new Database(filename);
+    dbInstance = drizzle(sqlite, { schema });
+  }
   return dbInstance;
 }
 
@@ -32,7 +46,7 @@ export function createTestDb(): DbInstance {
 }
 
 export function resetTestDb(): void {
-  sqlite.exec(`
+  sqlite!.exec(`
     DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
@@ -45,7 +59,7 @@ export function resetTestDb(): void {
 }
 
 export function initSchema(): void {
-  sqlite.exec(`
+  sqlite!.exec(`
     CREATE TABLE IF NOT EXISTS members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,

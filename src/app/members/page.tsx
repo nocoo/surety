@@ -66,7 +66,7 @@ export default function MembersPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
-  useEffect(() => {
+  const fetchMembers = () => {
     fetch("/api/members")
       .then((res) => res.json())
       .then((data: Member[]) => {
@@ -74,6 +74,10 @@ export default function MembersPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchMembers();
   }, []);
 
   const handleAdd = () => {
@@ -84,6 +88,18 @@ export default function MembersPage() {
   const handleEdit = (member: Member) => {
     setEditingMember(member);
     setSheetOpen(true);
+  };
+
+  const handleDelete = async (member: Member) => {
+    if (!confirm(`确定要删除 ${member.name} 吗？`)) return;
+
+    const response = await fetch(`/api/members/${member.id}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      fetchMembers();
+    }
   };
 
   if (loading) {
@@ -191,6 +207,7 @@ export default function MembersPage() {
                           <DropdownMenuItem
                             className="text-destructive"
                             disabled={member.relation === "Self"}
+                            onClick={() => handleDelete(member)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             删除
@@ -210,6 +227,7 @@ export default function MembersPage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         member={editingMember}
+        onSuccess={fetchMembers}
       />
     </AppShell>
   );

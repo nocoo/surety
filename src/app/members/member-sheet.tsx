@@ -43,6 +43,7 @@ interface MemberSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   member?: Member | null;
+  onSuccess?: () => void;
 }
 
 const relations = [
@@ -81,23 +82,54 @@ function createFormData(member: Member | null | undefined): MemberFormData {
 function MemberForm({
   member,
   onClose,
+  onSuccess,
 }: {
   member: Member | null | undefined;
   onClose: () => void;
+  onSuccess?: (() => void) | undefined;
 }) {
   const isEditing = !!member;
   const [formData, setFormData] = useState<MemberFormData>(() =>
     createFormData(member)
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field: keyof MemberFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      const url = isEditing ? `/api/members/${member.id}` : "/api/members";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          relation: formData.relation,
+          gender: formData.gender || null,
+          birthDate: formData.birthDate || null,
+          idCard: formData.idCard || null,
+          phone: formData.phone || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save member");
+      }
+
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Error saving member:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -196,11 +228,11 @@ function MemberForm({
         </div>
 
         <SheetFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             取消
           </Button>
-          <Button type="submit">
-            {isEditing ? "保存修改" : "添加成员"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "保存中..." : isEditing ? "保存修改" : "添加成员"}
           </Button>
         </SheetFooter>
       </form>
@@ -208,7 +240,7 @@ function MemberForm({
   );
 }
 
-export function MemberSheet({ open, onOpenChange, member }: MemberSheetProps) {
+export function MemberSheet({ open, onOpenChange, member, onSuccess }: MemberSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
@@ -216,6 +248,7 @@ export function MemberSheet({ open, onOpenChange, member }: MemberSheetProps) {
           key={member?.id ?? "new"}
           member={member}
           onClose={() => onOpenChange(false)}
+          onSuccess={onSuccess}
         />
       </SheetContent>
     </Sheet>
