@@ -39,13 +39,18 @@ interface Policy {
   insurerName: string;
   policyNumber: string;
   category: string;
-  insuredName: string;
+  insuredName?: string | null;
   sumAssured: number;
   premium: number;
-  applicantId?: number;
-  insuredMemberId?: number;
-  effectiveDate?: string;
-  expiryDate?: string;
+  applicantId?: number | null;
+  insuredMemberId?: number | null;
+  effectiveDate?: string | null;
+  expiryDate?: string | null;
+  subCategory?: string | null;
+  status?: string;
+  nextDueDate?: string | null;
+  channel?: string | null;
+  archived?: boolean | null;
 }
 
 interface Member {

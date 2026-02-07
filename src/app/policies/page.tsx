@@ -76,7 +76,7 @@ export default function PoliciesPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
 
-  useEffect(() => {
+  const fetchPolicies = () => {
     fetch("/api/policies")
       .then((res) => res.json())
       .then((data: Policy[]) => {
@@ -84,6 +84,10 @@ export default function PoliciesPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchPolicies();
   }, []);
 
   const handleAdd = () => {
@@ -94,6 +98,19 @@ export default function PoliciesPage() {
   const handleEdit = (policy: Policy) => {
     setEditingPolicy(policy);
     setSheetOpen(true);
+  };
+
+  const handleDelete = async (policyId: number) => {
+    try {
+      const response = await fetch(`/api/policies/${policyId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        fetchPolicies();
+      }
+    } catch (error) {
+      console.error("Error deleting policy:", error);
+    }
   };
 
   if (loading) {
@@ -193,7 +210,10 @@ export default function PoliciesPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             编辑
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDelete(policy.id)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             删除
                           </DropdownMenuItem>
@@ -212,6 +232,7 @@ export default function PoliciesPage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         policy={editingPolicy}
+        onSuccess={fetchPolicies}
       />
     </AppShell>
   );
