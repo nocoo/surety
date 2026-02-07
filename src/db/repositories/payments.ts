@@ -41,7 +41,7 @@ export const paymentsRepo = {
   },
 
   delete(id: number): boolean {
-    const result = db.delete(payments).where(eq(payments.id, id)).run();
+    const result = db.delete(payments).where(eq(payments.id, id)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 
@@ -49,7 +49,7 @@ export const paymentsRepo = {
     const result = db
       .delete(payments)
       .where(eq(payments.policyId, policyId))
-      .run();
+      .run() as unknown as { changes: number };
     return result.changes;
   },
 };

@@ -33,7 +33,7 @@ export const beneficiariesRepo = {
   },
 
   delete(id: number): boolean {
-    const result = db.delete(beneficiaries).where(eq(beneficiaries.id, id)).run();
+    const result = db.delete(beneficiaries).where(eq(beneficiaries.id, id)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 
@@ -41,7 +41,7 @@ export const beneficiariesRepo = {
     const result = db
       .delete(beneficiaries)
       .where(eq(beneficiaries.policyId, policyId))
-      .run();
+      .run() as unknown as { changes: number };
     return result.changes;
   },
 };

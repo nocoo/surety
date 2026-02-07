@@ -70,7 +70,7 @@ export const policyExtensionsRepo = {
     const result = db
       .delete(policyExtensions)
       .where(eq(policyExtensions.id, id))
-      .run();
+      .run() as unknown as { changes: number };
     return result.changes > 0;
   },
 
@@ -78,7 +78,7 @@ export const policyExtensionsRepo = {
     const result = db
       .delete(policyExtensions)
       .where(eq(policyExtensions.policyId, policyId))
-      .run();
+      .run() as unknown as { changes: number };
     return result.changes > 0;
   },
 

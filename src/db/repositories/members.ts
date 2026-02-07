@@ -25,7 +25,7 @@ export const membersRepo = {
   },
 
   delete(id: number): boolean {
-    const result = db.delete(members).where(eq(members.id, id)).run();
+    const result = db.delete(members).where(eq(members.id, id)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 };

@@ -45,7 +45,7 @@ export const policiesRepo = {
   },
 
   delete(id: number): boolean {
-    const result = db.delete(policies).where(eq(policies.id, id)).run();
+    const result = db.delete(policies).where(eq(policies.id, id)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 };

@@ -29,7 +29,7 @@ export const assetsRepo = {
   },
 
   delete(id: number): boolean {
-    const result = db.delete(assets).where(eq(assets.id, id)).run();
+    const result = db.delete(assets).where(eq(assets.id, id)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 };

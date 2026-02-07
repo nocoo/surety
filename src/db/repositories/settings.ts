@@ -32,7 +32,7 @@ export const settingsRepo = {
   },
 
   delete(key: string): boolean {
-    const result = db.delete(settings).where(eq(settings.key, key)).run();
+    const result = db.delete(settings).where(eq(settings.key, key)).run() as unknown as { changes: number };
     return result.changes > 0;
   },
 
