@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,4 +28,69 @@ export async function GET() {
   }));
 
   return NextResponse.json(result);
+}
+
+export async function POST(request: NextRequest) {
+  const { policiesRepo } = await import("@/db/repositories");
+
+  const body = await request.json();
+
+  if (
+    !body.applicantId ||
+    !body.category ||
+    !body.insurerName ||
+    !body.productName ||
+    !body.policyNumber ||
+    !body.effectiveDate
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "applicantId, category, insurerName, productName, policyNumber, effectiveDate are required",
+      },
+      { status: 400 }
+    );
+  }
+
+  const policy = policiesRepo.create({
+    applicantId: body.applicantId,
+    insuredType: body.insuredType ?? "Member",
+    insuredMemberId: body.insuredMemberId ?? null,
+    insuredAssetId: body.insuredAssetId ?? null,
+    category: body.category,
+    subCategory: body.subCategory ?? null,
+    insurerName: body.insurerName,
+    productName: body.productName,
+    policyNumber: body.policyNumber,
+    channel: body.channel ?? null,
+    sumAssured: body.sumAssured ?? 0,
+    premium: body.premium ?? 0,
+    paymentFrequency: body.paymentFrequency ?? "Yearly",
+    paymentYears: body.paymentYears ?? null,
+    totalPayments: body.totalPayments ?? null,
+    renewalType: body.renewalType ?? null,
+    paymentAccount: body.paymentAccount ?? null,
+    nextDueDate: body.nextDueDate ?? null,
+    effectiveDate: body.effectiveDate,
+    expiryDate: body.expiryDate ?? null,
+    hesitationEndDate: body.hesitationEndDate ?? null,
+    waitingDays: body.waitingDays ?? null,
+    status: body.status ?? "Active",
+    deathBenefit: body.deathBenefit ?? null,
+    archived: body.archived ?? false,
+    policyFilePath: body.policyFilePath ?? null,
+    notes: body.notes ?? null,
+  });
+
+  return NextResponse.json(
+    {
+      id: policy.id,
+      policyNumber: policy.policyNumber,
+      productName: policy.productName,
+      insurerName: policy.insurerName,
+      category: policy.category,
+      status: policy.status,
+    },
+    { status: 201 }
+  );
 }
