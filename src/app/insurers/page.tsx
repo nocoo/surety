@@ -140,9 +140,9 @@ export default function InsurersPage() {
                       {insurer.phone ? (
                         <a
                           href={`tel:${insurer.phone}`}
-                          className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 hover:underline"
                         >
-                          <Phone className="h-3.5 w-3.5" />
+                          <Phone className="h-3.5 w-3.5 text-primary" />
                           {insurer.phone}
                         </a>
                       ) : (
@@ -157,9 +157,9 @@ export default function InsurersPage() {
                           href={insurer.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                          className="inline-flex items-center gap-1.5 hover:underline"
                         >
-                          <Globe className="h-3.5 w-3.5" />
+                          <Globe className="h-3.5 w-3.5 text-primary" />
                           {new URL(insurer.website).hostname}
                         </a>
                       ) : (
