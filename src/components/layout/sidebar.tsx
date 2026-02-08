@@ -14,6 +14,7 @@ import {
   Building2,
   CalendarClock,
   ShieldCheck,
+  Landmark,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -39,6 +40,7 @@ const navItems = [
   { href: "/policies", label: "保单", icon: FileText },
   { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
   { href: "/members", label: "家庭成员", icon: Users },
+  { href: "/insurers", label: "保险公司", icon: Landmark },
   { href: "/assets", label: "资产", icon: Building2 },
   { href: "/settings", label: "设置", icon: Settings },
 ];

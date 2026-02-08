@@ -3,14 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { insurersRepo } = await import("@/db/repositories");
+  const { insurersRepo, policiesRepo } = await import("@/db/repositories");
   const insurers = insurersRepo.findAll();
+  const policies = policiesRepo.findAll();
+
+  // Count policies per insurer by name
+  const policyCountMap = new Map<string, number>();
+  for (const policy of policies) {
+    const count = policyCountMap.get(policy.insurerName) ?? 0;
+    policyCountMap.set(policy.insurerName, count + 1);
+  }
 
   return NextResponse.json(insurers.map((i) => ({
     id: i.id,
     name: i.name,
     phone: i.phone,
     website: i.website,
+    policyCount: policyCountMap.get(i.name) ?? 0,
   })));
 }
 
