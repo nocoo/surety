@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Eye, Pencil, Trash2, Info, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Info, Check } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PolicySheet } from "./policy-sheet";
+import { PolicyDetailDialog } from "./policy-detail-dialog";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
 
@@ -86,6 +87,8 @@ export default function PoliciesPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailPolicyId, setDetailPolicyId] = useState<number | null>(null);
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -137,6 +140,11 @@ export default function PoliciesPage() {
     }
   };
 
+  const handleViewDetail = (policy: Policy) => {
+    setDetailPolicyId(policy.id);
+    setDetailOpen(true);
+  };
+
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
@@ -175,7 +183,7 @@ export default function PoliciesPage() {
                 <TableHead className="text-right">保额</TableHead>
                 <TableHead className="text-right">年保费</TableHead>
                 <TableHead className="font-mono">生效日期</TableHead>
-                <TableHead className="w-[120px]">操作</TableHead>
+                <TableHead className="w-[80px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -193,7 +201,12 @@ export default function PoliciesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <span className="font-medium">{policy.productName}</span>
+                        <button
+                          onClick={() => handleViewDetail(policy)}
+                          className="font-medium hover:text-primary hover:underline transition-colors text-left"
+                        >
+                          {policy.productName}
+                        </button>
                         {policy.policyNumber && (
                           <TooltipProvider delayDuration={0}>
                             <Tooltip>
@@ -250,14 +263,6 @@ export default function PoliciesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">查看详情</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
                           onClick={() => handleEdit(policy)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -287,6 +292,12 @@ export default function PoliciesPage() {
         onOpenChange={setSheetOpen}
         policy={editingPolicy}
         onSuccess={fetchPolicies}
+      />
+
+      <PolicyDetailDialog
+        policyId={detailPolicyId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
       />
     </AppShell>
   );
