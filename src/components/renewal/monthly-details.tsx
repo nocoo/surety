@@ -4,26 +4,51 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { MonthlyRenewal, RenewalItem } from "@/lib/renewal-calendar-vm";
 import { formatCurrency } from "@/lib/chart-config";
+import {
+  getCategoryConfig,
+  getMemberAvatarColors,
+  getNameInitial,
+} from "@/lib/category-config";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface MonthlyDetailsProps {
   data: MonthlyRenewal[];
 }
 
 function RenewalRow({ item }: { item: RenewalItem }) {
+  const avatarColors = getMemberAvatarColors(item.insuredMemberName);
+  const categoryConfig = getCategoryConfig(item.category);
+
   return (
-    <div className="flex items-center justify-between py-3 pl-10 pr-4 hover:bg-muted/50 border-b border-border/50 last:border-0">
+    <div className="flex items-center gap-3 py-3 pl-10 pr-4 hover:bg-muted/50 border-b border-border/50 last:border-0">
+      {/* Member Avatar */}
+      <Avatar size="sm">
+        <AvatarFallback className={`${avatarColors.bg} ${avatarColors.text}`}>
+          {getNameInitial(item.insuredMemberName)}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Main content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{item.productName}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {item.insuredMemberName} · {item.categoryLabel}
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium truncate">{item.productName}</p>
+          <Badge variant={categoryConfig.variant} className="shrink-0">
+            {categoryConfig.label}
+          </Badge>
           {item.isSavings && (
-            <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-amber-600">
+            <Badge variant="warning" className="shrink-0">
               储蓄
-            </span>
+            </Badge>
           )}
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {item.insuredMemberName}
         </p>
       </div>
-      <div className="text-right shrink-0 ml-4">
+
+      {/* Amount and date */}
+      <div className="text-right shrink-0">
         <p className="text-sm font-semibold">{formatCurrency(item.premium)}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{item.nextDueDate}</p>
       </div>
