@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cn } from "@/lib/utils";
+import { cn, hashString, getAvatarColor, getBadgeColor } from "@/lib/utils";
 
 describe("cn utility", () => {
   test("merges class names", () => {
@@ -22,5 +22,69 @@ describe("cn utility", () => {
 
   test("handles undefined and null", () => {
     expect(cn("foo", undefined, null, "bar")).toBe("foo bar");
+  });
+});
+
+describe("hashString", () => {
+  test("returns consistent hash for same input", () => {
+    const hash1 = hashString("test");
+    const hash2 = hashString("test");
+    expect(hash1).toBe(hash2);
+  });
+
+  test("returns different hash for different input", () => {
+    const hash1 = hashString("test1");
+    const hash2 = hashString("test2");
+    expect(hash1).not.toBe(hash2);
+  });
+
+  test("handles Chinese characters", () => {
+    const hash1 = hashString("寿险");
+    const hash2 = hashString("寿险");
+    expect(hash1).toBe(hash2);
+
+    const hash3 = hashString("重疾险");
+    expect(hash1).not.toBe(hash3);
+  });
+
+  test("returns positive number", () => {
+    expect(hashString("test")).toBeGreaterThanOrEqual(0);
+    expect(hashString("寿险")).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("getAvatarColor", () => {
+  test("returns consistent color for same name", () => {
+    const color1 = getAvatarColor("张三");
+    const color2 = getAvatarColor("张三");
+    expect(color1).toBe(color2);
+  });
+
+  test("returns bg-* class", () => {
+    const color = getAvatarColor("李四");
+    expect(color).toMatch(/^bg-\w+-\d+$/);
+  });
+});
+
+describe("getBadgeColor", () => {
+  test("returns consistent colors for same label", () => {
+    const color1 = getBadgeColor("寿险");
+    const color2 = getBadgeColor("寿险");
+    expect(color1).toEqual(color2);
+  });
+
+  test("returns object with bg, text, border", () => {
+    const color = getBadgeColor("重疾险");
+    expect(color).toHaveProperty("bg");
+    expect(color).toHaveProperty("text");
+    expect(color).toHaveProperty("border");
+  });
+
+  test("different labels may have different colors", () => {
+    const color1 = getBadgeColor("寿险");
+    const color2 = getBadgeColor("医疗险");
+    // They might be the same by chance, but structure should be correct
+    expect(color1.bg).toMatch(/^bg-\w+-\d+$/);
+    expect(color2.bg).toMatch(/^bg-\w+-\d+$/);
   });
 });

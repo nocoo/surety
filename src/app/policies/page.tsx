@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Info, Check } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn, getAvatarColor } from "@/lib/utils";
+import { cn, getAvatarColor, getBadgeColor } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -53,15 +60,6 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-const categoryVariants: Record<string, "default" | "secondary" | "outline" | "info"> = {
-  Life: "secondary",
-  CriticalIllness: "default",
-  Medical: "info",
-  Accident: "outline",
-  Annuity: "secondary",
-  Property: "outline",
-};
-
 const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" }> = {
   Active: { label: "生效中", variant: "success" },
   Lapsed: { label: "已失效", variant: "secondary" },
@@ -81,6 +79,9 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+type SortField = "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate";
+type SortDirection = "asc" | "desc";
+
 export default function PoliciesPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +90,14 @@ export default function PoliciesPage() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailPolicyId, setDetailPolicyId] = useState<number | null>(null);
+
+  // Filter state
+  const [filterInsured, setFilterInsured] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+
+  // Sort state
+  const [sortField, setSortField] = useState<SortField>("effectiveDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -103,6 +112,78 @@ export default function PoliciesPage() {
   useEffect(() => {
     fetchPolicies();
   }, []);
+
+  // Get unique insured names and categories for filter options
+  const insuredNames = useMemo(() => {
+    const names = new Set(policies.map((p) => p.insuredName));
+    return Array.from(names).sort();
+  }, [policies]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(policies.map((p) => p.category));
+    return Array.from(cats);
+  }, [policies]);
+
+  // Filter and sort policies
+  const filteredPolicies = useMemo(() => {
+    let result = [...policies];
+
+    // Apply filters
+    if (filterInsured !== "all") {
+      result = result.filter((p) => p.insuredName === filterInsured);
+    }
+    if (filterCategory !== "all") {
+      result = result.filter((p) => p.category === filterCategory);
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "productName":
+          comparison = a.productName.localeCompare(b.productName, "zh-CN");
+          break;
+        case "insurerName":
+          comparison = a.insurerName.localeCompare(b.insurerName, "zh-CN");
+          break;
+        case "insuredName":
+          comparison = a.insuredName.localeCompare(b.insuredName, "zh-CN");
+          break;
+        case "sumAssured":
+          comparison = a.sumAssured - b.sumAssured;
+          break;
+        case "premium":
+          comparison = a.premium - b.premium;
+          break;
+        case "effectiveDate":
+          comparison = a.effectiveDate.localeCompare(b.effectiveDate);
+          break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [policies, filterInsured, filterCategory, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground/50" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ml-1 h-3 w-3" />
+    ) : (
+      <ArrowDown className="ml-1 h-3 w-3" />
+    );
+  };
 
   const handleAdd = () => {
     setEditingPolicy(null);
@@ -162,7 +243,10 @@ export default function PoliciesPage() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
-              共 {policies.length} 份保单
+              共 {filteredPolicies.length} 份保单
+              {(filterInsured !== "all" || filterCategory !== "all") && 
+                ` (已筛选，共 ${policies.length} 份)`
+              }
             </p>
           </div>
           <Button onClick={handleAdd}>
@@ -171,33 +255,136 @@ export default function PoliciesPage() {
           </Button>
         </div>
 
+        {/* Filter Area */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">被保人:</span>
+            <Select value={filterInsured} onValueChange={setFilterInsured}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="全部" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                {insuredNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">类型:</span>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="全部" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {categoryLabels[cat] ?? cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(filterInsured !== "all" || filterCategory !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterInsured("all");
+                setFilterCategory("all");
+              }}
+            >
+              清除筛选
+            </Button>
+          )}
+        </div>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">状态</TableHead>
-                <TableHead className="w-[80px]">类型</TableHead>
-                <TableHead>产品名称</TableHead>
-                <TableHead>保险公司</TableHead>
-                <TableHead>被保人</TableHead>
-                <TableHead className="text-right">保额</TableHead>
-                <TableHead className="text-right">年保费</TableHead>
-                <TableHead className="font-mono">生效日期</TableHead>
+                <TableHead className="w-[80px]">状态</TableHead>
+                <TableHead className="w-[90px]">类型</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("productName")}
+                    className="inline-flex items-center hover:text-foreground transition-colors"
+                  >
+                    产品名称
+                    {renderSortIcon("productName")}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("insurerName")}
+                    className="inline-flex items-center hover:text-foreground transition-colors"
+                  >
+                    保险公司
+                    {renderSortIcon("insurerName")}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("insuredName")}
+                    className="inline-flex items-center hover:text-foreground transition-colors"
+                  >
+                    被保人
+                    {renderSortIcon("insuredName")}
+                  </button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <button
+                    onClick={() => handleSort("sumAssured")}
+                    className="inline-flex items-center justify-end w-full hover:text-foreground transition-colors"
+                  >
+                    保额
+                    {renderSortIcon("sumAssured")}
+                  </button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <button
+                    onClick={() => handleSort("premium")}
+                    className="inline-flex items-center justify-end w-full hover:text-foreground transition-colors"
+                  >
+                    年保费
+                    {renderSortIcon("premium")}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("effectiveDate")}
+                    className="inline-flex items-center hover:text-foreground transition-colors font-mono"
+                  >
+                    生效日期
+                    {renderSortIcon("effectiveDate")}
+                  </button>
+                </TableHead>
                 <TableHead className="w-[80px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {policies.map((policy) => {
+              {filteredPolicies.map((policy) => {
                 const status = statusConfig[policy.status];
                 const categoryLabel = categoryLabels[policy.category] ?? policy.category;
-                const categoryVariant = categoryVariants[policy.category] ?? "outline";
+                const badgeColor = getBadgeColor(categoryLabel);
                 return (
                   <TableRow key={policy.id} className="hover:bg-muted/50">
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={categoryVariant}>{categoryLabel}</Badge>
+                      <span className={cn(
+                        "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border",
+                        badgeColor.bg,
+                        badgeColor.text,
+                        badgeColor.border
+                      )}>
+                        {categoryLabel}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
