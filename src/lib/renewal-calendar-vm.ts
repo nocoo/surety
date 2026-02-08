@@ -63,7 +63,8 @@ export interface RenewalSummary {
 export interface RenewalCalendarData {
   summary: RenewalSummary;
   monthlyData: MonthlyRenewal[];
-  upcomingRenewals: RenewalItem[];
+  /** All unique policy names for stacked bar chart */
+  policyNames: string[];
 }
 
 // ============================================================================
@@ -191,11 +192,33 @@ export function calculateRenewalItems(
 }
 
 /**
- * Group renewal items by month
+ * Generate all 12 consecutive months starting from reference date
  */
-export function groupByMonth(items: RenewalItem[]): MonthlyRenewal[] {
-  const monthMap = new Map<string, RenewalItem[]>();
+export function generateConsecutiveMonths(
+  referenceDate: Date,
+  monthsCount: number = 12
+): string[] {
+  const months: string[] = [];
+  for (let i = 0; i < monthsCount; i++) {
+    const date = addMonths(referenceDate, i);
+    months.push(formatYearMonth(date));
+  }
+  return months;
+}
 
+/**
+ * Group renewal items by month, ensuring all 12 consecutive months are present
+ */
+export function groupByMonth(
+  items: RenewalItem[],
+  referenceDate: Date,
+  monthsCount: number = 12
+): MonthlyRenewal[] {
+  // Generate all consecutive months
+  const allMonths = generateConsecutiveMonths(referenceDate, monthsCount);
+
+  // Group items by month
+  const monthMap = new Map<string, RenewalItem[]>();
   for (const item of items) {
     const month = item.nextDueDate.substring(0, 7); // YYYY-MM
     const existing = monthMap.get(month) ?? [];
@@ -203,22 +226,33 @@ export function groupByMonth(items: RenewalItem[]): MonthlyRenewal[] {
     monthMap.set(month, existing);
   }
 
-  return Array.from(monthMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, monthItems]) => {
-      const savingsItems = monthItems.filter((i) => i.isSavings);
-      const protectionItems = monthItems.filter((i) => !i.isSavings);
+  // Create monthly data for all months (including empty ones)
+  return allMonths.map((month) => {
+    const monthItems = monthMap.get(month) ?? [];
+    const savingsItems = monthItems.filter((i) => i.isSavings);
+    const protectionItems = monthItems.filter((i) => !i.isSavings);
 
-      return {
-        month,
-        monthLabel: getMonthLabel(month),
-        items: monthItems,
-        totalPremium: monthItems.reduce((sum, i) => sum + i.premium, 0),
-        savingsPremium: savingsItems.reduce((sum, i) => sum + i.premium, 0),
-        protectionPremium: protectionItems.reduce((sum, i) => sum + i.premium, 0),
-        count: monthItems.length,
-      };
-    });
+    return {
+      month,
+      monthLabel: getMonthLabel(month),
+      items: monthItems,
+      totalPremium: monthItems.reduce((sum, i) => sum + i.premium, 0),
+      savingsPremium: savingsItems.reduce((sum, i) => sum + i.premium, 0),
+      protectionPremium: protectionItems.reduce((sum, i) => sum + i.premium, 0),
+      count: monthItems.length,
+    };
+  });
+}
+
+/**
+ * Get all unique policy names from items (for stacked bar chart)
+ */
+export function getUniquePolicyNames(items: RenewalItem[]): string[] {
+  const names = new Set<string>();
+  for (const item of items) {
+    names.add(item.productName);
+  }
+  return Array.from(names).sort();
 }
 
 /**
@@ -249,16 +283,14 @@ export function buildRenewalCalendarData(
   monthsAhead: number = 12
 ): RenewalCalendarData {
   const items = calculateRenewalItems(policies, referenceDate, monthsAhead);
-  const monthlyData = groupByMonth(items);
+  const monthlyData = groupByMonth(items, referenceDate, monthsAhead);
   const summary = calculateSummary(items);
-
-  // Upcoming renewals (next 30 days)
-  const upcomingRenewals = items.filter((i) => i.daysUntilDue <= 30);
+  const policyNames = getUniquePolicyNames(items);
 
   return {
     summary,
     monthlyData,
-    upcomingRenewals,
+    policyNames,
   };
 }
 
