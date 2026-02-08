@@ -1,4 +1,5 @@
 export { membersRepo } from "./members";
+export { insurersRepo } from "./insurers";
 export { assetsRepo } from "./assets";
 export { policiesRepo } from "./policies";
 export { beneficiariesRepo } from "./beneficiaries";
