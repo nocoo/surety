@@ -19,6 +19,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AssetSheet } from "./asset-sheet";
 
 type AssetType = "RealEstate" | "Vehicle";
@@ -43,11 +53,28 @@ const typeIcons: Record<AssetType, typeof Home> = {
   Vehicle: Car,
 };
 
+const typeBadgeColors: Record<AssetType, string> = {
+  RealEstate: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  Vehicle: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+};
+
+const typeIconBgColors: Record<AssetType, string> = {
+  RealEstate: "bg-blue-100 dark:bg-blue-900",
+  Vehicle: "bg-green-100 dark:bg-green-900",
+};
+
+const typeIconColors: Record<AssetType, string> = {
+  RealEstate: "text-blue-600 dark:text-blue-400",
+  Vehicle: "text-green-600 dark:text-green-400",
+};
+
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
   const fetchAssets = () => {
     fetch("/api/assets")
@@ -73,16 +100,23 @@ export default function AssetsPage() {
     setSheetOpen(true);
   };
 
-  const handleDelete = async (asset: Asset) => {
-    if (!confirm(`确定要删除 ${asset.name} 吗？`)) return;
+  const handleDeleteClick = (asset: Asset) => {
+    setAssetToDelete(asset);
+    setDeleteDialogOpen(true);
+  };
 
-    const response = await fetch(`/api/assets/${asset.id}`, {
+  const handleDeleteConfirm = async () => {
+    if (!assetToDelete) return;
+
+    const response = await fetch(`/api/assets/${assetToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
       fetchAssets();
     }
+    setDeleteDialogOpen(false);
+    setAssetToDelete(null);
   };
 
   if (loading) {
@@ -138,14 +172,14 @@ export default function AssetsPage() {
                     <TableRow key={asset.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-md ${typeIconBgColors[asset.type]}`}>
+                            <Icon className={`h-4 w-4 ${typeIconColors[asset.type]}`} />
                           </div>
                           <span className="font-medium">{asset.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{typeLabels[asset.type]}</Badge>
+                        <Badge className={typeBadgeColors[asset.type]}>{typeLabels[asset.type]}</Badge>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-muted-foreground">
                         {asset.identifier}
@@ -168,7 +202,7 @@ export default function AssetsPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => handleDelete(asset)}
+                              onClick={() => handleDeleteClick(asset)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               删除
@@ -191,6 +225,23 @@ export default function AssetsPage() {
         asset={editingAsset}
         onSuccess={fetchAssets}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除资产「{assetToDelete?.name}」吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }

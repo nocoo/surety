@@ -124,36 +124,11 @@ export function Sidebar() {
 
         <Separator />
 
-        {/* Footer */}
+        {/* User info */}
         <div className={cn(
           "flex items-center gap-3 py-4",
           collapsed ? "flex-col px-2" : "px-4"
         )}>
-          {/* Toggle button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggle}
-                className="h-8 w-8 shrink-0"
-              >
-                {collapsed ? (
-                  <PanelLeft className="h-4 w-4" />
-                ) : (
-                  <PanelLeftClose className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {collapsed ? "展开侧边栏" : "收起侧边栏"}
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side={collapsed ? "right" : "top"}>
-              {collapsed ? "展开侧边栏" : "收起侧边栏"}
-            </TooltipContent>
-          </Tooltip>
-
-          {/* User info */}
           {!collapsed && (
             <>
               <Avatar className="h-8 w-8">
@@ -178,6 +153,35 @@ export function Sidebar() {
               </TooltipContent>
             </Tooltip>
           )}
+        </div>
+
+        {/* Toggle button - at the very bottom */}
+        <div className={cn(
+          "mt-auto border-t py-3",
+          collapsed ? "px-2 flex justify-center" : "px-4"
+        )}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggle}
+                className="h-8 w-8 shrink-0"
+              >
+                {collapsed ? (
+                  <PanelLeft className="h-4 w-4" />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" />
+                )}
+                <span className="sr-only">
+                  {collapsed ? "展开侧边栏" : "收起侧边栏"}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side={collapsed ? "right" : "top"}>
+              {collapsed ? "展开侧边栏" : "收起侧边栏"}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </aside>
     </TooltipProvider>

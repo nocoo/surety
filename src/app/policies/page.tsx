@@ -28,6 +28,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
 import { PolicyDetailDialog } from "./policy-detail-dialog";
 
@@ -90,6 +100,8 @@ export default function PoliciesPage() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailPolicyId, setDetailPolicyId] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
 
   // Filter state
   const [filterInsured, setFilterInsured] = useState<string>("all");
@@ -198,11 +210,16 @@ export default function PoliciesPage() {
     setSheetOpen(true);
   };
 
-  const handleDelete = async (policy: Policy) => {
-    if (!confirm(`确定要删除保单「${policy.productName}」吗？`)) return;
+  const handleDeleteClick = (policy: Policy) => {
+    setPolicyToDelete(policy);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!policyToDelete) return;
 
     try {
-      const response = await fetch(`/api/policies/${policy.id}`, {
+      const response = await fetch(`/api/policies/${policyToDelete.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -211,6 +228,8 @@ export default function PoliciesPage() {
     } catch (error) {
       console.error("Error deleting policy:", error);
     }
+    setDeleteDialogOpen(false);
+    setPolicyToDelete(null);
   };
 
   const handleCopyPolicyNumber = async (policy: Policy) => {
@@ -470,7 +489,7 @@ export default function PoliciesPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(policy)}
+                          onClick={() => handleDeleteClick(policy)}
                         >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">删除</span>
@@ -497,6 +516,23 @@ export default function PoliciesPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除保单「{policyToDelete?.productName}」吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }

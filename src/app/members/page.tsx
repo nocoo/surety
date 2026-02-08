@@ -15,6 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MemberSheet } from "./member-sheet";
 
 type Relation = "Self" | "Spouse" | "Child" | "Parent";
@@ -60,6 +70,8 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const fetchMembers = () => {
     fetch("/api/members")
@@ -85,16 +97,23 @@ export default function MembersPage() {
     setSheetOpen(true);
   };
 
-  const handleDelete = async (member: Member) => {
-    if (!confirm(`确定要删除 ${member.name} 吗？`)) return;
+  const handleDeleteClick = (member: Member) => {
+    setMemberToDelete(member);
+    setDeleteDialogOpen(true);
+  };
 
-    const response = await fetch(`/api/members/${member.id}`, {
+  const handleDeleteConfirm = async () => {
+    if (!memberToDelete) return;
+
+    const response = await fetch(`/api/members/${memberToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
       fetchMembers();
     }
+    setDeleteDialogOpen(false);
+    setMemberToDelete(null);
   };
 
   if (loading) {
@@ -202,7 +221,7 @@ export default function MembersPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           disabled={member.relation === "Self"}
-                          onClick={() => handleDelete(member)}
+                          onClick={() => handleDeleteClick(member)}
                         >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">删除</span>
@@ -223,6 +242,23 @@ export default function MembersPage() {
         member={editingMember}
         onSuccess={fetchMembers}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除成员「{memberToDelete?.name}」吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
