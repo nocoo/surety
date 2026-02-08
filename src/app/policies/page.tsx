@@ -51,11 +51,11 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-const statusConfig: Record<PolicyStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  Active: { label: "生效中", variant: "default" },
+const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" }> = {
+  Active: { label: "生效中", variant: "success" },
   Lapsed: { label: "已失效", variant: "secondary" },
-  Surrendered: { label: "已退保", variant: "outline" },
-  Claimed: { label: "已理赔", variant: "destructive" },
+  Surrendered: { label: "已退保", variant: "warning" },
+  Claimed: { label: "已理赔", variant: "purple" },
 };
 
 function formatCurrency(value: number): string {

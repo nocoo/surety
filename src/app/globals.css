@@ -45,6 +45,15 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Semantic colors */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-purple: var(--purple);
+  --color-purple-foreground: var(--purple-foreground);
 }
 
 :root {
@@ -80,6 +89,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Semantic colors for badges */
+  --success: oklch(0.59 0.16 145);
+  --success-foreground: oklch(0.98 0 0);
+  --warning: oklch(0.75 0.18 75);
+  --warning-foreground: oklch(0.25 0 0);
+  --info: oklch(0.55 0.15 250);
+  --info-foreground: oklch(0.98 0 0);
+  --purple: oklch(0.55 0.2 300);
+  --purple-foreground: oklch(0.98 0 0);
 }
 
 .dark {
@@ -114,6 +133,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Semantic colors for badges (dark mode) */
+  --success: oklch(0.65 0.18 145);
+  --success-foreground: oklch(0.15 0 0);
+  --warning: oklch(0.78 0.16 75);
+  --warning-foreground: oklch(0.15 0 0);
+  --info: oklch(0.65 0.17 250);
+  --info-foreground: oklch(0.98 0 0);
+  --purple: oklch(0.65 0.22 300);
+  --purple-foreground: oklch(0.98 0 0);
 }
 
 @layer base {
