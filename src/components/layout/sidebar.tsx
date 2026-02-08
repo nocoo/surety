@@ -13,6 +13,7 @@ import {
   PanelLeft,
   Building2,
   CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -34,6 +35,7 @@ interface Member {
 
 const navItems = [
   { href: "/", label: "仪表盘", icon: LayoutDashboard },
+  { href: "/member-coverage", label: "成员保障", icon: ShieldCheck },
   { href: "/policies", label: "保单", icon: FileText },
   { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
   { href: "/members", label: "家庭成员", icon: Users },
