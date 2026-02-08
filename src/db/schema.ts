@@ -25,7 +25,26 @@ export type Member = typeof members.$inferSelect;
 export type NewMember = typeof members.$inferInsert;
 
 // ============================================================================
-// 2. assets - 财产（仅财产险标的）
+// 2. insurers - 保险公司
+// ============================================================================
+export const insurers = sqliteTable("insurers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  phone: text("phone"),
+  website: text("website"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Insurer = typeof insurers.$inferSelect;
+export type NewInsurer = typeof insurers.$inferInsert;
+
+// ============================================================================
+// 3. assets - 财产（仅财产险标的）
 // ============================================================================
 export const assets = sqliteTable("assets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -46,7 +65,7 @@ export type Asset = typeof assets.$inferSelect;
 export type NewAsset = typeof assets.$inferInsert;
 
 // ============================================================================
-// 3. policies - 保单
+// 4. policies - 保单
 // ============================================================================
 export const policies = sqliteTable("policies", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -71,7 +90,8 @@ export const policies = sqliteTable("policies", {
     ],
   }).notNull(),
   subCategory: text("sub_category"), // 子类别: 综合意外险、百万医疗险等
-  insurerName: text("insurer_name").notNull(),
+  insurerId: integer("insurer_id").references(() => insurers.id),
+  insurerName: text("insurer_name").notNull(), // 冗余字段，便于查询展示
   productName: text("product_name").notNull(),
   policyNumber: text("policy_number").notNull().unique(),
   channel: text("channel"), // 渠道: 关哥说险、支付宝等
@@ -120,7 +140,7 @@ export type Policy = typeof policies.$inferSelect;
 export type NewPolicy = typeof policies.$inferInsert;
 
 // ============================================================================
-// 4. beneficiaries - 受益人
+// 5. beneficiaries - 受益人
 // ============================================================================
 export const beneficiaries = sqliteTable("beneficiaries", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -138,7 +158,7 @@ export type Beneficiary = typeof beneficiaries.$inferSelect;
 export type NewBeneficiary = typeof beneficiaries.$inferInsert;
 
 // ============================================================================
-// 5. payments - 缴费记录
+// 6. payments - 缴费记录
 // ============================================================================
 export const payments = sqliteTable("payments", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -159,7 +179,7 @@ export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
 
 // ============================================================================
-// 6. cashValues - 现金价值
+// 7. cashValues - 现金价值
 // ============================================================================
 export const cashValues = sqliteTable("cash_values", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -174,7 +194,7 @@ export type CashValue = typeof cashValues.$inferSelect;
 export type NewCashValue = typeof cashValues.$inferInsert;
 
 // ============================================================================
-// 7. policyExtensions - 险种特有字段
+// 8. policyExtensions - 险种特有字段
 // ============================================================================
 export const policyExtensions = sqliteTable("policy_extensions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -189,7 +209,7 @@ export type PolicyExtension = typeof policyExtensions.$inferSelect;
 export type NewPolicyExtension = typeof policyExtensions.$inferInsert;
 
 // ============================================================================
-// 8. settings - 全局设置
+// 9. settings - 全局设置
 // ============================================================================
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

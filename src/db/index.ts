@@ -82,6 +82,7 @@ export function resetE2EDb(): void {
     DELETE FROM beneficiaries;
     DELETE FROM policies;
     DELETE FROM assets;
+    DELETE FROM insurers;
     DELETE FROM members;
     DELETE FROM settings;
   `);
@@ -102,6 +103,7 @@ export function resetTestDb(): void {
     DELETE FROM beneficiaries;
     DELETE FROM policies;
     DELETE FROM assets;
+    DELETE FROM insurers;
     DELETE FROM members;
     DELETE FROM settings;
   `);
@@ -128,6 +130,15 @@ export function initSchema(): void {
       updated_at INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS insurers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      phone TEXT,
+      website TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS assets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       type TEXT NOT NULL,
@@ -147,6 +158,7 @@ export function initSchema(): void {
       insured_asset_id INTEGER REFERENCES assets(id),
       category TEXT NOT NULL,
       sub_category TEXT,
+      insurer_id INTEGER REFERENCES insurers(id),
       insurer_name TEXT NOT NULL,
       product_name TEXT NOT NULL,
       policy_number TEXT NOT NULL UNIQUE,
