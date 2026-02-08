@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
 import { PolicyDetailDialog } from "./policy-detail-dialog";
+import { PaymentsDialog } from "./payments-dialog";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
 
@@ -120,6 +121,9 @@ export default function PoliciesPage() {
   const [detailPolicyId, setDetailPolicyId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [paymentsPolicyId, setPaymentsPolicyId] = useState<number | null>(null);
+  const [paymentsProductName, setPaymentsProductName] = useState<string>("");
 
   // Filter state
   const [filterInsured, setFilterInsured] = useState<string>("all");
@@ -267,6 +271,12 @@ export default function PoliciesPage() {
   const handleViewDetail = (policy: Policy) => {
     setDetailPolicyId(policy.id);
     setDetailOpen(true);
+  };
+
+  const handleViewPayments = (policy: Policy) => {
+    setPaymentsPolicyId(policy.id);
+    setPaymentsProductName(policy.productName);
+    setPaymentsOpen(true);
   };
 
   if (loading) {
@@ -423,7 +433,7 @@ export default function PoliciesPage() {
                     {renderSortIcon("nextDueDate")}
                   </button>
                 </TableHead>
-                <TableHead className="w-[80px]">操作</TableHead>
+                <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -534,6 +544,24 @@ export default function PoliciesPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
+                                onClick={() => handleViewPayments(policy)}
+                              >
+                                <Receipt className="h-4 w-4" />
+                                <span className="sr-only">缴费记录</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">缴费记录</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
                                 onClick={() => handleEdit(policy)}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -584,6 +612,13 @@ export default function PoliciesPage() {
         policyId={detailPolicyId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <PaymentsDialog
+        policyId={paymentsPolicyId}
+        productName={paymentsProductName}
+        open={paymentsOpen}
+        onOpenChange={setPaymentsOpen}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
