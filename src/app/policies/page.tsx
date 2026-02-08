@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2, Info, Check } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PolicySheet } from "./policy-sheet";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
@@ -46,6 +52,15 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
+const categoryVariants: Record<string, "default" | "secondary" | "outline" | "info"> = {
+  Life: "secondary",
+  CriticalIllness: "default",
+  Medical: "info",
+  Accident: "outline",
+  Annuity: "secondary",
+  Property: "outline",
+};
+
 const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" }> = {
   Active: { label: "生效中", variant: "success" },
   Lapsed: { label: "已失效", variant: "secondary" },
@@ -70,6 +85,7 @@ export default function PoliciesPage() {
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -110,6 +126,17 @@ export default function PoliciesPage() {
     }
   };
 
+  const handleCopyPolicyNumber = async (policy: Policy) => {
+    if (!policy.policyNumber) return;
+    try {
+      await navigator.clipboard.writeText(policy.policyNumber);
+      setCopiedId(policy.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
@@ -141,6 +168,7 @@ export default function PoliciesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[100px]">状态</TableHead>
+                <TableHead className="w-[80px]">类型</TableHead>
                 <TableHead>产品名称</TableHead>
                 <TableHead>保险公司</TableHead>
                 <TableHead>被保人</TableHead>
@@ -154,18 +182,44 @@ export default function PoliciesPage() {
               {policies.map((policy) => {
                 const status = statusConfig[policy.status];
                 const categoryLabel = categoryLabels[policy.category] ?? policy.category;
+                const categoryVariant = categoryVariants[policy.category] ?? "outline";
                 return (
                   <TableRow key={policy.id} className="hover:bg-muted/50">
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{policy.productName}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {policy.subCategory ?? categoryLabel}
-                          {policy.policyNumber && ` · ${policy.policyNumber}`}
-                        </div>
+                      <Badge variant={categoryVariant}>{categoryLabel}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{policy.productName}</span>
+                        {policy.policyNumber && (
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleCopyPolicyNumber(policy)}
+                                  className="inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                  {copiedId === policy.id ? (
+                                    <Check className="h-3 w-3 text-success" />
+                                  ) : (
+                                    <Info className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  {copiedId === policy.id ? "已复制!" : `保单号: ${policy.policyNumber}`}
+                                </p>
+                                {copiedId !== policy.id && (
+                                  <p className="text-xs text-muted-foreground">点击复制</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
