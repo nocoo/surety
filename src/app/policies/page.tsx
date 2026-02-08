@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn, getAvatarColor } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -173,7 +174,7 @@ export default function PoliciesPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className={cn("text-xs text-white", getAvatarColor(policy.insuredName ?? ""))}>
                             {policy.insuredName?.[0] ?? "?"}
                           </AvatarFallback>
                         </Avatar>

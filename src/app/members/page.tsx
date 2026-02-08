@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn, getAvatarColor } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -144,7 +145,7 @@ export default function MembersPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-sm">
+                          <AvatarFallback className={cn("text-sm text-white", getAvatarColor(member.name))}>
                             {member.name[0]}
                           </AvatarFallback>
                         </Avatar>

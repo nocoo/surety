@@ -12,7 +12,7 @@ import {
   PanelLeft,
   Building2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,7 @@ export function Sidebar() {
           {!collapsed && (
             <>
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">张</AvatarFallback>
+                <AvatarFallback className={cn("text-xs text-white", getAvatarColor("张伟"))}>张</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">张伟</span>
@@ -144,7 +144,7 @@ export function Sidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarFallback className="text-xs">张</AvatarFallback>
+                  <AvatarFallback className={cn("text-xs text-white", getAvatarColor("张伟"))}>张</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent side="right">
