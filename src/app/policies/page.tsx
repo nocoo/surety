@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MoreHorizontal, Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { PolicySheet } from "./policy-sheet";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
@@ -100,9 +94,11 @@ export default function PoliciesPage() {
     setSheetOpen(true);
   };
 
-  const handleDelete = async (policyId: number) => {
+  const handleDelete = async (policy: Policy) => {
+    if (!confirm(`确定要删除保单「${policy.productName}」吗？`)) return;
+
     try {
-      const response = await fetch(`/api/policies/${policyId}`, {
+      const response = await fetch(`/api/policies/${policy.id}`, {
         method: "DELETE",
       });
       if (response.ok) {
@@ -150,7 +146,7 @@ export default function PoliciesPage() {
                 <TableHead className="text-right">保额</TableHead>
                 <TableHead className="text-right">年保费</TableHead>
                 <TableHead className="font-mono">生效日期</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[120px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,31 +190,34 @@ export default function PoliciesPage() {
                       {policy.effectiveDate}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">操作菜单</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            查看详情
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(policy)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => handleDelete(policy.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">查看详情</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEdit(policy)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">编辑</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(policy)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">删除</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

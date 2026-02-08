@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MoreHorizontal, Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { MemberSheet } from "./member-sheet";
 
 type Relation = "Self" | "Spouse" | "Child" | "Parent";
@@ -139,7 +133,7 @@ export default function MembersPage() {
                 <TableHead>出生日期</TableHead>
                 <TableHead>手机号</TableHead>
                 <TableHead className="text-center">保单数</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -184,7 +178,7 @@ export default function MembersPage() {
                     <TableCell className="text-center">
                       {member.policyCount && member.policyCount > 0 ? (
                         <div className="flex items-center justify-center gap-1">
-                          <Shield className="h-3 w-3 text-green-600" />
+                          <Shield className="h-3 w-3 text-success" />
                           <span className="text-sm">{member.policyCount}</span>
                         </div>
                       ) : (
@@ -192,28 +186,27 @@ export default function MembersPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">操作菜单</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(member)}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            编辑
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            disabled={member.relation === "Self"}
-                            onClick={() => handleDelete(member)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            删除
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEdit(member)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">编辑</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          disabled={member.relation === "Self"}
+                          onClick={() => handleDelete(member)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">删除</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

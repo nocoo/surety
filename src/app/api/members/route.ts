@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { membersRepo } = await import("@/db/repositories");
+  const { membersRepo, policiesRepo } = await import("@/db/repositories");
   const members = membersRepo.findAll();
 
   const result = members.map((m) => ({
@@ -13,6 +13,7 @@ export async function GET() {
     gender: m.gender,
     birthDate: m.birthDate,
     phone: m.phone,
+    policyCount: policiesRepo.findByInsuredMemberId(m.id).length,
   }));
 
   return NextResponse.json(result);
