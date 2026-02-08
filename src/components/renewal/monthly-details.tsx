@@ -31,41 +31,57 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 
 function MonthSection({ month }: { month: MonthlyRenewal }) {
   const [expanded, setExpanded] = useState(false);
+  const isEmpty = month.count === 0;
 
   return (
     <div className="border-b border-border last:border-0">
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+        onClick={() => !isEmpty && setExpanded(!expanded)}
+        className={`w-full flex items-center justify-between p-4 transition-colors ${
+          isEmpty ? "cursor-default" : "hover:bg-muted/50"
+        }`}
+        disabled={isEmpty}
       >
         <div className="flex items-center gap-2">
-          {expanded ? (
+          {isEmpty ? (
+            <div className="h-4 w-4" /> // Spacer for alignment
+          ) : expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="font-medium">{month.monthLabel}</span>
-          <span className="text-xs text-muted-foreground">
-            ({month.count} 次)
+          <span className={`font-medium ${isEmpty ? "text-muted-foreground" : ""}`}>
+            {month.monthLabel}
           </span>
+          {!isEmpty && (
+            <span className="text-xs text-muted-foreground">
+              ({month.count} 次)
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm">
-          {month.savingsPremium > 0 && (
-            <span className="text-amber-500">
-              储蓄 {formatCurrency(month.savingsPremium)}
-            </span>
+          {isEmpty ? (
+            <span className="text-muted-foreground">无续保</span>
+          ) : (
+            <>
+              {month.savingsPremium > 0 && (
+                <span className="text-amber-500">
+                  储蓄 {formatCurrency(month.savingsPremium)}
+                </span>
+              )}
+              {month.protectionPremium > 0 && (
+                <span className="text-emerald-500">
+                  保障 {formatCurrency(month.protectionPremium)}
+                </span>
+              )}
+              <span className="font-medium">
+                {formatCurrency(month.totalPremium)}
+              </span>
+            </>
           )}
-          {month.protectionPremium > 0 && (
-            <span className="text-emerald-500">
-              保障 {formatCurrency(month.protectionPremium)}
-            </span>
-          )}
-          <span className="font-medium">
-            {formatCurrency(month.totalPremium)}
-          </span>
         </div>
       </button>
-      {expanded && (
+      {expanded && !isEmpty && (
         <div className="bg-muted/30">
           {month.items.map((item, idx) => (
             <RenewalRow

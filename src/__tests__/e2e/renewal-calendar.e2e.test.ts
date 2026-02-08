@@ -34,7 +34,7 @@ interface MonthlyRenewal {
 interface RenewalCalendarResponse {
   summary: RenewalSummary;
   monthlyData: MonthlyRenewal[];
-  upcomingRenewals: RenewalItem[];
+  policyNames: string[];
 }
 
 describe("Renewal Calendar API E2E", () => {
@@ -55,7 +55,7 @@ describe("Renewal Calendar API E2E", () => {
       expect(status).toBe(200);
       expect(data.summary).toBeDefined();
       expect(data.monthlyData).toBeDefined();
-      expect(data.upcomingRenewals).toBeDefined();
+      expect(data.policyNames).toBeDefined();
     });
 
     test("summary has correct structure", async () => {
@@ -92,18 +92,19 @@ describe("Renewal Calendar API E2E", () => {
       expect(calculatedTotal).toBe(data.summary.totalPremium);
     });
 
-    test("monthlyData is array sorted by month", async () => {
+    test("monthlyData has exactly 12 consecutive months", async () => {
       const { data } = await apiRequest<RenewalCalendarResponse>(
         "/api/renewal-calendar"
       );
 
       expect(Array.isArray(data.monthlyData)).toBe(true);
+      expect(data.monthlyData).toHaveLength(12);
 
       // Verify sorted order
       for (let i = 1; i < data.monthlyData.length; i++) {
         const prev = data.monthlyData[i - 1]!.month;
         const curr = data.monthlyData[i]!.month;
-        expect(prev.localeCompare(curr)).toBeLessThanOrEqual(0);
+        expect(prev.localeCompare(curr)).toBeLessThan(0);
       }
     });
 
@@ -132,13 +133,9 @@ describe("Renewal Calendar API E2E", () => {
         "/api/renewal-calendar"
       );
 
-      // Check upcomingRenewals or items in monthlyData
-      const items =
-        data.upcomingRenewals.length > 0
-          ? data.upcomingRenewals
-          : data.monthlyData.length > 0
-            ? data.monthlyData[0]!.items
-            : [];
+      // Find first month with items
+      const monthWithItems = data.monthlyData.find((m) => m.items.length > 0);
+      const items = monthWithItems?.items ?? [];
 
       if (items.length > 0) {
         const item = items[0]!;
@@ -157,25 +154,14 @@ describe("Renewal Calendar API E2E", () => {
       }
     });
 
-    test("upcomingRenewals are within 30 days", async () => {
+    test("policyNames is array of strings", async () => {
       const { data } = await apiRequest<RenewalCalendarResponse>(
         "/api/renewal-calendar"
       );
 
-      for (const item of data.upcomingRenewals) {
-        expect(item.daysUntilDue).toBeLessThanOrEqual(30);
-      }
-    });
-
-    test("upcomingRenewals are sorted by daysUntilDue", async () => {
-      const { data } = await apiRequest<RenewalCalendarResponse>(
-        "/api/renewal-calendar"
-      );
-
-      for (let i = 1; i < data.upcomingRenewals.length; i++) {
-        const prev = data.upcomingRenewals[i - 1]!.daysUntilDue;
-        const curr = data.upcomingRenewals[i]!.daysUntilDue;
-        expect(prev).toBeLessThanOrEqual(curr);
+      expect(Array.isArray(data.policyNames)).toBe(true);
+      for (const name of data.policyNames) {
+        expect(typeof name).toBe("string");
       }
     });
 

@@ -11,6 +11,8 @@ import {
   calculateSummary,
   buildRenewalCalendarData,
   formatCurrency,
+  generateConsecutiveMonths,
+  getUniquePolicyNames,
   type PolicyForRenewal,
 } from "@/lib/renewal-calendar-vm";
 
@@ -203,7 +205,7 @@ describe("renewal-calendar-vm", () => {
   });
 
   describe("groupByMonth", () => {
-    it("groups items by month correctly", () => {
+    it("groups items by month with all 12 consecutive months", () => {
       const items = [
         {
           id: 1,
@@ -240,16 +242,55 @@ describe("renewal-calendar-vm", () => {
         },
       ];
 
-      const grouped = groupByMonth(items);
+      const referenceDate = new Date("2026-01-01");
+      const grouped = groupByMonth(items, referenceDate, 12);
       
-      expect(grouped).toHaveLength(2);
-      expect(grouped[0]?.month).toBe("2026-03");
-      expect(grouped[0]?.count).toBe(2);
-      expect(grouped[0]?.totalPremium).toBe(6000);
-      expect(grouped[0]?.savingsPremium).toBe(5000);
-      expect(grouped[0]?.protectionPremium).toBe(1000);
-      expect(grouped[1]?.month).toBe("2026-04");
-      expect(grouped[1]?.count).toBe(1);
+      // Should have all 12 months
+      expect(grouped).toHaveLength(12);
+      expect(grouped[0]?.month).toBe("2026-01");
+      expect(grouped[0]?.count).toBe(0); // January has no items
+      
+      // March should have 2 items
+      const march = grouped.find(m => m.month === "2026-03");
+      expect(march?.count).toBe(2);
+      expect(march?.totalPremium).toBe(6000);
+      expect(march?.savingsPremium).toBe(5000);
+      expect(march?.protectionPremium).toBe(1000);
+      
+      // April should have 1 item
+      const april = grouped.find(m => m.month === "2026-04");
+      expect(april?.count).toBe(1);
+    });
+  });
+
+  describe("generateConsecutiveMonths", () => {
+    it("generates 12 consecutive months", () => {
+      const months = generateConsecutiveMonths(new Date("2026-01-15"), 12);
+      expect(months).toHaveLength(12);
+      expect(months[0]).toBe("2026-01");
+      expect(months[11]).toBe("2026-12");
+    });
+
+    it("handles year rollover", () => {
+      const months = generateConsecutiveMonths(new Date("2026-10-01"), 6);
+      expect(months).toHaveLength(6);
+      expect(months[0]).toBe("2026-10");
+      expect(months[3]).toBe("2027-01");
+    });
+  });
+
+  describe("getUniquePolicyNames", () => {
+    it("extracts unique policy names", () => {
+      const items = [
+        { id: 1, productName: "A", category: "Medical", categoryLabel: "医疗险", premium: 1000, nextDueDate: "2026-03-15", daysUntilDue: 73, insuredMemberName: "张三", isSavings: false },
+        { id: 1, productName: "A", category: "Medical", categoryLabel: "医疗险", premium: 1000, nextDueDate: "2027-03-15", daysUntilDue: 438, insuredMemberName: "张三", isSavings: false },
+        { id: 2, productName: "B", category: "Annuity", categoryLabel: "年金险", premium: 5000, nextDueDate: "2026-06-01", daysUntilDue: 151, insuredMemberName: "李四", isSavings: true },
+      ];
+
+      const names = getUniquePolicyNames(items);
+      expect(names).toHaveLength(2);
+      expect(names).toContain("A");
+      expect(names).toContain("B");
     });
   });
 
@@ -323,28 +364,29 @@ describe("renewal-calendar-vm", () => {
 
       expect(data.summary).toBeDefined();
       expect(data.monthlyData).toBeDefined();
-      expect(data.upcomingRenewals).toBeDefined();
+      expect(data.policyNames).toBeDefined();
       expect(Array.isArray(data.monthlyData)).toBe(true);
+      expect(data.monthlyData).toHaveLength(12); // All 12 months present
     });
 
-    it("filters upcoming renewals within 30 days", () => {
+    it("includes all unique policy names", () => {
       const policies: PolicyForRenewal[] = [
         {
           id: 1,
-          productName: "即将到期",
+          productName: "医疗险A",
           category: "Medical",
           premium: 1000,
           paymentFrequency: "Yearly",
-          nextDueDate: "2026-01-15", // 14 days from reference
+          nextDueDate: "2026-01-15",
           insuredMemberName: "张三",
         },
         {
           id: 2,
-          productName: "较远到期",
+          productName: "意外险B",
           category: "Accident",
           premium: 500,
           paymentFrequency: "Yearly",
-          nextDueDate: "2026-06-01", // 151 days from reference
+          nextDueDate: "2026-06-01",
           insuredMemberName: "李四",
         },
       ];
@@ -355,8 +397,24 @@ describe("renewal-calendar-vm", () => {
         12
       );
 
-      expect(data.upcomingRenewals).toHaveLength(1);
-      expect(data.upcomingRenewals[0]?.productName).toBe("即将到期");
+      expect(data.policyNames).toHaveLength(2);
+      expect(data.policyNames).toContain("医疗险A");
+      expect(data.policyNames).toContain("意外险B");
+    });
+
+    it("generates consecutive months even without renewals", () => {
+      const policies: PolicyForRenewal[] = [];
+
+      const data = buildRenewalCalendarData(
+        policies,
+        new Date("2026-01-01"),
+        12
+      );
+
+      expect(data.monthlyData).toHaveLength(12);
+      expect(data.monthlyData[0]?.month).toBe("2026-01");
+      expect(data.monthlyData[11]?.month).toBe("2026-12");
+      expect(data.summary.totalPremium).toBe(0);
     });
   });
 

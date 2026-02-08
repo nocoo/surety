@@ -5,13 +5,14 @@ import { AppShell } from "@/components/layout";
 import {
   SummaryCards,
   MonthlyChart,
-  UpcomingList,
   MonthlyDetails,
 } from "@/components/renewal";
 import {
   fetchRenewalCalendarData,
   type RenewalCalendarData,
 } from "@/lib/renewal-calendar-vm";
+
+const breadcrumbs = [{ label: "续保日历" }];
 
 export default function RenewalCalendarPage() {
   const [data, setData] = useState<RenewalCalendarData | null>(null);
@@ -32,7 +33,7 @@ export default function RenewalCalendarPage() {
 
   if (loading) {
     return (
-      <AppShell>
+      <AppShell breadcrumbs={breadcrumbs}>
         <div className="flex items-center justify-center h-64">
           <div className="text-muted-foreground">加载中...</div>
         </div>
@@ -42,7 +43,7 @@ export default function RenewalCalendarPage() {
 
   if (error || !data) {
     return (
-      <AppShell>
+      <AppShell breadcrumbs={breadcrumbs}>
         <div className="flex items-center justify-center h-64">
           <div className="text-destructive">{error ?? "加载失败"}</div>
         </div>
@@ -51,7 +52,7 @@ export default function RenewalCalendarPage() {
   }
 
   return (
-    <AppShell>
+    <AppShell breadcrumbs={breadcrumbs}>
       <div className="space-y-8">
         {/* Header */}
         <div>
@@ -64,18 +65,8 @@ export default function RenewalCalendarPage() {
         {/* Summary Cards */}
         <SummaryCards summary={data.summary} />
 
-        {/* Two Column Layout */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Upcoming List - 1/3 width */}
-          <div className="lg:col-span-1">
-            <UpcomingList items={data.upcomingRenewals} />
-          </div>
-
-          {/* Monthly Chart - 2/3 width */}
-          <div className="lg:col-span-2">
-            <MonthlyChart data={data.monthlyData} />
-          </div>
-        </div>
+        {/* Monthly Chart - full width */}
+        <MonthlyChart data={data.monthlyData} policyNames={data.policyNames} />
 
         {/* Monthly Details */}
         <div>
