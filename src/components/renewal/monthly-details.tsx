@@ -11,19 +11,21 @@ interface MonthlyDetailsProps {
 
 function RenewalRow({ item }: { item: RenewalItem }) {
   return (
-    <div className="flex items-center justify-between py-2 px-4 hover:bg-muted/50">
-      <div className="flex-1">
-        <p className="text-sm font-medium">{item.productName}</p>
-        <p className="text-xs text-muted-foreground">
+    <div className="flex items-center justify-between py-3 pl-10 pr-4 hover:bg-muted/50 border-b border-border/50 last:border-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{item.productName}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
           {item.insuredMemberName} · {item.categoryLabel}
           {item.isSavings && (
-            <span className="ml-1 text-amber-500">(储蓄)</span>
+            <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-0.5 text-amber-600">
+              储蓄
+            </span>
           )}
         </p>
       </div>
-      <div className="text-right">
-        <p className="text-sm font-medium">{formatCurrency(item.premium)}</p>
-        <p className="text-xs text-muted-foreground">{item.nextDueDate}</p>
+      <div className="text-right shrink-0 ml-4">
+        <p className="text-sm font-semibold">{formatCurrency(item.premium)}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{item.nextDueDate}</p>
       </div>
     </div>
   );
@@ -82,7 +84,7 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
         </div>
       </button>
       {expanded && !isEmpty && (
-        <div className="bg-muted/30">
+        <div className="bg-muted/20 border-t border-border/50">
           {month.items.map((item, idx) => (
             <RenewalRow
               key={`${item.id}-${item.nextDueDate}-${idx}`}
