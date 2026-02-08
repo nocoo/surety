@@ -22,6 +22,7 @@ export async function GET() {
     id: p.id,
     productName: p.productName,
     category: p.category,
+    subCategory: p.subCategory,
     premium: p.premium,
     paymentFrequency: p.paymentFrequency,
     nextDueDate: p.nextDueDate,

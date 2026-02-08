@@ -13,8 +13,12 @@ export const CATEGORY_LABELS: Record<string, string> = {
   Property: "财产险",
 };
 
-// Savings insurance categories (separate calculation)
-export const SAVINGS_CATEGORIES = ["Annuity", "Life"];
+// Savings insurance categories
+// - Annuity: always savings
+// - Life: only savings when subCategory contains "增额" (e.g., 增额终身寿)
+//   Regular term life insurance is protection, not savings
+export const SAVINGS_CATEGORIES = ["Annuity"];
+export const SAVINGS_LIFE_SUBCATEGORIES = ["增额终身寿", "增额寿"];
 
 // ============================================================================
 // Types
@@ -24,6 +28,7 @@ export interface PolicyForRenewal {
   id: number;
   productName: string;
   category: string;
+  subCategory?: string | null;
   premium: number;
   paymentFrequency: "Single" | "Monthly" | "Yearly";
   nextDueDate: string | null;
@@ -88,10 +93,21 @@ export function getMonthLabel(yearMonth: string): string {
 }
 
 /**
- * Check if a category is savings insurance
+ * Check if a policy is savings insurance
+ * - Annuity: always savings
+ * - Life: only savings when subCategory indicates 增额终身寿
  */
-export function isSavingsCategory(category: string): boolean {
-  return SAVINGS_CATEGORIES.includes(category);
+export function isSavingsPolicy(
+  category: string,
+  subCategory?: string | null
+): boolean {
+  if (SAVINGS_CATEGORIES.includes(category)) {
+    return true;
+  }
+  if (category === "Life" && subCategory) {
+    return SAVINGS_LIFE_SUBCATEGORIES.some((s) => subCategory.includes(s));
+  }
+  return false;
 }
 
 /**
@@ -182,7 +198,7 @@ export function calculateRenewalItems(
         nextDueDate: date.toISOString().split("T")[0] ?? "",
         daysUntilDue: daysBetween(referenceDate, date),
         insuredMemberName: policy.insuredMemberName ?? "未知",
-        isSavings: isSavingsCategory(policy.category),
+        isSavings: isSavingsPolicy(policy.category, policy.subCategory),
       });
     }
   }

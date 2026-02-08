@@ -62,6 +62,7 @@ export const policySeedData: PolicySeed[] = [
   {
     policy: {
       category: "Life",
+      subCategory: "定期寿险",
       insuredType: "Member",
       insurerName: "中国人寿",
       productName: "国寿福终身寿险",

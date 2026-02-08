@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   daysBetween,
   getMonthLabel,
-  isSavingsCategory,
+  isSavingsPolicy,
   calculateRenewalDates,
   addMonths,
   formatYearMonth,
@@ -43,17 +43,28 @@ describe("renewal-calendar-vm", () => {
     });
   });
 
-  describe("isSavingsCategory", () => {
-    it("identifies savings categories", () => {
-      expect(isSavingsCategory("Annuity")).toBe(true);
-      expect(isSavingsCategory("Life")).toBe(true);
+  describe("isSavingsPolicy", () => {
+    it("identifies annuity as savings", () => {
+      expect(isSavingsPolicy("Annuity")).toBe(true);
+      expect(isSavingsPolicy("Annuity", null)).toBe(true);
+    });
+
+    it("identifies regular life insurance as protection", () => {
+      expect(isSavingsPolicy("Life")).toBe(false);
+      expect(isSavingsPolicy("Life", "定期寿险")).toBe(false);
+      expect(isSavingsPolicy("Life", null)).toBe(false);
+    });
+
+    it("identifies 增额终身寿 as savings", () => {
+      expect(isSavingsPolicy("Life", "增额终身寿")).toBe(true);
+      expect(isSavingsPolicy("Life", "增额寿")).toBe(true);
     });
 
     it("identifies protection categories", () => {
-      expect(isSavingsCategory("Medical")).toBe(false);
-      expect(isSavingsCategory("Accident")).toBe(false);
-      expect(isSavingsCategory("CriticalIllness")).toBe(false);
-      expect(isSavingsCategory("Property")).toBe(false);
+      expect(isSavingsPolicy("Medical")).toBe(false);
+      expect(isSavingsPolicy("Accident")).toBe(false);
+      expect(isSavingsPolicy("CriticalIllness")).toBe(false);
+      expect(isSavingsPolicy("Property")).toBe(false);
     });
   });
 

@@ -165,17 +165,24 @@ describe("Renewal Calendar API E2E", () => {
       }
     });
 
-    test("isSavings flag is consistent with category", async () => {
+    test("isSavings flag is boolean for all items", async () => {
       const { data } = await apiRequest<RenewalCalendarResponse>(
         "/api/renewal-calendar"
       );
 
-      const savingsCategories = ["Annuity", "Life"];
-
+      // Annuity should always be savings
+      // Life depends on subCategory (增额终身寿 = savings, others = protection)
       for (const month of data.monthlyData) {
         for (const item of month.items) {
-          const shouldBeSavings = savingsCategories.includes(item.category);
-          expect(item.isSavings).toBe(shouldBeSavings);
+          expect(typeof item.isSavings).toBe("boolean");
+          // Annuity is always savings
+          if (item.category === "Annuity") {
+            expect(item.isSavings).toBe(true);
+          }
+          // Non-life, non-annuity is never savings
+          if (!["Annuity", "Life"].includes(item.category)) {
+            expect(item.isSavings).toBe(false);
+          }
         }
       }
     });
