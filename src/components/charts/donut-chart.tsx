@@ -1,5 +1,6 @@
 "use client";
 
+import { type LucideIcon } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -8,13 +9,13 @@ import {
   Tooltip,
 } from "recharts";
 import {
-  CHART_COLORS,
   getChartColor,
   PIE_LABEL_LINE,
   TOOLTIP_STYLES,
   formatCurrency,
   formatPercent,
 } from "@/lib/chart-config";
+import { ChartCard } from "./chart-card";
 
 export interface DonutChartItem {
   name: string;
@@ -25,8 +26,7 @@ export interface DonutChartItem {
 interface DonutChartProps {
   data: DonutChartItem[];
   title: string;
-  valueKey?: string;
-  nameKey?: string;
+  icon: LucideIcon;
 }
 
 function ChartTooltip({
@@ -49,40 +49,36 @@ function ChartTooltip({
   );
 }
 
-export function DonutChart({ data, title }: DonutChartProps) {
+export function DonutChart({ data, title, icon }: DonutChartProps) {
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
-      <h3 className="text-base font-semibold mb-4">{title}</h3>
-      <div className="h-[280px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              innerRadius={50}
-              paddingAngle={2}
-              label={({ name, percent }) =>
-                `${name} ${formatPercent(percent ?? 0)}`
-              }
-              labelLine={PIE_LABEL_LINE}
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${entry.name}`}
-                  fill={getChartColor(index)}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={<ChartTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <ChartCard title={title} icon={icon}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={90}
+            innerRadius={50}
+            paddingAngle={2}
+            label={({ name, percent }) =>
+              `${name} ${formatPercent(percent ?? 0)}`
+            }
+            labelLine={PIE_LABEL_LINE}
+            style={{ fontSize: 12 }}
+          >
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${entry.name}`}
+                fill={getChartColor(index)}
+              />
+            ))}
+          </Pie>
+          <Tooltip content={<ChartTooltip />} />
+        </PieChart>
+      </ResponsiveContainer>
+    </ChartCard>
   );
 }
-
-export { CHART_COLORS };

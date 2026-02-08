@@ -110,6 +110,34 @@ export async function GET() {
     .map(([year, data]) => ({ year, ...data }))
     .sort((a, b) => a.year.localeCompare(b.year));
 
+  // Member by category (for stacked bar chart)
+  const memberCategoryMap = new Map<number, Record<string, number>>();
+  for (const p of activePolicies) {
+    if (p.insuredMemberId) {
+      const existing = memberCategoryMap.get(p.insuredMemberId) ?? {};
+      const categoryLabel = categoryLabels[p.category] ?? p.category;
+      existing[categoryLabel] = (existing[categoryLabel] ?? 0) + 1;
+      memberCategoryMap.set(p.insuredMemberId, existing);
+    }
+  }
+  const allCategories = new Set<string>();
+  memberCategoryMap.forEach((categories) => {
+    Object.keys(categories).forEach((c) => allCategories.add(c));
+  });
+  const memberByCategory = {
+    data: Array.from(memberCategoryMap.entries())
+      .map(([memberId, categories]) => ({
+        name: memberMap.get(memberId) ?? "未知",
+        ...categories,
+      }))
+      .sort((a, b) => {
+        const totalA = Object.values(a).filter((v) => typeof v === "number").reduce((s, n) => s + n, 0);
+        const totalB = Object.values(b).filter((v) => typeof v === "number").reduce((s, n) => s + n, 0);
+        return totalB - totalA;
+      }),
+    categories: Array.from(allCategories).sort(),
+  };
+
   return NextResponse.json({
     stats: {
       policyCount,
@@ -124,6 +152,7 @@ export async function GET() {
       policyByChannel,
       coverageByCategory,
       policyByYear,
+      memberByCategory,
     },
   });
 }

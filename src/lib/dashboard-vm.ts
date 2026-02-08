@@ -48,6 +48,11 @@ export interface YearData {
   premium: number;
 }
 
+export interface MemberCategoryData {
+  data: Array<{ name: string; [category: string]: string | number }>;
+  categories: string[];
+}
+
 export interface DashboardCharts {
   premiumByCategory: CategoryData[];
   premiumByMember: MemberData[];
@@ -55,6 +60,7 @@ export interface DashboardCharts {
   policyByChannel: ChannelData[];
   coverageByCategory: CoverageData[];
   policyByYear: YearData[];
+  memberByCategory: MemberCategoryData;
 }
 
 export interface DashboardData {

@@ -1,13 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Users, TrendingUp, Shield, type LucideIcon } from "lucide-react";
+import {
+  FileText,
+  Users,
+  TrendingUp,
+  Shield,
+  PieChart,
+  BarChart3,
+  Building2,
+  CalendarDays,
+  Layers,
+  type LucideIcon,
+} from "lucide-react";
 import { AppShell } from "@/components/layout";
 import {
   DonutChart,
   HorizontalBarChart,
   YearTrendChart,
   InsurerChart,
+  MemberCategoryChart,
 } from "@/components/charts";
 import { CHART_COLORS } from "@/lib/chart-config";
 import {
@@ -106,10 +118,11 @@ export default function Home() {
 
         {/* Charts Row 1 */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <DonutChart data={premiumByCategoryData} title="保费构成" />
+          <DonutChart data={premiumByCategoryData} title="保费构成" icon={PieChart} />
           <HorizontalBarChart
             data={premiumByMemberData}
             title="成员保费分布"
+            icon={Users}
             color={CHART_COLORS.primary}
           />
         </div>
@@ -119,9 +132,10 @@ export default function Home() {
           <HorizontalBarChart
             data={coverageData}
             title="保障额度"
+            icon={Shield}
             color={CHART_COLORS.palette[1]}
           />
-          <DonutChart data={channelData} title="渠道分布" />
+          <DonutChart data={channelData} title="渠道分布" icon={BarChart3} />
         </div>
 
         {/* Charts Row 3 */}
@@ -129,10 +143,22 @@ export default function Home() {
           <InsurerChart
             data={data.charts.policyByInsurer}
             title="保险公司"
+            icon={Building2}
           />
           <YearTrendChart
             data={data.charts.policyByYear}
             title="投保年份"
+            icon={CalendarDays}
+          />
+        </div>
+
+        {/* Charts Row 4 */}
+        <div className="grid gap-6 lg:grid-cols-1">
+          <MemberCategoryChart
+            data={data.charts.memberByCategory.data}
+            categories={data.charts.memberByCategory.categories}
+            title="成员险种分布"
+            icon={Layers}
           />
         </div>
       </div>
