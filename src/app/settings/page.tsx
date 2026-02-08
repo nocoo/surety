@@ -45,7 +45,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "设置" }]}>
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">设置</h1>
           <p className="text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -173,26 +173,26 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
-            <div className="flex gap-3">
-              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <div className="text-sm text-blue-800 dark:text-blue-200">
-                <p className="font-medium mb-1">关于数据安全</p>
-                <p className="text-blue-600 dark:text-blue-400">
-                  所有数据仅存储在本地 SQLite 数据库中，不会上传至任何服务器。
-                  建议定期备份数据库文件。
-                </p>
-              </div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+          <div className="flex gap-3">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              <p className="font-medium mb-1">关于数据安全</p>
+              <p className="text-blue-600 dark:text-blue-400">
+                所有数据仅存储在本地 SQLite 数据库中，不会上传至任何服务器。
+                建议定期备份数据库文件。
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saved}>
-              <Save className="mr-2 h-4 w-4" />
-              {saved ? "已保存" : "保存设置"}
-            </Button>
-          </div>
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={saved}>
+            <Save className="mr-2 h-4 w-4" />
+            {saved ? "已保存" : "保存设置"}
+          </Button>
         </div>
       </div>
     </AppShell>
