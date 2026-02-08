@@ -89,7 +89,25 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-type SortField = "category" | "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate";
+function getDaysUntil(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const targetDate = new Date(dateStr);
+  targetDate.setHours(0, 0, 0, 0);
+  const diffTime = targetDate.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function formatDaysUntil(days: number | null): { text: string; variant: "default" | "warning" | "destructive" } {
+  if (days === null) return { text: "-", variant: "default" };
+  if (days < 0) return { text: `已过期 ${Math.abs(days)} 天`, variant: "destructive" };
+  if (days === 0) return { text: "今天", variant: "warning" };
+  if (days <= 30) return { text: `${days} 天`, variant: "warning" };
+  return { text: `${days} 天`, variant: "default" };
+}
+
+type SortField = "category" | "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
 type SortDirection = "asc" | "desc";
 
 export default function PoliciesPage() {
@@ -172,6 +190,9 @@ export default function PoliciesPage() {
           break;
         case "effectiveDate":
           comparison = a.effectiveDate.localeCompare(b.effectiveDate);
+          break;
+        case "nextDueDate":
+          comparison = (a.nextDueDate ?? "").localeCompare(b.nextDueDate ?? "");
           break;
       }
       return sortDirection === "asc" ? comparison : -comparison;
@@ -393,6 +414,15 @@ export default function PoliciesPage() {
                     {renderSortIcon("effectiveDate")}
                   </button>
                 </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("nextDueDate")}
+                    className="inline-flex items-center hover:text-foreground transition-colors"
+                  >
+                    下次缴费
+                    {renderSortIcon("nextDueDate")}
+                  </button>
+                </TableHead>
                 <TableHead className="w-[80px]">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -473,6 +503,27 @@ export default function PoliciesPage() {
                     </TableCell>
                     <TableCell className="font-mono text-sm">
                       {policy.effectiveDate}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const days = getDaysUntil(policy.nextDueDate);
+                        const { text, variant } = formatDaysUntil(days);
+                        return (
+                          <div className="flex flex-col">
+                            <span className="font-mono text-sm">{policy.nextDueDate ?? "-"}</span>
+                            {policy.nextDueDate && (
+                              <span className={cn(
+                                "text-xs",
+                                variant === "warning" && "text-warning",
+                                variant === "destructive" && "text-destructive",
+                                variant === "default" && "text-muted-foreground"
+                              )}>
+                                {text}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
