@@ -96,8 +96,8 @@ export default function PoliciesPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
   // Sort state
-  const [sortField, setSortField] = useState<SortField>("effectiveDate");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [sortField, setSortField] = useState<SortField>("insuredName");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const fetchPolicies = () => {
     fetch("/api/policies")

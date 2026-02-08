@@ -241,7 +241,7 @@ function AssetForm({
           </div>
         </div>
 
-        <SheetFooter className="gap-2 sm:gap-0">
+        <SheetFooter className="flex-row justify-end gap-2 pt-4 border-t">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             取消
           </Button>

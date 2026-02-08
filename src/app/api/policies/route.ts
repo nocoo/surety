@@ -14,6 +14,8 @@ export async function GET() {
     policyNumber: p.policyNumber,
     productName: p.productName,
     insurerName: p.insurerName,
+    applicantId: p.applicantId,
+    insuredMemberId: p.insuredMemberId,
     insuredName: p.insuredMemberId ? memberMap.get(p.insuredMemberId) ?? "未知" : "未知",
     category: p.category,
     subCategory: p.subCategory,
