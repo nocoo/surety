@@ -1,1 +1,1 @@
-bun test && bun run lint
+bun run test && bun run lint
