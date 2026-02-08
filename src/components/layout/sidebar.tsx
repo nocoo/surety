@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -24,6 +25,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useSidebar } from "./sidebar-context";
 
+interface Member {
+  id: number;
+  name: string;
+  relation: string;
+}
+
 const navItems = [
   { href: "/", label: "仪表盘", icon: LayoutDashboard },
   { href: "/policies", label: "保单", icon: FileText },
@@ -35,6 +42,25 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
+  const [selfMember, setSelfMember] = useState<Member | null>(null);
+
+  useEffect(() => {
+    fetch("/api/members")
+      .then((res) => res.json())
+      .then((members: Member[]) => {
+        // Find first Self member by id
+        const self = members
+          .filter((m) => m.relation === "Self")
+          .sort((a, b) => a.id - b.id)[0];
+        if (self) {
+          setSelfMember(self);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const userName = selfMember?.name ?? "用户";
+  const userInitial = userName[0] ?? "?";
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -131,10 +157,10 @@ export function Sidebar() {
           {!collapsed && (
             <>
               <Avatar className="h-8 w-8">
-                <AvatarFallback className={cn("text-xs text-white", getAvatarColor("张伟"))}>张</AvatarFallback>
+                <AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>{userInitial}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">张伟</span>
+                <span className="text-sm font-medium">{userName}</span>
                 <span className="text-xs text-muted-foreground">家庭管理员</span>
               </div>
             </>
@@ -144,11 +170,11 @@ export function Sidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarFallback className={cn("text-xs text-white", getAvatarColor("张伟"))}>张</AvatarFallback>
+                  <AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>{userInitial}</AvatarFallback>
                 </Avatar>
               </TooltipTrigger>
               <TooltipContent side="right">
-                张伟 · 家庭管理员
+                {userName} · 家庭管理员
               </TooltipContent>
             </Tooltip>
           )}
