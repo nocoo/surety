@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Database, Bell, Shield, Info } from "lucide-react";
+import { Save, Database, Bell, Shield, Info, Palette, Check } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,50 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useTheme, ThemeColor } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
+
+const themeColors: { value: ThemeColor; label: string; color: string }[] = [
+  { value: "orange", label: "橙色", color: "bg-orange-500" },
+  { value: "blue", label: "蓝色", color: "bg-blue-500" },
+  { value: "green", label: "绿色", color: "bg-green-600" },
+  { value: "purple", label: "紫色", color: "bg-purple-500" },
+  { value: "rose", label: "玫红", color: "bg-rose-500" },
+];
+
+function ThemeColorPicker() {
+  const { themeColor, setThemeColor } = useTheme();
+
+  return (
+    <div className="space-y-3">
+      <Label>主题色</Label>
+      <div className="flex gap-3">
+        {themeColors.map((theme) => (
+          <button
+            key={theme.value}
+            type="button"
+            onClick={() => setThemeColor(theme.value)}
+            className={cn(
+              "relative h-10 w-10 rounded-full transition-all",
+              theme.color,
+              themeColor === theme.value
+                ? "ring-2 ring-offset-2 ring-offset-background ring-foreground scale-110"
+                : "hover:scale-105"
+            )}
+            title={theme.label}
+          >
+            {themeColor === theme.value && (
+              <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
+            )}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        选择你喜欢的主题色，更改会立即生效
+      </p>
+    </div>
+  );
+}
 
 interface SettingsData {
   annualIncome: string;
@@ -132,6 +176,20 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-lg border p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+                <Palette className="h-5 w-5 text-purple-500" />
+              </div>
+              <div>
+                <h2 className="font-semibold">外观设置</h2>
+                <p className="text-sm text-muted-foreground">自定义主题颜色</p>
+              </div>
+            </div>
+            <Separator className="mb-4" />
+            <ThemeColorPicker />
           </div>
 
           <div className="rounded-lg border p-6">

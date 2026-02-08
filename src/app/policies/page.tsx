@@ -79,7 +79,7 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-type SortField = "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate";
+type SortField = "category" | "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate";
 type SortDirection = "asc" | "desc";
 
 export default function PoliciesPage() {
@@ -140,6 +140,9 @@ export default function PoliciesPage() {
     result.sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
+        case "category":
+          comparison = a.category.localeCompare(b.category, "zh-CN");
+          break;
         case "productName":
           comparison = a.productName.localeCompare(b.productName, "zh-CN");
           break;
@@ -308,7 +311,15 @@ export default function PoliciesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">状态</TableHead>
-                <TableHead className="w-[90px]">类型</TableHead>
+                <TableHead className="w-[90px]">
+                  <button
+                    onClick={() => handleSort("category")}
+                    className="inline-flex items-center hover:text-foreground transition-colors"
+                  >
+                    类型
+                    {renderSortIcon("category")}
+                  </button>
+                </TableHead>
                 <TableHead>
                   <button
                     onClick={() => handleSort("productName")}
