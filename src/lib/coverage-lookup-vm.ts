@@ -1,6 +1,7 @@
 /**
- * Member Coverage ViewModel
- * Provides data structures and helpers for the member coverage page
+ * Coverage Lookup ViewModel
+ * Provides data structures and helpers for the coverage lookup page
+ * Supports both member coverage and asset coverage
  */
 
 import type { PolicyCategory } from "@/db/types";
@@ -10,11 +11,20 @@ import { CATEGORY_CONFIG, getCategoryConfig } from "./category-config";
 // Types
 // ============================================================================
 
+export type SelectionType = "member" | "asset";
+
 export interface MemberForCoverage {
   id: number;
   name: string;
   relation: string;
   gender: string | null;
+}
+
+export interface AssetForCoverage {
+  id: number;
+  name: string;
+  type: "RealEstate" | "Vehicle";
+  identifier: string;
 }
 
 export interface PolicyForCoverage {
@@ -37,6 +47,16 @@ export interface MemberCoverageCard {
   relation: string;
   relationLabel: string;
   gender: string | null;
+  activePolicyCount: number;
+  totalSumAssured: number;
+}
+
+export interface AssetCoverageCard {
+  id: number;
+  name: string;
+  type: "RealEstate" | "Vehicle";
+  typeLabel: string;
+  identifier: string;
   activePolicyCount: number;
   totalSumAssured: number;
 }
@@ -70,9 +90,12 @@ export interface CategoryGroup {
   count: number;
 }
 
-export interface MemberCoverageData {
+export interface CoverageLookupData {
   members: MemberCoverageCard[];
+  assets: AssetCoverageCard[];
+  selectionType: SelectionType;
   selectedMember: MemberCoverageCard | null;
+  selectedAsset: AssetCoverageCard | null;
   categoryGroups: CategoryGroup[];
 }
 
@@ -85,6 +108,11 @@ export const RELATION_LABELS: Record<string, string> = {
   Spouse: "配偶",
   Child: "子女",
   Parent: "父母",
+};
+
+export const ASSET_TYPE_LABELS: Record<string, string> = {
+  RealEstate: "房产",
+  Vehicle: "车辆",
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -143,6 +171,29 @@ export function buildMemberCards(
       relation: member.relation,
       relationLabel: RELATION_LABELS[member.relation] ?? member.relation,
       gender: member.gender,
+      activePolicyCount: activePolicies.length,
+      totalSumAssured: activePolicies.reduce((sum, p) => sum + p.sumAssured, 0),
+    };
+  });
+}
+
+/**
+ * Build asset coverage cards from raw data
+ */
+export function buildAssetCards(
+  assets: AssetForCoverage[],
+  policiesByAsset: Map<number, PolicyForCoverage[]>
+): AssetCoverageCard[] {
+  return assets.map((asset) => {
+    const policies = policiesByAsset.get(asset.id) ?? [];
+    const activePolicies = policies.filter((p) => p.status === "Active");
+
+    return {
+      id: asset.id,
+      name: asset.name,
+      type: asset.type,
+      typeLabel: ASSET_TYPE_LABELS[asset.type] ?? asset.type,
+      identifier: asset.identifier,
       activePolicyCount: activePolicies.length,
       totalSumAssured: activePolicies.reduce((sum, p) => sum + p.sumAssured, 0),
     };
@@ -217,14 +268,17 @@ export function groupPoliciesByCategory(
 }
 
 /**
- * Build complete member coverage data
+ * Build complete coverage lookup data for member selection
  */
 export function buildMemberCoverageData(
   members: MemberForCoverage[],
+  assets: AssetForCoverage[],
   policiesByMember: Map<number, PolicyForCoverage[]>,
+  policiesByAsset: Map<number, PolicyForCoverage[]>,
   selectedMemberId?: number
-): MemberCoverageData {
+): CoverageLookupData {
   const memberCards = buildMemberCards(members, policiesByMember);
+  const assetCards = buildAssetCards(assets, policiesByAsset);
 
   // Select first member if not specified
   const effectiveSelectedId = selectedMemberId ?? memberCards[0]?.id;
@@ -240,24 +294,64 @@ export function buildMemberCoverageData(
 
   return {
     members: memberCards,
+    assets: assetCards,
+    selectionType: "member",
     selectedMember,
+    selectedAsset: null,
     categoryGroups,
   };
 }
 
 /**
- * Fetch member coverage data from API
+ * Build complete coverage lookup data for asset selection
  */
-export async function fetchMemberCoverageData(
-  memberId?: number
-): Promise<MemberCoverageData> {
-  const url = memberId
-    ? `/api/member-coverage?memberId=${memberId}`
-    : "/api/member-coverage";
+export function buildAssetCoverageData(
+  members: MemberForCoverage[],
+  assets: AssetForCoverage[],
+  policiesByMember: Map<number, PolicyForCoverage[]>,
+  policiesByAsset: Map<number, PolicyForCoverage[]>,
+  selectedAssetId?: number
+): CoverageLookupData {
+  const memberCards = buildMemberCards(members, policiesByMember);
+  const assetCards = buildAssetCards(assets, policiesByAsset);
 
-  const response = await fetch(url);
+  // Select first asset if not specified
+  const effectiveSelectedId = selectedAssetId ?? assetCards[0]?.id;
+  const selectedAsset = assetCards.find((a) => a.id === effectiveSelectedId) ?? null;
+
+  // Get policies for selected asset
+  const selectedPolicies = effectiveSelectedId
+    ? policiesByAsset.get(effectiveSelectedId) ?? []
+    : [];
+
+  const policyCards = buildPolicyCards(selectedPolicies);
+  const categoryGroups = groupPoliciesByCategory(policyCards);
+
+  return {
+    members: memberCards,
+    assets: assetCards,
+    selectionType: "asset",
+    selectedMember: null,
+    selectedAsset,
+    categoryGroups,
+  };
+}
+
+/**
+ * Fetch coverage lookup data from API
+ */
+export async function fetchCoverageLookupData(
+  type: SelectionType = "member",
+  id?: number
+): Promise<CoverageLookupData> {
+  const params = new URLSearchParams({ type });
+  if (id !== undefined) {
+    params.set("id", id.toString());
+  }
+
+  const response = await fetch(`/api/coverage-lookup?${params}`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch member coverage: ${response.status}`);
+    throw new Error(`Failed to fetch coverage data: ${response.status}`);
   }
   return response.json();
 }

@@ -36,7 +36,7 @@ interface Member {
 
 const navItems = [
   { href: "/", label: "仪表盘", icon: LayoutDashboard },
-  { href: "/member-coverage", label: "成员保障", icon: ShieldCheck },
+  { href: "/coverage-lookup", label: "保障速查", icon: ShieldCheck },
   { href: "/policies", label: "保单", icon: FileText },
   { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
   { href: "/members", label: "家庭成员", icon: Users },

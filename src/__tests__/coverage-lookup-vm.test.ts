@@ -3,17 +3,21 @@ import {
   formatSumAssured,
   formatPremium,
   buildMemberCards,
+  buildAssetCards,
   buildPolicyCards,
   groupPoliciesByCategory,
   buildMemberCoverageData,
+  buildAssetCoverageData,
   RELATION_LABELS,
+  ASSET_TYPE_LABELS,
   STATUS_LABELS,
   CATEGORY_ORDER,
   type MemberForCoverage,
+  type AssetForCoverage,
   type PolicyForCoverage,
-} from "@/lib/member-coverage-vm";
+} from "@/lib/coverage-lookup-vm";
 
-describe("member-coverage-vm", () => {
+describe("coverage-lookup-vm", () => {
   describe("formatSumAssured", () => {
     test("formats values >= 10000 as 万", () => {
       expect(formatSumAssured(100000)).toBe("10万");
@@ -155,6 +159,9 @@ describe("member-coverage-vm", () => {
   });
 
   describe("buildMemberCoverageData", () => {
+    const assets: AssetForCoverage[] = [];
+    const policiesByAsset = new Map<number, PolicyForCoverage[]>();
+
     test("selects first member by default", () => {
       const members: MemberForCoverage[] = [
         { id: 1, name: "张三", relation: "Self", gender: "M" },
@@ -165,7 +172,7 @@ describe("member-coverage-vm", () => {
         [2, [createPolicy({ id: 2, category: "Life" })]],
       ]);
 
-      const data = buildMemberCoverageData(members, policiesByMember);
+      const data = buildMemberCoverageData(members, assets, policiesByMember, policiesByAsset);
 
       expect(data.selectedMember?.id).toBe(1);
       expect(data.categoryGroups).toHaveLength(1);
@@ -182,11 +189,87 @@ describe("member-coverage-vm", () => {
         [2, [createPolicy({ id: 2, category: "Life" })]],
       ]);
 
-      const data = buildMemberCoverageData(members, policiesByMember, 2);
+      const data = buildMemberCoverageData(members, assets, policiesByMember, policiesByAsset, 2);
 
       expect(data.selectedMember?.id).toBe(2);
       expect(data.categoryGroups).toHaveLength(1);
       expect(data.categoryGroups[0]?.category).toBe("Life");
+    });
+  });
+
+  describe("buildAssetCards", () => {
+    const assets: AssetForCoverage[] = [
+      { id: 1, name: "我的汽车", type: "Vehicle", identifier: "沪A12345" },
+      { id: 2, name: "我的房子", type: "RealEstate", identifier: "上海市浦东新区" },
+    ];
+
+    test("builds cards with policy counts and totals", () => {
+      const policiesByAsset = new Map<number, PolicyForCoverage[]>([
+        [1, [
+          createPolicy({ id: 1, sumAssured: 500000, status: "Active", category: "Property" }),
+        ]],
+        [2, [
+          createPolicy({ id: 2, sumAssured: 1000000, status: "Lapsed", category: "Property" }),
+        ]],
+      ]);
+
+      const cards = buildAssetCards(assets, policiesByAsset);
+
+      expect(cards).toHaveLength(2);
+      expect(cards[0]).toEqual({
+        id: 1,
+        name: "我的汽车",
+        type: "Vehicle",
+        typeLabel: "车辆",
+        identifier: "沪A12345",
+        activePolicyCount: 1,
+        totalSumAssured: 500000,
+      });
+      expect(cards[1]).toEqual({
+        id: 2,
+        name: "我的房子",
+        type: "RealEstate",
+        typeLabel: "房产",
+        identifier: "上海市浦东新区",
+        activePolicyCount: 0, // Lapsed policy not counted
+        totalSumAssured: 0,
+      });
+    });
+  });
+
+  describe("buildAssetCoverageData", () => {
+    const members: MemberForCoverage[] = [];
+    const policiesByMember = new Map<number, PolicyForCoverage[]>();
+
+    test("selects first asset by default", () => {
+      const assets: AssetForCoverage[] = [
+        { id: 1, name: "我的汽车", type: "Vehicle", identifier: "沪A12345" },
+        { id: 2, name: "我的房子", type: "RealEstate", identifier: "上海市浦东新区" },
+      ];
+      const policiesByAsset = new Map<number, PolicyForCoverage[]>([
+        [1, [createPolicy({ id: 1, category: "Property" })]],
+        [2, [createPolicy({ id: 2, category: "Property" })]],
+      ]);
+
+      const data = buildAssetCoverageData(members, assets, policiesByMember, policiesByAsset);
+
+      expect(data.selectedAsset?.id).toBe(1);
+      expect(data.selectionType).toBe("asset");
+    });
+
+    test("selects specified asset", () => {
+      const assets: AssetForCoverage[] = [
+        { id: 1, name: "我的汽车", type: "Vehicle", identifier: "沪A12345" },
+        { id: 2, name: "我的房子", type: "RealEstate", identifier: "上海市浦东新区" },
+      ];
+      const policiesByAsset = new Map<number, PolicyForCoverage[]>([
+        [1, [createPolicy({ id: 1, category: "Property" })]],
+        [2, [createPolicy({ id: 2, category: "Property" })]],
+      ]);
+
+      const data = buildAssetCoverageData(members, assets, policiesByMember, policiesByAsset, 2);
+
+      expect(data.selectedAsset?.id).toBe(2);
     });
   });
 
@@ -203,6 +286,11 @@ describe("member-coverage-vm", () => {
       expect(STATUS_LABELS.Lapsed).toBe("已失效");
       expect(STATUS_LABELS.Surrendered).toBe("已退保");
       expect(STATUS_LABELS.Claimed).toBe("已理赔");
+    });
+
+    test("ASSET_TYPE_LABELS covers all asset types", () => {
+      expect(ASSET_TYPE_LABELS.RealEstate).toBe("房产");
+      expect(ASSET_TYPE_LABELS.Vehicle).toBe("车辆");
     });
 
     test("CATEGORY_ORDER starts with Accident for emergency focus", () => {

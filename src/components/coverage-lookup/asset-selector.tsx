@@ -1,24 +1,22 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getMemberAvatarColors, getNameInitial } from "@/lib/category-config";
-import { formatSumAssured, type MemberCoverageCard } from "@/lib/member-coverage-vm";
+import { formatSumAssured, type AssetCoverageCard } from "@/lib/coverage-lookup-vm";
 
-interface MemberSelectorProps {
-  members: MemberCoverageCard[];
-  selectedMemberId: number | null;
-  onSelectMember: (memberId: number) => void;
+interface AssetSelectorProps {
+  assets: AssetCoverageCard[];
+  selectedAssetId: number | null;
+  onSelectAsset: (assetId: number) => void;
 }
 
-export function MemberSelector({
-  members,
-  selectedMemberId,
-  onSelectMember,
-}: MemberSelectorProps) {
+export function AssetSelector({
+  assets,
+  selectedAssetId,
+  onSelectAsset,
+}: AssetSelectorProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -35,7 +33,7 @@ export function MemberSelector({
     checkScroll();
     window.addEventListener("resize", checkScroll);
     return () => window.removeEventListener("resize", checkScroll);
-  }, [members]);
+  }, [assets]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -47,13 +45,17 @@ export function MemberSelector({
     }
   };
 
-  if (members.length === 0) {
+  if (assets.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
-        暂无家庭成员
+        暂无资产
       </div>
     );
   }
+
+  const getAssetIcon = (type: "RealEstate" | "Vehicle") => {
+    return type === "Vehicle" ? Car : Home;
+  };
 
   return (
     <div className="relative">
@@ -75,39 +77,40 @@ export function MemberSelector({
         className="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-1"
         onScroll={checkScroll}
       >
-        {members.map((member) => {
-          const isSelected = member.id === selectedMemberId;
-          const colors = getMemberAvatarColors(member.name);
+        {assets.map((asset) => {
+          const isSelected = asset.id === selectedAssetId;
+          const Icon = getAssetIcon(asset.type);
 
           return (
             <button
-              key={member.id}
-              onClick={() => onSelectMember(member.id)}
+              key={asset.id}
+              onClick={() => onSelectAsset(asset.id)}
               className={cn(
-                "flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl border transition-all min-w-[120px]",
+                "flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl border transition-all min-w-[140px]",
                 isSelected
                   ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                   : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
               )}
             >
-              <Avatar size="lg">
-                <AvatarFallback className={cn(colors.bg, colors.text)}>
-                  {getNameInitial(member.name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className={cn(
+                "flex items-center justify-center h-12 w-12 rounded-full",
+                isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+              )}>
+                <Icon className="h-6 w-6" />
+              </div>
               <div className="text-center">
-                <p className="text-sm font-medium">{member.name}</p>
+                <p className="text-sm font-medium">{asset.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {member.relationLabel}
+                  {asset.typeLabel}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">
-                  {member.activePolicyCount} 份保单
+                  {asset.activePolicyCount} 份保单
                 </p>
-                {member.totalSumAssured > 0 && (
+                {asset.totalSumAssured > 0 && (
                   <p className="text-xs font-medium text-primary">
-                    保额 {formatSumAssured(member.totalSumAssured)}
+                    保额 {formatSumAssured(asset.totalSumAssured)}
                   </p>
                 )}
               </div>

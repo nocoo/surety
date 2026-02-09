@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Phone, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { PolicyCoverageCard } from "@/lib/member-coverage-vm";
+import type { PolicyCoverageCard } from "@/lib/coverage-lookup-vm";
 
 interface PolicyCardProps {
   policy: PolicyCoverageCard;
