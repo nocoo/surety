@@ -3,11 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { policiesRepo, membersRepo } = await import("@/db/repositories");
+  const { policiesRepo, membersRepo, assetsRepo } = await import("@/db/repositories");
   
   const policies = policiesRepo.findAll();
   const members = membersRepo.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
+
+  const assets = assetsRepo.findAll();
+  const assetMap = new Map(assets.map((a) => [a.id, a.name]));
 
   const result = policies.map((p) => ({
     id: p.id,
@@ -17,6 +20,8 @@ export async function GET() {
     applicantId: p.applicantId,
     insuredMemberId: p.insuredMemberId,
     insuredName: p.insuredMemberId ? memberMap.get(p.insuredMemberId) ?? "未知" : "未知",
+    insuredAssetId: p.insuredAssetId,
+    insuredAssetName: p.insuredAssetId ? assetMap.get(p.insuredAssetId) ?? null : null,
     category: p.category,
     subCategory: p.subCategory,
     status: p.status,

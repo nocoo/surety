@@ -50,6 +50,8 @@ interface Policy {
   productName: string;
   insurerName: string;
   insuredName: string;
+  insuredAssetId: number | null;
+  insuredAssetName: string | null;
   category: string;
   subCategory: string | null;
   status: PolicyStatus;
@@ -128,6 +130,7 @@ export default function PoliciesPage() {
   // Filter state
   const [filterInsured, setFilterInsured] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterAsset, setFilterAsset] = useState<string>("all");
 
   // Sort state
   const [sortField, setSortField] = useState<SortField>("insuredName");
@@ -158,6 +161,16 @@ export default function PoliciesPage() {
     return Array.from(cats);
   }, [policies]);
 
+  // Get unique asset names for filter options (only assets that have policies)
+  const assetNames = useMemo(() => {
+    const names = new Set(
+      policies
+        .filter((p) => p.insuredAssetName)
+        .map((p) => p.insuredAssetName as string)
+    );
+    return Array.from(names).sort();
+  }, [policies]);
+
   // Filter and sort policies
   const filteredPolicies = useMemo(() => {
     let result = [...policies];
@@ -168,6 +181,9 @@ export default function PoliciesPage() {
     }
     if (filterCategory !== "all") {
       result = result.filter((p) => p.category === filterCategory);
+    }
+    if (filterAsset !== "all") {
+      result = result.filter((p) => p.insuredAssetName === filterAsset);
     }
 
     // Apply sorting
@@ -203,7 +219,7 @@ export default function PoliciesPage() {
     });
 
     return result;
-  }, [policies, filterInsured, filterCategory, sortField, sortDirection]);
+  }, [policies, filterInsured, filterCategory, filterAsset, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -342,13 +358,32 @@ export default function PoliciesPage() {
               </SelectContent>
             </Select>
           </div>
-          {(filterInsured !== "all" || filterCategory !== "all") && (
+          {assetNames.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">资产:</span>
+              <Select value={filterAsset} onValueChange={setFilterAsset}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  {assetNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all") && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
                 setFilterInsured("all");
                 setFilterCategory("all");
+                setFilterAsset("all");
               }}
             >
               清除筛选
