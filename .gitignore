@@ -47,3 +47,6 @@ next-env.d.ts
 !surety.example.db
 surety.e2e.db
 .next-e2e
+
+# source logo files (large, in root only)
+/logo-*.png

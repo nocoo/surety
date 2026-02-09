@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -8,7 +9,6 @@ import {
   FileText,
   Users,
   Settings,
-  Shield,
   PanelLeftClose,
   PanelLeft,
   Building2,
@@ -63,7 +63,22 @@ export function Sidebar() {
           "flex h-14 items-center gap-2",
           collapsed ? "justify-center px-2" : "px-6"
         )}>
-          <Shield className="h-5 w-5 shrink-0 text-primary" />
+          <Image
+            src="/logo-light-24.png"
+            alt="Surety"
+            width={24}
+            height={24}
+            className="shrink-0 dark:hidden"
+            priority
+          />
+          <Image
+            src="/logo-dark-24.png"
+            alt="Surety"
+            width={24}
+            height={24}
+            className="hidden shrink-0 dark:block"
+            priority
+          />
           {!collapsed && (
             <span className="text-lg font-bold tracking-tighter">surety</span>
           )}

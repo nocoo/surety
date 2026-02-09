@@ -1,9 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -21,7 +21,22 @@ function LoginContent() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-primary" />
+              <Image
+                src="/logo-light-40.png"
+                alt="Surety"
+                width={40}
+                height={40}
+                className="dark:hidden"
+                priority
+              />
+              <Image
+                src="/logo-dark-40.png"
+                alt="Surety"
+                width={40}
+                height={40}
+                className="hidden dark:block"
+                priority
+              />
               <span className="text-2xl font-bold tracking-tighter">surety</span>
             </div>
           </div>
