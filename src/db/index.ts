@@ -214,6 +214,7 @@ export function resetE2EDb(): void {
     DELETE FROM insurers;
     DELETE FROM members;
     DELETE FROM settings;
+    DELETE FROM sqlite_sequence;
   `);
 }
 
@@ -241,6 +242,7 @@ export function resetTestDb(): void {
     DELETE FROM insurers;
     DELETE FROM members;
     DELETE FROM settings;
+    DELETE FROM sqlite_sequence;
   `);
 }
 

@@ -36,11 +36,14 @@
 ```bash
 bun dev              # 开发服务器 (7015)
 bun run build        # 生产构建
-bun test             # 单元测试
+bun test             # 单元测试 (含 MCP)
 bun test --coverage  # 测试覆盖率
+bun run test:mcp     # MCP 单元测试
+bun run test:mcp:e2e # MCP E2E 测试
 bun run lint         # ESLint
 bun run db:push      # 推送 schema
 bun run db:studio    # 数据库可视化
+bun run mcp          # 启动 MCP Server (stdio)
 ```
 
 ## Retrospective

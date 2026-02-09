@@ -12,7 +12,16 @@ async function main() {
 
   // Run tests with coverage
   const proc = Bun.spawn(
-    ["bun", "test", "src/__tests__/db", "src/__tests__/utils.test.ts", "--coverage"],
+    [
+      "bun", "test",
+      "src/__tests__/db", "src/__tests__/utils.test.ts",
+      "mcp/__tests__/guard.test.ts",
+      "mcp/__tests__/tools-members.test.ts",
+      "mcp/__tests__/tools-policies.test.ts",
+      "mcp/__tests__/tools-assets.test.ts",
+      "mcp/__tests__/tools-coverage.test.ts",
+      "--coverage",
+    ],
     {
       stdout: "pipe",
       stderr: "pipe",

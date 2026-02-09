@@ -27,6 +27,7 @@
 - 🏢 **保险公司** — 管理保险公司和代理人联系方式
 - 🏠 **资产管理** — 房产、车辆等财产保险关联
 - 🔒 **隐私优先** — 数据完全存储在本地 SQLite
+- 🤖 **MCP 接入** — 支持 AI 助手通过 MCP 协议查询保单数据
 
 ## 🚀 快速开始
 
@@ -109,6 +110,22 @@ surety/
 │   │   ├── schema.ts             # Drizzle schema
 │   │   └── types.ts              # 类型定义
 │   └── 📂 lib/                   # 工具函数
+├── 📂 mcp/                       # MCP Server
+│   ├── index.ts                  # Entry point (stdio transport)
+│   ├── server.ts                 # Tool registration
+│   ├── guard.ts                  # Security enable check
+│   ├── 📂 tools/                 # Tool implementations
+│   │   ├── members.ts            # list-members, get-member
+│   │   ├── policies.ts           # list-policies, get-policy
+│   │   ├── assets.ts             # list-assets
+│   │   └── coverage.ts           # coverage-analysis, renewal-overview, dashboard-summary
+│   └── 📂 __tests__/             # MCP tests
+│       ├── mcp.e2e.test.ts       # E2E tests (agent perspective)
+│       ├── guard.test.ts         # Guard unit tests
+│       ├── tools-members.test.ts # Member tools unit tests
+│       ├── tools-policies.test.ts # Policy tools unit tests
+│       ├── tools-assets.test.ts  # Asset tools unit tests
+│       └── tools-coverage.test.ts # Coverage tools unit tests
 ├── .env.example                  # 环境变量示例
 ├── drizzle.config.ts             # Drizzle ORM 配置
 └── package.json
@@ -133,6 +150,8 @@ surety/
 | `bun run build` | 生产构建 |
 | `bun start` | 启动生产服务器 |
 | `bun test` | 运行单元测试 |
+| `bun run test:mcp` | 运行 MCP 单元测试 |
+| `bun run test:mcp:e2e` | 运行 MCP E2E 测试 |
 | `bun run test:e2e` | 运行端到端测试 |
 | `bun run test:coverage` | 测试覆盖率报告 |
 | `bun run lint` | ESLint 检查 |
@@ -156,6 +175,42 @@ bun run db:studio
 ```
 
 打开 [https://local.drizzle.studio](https://local.drizzle.studio) 可视化管理数据库。
+
+## 🤖 MCP Server
+
+Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接口，允许 AI 助手（Claude Code、Cursor 等）通过 stdio 传输协议查询保单数据。
+
+### 启用 MCP
+
+1. 在 Surety 设置页面中开启 **MCP Access** 开关
+2. 在 AI 助手配置中添加：
+
+```json
+{
+  "mcpServers": {
+    "surety": {
+      "command": "bun",
+      "args": ["run", "mcp/index.ts"],
+      "cwd": "/path/to/surety"
+    }
+  }
+}
+```
+
+### 可用工具
+
+| 工具 | 说明 |
+|------|------|
+| `list-members` | 查看所有家庭成员 |
+| `get-member` | 查看成员详情及关联保单 |
+| `list-policies` | 查看保单列表（支持状态/类别/成员筛选） |
+| `get-policy` | 查看保单详情及受益人 |
+| `list-assets` | 查看资产列表 |
+| `coverage-analysis` | 分析成员或资产的保障覆盖 |
+| `renewal-overview` | 查看即将到期的保单 |
+| `dashboard-summary` | 获取整体保障概览 |
+
+> ⚠️ **安全提示**: MCP 默认关闭，所有工具均为只读操作。
 
 ## 📄 License
 
