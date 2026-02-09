@@ -68,7 +68,7 @@ export function Sidebar() {
             alt="Surety"
             width={24}
             height={24}
-            className="shrink-0 dark:hidden"
+            className="block shrink-0 dark:hidden"
           />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

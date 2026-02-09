@@ -26,7 +26,7 @@ function LoginContent() {
                 alt="Surety"
                 width={40}
                 height={40}
-                className="dark:hidden"
+                className="block dark:hidden"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
