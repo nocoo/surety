@@ -31,7 +31,7 @@ console.log(`   Assets: ${result.assets}`);
 console.log(`   Policies: ${result.policies}`);
 console.log("\n📝 Demo data highlights:");
 console.log("   - 9 family members (couple + 2 kids + 4 grandparents + 1 pet)");
-console.log("   - 4 assets (1 house, 2 cars, 1 pet)");
+console.log("   - 3 assets (1 house, 2 cars)");
 console.log("   - 21 insurance policies across all categories");
 console.log("\n💡 Issues shown in demo:");
 console.log("   - Young daughter (2 yo) missing accident insurance");

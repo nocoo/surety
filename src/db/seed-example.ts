@@ -145,19 +145,6 @@ export const exampleAssets: (Omit<NewAsset, "ownerId"> & { ownerName: string })[
       value: 220000 
     }),
   },
-  // Pet (as an asset for insurance purposes)
-  {
-    type: "Pet",
-    name: "金毛犬-豆豆",
-    identifier: "PET-2021-001",
-    ownerName: "王小宇",
-    details: JSON.stringify({
-      species: "Dog",
-      breed: "Golden Retriever",
-      birthYear: 2021,
-      chipNumber: "156***001",
-    }),
-  },
 ];
 
 // ============================================================================
@@ -677,12 +664,12 @@ export const examplePolicies: PolicySeed[] = [
     },
   },
 
-  // ============ 宠物险 ============
+  // ============ 宠物险 - 豆豆 (作为家庭成员) ============
   {
     policy: {
-      category: "Property",
+      category: "Medical",
       subCategory: "宠物险",
-      insuredType: "Asset",
+      insuredType: "Member",
       insurerName: "众安保险",
       productName: "宠物医疗险",
       policyNumber: "DEMO-2024-020",
@@ -697,7 +684,7 @@ export const examplePolicies: PolicySeed[] = [
       status: "Active",
     },
     applicantName: "王明远",
-    insuredAssetIdentifier: "PET-2021-001",
+    insuredName: "豆豆",
     extension: { 
       medicalCoverage: 20000, 
       deductible: 200,

@@ -48,7 +48,7 @@ export type NewInsurer = typeof insurers.$inferInsert;
 // ============================================================================
 export const assets = sqliteTable("assets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type", { enum: ["RealEstate", "Vehicle", "Pet"] }).notNull(),
+  type: text("type", { enum: ["RealEstate", "Vehicle"] }).notNull(),
   name: text("name").notNull(),
   identifier: text("identifier").notNull(),
   ownerId: integer("owner_id").references(() => members.id),
