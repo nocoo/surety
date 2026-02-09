@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MoreHorizontal, Plus, Pencil, Trash2, Home, Car } from "lucide-react";
+import { Plus, Pencil, Trash2, Home, Car, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +35,7 @@ interface Asset {
   ownerId: number | null;
   ownerName: string | null;
   details: string | null;
+  policyCount: number;
 }
 
 const typeLabels: Record<AssetType, string> = {
@@ -153,13 +148,14 @@ export default function AssetsPage() {
                 <TableHead>类型</TableHead>
                 <TableHead>标识/产权号</TableHead>
                 <TableHead>所有人</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-center">保单数</TableHead>
+                <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {assets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     <div className="text-muted-foreground">
                       暂无资产，点击「添加资产」开始记录
                     </div>
@@ -168,6 +164,7 @@ export default function AssetsPage() {
               ) : (
                 assets.map((asset) => {
                   const Icon = typeIcons[asset.type];
+                  const hasPolicies = asset.policyCount > 0;
                   return (
                     <TableRow key={asset.id} className="hover:bg-muted/50">
                       <TableCell>
@@ -187,28 +184,38 @@ export default function AssetsPage() {
                       <TableCell className="text-muted-foreground">
                         {asset.ownerName ?? "-"}
                       </TableCell>
+                      <TableCell className="text-center">
+                        {hasPolicies ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <FileText className="h-3 w-3 text-primary" />
+                            <span className="text-sm">{asset.policyCount}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">操作菜单</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(asset)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              编辑
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDeleteClick(asset)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              删除
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(asset)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">编辑</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            disabled={hasPolicies}
+                            onClick={() => handleDeleteClick(asset)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">删除</span>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

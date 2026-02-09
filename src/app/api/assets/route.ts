@@ -3,10 +3,21 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { assetsRepo, membersRepo } = await import("@/db/repositories");
+  const { assetsRepo, membersRepo, policiesRepo } = await import("@/db/repositories");
   const assets = assetsRepo.findAll();
   const members = membersRepo.findAll();
+  const policies = policiesRepo.findAll();
+  
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
+  
+  // Count policies per asset
+  const policyCountMap = new Map<number, number>();
+  for (const policy of policies) {
+    if (policy.insuredType === "Asset" && policy.insuredAssetId) {
+      const count = policyCountMap.get(policy.insuredAssetId) ?? 0;
+      policyCountMap.set(policy.insuredAssetId, count + 1);
+    }
+  }
 
   const result = assets.map((a) => ({
     id: a.id,
@@ -16,6 +27,7 @@ export async function GET() {
     ownerId: a.ownerId,
     ownerName: a.ownerId ? memberMap.get(a.ownerId) ?? "未知" : null,
     details: a.details,
+    policyCount: policyCountMap.get(a.id) ?? 0,
   }));
 
   return NextResponse.json(result);

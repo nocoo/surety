@@ -67,12 +67,25 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { assetsRepo } = await import("@/db/repositories");
+  const { assetsRepo, policiesRepo } = await import("@/db/repositories");
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
 
   if (isNaN(assetId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  // Check if asset has linked policies
+  const policies = policiesRepo.findAll();
+  const linkedPolicies = policies.filter(
+    (p) => p.insuredType === "Asset" && p.insuredAssetId === assetId
+  );
+
+  if (linkedPolicies.length > 0) {
+    return NextResponse.json(
+      { error: `该资产关联了 ${linkedPolicies.length} 份保单，无法删除` },
+      { status: 409 }
+    );
   }
 
   const deleted = assetsRepo.delete(assetId);
