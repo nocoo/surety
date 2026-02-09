@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await ensureDbFromRequest();
   const { paymentsRepo } = await import("@/db/repositories");
   const { id } = await params;
   const policyId = parseInt(id, 10);

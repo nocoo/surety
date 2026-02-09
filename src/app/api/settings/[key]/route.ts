@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ key: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { settingsRepo } = await import("@/db/repositories");
   const { key } = await context.params;
 
@@ -25,6 +27,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { settingsRepo } = await import("@/db/repositories");
   const { key } = await context.params;
 
@@ -47,6 +50,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { settingsRepo } = await import("@/db/repositories");
   const { key } = await context.params;
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ const categoryLabels: Record<string, string> = {
 };
 
 export async function GET() {
+  await ensureDbFromRequest();
+  
   const { policiesRepo, membersRepo } = await import("@/db/repositories");
   const policies = policiesRepo.findAll();
   const members = membersRepo.findAll();

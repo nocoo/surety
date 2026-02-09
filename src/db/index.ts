@@ -94,11 +94,59 @@ export function getDbForType(dbType: DatabaseType): DbInstance {
 
 /**
  * Get database instance using environment variable or default.
+ * Note: For server-side cookie-based switching, set SURETY_DB env var
+ * before calling this function (e.g., in middleware/proxy).
  */
 export function getDb(): DbInstance {
   const envDb = process.env.SURETY_DB;
   const filename = envDb || DATABASE_FILES.production;
   return createDatabase(filename);
+}
+
+/**
+ * Switch to a specific database type.
+ * This closes any existing connection and opens the new database.
+ */
+export function switchDatabase(dbType: DatabaseType): DbInstance {
+  const filename = DATABASE_FILES[dbType];
+  // Only reconnect if the database file is different
+  if (currentDbFile === filename && dbInstance) {
+    return dbInstance;
+  }
+  // Force reconnection by closing existing
+  if (sqlite) {
+    sqlite.close();
+    sqlite = null;
+    dbInstance = null;
+    currentDbFile = null;
+  }
+  process.env.SURETY_DB = filename;
+  return createDatabase(filename);
+}
+
+/**
+ * Ensure the database connection matches the specified type.
+ * Only switches if necessary (avoids unnecessary reconnections).
+ */
+export function ensureDatabase(dbType: DatabaseType): DbInstance {
+  const filename = DATABASE_FILES[dbType];
+  if (currentDbFile === filename && dbInstance) {
+    return dbInstance;
+  }
+  return switchDatabase(dbType);
+}
+
+/**
+ * Ensure the database connection matches the cookie setting.
+ * Call this at the start of API route handlers.
+ * Must be called with the result of cookies().get("surety-database")?.value
+ */
+export function ensureDatabaseFromCookie(cookieValue: string | undefined): DbInstance {
+  const dbType = (cookieValue || "production") as DatabaseType;
+  if (!DATABASE_FILES[dbType]) {
+    return ensureDatabase("production");
+  }
+  return ensureDatabase(dbType);
 }
 
 export function createTestDb(): DbInstance {

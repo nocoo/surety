@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { assetsRepo, membersRepo } = await import("@/db/repositories");
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
@@ -34,6 +36,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { assetsRepo } = await import("@/db/repositories");
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
@@ -67,6 +70,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  await ensureDbFromRequest();
   const { assetsRepo, policiesRepo } = await import("@/db/repositories");
   const { id } = await context.params;
   const assetId = parseInt(id, 10);

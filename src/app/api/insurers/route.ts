@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  await ensureDbFromRequest();
   const { insurersRepo, policiesRepo } = await import("@/db/repositories");
   const insurers = insurersRepo.findAll();
   const policies = policiesRepo.findAll();
@@ -24,6 +26,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  await ensureDbFromRequest();
   const { insurersRepo } = await import("@/db/repositories");
 
   const body = await request.json();

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 import {
   buildMemberCoverageData,
   buildAssetCoverageData,
@@ -11,6 +12,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  await ensureDbFromRequest();
   const { membersRepo, policiesRepo, insurersRepo, assetsRepo } = await import(
     "@/db/repositories"
   );

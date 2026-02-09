@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { switchDatabase, ensureDatabase, type DatabaseType } from "@/db/index";
 
 export const dynamic = "force-dynamic";
 
 const VALID_DATABASES = ["production", "example", "test"] as const;
-type DatabaseType = (typeof VALID_DATABASES)[number];
 
 const DATABASE_FILES: Record<DatabaseType, string> = {
   production: "surety.db",
@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365, // 1 year
     });
 
+    // Actually switch the database connection
+    switchDatabase(database as DatabaseType);
+
     return NextResponse.json({
       success: true,
       database,
@@ -49,10 +52,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   const cookieStore = await cookies();
-  const database = cookieStore.get("surety-database")?.value || "production";
+  const database = (cookieStore.get("surety-database")?.value || "production") as DatabaseType;
+
+  // Ensure the database connection matches the cookie (only switches if necessary)
+  ensureDatabase(database);
 
   return NextResponse.json({
     database,
-    file: DATABASE_FILES[database as DatabaseType] || DATABASE_FILES.production,
+    file: DATABASE_FILES[database] || DATABASE_FILES.production,
   });
 }
