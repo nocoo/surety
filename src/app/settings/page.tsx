@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Save, Database, Bell, Shield, Info, Palette, Check, Terminal } from "lucide-react";
+import { Save, Database, Bell, Shield, Info, Palette, Check, Terminal, Download } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +64,6 @@ interface SettingsData {
   annualIncome: string;
   reminderDays: string;
   currency: string;
-  exportFormat: string;
 }
 
 export default function SettingsPage() {
@@ -72,7 +71,6 @@ export default function SettingsPage() {
     annualIncome: "600000",
     reminderDays: "30",
     currency: "CNY",
-    exportFormat: "xlsx",
   });
 
   const [saved, setSaved] = useState(false);
@@ -236,36 +234,24 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h2 className="font-semibold">数据管理</h2>
-                <p className="text-sm text-muted-foreground">导出和备份</p>
+                <p className="text-sm text-muted-foreground">备份与导出</p>
               </div>
             </div>
             <Separator className="mb-4" />
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>导出格式</Label>
-                <Select
-                  value={settings.exportFormat}
-                  onValueChange={(value) => handleChange("exportFormat", value)}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
-                    <SelectItem value="csv">CSV (.csv)</SelectItem>
-                    <SelectItem value="json">JSON (.json)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  导出全部数据
-                </Button>
-                <Button variant="outline" size="sm">
-                  备份数据库
-                </Button>
-              </div>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                导出所有保单、成员、资产等数据为 JSON 文件，可用于备份或迁移。
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.location.href = "/api/backup";
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                导出 JSON 备份
+              </Button>
             </div>
           </div>
 
