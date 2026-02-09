@@ -70,6 +70,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Match all paths except static files and api routes (except auth)
-    "/((?!_next/static|_next/image|favicon.ico|api/(?!auth)).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.ico$|.*\\.svg$|api/(?!auth)).*)",
   ],
 };
