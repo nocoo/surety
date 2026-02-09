@@ -64,6 +64,7 @@ export async function setupE2E(): Promise<void> {
       ...process.env,
       SURETY_DB: E2E_DB_FILE,
       NEXT_DIST_DIR: E2E_DIST_DIR,
+      E2E_SKIP_AUTH: "true", // Skip auth for E2E tests
     },
     stdout: "ignore",
     stderr: "ignore",

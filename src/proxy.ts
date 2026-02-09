@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Skip auth in E2E test environment
+const SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
+
 // Build redirect URL respecting reverse proxy headers
 function buildRedirectUrl(req: NextRequest, pathname: string): URL {
   const forwardedHost = req.headers.get("x-forwarded-host");
@@ -19,6 +22,11 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
 // Next.js 16 proxy convention (replaces middleware.ts)
 // NextAuth's auth() returns a middleware-compatible handler
 const authHandler = auth((req) => {
+  // Skip auth check in E2E test environment
+  if (SKIP_AUTH) {
+    return NextResponse.next();
+  }
+
   const isLoggedIn = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
