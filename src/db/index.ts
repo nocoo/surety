@@ -62,8 +62,27 @@ export function getDatabaseFile(dbType: DatabaseType): string {
   return DATABASE_FILES[dbType];
 }
 
+// Files that must NEVER be opened during test runs.
+// Tests have historically deleted these files, destroying user data.
+const PROTECTED_FILES = new Set([
+  resolveDbPath("surety.db"),
+  resolveDbPath("surety.example.db"),
+]);
+
+function isTestEnv(): boolean {
+  return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
+}
+
 function createDatabase(filename: string): DbInstance {
   const resolvedPath = resolveDbPath(filename);
+
+  // Guard: block tests from touching production or example databases
+  if (isTestEnv() && PROTECTED_FILES.has(resolvedPath)) {
+    throw new Error(
+      `BLOCKED: Tests must not open protected database "${filename}". ` +
+      `Use createTestDb() (:memory:) or surety.e2e.db instead.`
+    );
+  }
 
   // If switching to a different database, close the existing connection
   if (sqlite && currentDbFile !== resolvedPath) {
