@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Surety - 家庭风险管理急救包",
+  title: "Surety - 家庭保单管理工具",
   description: "极简、本地化、隐私安全的家庭保障工具",
 };
 

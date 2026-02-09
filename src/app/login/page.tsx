@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -18,30 +18,27 @@ function LoginContent() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="flex items-center gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-light-40.png"
-                alt="Surety"
-                width={40}
-                height={40}
-                className="block dark:hidden"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-dark-40.png"
-                alt="Surety"
-                width={40}
-                height={40}
-                className="hidden dark:block"
-              />
-              <span className="text-2xl font-bold tracking-tighter">surety</span>
-            </div>
+          <div className="flex flex-col items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-light-80.png"
+              alt="Surety"
+              width={80}
+              height={80}
+              className="block dark:hidden"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-dark-80.png"
+              alt="Surety"
+              width={80}
+              height={80}
+              className="hidden dark:block"
+            />
+            <span className="text-2xl font-bold tracking-tighter">surety</span>
           </div>
-          <CardTitle className="text-xl">登录</CardTitle>
           <CardDescription>
-            家庭风险管理急救包
+            家庭保单管理工具
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

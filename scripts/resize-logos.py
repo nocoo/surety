@@ -61,11 +61,11 @@ def main():
     sidebar_dark.save(public / "logo-dark-24.png")
     print(f"Sidebar logos: {sidebar_light.size}")
 
-    # Generate login page logos (40px height)
-    login_light = resize_maintaining_aspect(light, 40)
-    login_dark = resize_maintaining_aspect(dark, 40)
-    login_light.save(public / "logo-light-40.png")
-    login_dark.save(public / "logo-dark-40.png")
+    # Generate login page logos (80px height - larger for vertical layout)
+    login_light = resize_maintaining_aspect(light, 80)
+    login_dark = resize_maintaining_aspect(dark, 80)
+    login_light.save(public / "logo-light-80.png")
+    login_dark.save(public / "logo-dark-80.png")
     print(f"Login logos: {login_light.size}")
 
     # Generate favicons (use light version)
