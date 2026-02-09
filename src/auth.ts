@@ -8,6 +8,9 @@ const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
   .filter(Boolean);
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  // Trust the host header for automatic URL detection
+  // This allows the app to work behind reverse proxies without manual NEXTAUTH_URL config
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
