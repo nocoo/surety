@@ -10,6 +10,15 @@ const nextConfig: NextConfig = {
     "*.hexly.ai",
     "*.dev.hexly.ai",
   ],
+  // Allow loading images from external domains (e.g., Google avatars)
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

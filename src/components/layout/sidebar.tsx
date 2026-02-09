@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   FileText,
@@ -15,10 +15,11 @@ import {
   CalendarClock,
   ShieldCheck,
   Landmark,
+  LogOut,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -27,12 +28,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useSidebar } from "./sidebar-context";
-
-interface Member {
-  id: number;
-  name: string;
-  relation: string;
-}
 
 const navItems = [
   { href: "/", label: "仪表盘", icon: LayoutDashboard },
@@ -48,24 +43,11 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { collapsed, toggle } = useSidebar();
-  const [selfMember, setSelfMember] = useState<Member | null>(null);
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    fetch("/api/members")
-      .then((res) => res.json())
-      .then((members: Member[]) => {
-        // Find first Self member by id
-        const self = members
-          .filter((m) => m.relation === "Self")
-          .sort((a, b) => a.id - b.id)[0];
-        if (self) {
-          setSelfMember(self);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const userName = selfMember?.name ?? "用户";
+  // Get user info from session (Google OAuth)
+  const userName = session?.user?.name ?? "用户";
+  const userImage = session?.user?.image;
   const userInitial = userName[0] ?? "?";
 
   return (
@@ -138,24 +120,47 @@ export function Sidebar() {
           {!collapsed && (
             <>
               <Avatar className="h-8 w-8">
+                {userImage && <AvatarImage src={userImage} alt={userName} />}
                 <AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>{userInitial}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col">
+              <div className="flex flex-1 flex-col">
                 <span className="text-sm font-medium">{userName}</span>
                 <span className="text-xs text-muted-foreground">家庭管理员</span>
               </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="sr-only">退出登录</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">退出登录</TooltipContent>
+              </Tooltip>
             </>
           )}
 
           {collapsed && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>{userInitial}</AvatarFallback>
-                </Avatar>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="h-8 w-8 p-0"
+                >
+                  <Avatar className="h-8 w-8">
+                    {userImage && <AvatarImage src={userImage} alt={userName} />}
+                    <AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>{userInitial}</AvatarFallback>
+                  </Avatar>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                {userName} · 家庭管理员
+                {userName} · 点击退出
               </TooltipContent>
             </Tooltip>
           )}
