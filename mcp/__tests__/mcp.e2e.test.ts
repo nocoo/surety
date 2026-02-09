@@ -28,15 +28,20 @@ const TEST_DB = resolve(import.meta.dir, "../../surety.mcp-test.db");
 async function createMcpClient(
   env?: Record<string, string>,
 ): Promise<{ client: Client; transport: StdioClientTransport }> {
+  // Build a clean env: strip test-mode flags so the MCP subprocess
+  // uses the file-based SURETY_DB instead of in-memory test DB
   const baseEnv: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) {
-    if (v !== undefined) baseEnv[k] = v;
+    if (v !== undefined && k !== "BUN_ENV" && k !== "NODE_ENV") {
+      baseEnv[k] = v;
+    }
   }
   const transport = new StdioClientTransport({
     command: "bun",
     args: ["run", MCP_ENTRY],
     env: {
       ...baseEnv,
+      NODE_ENV: "development",
       SURETY_DB: TEST_DB,
       ...env,
     },
