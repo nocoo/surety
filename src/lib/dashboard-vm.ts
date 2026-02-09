@@ -48,10 +48,10 @@ export interface YearData {
   premium: number;
 }
 
-export interface TimelineData {
-  month: string;
-  count: number;
-  premium: number;
+// Stacked timeline data for renewal (monthly) and expiry (by period)
+export interface StackedTimelineData {
+  data: Array<{ label: string; [category: string]: string | number }>;
+  categories: string[];
 }
 
 export interface MemberCategoryData {
@@ -68,8 +68,8 @@ export interface DashboardCharts {
   memberByCategory: MemberCategoryData;
   memberPremiumByCategory: MemberCategoryData;
   memberCoverageByCategory: MemberCategoryData;
-  renewalTimeline: TimelineData[];
-  expiryTimeline: TimelineData[];
+  renewalTimeline: StackedTimelineData;
+  expiryTimeline: StackedTimelineData;
 }
 
 export interface DashboardData {

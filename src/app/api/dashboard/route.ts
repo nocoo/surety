@@ -158,13 +158,24 @@ export async function GET() {
     categories: sortedCategories,
   };
 
-  // Renewal timeline (upcoming 12 months)
+  // Renewal timeline: next 12 months, stacked by category
   const now = new Date();
-  const renewalMap = new Map<string, { count: number; premium: number }>();
-  const expiryMap = new Map<string, { count: number; premium: number }>();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  // Generate next 12 months as keys
+  const next12Months: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    const monthDate = new Date(currentYear, currentMonth + i, 1);
+    const key = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
+    next12Months.push(key);
+  }
+  
+  // Build renewal data: month -> category -> count
+  const renewalByCategoryMap = new Map<string, Record<string, number>>();
+  next12Months.forEach((month) => renewalByCategoryMap.set(month, {}));
   
   for (const p of activePolicies) {
-    // Renewal: use effectiveDate to calculate next renewal month
     if (p.effectiveDate) {
       const effectiveDate = new Date(p.effectiveDate);
       // Calculate next renewal date (same month/day in current or next year)
@@ -173,30 +184,80 @@ export async function GET() {
         nextRenewal = new Date(now.getFullYear() + 1, effectiveDate.getMonth(), effectiveDate.getDate());
       }
       const monthKey = `${nextRenewal.getFullYear()}-${String(nextRenewal.getMonth() + 1).padStart(2, "0")}`;
-      const existing = renewalMap.get(monthKey) ?? { count: 0, premium: 0 };
-      renewalMap.set(monthKey, { count: existing.count + 1, premium: existing.premium + p.premium });
-    }
-    
-    // Expiry: use expiryDate if available
-    if (p.expiryDate) {
-      const expiryDate = new Date(p.expiryDate);
-      if (expiryDate >= now) {
-        const monthKey = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, "0")}`;
-        const existing = expiryMap.get(monthKey) ?? { count: 0, premium: 0 };
-        expiryMap.set(monthKey, { count: existing.count + 1, premium: existing.premium + p.premium });
+      
+      // Only include if within next 12 months
+      if (next12Months.includes(monthKey)) {
+        const categoryLabel = categoryLabels[p.category] ?? p.category;
+        const existing = renewalByCategoryMap.get(monthKey) ?? {};
+        existing[categoryLabel] = (existing[categoryLabel] ?? 0) + 1;
+        renewalByCategoryMap.set(monthKey, existing);
       }
     }
   }
   
-  const renewalTimeline = Array.from(renewalMap.entries())
-    .map(([month, data]) => ({ month, ...data }))
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(0, 12);
-    
-  const expiryTimeline = Array.from(expiryMap.entries())
-    .map(([month, data]) => ({ month, ...data }))
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .slice(0, 12);
+  // Collect all categories used in renewal timeline
+  const renewalCategories = new Set<string>();
+  renewalByCategoryMap.forEach((categories) => {
+    Object.keys(categories).forEach((c) => renewalCategories.add(c));
+  });
+  
+  const renewalTimeline = {
+    data: next12Months.map((month) => ({
+      month,
+      label: `${parseInt(month.split("-")[1] ?? "1")}月`,
+      ...renewalByCategoryMap.get(month),
+    })),
+    categories: Array.from(renewalCategories).sort(),
+  };
+  
+  // Expiry timeline: by period (1 month, 3 months, 6 months), stacked by category
+  const oneMonthLater = new Date(currentYear, currentMonth + 1, now.getDate());
+  const threeMonthsLater = new Date(currentYear, currentMonth + 3, now.getDate());
+  const sixMonthsLater = new Date(currentYear, currentMonth + 6, now.getDate());
+  
+  const expiryPeriods = [
+    { key: "1month", label: "1个月内", maxDate: oneMonthLater },
+    { key: "3months", label: "3个月内", maxDate: threeMonthsLater },
+    { key: "6months", label: "6个月内", maxDate: sixMonthsLater },
+  ];
+  
+  const expiryByCategoryMap = new Map<string, Record<string, number>>();
+  expiryPeriods.forEach((period) => expiryByCategoryMap.set(period.key, {}));
+  
+  for (const p of activePolicies) {
+    if (p.expiryDate) {
+      const expiryDate = new Date(p.expiryDate);
+      // Skip already expired
+      if (expiryDate < now) continue;
+      
+      const categoryLabel = categoryLabels[p.category] ?? p.category;
+      
+      // Find the smallest period this expiry falls into
+      for (const period of expiryPeriods) {
+        if (expiryDate <= period.maxDate) {
+          const existing = expiryByCategoryMap.get(period.key) ?? {};
+          existing[categoryLabel] = (existing[categoryLabel] ?? 0) + 1;
+          expiryByCategoryMap.set(period.key, existing);
+          break; // Only count in the smallest matching period
+        }
+      }
+    }
+  }
+  
+  // Collect all categories used in expiry timeline
+  const expiryCategories = new Set<string>();
+  expiryByCategoryMap.forEach((categories) => {
+    Object.keys(categories).forEach((c) => expiryCategories.add(c));
+  });
+  
+  const expiryTimeline = {
+    data: expiryPeriods.map((period) => ({
+      period: period.key,
+      label: period.label,
+      ...expiryByCategoryMap.get(period.key),
+    })),
+    categories: Array.from(expiryCategories).sort(),
+  };
 
   return NextResponse.json({
     stats: {

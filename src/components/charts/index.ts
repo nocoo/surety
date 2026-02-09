@@ -6,9 +6,9 @@ export {
   InsurerChart,
   MemberCategoryChart,
   StackedValueChart,
-  TimelineChart,
+  StackedTimelineChart,
   type HorizontalBarItem,
   type YearTrendItem,
   type MemberCategoryItem,
-  type TimelineItem,
+  type StackedTimelineItem,
 } from "./bar-chart";

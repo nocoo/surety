@@ -369,51 +369,56 @@ export function StackedValueChart({ data, categories, title, icon, valueLabel = 
   );
 }
 
-// Timeline bar chart for renewal/expiry dates
-export interface TimelineItem {
-  month: string;
-  count: number;
-  premium: number;
+// Stacked vertical bar chart for timeline (renewal/expiry)
+export interface StackedTimelineItem {
+  label: string;
+  [category: string]: string | number;
 }
 
-interface TimelineChartProps {
-  data: TimelineItem[];
+interface StackedTimelineChartProps {
+  data: StackedTimelineItem[];
+  categories: string[];
   title: string;
   icon: LucideIcon;
   emptyMessage?: string;
 }
 
-function TimelineTooltip({
+function StackedTimelineTooltip({
   active,
   payload,
+  label,
 }: {
   active?: boolean;
-  payload?: Array<{ payload: TimelineItem }>;
+  payload?: Array<{ name: string; value: number; fill: string }>;
+  label?: string;
 }) {
-  if (!active || !payload?.length || !payload[0]) return null;
-  const data = payload[0].payload;
-  // Format month: "2026-03" -> "2026年3月"
-  const parts = data.month.split("-");
-  const year = parts[0] ?? "";
-  const month = parts[1] ?? "1";
-  const monthLabel = `${year}年${parseInt(month)}月`;
+  if (!active || !payload?.length) return null;
+  const total = payload.reduce((sum, p) => sum + (p.value || 0), 0);
   return (
     <div className={TOOLTIP_STYLES.container}>
-      <p className={TOOLTIP_STYLES.title}>{monthLabel}</p>
-      <p className={TOOLTIP_STYLES.value}>保单: {data.count} 份</p>
-      <p className={TOOLTIP_STYLES.value}>保费: {formatCurrency(data.premium)}</p>
+      <p className={TOOLTIP_STYLES.title}>{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} className={TOOLTIP_STYLES.value} style={{ color: p.fill }}>
+          {p.name}: {p.value} 份
+        </p>
+      ))}
+      <p className="text-sm font-medium mt-1">合计: {total} 份</p>
     </div>
   );
 }
 
-export function TimelineChart({ data, title, icon, emptyMessage = "暂无数据" }: TimelineChartProps) {
-  // Format month for display: "2026-03" -> "3月"
-  const formattedData = data.map((item) => ({
-    ...item,
-    displayMonth: `${parseInt(item.month.split("-")[1] ?? "1")}月`,
-  }));
+export function StackedTimelineChart({ 
+  data, 
+  categories, 
+  title, 
+  icon, 
+  emptyMessage = "暂无数据" 
+}: StackedTimelineChartProps) {
+  const hasData = data.some((item) => 
+    categories.some((cat) => typeof item[cat] === "number" && item[cat] > 0)
+  );
   
-  if (data.length === 0) {
+  if (!hasData) {
     return (
       <ChartCard title={title} icon={icon}>
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -426,15 +431,20 @@ export function TimelineChart({ data, title, icon, emptyMessage = "暂无数据"
   return (
     <ChartCard title={title} icon={icon}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={formattedData} margin={{ left: 10, right: 10 }}>
-          <XAxis dataKey="displayMonth" {...AXIS_CONFIG} />
+        <BarChart data={data} margin={{ left: 10, right: 10 }}>
+          <XAxis dataKey="label" {...AXIS_CONFIG} />
           <YAxis tickFormatter={(v) => `${v}份`} {...AXIS_CONFIG} />
-          <Tooltip content={<TimelineTooltip />} />
-          <Bar
-            dataKey="count"
-            fill={CHART_COLORS.palette[3]}
-            radius={BAR_RADIUS.vertical}
-          />
+          <Tooltip content={<StackedTimelineTooltip />} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          {categories.map((category, index) => (
+            <Bar
+              key={category}
+              dataKey={category}
+              stackId="a"
+              fill={getChartColor(index)}
+              {...(index === categories.length - 1 ? { radius: BAR_RADIUS.vertical } : {})}
+            />
+          ))}
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

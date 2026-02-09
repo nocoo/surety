@@ -21,7 +21,7 @@ import {
   InsurerChart,
   MemberCategoryChart,
   StackedValueChart,
-  TimelineChart,
+  StackedTimelineChart,
 } from "@/components/charts";
 import { CHART_COLORS } from "@/lib/chart-config";
 import {
@@ -160,14 +160,16 @@ export default function Home() {
 
         {/* Row 4: 时间 (Time) */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <TimelineChart
-            data={data.charts.renewalTimeline}
+          <StackedTimelineChart
+            data={data.charts.renewalTimeline.data}
+            categories={data.charts.renewalTimeline.categories}
             title="续费时间分布"
             icon={CalendarClock}
             emptyMessage="暂无续费数据"
           />
-          <TimelineChart
-            data={data.charts.expiryTimeline}
+          <StackedTimelineChart
+            data={data.charts.expiryTimeline.data}
+            categories={data.charts.expiryTimeline.categories}
             title="到期时间分布"
             icon={CalendarX}
             emptyMessage="暂无到期数据"
