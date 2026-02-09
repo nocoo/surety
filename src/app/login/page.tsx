@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -21,21 +20,21 @@ function LoginContent() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="flex items-center gap-2">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/logo-light-40.png"
                 alt="Surety"
                 width={40}
                 height={40}
                 className="dark:hidden"
-                priority
               />
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/logo-dark-40.png"
                 alt="Surety"
                 width={40}
                 height={40}
                 className="hidden dark:block"
-                priority
               />
               <span className="text-2xl font-bold tracking-tighter">surety</span>
             </div>

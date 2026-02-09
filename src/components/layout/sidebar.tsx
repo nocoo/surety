@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -63,21 +62,21 @@ export function Sidebar() {
           "flex h-14 items-center gap-2",
           collapsed ? "justify-center px-2" : "px-6"
         )}>
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo-light-24.png"
             alt="Surety"
             width={24}
             height={24}
             className="shrink-0 dark:hidden"
-            priority
           />
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo-dark-24.png"
             alt="Surety"
             width={24}
             height={24}
             className="hidden shrink-0 dark:block"
-            priority
           />
           {!collapsed && (
             <span className="text-lg font-bold tracking-tighter">surety</span>

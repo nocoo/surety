@@ -57,15 +57,15 @@ def main():
     # Generate sidebar logos (24px height)
     sidebar_light = resize_maintaining_aspect(light, 24)
     sidebar_dark = resize_maintaining_aspect(dark, 24)
-    sidebar_light.save(public / "logo-light-24.png", "PNG", optimize=True)
-    sidebar_dark.save(public / "logo-dark-24.png", "PNG", optimize=True)
+    sidebar_light.save(public / "logo-light-24.png")
+    sidebar_dark.save(public / "logo-dark-24.png")
     print(f"Sidebar logos: {sidebar_light.size}")
 
     # Generate login page logos (40px height)
     login_light = resize_maintaining_aspect(light, 40)
     login_dark = resize_maintaining_aspect(dark, 40)
-    login_light.save(public / "logo-light-40.png", "PNG", optimize=True)
-    login_dark.save(public / "logo-dark-40.png", "PNG", optimize=True)
+    login_light.save(public / "logo-light-40.png")
+    login_dark.save(public / "logo-dark-40.png")
     print(f"Login logos: {login_light.size}")
 
     # Generate favicons (use light version)
@@ -73,12 +73,13 @@ def main():
     favicon_32 = resize_to_square(light, 32)
     apple_touch = resize_to_square(light, 180)
 
-    favicon_16.save(public / "favicon-16.png", "PNG", optimize=True)
-    favicon_32.save(public / "favicon-32.png", "PNG", optimize=True)
-    apple_touch.save(public / "apple-touch-icon.png", "PNG", optimize=True)
+    favicon_16.save(public / "favicon-16.png")
+    favicon_32.save(public / "favicon-32.png")
+    apple_touch.save(public / "apple-touch-icon.png")
 
     # Generate .ico file with multiple sizes
-    favicon_16.save(public / "favicon.ico", format="ICO", sizes=[(16, 16), (32, 32)])
+    favicon_32_for_ico = resize_to_square(light, 32)
+    favicon_32_for_ico.save(public / "favicon.ico", format="ICO")
 
     print("Favicons generated: 16x16, 32x32, 180x180, .ico")
     print("Done!")
