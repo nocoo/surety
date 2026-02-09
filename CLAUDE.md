@@ -49,3 +49,4 @@ bun run mcp          # 启动 MCP Server (stdio)
 ## Retrospective
 
 - **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。
+- **SQLite 路径必须用绝对路径**：SQLite 的相对路径基于 `process.cwd()` 而非源码位置。MCP Server 或其他外部进程从不同目录启动时，会在错误位置创建空数据库文件。解决方案：用 `import.meta.url` 推导项目根目录，拼接绝对路径。同时 `createDatabase()` 应自动调用 `initSchema()`（`CREATE TABLE IF NOT EXISTS` 幂等），防止空数据库无表。
