@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  const { policiesRepo, membersRepo } = await import("@/db/repositories");
+  const { policiesRepo, membersRepo, assetsRepo } = await import("@/db/repositories");
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -22,6 +22,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   const members = membersRepo.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
+  const assets = assetsRepo.findAll();
+  const assetMap = new Map(assets.map((a) => [a.id, a.name]));
+
   return NextResponse.json({
     id: policy.id,
     policyNumber: policy.policyNumber,
@@ -30,6 +33,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     insuredName: policy.insuredMemberId
       ? memberMap.get(policy.insuredMemberId) ?? "未知"
       : "未知",
+    insuredAssetName: policy.insuredAssetId
+      ? assetMap.get(policy.insuredAssetId) ?? null
+      : null,
     applicantId: policy.applicantId,
     insuredType: policy.insuredType,
     insuredMemberId: policy.insuredMemberId,

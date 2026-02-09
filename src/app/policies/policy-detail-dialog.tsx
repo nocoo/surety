@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Copy, Check, ExternalLink } from "lucide-react";
+import { Copy, Check, ExternalLink, Building2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ interface PolicyDetail {
   productName: string;
   insurerName: string;
   insuredName: string;
+  insuredAssetName: string | null;
   applicantName?: string;
   category: string;
   subCategory: string | null;
@@ -262,6 +263,18 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm">{policy.applicantName}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+                {policy.insuredAssetName && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center justify-between py-2">
+                      <span className="text-sm text-muted-foreground">关联资产</span>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{policy.insuredAssetName}</span>
                       </div>
                     </div>
                   </>
