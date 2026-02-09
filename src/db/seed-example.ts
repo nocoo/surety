@@ -755,6 +755,32 @@ interface PaymentRecord {
   status: "Pending" | "Paid";
 }
 
+/**
+ * Calculate the next due date for a policy based on effective date and frequency.
+ * For demo purposes, we set next due date to be within the next 12 months.
+ */
+function calculateNextDueDate(
+  effectiveDate: string,
+  paymentFrequency: "Single" | "Monthly" | "Yearly",
+  referenceDate: Date = new Date()
+): string | null {
+  if (paymentFrequency === "Single") {
+    return null;
+  }
+
+  const effective = new Date(effectiveDate);
+  const intervalMonths = paymentFrequency === "Monthly" ? 1 : 12;
+  
+  // Find the next due date after reference date
+  const nextDue = new Date(effective);
+  while (nextDue <= referenceDate) {
+    const newMonth = nextDue.getMonth() + intervalMonths;
+    nextDue.setMonth(newMonth);
+  }
+  
+  return nextDue.toISOString().split("T")[0] ?? null;
+}
+
 function generatePayments(policyId: number, policy: PolicySeed["policy"]): PaymentRecord[] {
   const records: PaymentRecord[] = [];
   const startDate = new Date(policy.effectiveDate);
@@ -826,11 +852,21 @@ export function seedExampleDatabase(): SeedResult {
   }
 
   // Seed policies with related data
+  // Use a fixed reference date for consistent demo data (Feb 9, 2026)
+  const referenceDate = new Date("2026-02-09");
+  
   for (const seed of examplePolicies) {
     const applicantId = memberMap.get(seed.applicantName)!;
     const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
     const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
     const insurerId = insurerMap.get(seed.policy.insurerName);
+    
+    // Calculate next due date based on effective date and frequency
+    const nextDueDate = calculateNextDueDate(
+      seed.policy.effectiveDate,
+      seed.policy.paymentFrequency,
+      referenceDate
+    );
 
     const policy = policiesRepo.create({
       ...seed.policy,
@@ -838,6 +874,7 @@ export function seedExampleDatabase(): SeedResult {
       insuredMemberId,
       insuredAssetId,
       insurerId,
+      nextDueDate,
     });
 
     // Beneficiaries
