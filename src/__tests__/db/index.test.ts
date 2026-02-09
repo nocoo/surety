@@ -194,7 +194,9 @@ describe("db/index", () => {
       const db = ensureDatabaseFromCookie(undefined);
       expect(db).toBeDefined();
       closeDb();
-      cleanupDbFile("surety.example.db");
+      // NOTE: Do NOT cleanupDbFile("surety.example.db") here.
+      // surety.example.db is a git-tracked data file with real demo data.
+      // Deleting it destroys the example database.
     });
 
     test("uses env var for production SURETY_DB", () => {
@@ -367,6 +369,28 @@ describe("db/index", () => {
       expect(members).toEqual([]);
       const insurers = insurersRepo.findAll();
       expect(insurers).toEqual([]);
+    });
+  });
+
+  describe("example database integrity", () => {
+    test("surety.example.db must contain demo data (guard against accidental deletion)", () => {
+      // This test acts as a canary: if any other test accidentally deletes
+      // or truncates surety.example.db, this will fail immediately.
+      const savedEnv = process.env.SURETY_DB;
+      process.env.SURETY_DB = "surety.example.db";
+      const db = getDb();
+      expect(db).toBeDefined();
+
+      const members = membersRepo.findAll();
+      expect(members.length).toBeGreaterThanOrEqual(5);
+
+      closeDb();
+      // Restore — do NOT delete the example database
+      if (savedEnv === undefined) {
+        delete process.env.SURETY_DB;
+      } else {
+        process.env.SURETY_DB = savedEnv;
+      }
     });
   });
 });
