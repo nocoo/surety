@@ -35,11 +35,18 @@ interface ChartData {
     label: string;
     sumAssured: number;
   }>;
-  policyByYear: Array<{
-    year: string;
-    count: number;
-    premium: number;
-  }>;
+  memberByCategory: {
+    data: Array<Record<string, string | number>>;
+    categories: string[];
+  };
+  renewalTimeline: {
+    data: Array<Record<string, string | number>>;
+    categories: string[];
+  };
+  expiryTimeline: {
+    data: Array<Record<string, string | number>>;
+    categories: string[];
+  };
 }
 
 interface DashboardResponse {
@@ -88,7 +95,13 @@ describe("Dashboard API E2E", () => {
       expect(Array.isArray(data.charts.policyByInsurer)).toBe(true);
       expect(Array.isArray(data.charts.policyByChannel)).toBe(true);
       expect(Array.isArray(data.charts.coverageByCategory)).toBe(true);
-      expect(Array.isArray(data.charts.policyByYear)).toBe(true);
+      expect(data.charts.memberByCategory).toBeDefined();
+      expect(Array.isArray(data.charts.memberByCategory.data)).toBe(true);
+      expect(Array.isArray(data.charts.memberByCategory.categories)).toBe(true);
+      expect(data.charts.renewalTimeline).toBeDefined();
+      expect(Array.isArray(data.charts.renewalTimeline.data)).toBe(true);
+      expect(data.charts.expiryTimeline).toBeDefined();
+      expect(Array.isArray(data.charts.expiryTimeline.data)).toBe(true);
     });
 
     test("premiumByCategory has correct item structure", async () => {

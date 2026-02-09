@@ -140,8 +140,24 @@ export function ensureDatabase(dbType: DatabaseType): DbInstance {
  * Ensure the database connection matches the cookie setting.
  * Call this at the start of API route handlers.
  * Must be called with the result of cookies().get("surety-database")?.value
+ * 
+ * Note: SURETY_DB environment variable takes precedence over cookie.
+ * This ensures E2E tests (which set SURETY_DB) work correctly.
  */
 export function ensureDatabaseFromCookie(cookieValue: string | undefined): DbInstance {
+  // Environment variable takes precedence (for E2E tests)
+  const envDb = process.env.SURETY_DB;
+  if (envDb) {
+    let envDbType: DatabaseType = "production";
+    if (envDb === E2E_DB_FILE || envDb.includes("e2e")) {
+      envDbType = "test";
+    } else if (envDb.includes("example")) {
+      envDbType = "example";
+    }
+    return ensureDatabase(envDbType);
+  }
+  
+  // Fall back to cookie value
   const dbType = (cookieValue || "production") as DatabaseType;
   if (!DATABASE_FILES[dbType]) {
     return ensureDatabase("production");
