@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type AssetType = "RealEstate" | "Vehicle";
+type AssetType = "RealEstate" | "Vehicle" | "Pet";
 
 interface AssetFormData {
   type: AssetType | "";
@@ -56,6 +56,7 @@ interface AssetSheetProps {
 const assetTypes = [
   { value: "RealEstate", label: "不动产" },
   { value: "Vehicle", label: "车辆" },
+  { value: "Pet", label: "宠物" },
 ];
 
 function createFormData(asset: Asset | null | undefined): AssetFormData {
@@ -147,6 +148,10 @@ function AssetForm({
       identifier: "如：京A88888",
       details: '如：{"brand": "Tesla", "model": "Model Y"}',
     },
+    Pet: {
+      identifier: "如：芯片号或宠物证号",
+      details: '如：{"breed": "金毛", "age": 3}',
+    },
   };
 
   const currentPlaceholder = placeholders[formData.type || ""];
@@ -186,7 +191,7 @@ function AssetForm({
             <Label htmlFor="name">资产名称</Label>
             <Input
               id="name"
-              placeholder={formData.type === "RealEstate" ? "如：朝阳区住宅" : "如：特斯拉 Model Y"}
+              placeholder={formData.type === "RealEstate" ? "如：朝阳区住宅" : formData.type === "Pet" ? "如：豆豆" : "如：特斯拉 Model Y"}
               value={formData.name}
               onChange={(e) => handleChange("name", e.target.value)}
               required
@@ -195,7 +200,7 @@ function AssetForm({
 
           <div className="space-y-2">
             <Label htmlFor="identifier">
-              {formData.type === "Vehicle" ? "车牌号" : "产权证号"}
+              {formData.type === "Vehicle" ? "车牌号" : formData.type === "Pet" ? "芯片号/宠物证号" : "产权证号"}
             </Label>
             <Input
               id="identifier"

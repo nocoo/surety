@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Home, Car, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Home, Car, FileText, PawPrint } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AssetSheet } from "./asset-sheet";
 
-type AssetType = "RealEstate" | "Vehicle";
+type AssetType = "RealEstate" | "Vehicle" | "Pet";
 
 interface Asset {
   id: number;
@@ -41,26 +41,31 @@ interface Asset {
 const typeLabels: Record<AssetType, string> = {
   RealEstate: "不动产",
   Vehicle: "车辆",
+  Pet: "宠物",
 };
 
 const typeIcons: Record<AssetType, typeof Home> = {
   RealEstate: Home,
   Vehicle: Car,
+  Pet: PawPrint,
 };
 
 const typeBadgeColors: Record<AssetType, string> = {
   RealEstate: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   Vehicle: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  Pet: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
 };
 
 const typeIconBgColors: Record<AssetType, string> = {
   RealEstate: "bg-blue-100 dark:bg-blue-900",
   Vehicle: "bg-green-100 dark:bg-green-900",
+  Pet: "bg-amber-100 dark:bg-amber-900",
 };
 
 const typeIconColors: Record<AssetType, string> = {
   RealEstate: "text-blue-600 dark:text-blue-400",
   Vehicle: "text-green-600 dark:text-green-400",
+  Pet: "text-amber-600 dark:text-amber-400",
 };
 
 export default function AssetsPage() {
