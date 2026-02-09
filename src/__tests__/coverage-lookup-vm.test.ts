@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, afterEach, mock } from "bun:test";
 import {
   formatSumAssured,
   formatPremium,
@@ -8,6 +8,7 @@ import {
   groupPoliciesByCategory,
   buildMemberCoverageData,
   buildAssetCoverageData,
+  fetchCoverageLookupData,
   RELATION_LABELS,
   ASSET_TYPE_LABELS,
   STATUS_LABELS,
@@ -295,6 +296,47 @@ describe("coverage-lookup-vm", () => {
 
     test("CATEGORY_ORDER starts with Accident for emergency focus", () => {
       expect(CATEGORY_ORDER[0]).toBe("Accident");
+    });
+  });
+
+  describe("fetchCoverageLookupData", () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    test("fetches with default member type", async () => {
+      const mockData = { selectionType: "member" };
+      const mockFn = mock(() =>
+        Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      const result = await fetchCoverageLookupData();
+      expect(result).toMatchObject(mockData);
+      expect(mockFn).toHaveBeenCalledWith("/api/coverage-lookup?type=member");
+    });
+
+    test("fetches with asset type and id", async () => {
+      const mockData = { selectionType: "asset" };
+      const mockFn = mock(() =>
+        Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      const result = await fetchCoverageLookupData("asset", 5);
+      expect(result).toMatchObject(mockData);
+      expect(mockFn).toHaveBeenCalledWith("/api/coverage-lookup?type=asset&id=5");
+    });
+
+    test("throws on non-ok response", async () => {
+      const mockFn = mock(() =>
+        Promise.resolve(new Response("Not Found", { status: 404 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      expect(fetchCoverageLookupData()).rejects.toThrow("Failed to fetch coverage data: 404");
     });
   });
 });

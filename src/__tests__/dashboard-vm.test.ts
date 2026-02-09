@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, afterEach, mock } from "bun:test";
 import {
   createStatCards,
   formatStatCurrency,
+  fetchDashboardData,
   type DashboardStats,
   type StatCardData,
 } from "@/lib/dashboard-vm";
@@ -112,6 +113,35 @@ describe("dashboard-vm", () => {
       for (const card of cards) {
         expect(validIcons).toContain(card.iconName);
       }
+    });
+  });
+
+  describe("fetchDashboardData", () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    test("fetches and returns dashboard data", async () => {
+      const mockData = { policyCount: 10, memberCount: 3 };
+      const mockFn = mock(() =>
+        Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      const result = await fetchDashboardData();
+      expect(result).toMatchObject(mockData);
+      expect(mockFn).toHaveBeenCalledWith("/api/dashboard");
+    });
+
+    test("throws on non-ok response", async () => {
+      const mockFn = mock(() =>
+        Promise.resolve(new Response("Error", { status: 500 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      expect(fetchDashboardData()).rejects.toThrow("Failed to fetch dashboard data: 500");
     });
   });
 });

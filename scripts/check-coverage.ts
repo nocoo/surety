@@ -15,6 +15,11 @@ async function main() {
     [
       "bun", "test",
       "src/__tests__/db", "src/__tests__/utils.test.ts",
+      "src/__tests__/dashboard-vm.test.ts",
+      "src/__tests__/coverage-lookup-vm.test.ts",
+      "src/__tests__/renewal-calendar-vm.test.ts",
+      "src/__tests__/category-config.test.ts",
+      "src/__tests__/chart-config.test.ts",
       "mcp/__tests__/guard.test.ts",
       "mcp/__tests__/tools-members.test.ts",
       "mcp/__tests__/tools-policies.test.ts",

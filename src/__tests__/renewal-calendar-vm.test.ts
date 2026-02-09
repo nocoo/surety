@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, afterEach, mock } from "bun:test";
 import {
   daysBetween,
   getMonthLabel,
@@ -13,6 +13,7 @@ import {
   formatCurrency,
   generateConsecutiveMonths,
   getUniquePolicyNames,
+  fetchRenewalCalendarData,
   type PolicyForRenewal,
 } from "@/lib/renewal-calendar-vm";
 
@@ -439,6 +440,35 @@ describe("renewal-calendar-vm", () => {
       expect(formatCurrency(10000)).toBe("¥1万");
       expect(formatCurrency(15000)).toBe("¥1.5万");
       expect(formatCurrency(100000)).toBe("¥10万");
+    });
+  });
+
+  describe("fetchRenewalCalendarData", () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it("fetches and returns renewal calendar data", async () => {
+      const mockData = { months: [], summary: {} };
+      const mockFn = mock(() =>
+        Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      const result = await fetchRenewalCalendarData();
+      expect(result).toMatchObject(mockData);
+      expect(mockFn).toHaveBeenCalledWith("/api/renewal-calendar");
+    });
+
+    it("throws on non-ok response", async () => {
+      const mockFn = mock(() =>
+        Promise.resolve(new Response("Error", { status: 503 }))
+      );
+      globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
+
+      expect(fetchRenewalCalendarData()).rejects.toThrow("Failed to fetch renewal calendar: 503");
     });
   });
 });
