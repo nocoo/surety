@@ -7,7 +7,7 @@ export const members = sqliteTable("members", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   relation: text("relation", {
-    enum: ["Self", "Spouse", "Child", "Parent"],
+    enum: ["Self", "Spouse", "Child", "Parent", "Pet"],
   }).notNull(),
   gender: text("gender", { enum: ["M", "F"] }),
   birthDate: text("birth_date"),
@@ -48,7 +48,7 @@ export type NewInsurer = typeof insurers.$inferInsert;
 // ============================================================================
 export const assets = sqliteTable("assets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type", { enum: ["RealEstate", "Vehicle"] }).notNull(),
+  type: text("type", { enum: ["RealEstate", "Vehicle", "Pet"] }).notNull(),
   name: text("name").notNull(),
   identifier: text("identifier").notNull(),
   ownerId: integer("owner_id").references(() => members.id),

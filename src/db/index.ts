@@ -3,19 +3,67 @@ import * as schema from "./schema";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DbInstance = any;
 
+// Database type for multi-database support
+export type DatabaseType = "production" | "example" | "test";
+
+// Database file mapping
+const DATABASE_FILES: Record<DatabaseType, string> = {
+  production: "surety.db",
+  example: "surety.example.db",
+  test: "surety.e2e.db",
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let sqlite: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let dbInstance: any;
+let currentDbFile: string | null = null;
 
 // Detect if running in Bun runtime
 const isBun = typeof globalThis.Bun !== "undefined";
 
 // Database file paths
-const DB_FILE = process.env.SURETY_DB || "surety.db";
 const E2E_DB_FILE = "surety.e2e.db";
 
+/**
+ * Get the current database type from environment or cookie.
+ * Priority: SURETY_DB env > cookie > default (production)
+ */
+export function getCurrentDatabaseType(): DatabaseType {
+  // Environment variable takes precedence
+  const envDb = process.env.SURETY_DB;
+  if (envDb) {
+    if (envDb === E2E_DB_FILE || envDb.includes("e2e")) return "test";
+    if (envDb.includes("example")) return "example";
+    return "production";
+  }
+  
+  // For server-side, we need to check cookies
+  // This is done asynchronously via the API route
+  return "production";
+}
+
+/**
+ * Get the database file path for a given database type.
+ */
+export function getDatabaseFile(dbType: DatabaseType): string {
+  return DATABASE_FILES[dbType];
+}
+
 function createDatabase(filename: string): DbInstance {
+  // If switching to a different database, close the existing connection
+  if (sqlite && currentDbFile !== filename) {
+    sqlite.close();
+    sqlite = null;
+    dbInstance = null;
+  }
+  
+  if (dbInstance && currentDbFile === filename) {
+    return dbInstance;
+  }
+  
+  currentDbFile = filename;
+  
   if (isBun) {
     // Bun runtime: use bun:sqlite
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -36,14 +84,31 @@ function createDatabase(filename: string): DbInstance {
   return dbInstance;
 }
 
+/**
+ * Get database instance for the specified database type.
+ */
+export function getDbForType(dbType: DatabaseType): DbInstance {
+  const filename = DATABASE_FILES[dbType];
+  return createDatabase(filename);
+}
+
+/**
+ * Get database instance using environment variable or default.
+ */
 export function getDb(): DbInstance {
-  if (!dbInstance) {
-    createDatabase(DB_FILE);
-  }
-  return dbInstance;
+  const envDb = process.env.SURETY_DB;
+  const filename = envDb || DATABASE_FILES.production;
+  return createDatabase(filename);
 }
 
 export function createTestDb(): DbInstance {
+  // Ensure we close any existing connection first
+  if (sqlite) {
+    sqlite.close();
+    sqlite = null;
+    dbInstance = null;
+    currentDbFile = null;
+  }
   createDatabase(":memory:");
   initSchema();
   return dbInstance;
@@ -96,6 +161,12 @@ export function getE2EDbPath(): string {
 }
 
 export function resetTestDb(): void {
+  // Ensure test database is initialized
+  if (!sqlite) {
+    createTestDb();
+    return; // createTestDb already initializes an empty schema
+  }
+  
   sqlite!.exec(`
     DELETE FROM policy_extensions;
     DELETE FROM cash_values;
@@ -113,7 +184,7 @@ export function resetTestDb(): void {
  * Check if using E2E database.
  */
 export function isE2EMode(): boolean {
-  return DB_FILE === E2E_DB_FILE || process.env.SURETY_E2E === "true";
+  return currentDbFile === E2E_DB_FILE || process.env.SURETY_E2E === "true";
 }
 
 export function initSchema(): void {
@@ -229,12 +300,26 @@ export function initSchema(): void {
 export function closeDb(): void {
   if (sqlite) {
     sqlite.close();
+    sqlite = null;
+    dbInstance = null;
+    currentDbFile = null;
   }
 }
 
-export const db = (() => {
-  if (process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test") {
-    return createTestDb();
-  }
-  return getDb();
-})();
+// Dynamic db getter - always uses current environment variable
+// This allows database switching at runtime
+export const db = new Proxy({} as DbInstance, {
+  get(_, prop) {
+    // For tests, use in-memory database
+    if (process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test") {
+      if (!dbInstance) {
+        createTestDb();
+      }
+      return dbInstance[prop];
+    }
+    
+    // Get/create database based on current SURETY_DB env
+    const currentDb = getDb();
+    return currentDb[prop];
+  },
+});

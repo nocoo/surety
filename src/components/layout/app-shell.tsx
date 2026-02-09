@@ -3,6 +3,7 @@
 import { Sidebar } from "./sidebar";
 import { SidebarProvider } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
+import { DbSelector } from "./db-selector";
 import { Breadcrumbs } from "./breadcrumbs";
 
 interface AppShellProps {
@@ -19,7 +20,10 @@ export function AppShell({ children, breadcrumbs = [] }: AppShellProps) {
         <div className="flex flex-1 flex-col overflow-hidden">
           <header className="flex h-14 items-center justify-between border-b border-border bg-background px-6">
             <Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <DbSelector />
+              <ThemeToggle />
+            </div>
           </header>
 
           <main className="flex-1 overflow-auto bg-background p-6">

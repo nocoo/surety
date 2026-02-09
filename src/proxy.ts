@@ -5,6 +5,13 @@ import type { NextRequest } from "next/server";
 // Skip auth in E2E test environment
 const SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
 
+// Database file mapping
+const DATABASE_FILES: Record<string, string> = {
+  production: "surety.db",
+  example: "surety.example.db",
+  test: "surety.e2e.db",
+};
+
 // Build redirect URL respecting reverse proxy headers
 function buildRedirectUrl(req: NextRequest, pathname: string): URL {
   const forwardedHost = req.headers.get("x-forwarded-host");
@@ -22,6 +29,12 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
 // Next.js 16 proxy convention (replaces middleware.ts)
 // NextAuth's auth() returns a middleware-compatible handler
 const authHandler = auth((req) => {
+  // Read database selection from cookie and set environment variable
+  const dbCookie = req.cookies.get("surety-database")?.value;
+  if (dbCookie && DATABASE_FILES[dbCookie]) {
+    process.env.SURETY_DB = DATABASE_FILES[dbCookie];
+  }
+
   // Skip auth check in E2E test environment
   if (SKIP_AUTH) {
     return NextResponse.next();

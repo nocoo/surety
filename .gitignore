@@ -44,5 +44,6 @@ next-env.d.ts
 # database
 *.db
 *.db-journal
+!surety.example.db
 surety.e2e.db
 .next-e2e
