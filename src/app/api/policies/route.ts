@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET() {
     insuredAssetName: p.insuredAssetId ? assetMap.get(p.insuredAssetId) ?? null : null,
     category: p.category,
     subCategory: p.subCategory,
-    status: p.status,
+    status: deriveDisplayStatus(p.status as PolicyDbStatus, p.expiryDate),
     premium: p.premium,
     sumAssured: p.sumAssured,
     nextDueDate: p.nextDueDate ?? p.effectiveDate,

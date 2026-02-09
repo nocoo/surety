@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
 
-type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
+type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed" | "Expired";
 
 interface PolicyDetail {
   id: number;
@@ -75,8 +75,9 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" }> = {
+const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" | "destructive" }> = {
   Active: { label: "生效中", variant: "success" },
+  Expired: { label: "已过期", variant: "destructive" },
   Lapsed: { label: "已失效", variant: "secondary" },
   Surrendered: { label: "已退保", variant: "warning" },
   Claimed: { label: "已理赔", variant: "purple" },

@@ -11,6 +11,7 @@ import {
   assetsRepo,
   policiesRepo,
 } from "@/db/repositories";
+import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 
 export function registerCoverageTools(server: McpServer): void {
@@ -46,7 +47,7 @@ export function registerCoverageTools(server: McpServer): void {
 
         const policies = policiesRepo
           .findByInsuredMemberId(id)
-          .filter((p) => p.status === "Active");
+          .filter((p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate));
 
         const totalPremium = policies.reduce((sum, p) => sum + p.premium, 0);
         const totalSumAssured = policies.reduce(
@@ -108,7 +109,7 @@ export function registerCoverageTools(server: McpServer): void {
 
         const allPolicies = policiesRepo.findAll();
         const policies = allPolicies.filter(
-          (p) => p.insuredAssetId === id && p.status === "Active",
+          (p) => p.insuredAssetId === id && isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
         );
 
         const owner = asset.ownerId
@@ -162,7 +163,7 @@ export function registerCoverageTools(server: McpServer): void {
 
       const allPolicies = policiesRepo.findAll();
       const activePolicies = allPolicies.filter(
-        (p) => p.status === "Active",
+        (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
       );
 
       const upcoming = activePolicies
@@ -219,7 +220,9 @@ export function registerCoverageTools(server: McpServer): void {
 
       const members = membersRepo.findAll();
       const policies = policiesRepo.findAll();
-      const activePolicies = policies.filter((p) => p.status === "Active");
+      const activePolicies = policies.filter(
+        (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
+      );
 
       const totalPremium = activePolicies.reduce(
         (sum, p) => sum + p.premium,

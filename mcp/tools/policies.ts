@@ -12,6 +12,7 @@ import {
   assetsRepo,
   beneficiariesRepo,
 } from "@/db/repositories";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 
 export function registerPolicyTools(server: McpServer): void {
@@ -20,7 +21,7 @@ export function registerPolicyTools(server: McpServer): void {
     "List all insurance policies with optional filters for status, category, or member",
     {
       status: z
-        .enum(["Active", "Lapsed", "Surrendered", "Claimed"])
+        .enum(["Active", "Expired", "Lapsed", "Surrendered", "Claimed"])
         .optional()
         .describe("Filter by policy status"),
       category: z
@@ -43,23 +44,31 @@ export function registerPolicyTools(server: McpServer): void {
       const error = checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      let policies = policiesRepo.findAll();
+      const policies = policiesRepo.findAll();
+
+      // Derive display status for each policy
+      const withDisplayStatus = policies.map((p) => ({
+        ...p,
+        displayStatus: deriveDisplayStatus(p.status as PolicyDbStatus, p.expiryDate),
+      }));
+
+      let filtered = withDisplayStatus;
 
       if (status) {
-        policies = policies.filter((p) => p.status === status);
+        filtered = filtered.filter((p) => p.displayStatus === status);
       }
       if (category) {
-        policies = policies.filter((p) => p.category === category);
+        filtered = filtered.filter((p) => p.category === category);
       }
       if (memberId) {
-        policies = policies.filter(
+        filtered = filtered.filter(
           (p) =>
             p.insuredMemberId === memberId || p.applicantId === memberId,
         );
       }
 
       // Enrich with member/asset names
-      const result = policies.map((p) => {
+      const result = filtered.map((p) => {
         const applicant = membersRepo.findById(p.applicantId);
         const insuredMember = p.insuredMemberId
           ? membersRepo.findById(p.insuredMemberId)
@@ -75,7 +84,7 @@ export function registerPolicyTools(server: McpServer): void {
           category: p.category,
           subCategory: p.subCategory,
           insurerName: p.insurerName,
-          status: p.status,
+          status: p.displayStatus,
           premium: p.premium,
           sumAssured: p.sumAssured,
           effectiveDate: p.effectiveDate,
@@ -142,7 +151,7 @@ export function registerPolicyTools(server: McpServer): void {
         subCategory: policy.subCategory,
         insurerName: policy.insurerName,
         insuredType: policy.insuredType,
-        status: policy.status,
+        status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
         premium: policy.premium,
         sumAssured: policy.sumAssured,
         paymentFrequency: policy.paymentFrequency,

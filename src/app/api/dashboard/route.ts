@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,9 @@ export async function GET() {
   const policies = policiesRepo.findAll();
   const members = membersRepo.findAll();
 
-  const activePolicies = policies.filter((p) => p.status === "Active" && !p.archived);
+  const activePolicies = policies.filter(
+    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate) && !p.archived
+  );
   const totalPremium = activePolicies.reduce((sum, p) => sum + p.premium, 0);
   const totalSumAssured = activePolicies.reduce((sum, p) => sum + p.sumAssured, 0);
   const memberCount = members.length;

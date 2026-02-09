@@ -4,6 +4,7 @@ import {
   type PolicyForRenewal,
 } from "@/lib/renewal-calendar-vm";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function GET() {
   const members = membersRepo.findAll();
 
   const activePolicies = policies.filter(
-    (p) => p.status === "Active" && !p.archived
+    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate) && !p.archived
   );
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 

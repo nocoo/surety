@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     expiryDate: policy.expiryDate,
     hesitationEndDate: policy.hesitationEndDate,
     waitingDays: policy.waitingDays,
-    status: policy.status,
+    status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
     deathBenefit: policy.deathBenefit,
     archived: policy.archived,
     policyFilePath: policy.policyFilePath,

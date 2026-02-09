@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
 import {
   buildMemberCoverageData,
   buildAssetCoverageData,
@@ -8,6 +7,8 @@ import {
   type PolicyForCoverage,
   type SelectionType,
 } from "@/lib/coverage-lookup-vm";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
+import { ensureDbFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
       insurerPhone: insurerPhoneMap.get(policy.insurerName) ?? null,
       effectiveDate: policy.effectiveDate,
       expiryDate: policy.expiryDate,
-      status: policy.status,
+      status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
     };
 
     // Group by insured member and/or asset

@@ -117,6 +117,7 @@ export const ASSET_TYPE_LABELS: Record<string, string> = {
 
 export const STATUS_LABELS: Record<string, string> = {
   Active: "生效中",
+  Expired: "已过期",
   Lapsed: "已失效",
   Surrendered: "已退保",
   Claimed: "已理赔",
