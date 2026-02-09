@@ -7,6 +7,12 @@ const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
+// Detect if running in production (behind HTTPS reverse proxy)
+const useSecureCookies =
+  process.env.NODE_ENV === "production" ||
+  process.env.NEXTAUTH_URL?.startsWith("https://") ||
+  false;
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   // Trust the host header for automatic URL detection
   // This allows the app to work behind reverse proxies without manual NEXTAUTH_URL config
@@ -20,6 +26,37 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
     error: "/login",
+  },
+  // Cookie configuration for reverse proxy environments
+  cookies: {
+    pkceCodeVerifier: {
+      name: "authjs.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+        // Don't set domain to allow cookies to work on any subdomain
+      },
+    },
+    state: {
+      name: "authjs.state",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
+    callbackUrl: {
+      name: "authjs.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: useSecureCookies,
+      },
+    },
   },
   callbacks: {
     async signIn({ user }) {

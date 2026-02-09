@@ -1,7 +1,10 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
+// Next.js 16 proxy convention (replaces middleware.ts)
+// NextAuth's auth() returns a middleware-compatible handler
+const authHandler = auth((req) => {
   const isLoggedIn = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
@@ -23,6 +26,11 @@ export default auth((req) => {
 
   return NextResponse.next();
 });
+
+// Export as named 'proxy' function for Next.js 16
+export function proxy(request: NextRequest) {
+  return authHandler(request, {} as never);
+}
 
 export const config = {
   matcher: [
