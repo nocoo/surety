@@ -1,3 +1,5 @@
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import * as schema from "./schema";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -6,7 +8,17 @@ export type DbInstance = any;
 // Database type for multi-database support
 export type DatabaseType = "production" | "example" | "test";
 
-// Database file mapping
+// Project root directory (where db files live), resolved from this source file
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
+/** Resolve a database filename to an absolute path under the project root. */
+function resolveDbPath(filename: string): string {
+  // In-memory and already-absolute paths are passed through
+  if (filename === ":memory:" || filename.startsWith("/")) return filename;
+  return resolve(PROJECT_ROOT, filename);
+}
+
+// Database file mapping (relative names, resolved at use-site)
 const DATABASE_FILES: Record<DatabaseType, string> = {
   production: "surety.db",
   example: "surety.example.db",
@@ -51,18 +63,20 @@ export function getDatabaseFile(dbType: DatabaseType): string {
 }
 
 function createDatabase(filename: string): DbInstance {
+  const resolvedPath = resolveDbPath(filename);
+
   // If switching to a different database, close the existing connection
-  if (sqlite && currentDbFile !== filename) {
+  if (sqlite && currentDbFile !== resolvedPath) {
     sqlite.close();
     sqlite = null;
     dbInstance = null;
   }
   
-  if (dbInstance && currentDbFile === filename) {
+  if (dbInstance && currentDbFile === resolvedPath) {
     return dbInstance;
   }
   
-  currentDbFile = filename;
+  currentDbFile = resolvedPath;
   
   if (isBun) {
     // Bun runtime: use bun:sqlite
@@ -70,7 +84,7 @@ function createDatabase(filename: string): DbInstance {
     const { Database } = require("bun:sqlite");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { drizzle } = require("drizzle-orm/bun-sqlite");
-    sqlite = new Database(filename);
+    sqlite = new Database(resolvedPath);
     dbInstance = drizzle(sqlite, { schema });
   } else {
     // Node.js runtime: use better-sqlite3
@@ -78,9 +92,13 @@ function createDatabase(filename: string): DbInstance {
     const Database = require("better-sqlite3");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { drizzle } = require("drizzle-orm/better-sqlite3");
-    sqlite = new Database(filename);
+    sqlite = new Database(resolvedPath);
     dbInstance = drizzle(sqlite, { schema });
   }
+
+  // Auto-initialize schema (CREATE TABLE IF NOT EXISTS is idempotent)
+  initSchema();
+
   return dbInstance;
 }
 
@@ -109,8 +127,9 @@ export function getDb(): DbInstance {
  */
 export function switchDatabase(dbType: DatabaseType): DbInstance {
   const filename = DATABASE_FILES[dbType];
+  const resolvedPath = resolveDbPath(filename);
   // Only reconnect if the database file is different
-  if (currentDbFile === filename && dbInstance) {
+  if (currentDbFile === resolvedPath && dbInstance) {
     return dbInstance;
   }
   // Force reconnection by closing existing
@@ -130,7 +149,8 @@ export function switchDatabase(dbType: DatabaseType): DbInstance {
  */
 export function ensureDatabase(dbType: DatabaseType): DbInstance {
   const filename = DATABASE_FILES[dbType];
-  if (currentDbFile === filename && dbInstance) {
+  const resolvedPath = resolveDbPath(filename);
+  if (currentDbFile === resolvedPath && dbInstance) {
     return dbInstance;
   }
   return switchDatabase(dbType);
@@ -174,7 +194,6 @@ export function createTestDb(): DbInstance {
     currentDbFile = null;
   }
   createDatabase(":memory:");
-  initSchema();
   return dbInstance;
 }
 
@@ -191,7 +210,6 @@ export function createE2EDb(): string {
   }
   
   createDatabase(E2E_DB_FILE);
-  initSchema();
   return E2E_DB_FILE;
 }
 
@@ -201,7 +219,6 @@ export function createE2EDb(): string {
 export function resetE2EDb(): void {
   if (!sqlite) {
     createDatabase(E2E_DB_FILE);
-    initSchema();
   }
   
   sqlite!.exec(`
@@ -250,7 +267,7 @@ export function resetTestDb(): void {
  * Check if using E2E database.
  */
 export function isE2EMode(): boolean {
-  return currentDbFile === E2E_DB_FILE || process.env.SURETY_E2E === "true";
+  return currentDbFile === resolveDbPath(E2E_DB_FILE) || process.env.SURETY_E2E === "true";
 }
 
 export function initSchema(): void {
