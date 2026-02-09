@@ -10,10 +10,10 @@ export async function GET() {
   
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
   
-  // Count policies per asset
+  // Count policies per asset (any policy with insuredAssetId)
   const policyCountMap = new Map<number, number>();
   for (const policy of policies) {
-    if (policy.insuredType === "Asset" && policy.insuredAssetId) {
+    if (policy.insuredAssetId) {
       const count = policyCountMap.get(policy.insuredAssetId) ?? 0;
       policyCountMap.set(policy.insuredAssetId, count + 1);
     }

@@ -66,12 +66,14 @@ export async function GET(request: NextRequest) {
       status: policy.status,
     };
 
-    // Group by insured type
-    if (policy.insuredType === "Member" && policy.insuredMemberId) {
+    // Group by insured member and/or asset
+    // A policy can be linked to both a member (insured person) and an asset (insured property)
+    if (policy.insuredMemberId) {
       const existing = policiesByMember.get(policy.insuredMemberId) ?? [];
       existing.push(policyData);
       policiesByMember.set(policy.insuredMemberId, existing);
-    } else if (policy.insuredType === "Asset" && policy.insuredAssetId) {
+    }
+    if (policy.insuredAssetId) {
       const existing = policiesByAsset.get(policy.insuredAssetId) ?? [];
       existing.push(policyData);
       policiesByAsset.set(policy.insuredAssetId, existing);
