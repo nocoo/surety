@@ -21,7 +21,7 @@ const insurerContacts: Record<string, { phone: string; website: string }> = {
   },
   "太平洋健康": {
     phone: "95500",
-    website: "https://www.cpic.com.cn",
+    website: "https://health.cpic.com.cn",
   },
 
   // China Taiping Insurance Group (中国太平保险集团)
@@ -30,10 +30,10 @@ const insurerContacts: Record<string, { phone: string; website: string }> = {
     website: "https://www.cntaiping.com",
   },
 
-  // Junlong Life (君龙人寿)
+  // Junlong Life (君龙人寿) - formerly KGI Life
   "君龙人寿": {
-    phone: "4008-188-688",
-    website: "https://www.kgi-life.com.cn",
+    phone: "400-666-0123",
+    website: "https://www.kdlins.com.cn",
   },
 
   // PICC Group (中国人民保险集团)
@@ -48,38 +48,38 @@ const insurerContacts: Record<string, { phone: string; website: string }> = {
 
   // Ruihua Health Insurance (瑞华健康保险)
   "瑞华健康": {
-    phone: "4008-500-365",
-    website: "https://www.rhealthins.com",
+    phone: "400-609-6868",
+    website: "https://www.rhassurance.com",
   },
 
   // Sunshine Insurance Group (阳光保险集团)
   "阳光人寿": {
     phone: "95510",
-    website: "https://www.sinosig.com",
+    website: "https://wecare.sinosig.com",
   },
 
   // Guofu Life (国富人寿)
   "国富人寿": {
-    phone: "4001-600-601",
-    website: "https://www.gflife.com.cn",
+    phone: "400-694-6688",
+    website: "https://www.e-guofu.com",
   },
 
   // Huagui Insurance (华贵保险)
   "华贵保险": {
-    phone: "4008-508-505",
-    website: "https://www.hklife.com.cn",
+    phone: "400-684-1888",
+    website: "https://www.huaguilife.cn",
   },
 
   // Everbright Sun Life (光大永明人寿)
   "光大永明": {
-    phone: "95348",
+    phone: "95105698",
     website: "https://www.sunlife-everbright.com",
   },
 
   // Bohai Property Insurance (渤海财险)
   "渤海财险": {
-    phone: "4006-111-111",
-    website: "https://www.bihins.com",
+    phone: "95541",
+    website: "https://www.bpic.com.cn",
   },
 
   // China Life (中国人寿)
