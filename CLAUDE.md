@@ -50,3 +50,4 @@ bun run mcp          # 启动 MCP Server (stdio)
 
 - **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。
 - **SQLite 路径必须用绝对路径**：SQLite 的相对路径基于 `process.cwd()` 而非源码位置。MCP Server 或其他外部进程从不同目录启动时，会在错误位置创建空数据库文件。解决方案：用 `import.meta.url` 推导项目根目录，拼接绝对路径。同时 `createDatabase()` 应自动调用 `initSchema()`（`CREATE TABLE IF NOT EXISTS` 幂等），防止空数据库无表。
+- **测试不得删除 git-tracked 数据文件**：`surety.example.db` 是包含演示数据的 git-tracked 文件。单元测试中 `cleanupDbFile()` 会 `unlinkSync` 删除文件，若对 example db 执行则会清空全部演示数据。测试连接 example db 后只需 `closeDb()`，不可 cleanup。已添加 guard test 验证 example db 至少有 5 条 members 数据，防止此类 regression。同理，commit 时若 `git status` 显示 binary db 文件有变更，必须验证内容未被意外清空再 add。
