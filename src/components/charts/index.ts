@@ -5,7 +5,10 @@ export {
   YearTrendChart,
   InsurerChart,
   MemberCategoryChart,
+  StackedValueChart,
+  TimelineChart,
   type HorizontalBarItem,
   type YearTrendItem,
   type MemberCategoryItem,
+  type TimelineItem,
 } from "./bar-chart";

@@ -7,19 +7,21 @@ import {
   TrendingUp,
   Shield,
   PieChart,
-  BarChart3,
   Building2,
-  CalendarDays,
   Layers,
+  CalendarClock,
+  CalendarX,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import {
   DonutChart,
   HorizontalBarChart,
-  YearTrendChart,
   InsurerChart,
   MemberCategoryChart,
+  StackedValueChart,
+  TimelineChart,
 } from "@/components/charts";
 import { CHART_COLORS } from "@/lib/chart-config";
 import {
@@ -84,15 +86,14 @@ export default function Home() {
     count: item.count,
   }));
 
-  const premiumByMemberData = data.charts.premiumByMember.map((item) => ({
-    name: item.name,
-    value: item.premium,
-    count: item.count,
-  }));
-
   const coverageData = data.charts.coverageByCategory.map((item) => ({
     name: item.label,
     value: item.sumAssured,
+  }));
+
+  const categoryCountData = data.charts.premiumByCategory.map((item) => ({
+    name: item.label,
+    value: item.count,
   }));
 
   const channelData = data.charts.policyByChannel.map((item) => ({
@@ -116,50 +117,71 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Charts Row 1 */}
+        {/* Row 1: 保费 (Premium) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <DonutChart data={premiumByCategoryData} title="保费构成" icon={PieChart} />
-          <HorizontalBarChart
-            data={premiumByMemberData}
+          <StackedValueChart
+            data={data.charts.memberPremiumByCategory.data}
+            categories={data.charts.memberPremiumByCategory.categories}
             title="成员保费分布"
-            icon={Users}
-            color={CHART_COLORS.primary}
+            icon={Wallet}
+            valueLabel="保费"
           />
         </div>
 
-        {/* Charts Row 2 */}
+        {/* Row 2: 保额 (Coverage) */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <DonutChart data={coverageData} title="保障额度构成" icon={Shield} />
+          <StackedValueChart
+            data={data.charts.memberCoverageByCategory.data}
+            categories={data.charts.memberCoverageByCategory.categories}
+            title="成员保障额度"
+            icon={Shield}
+            valueLabel="保额"
+          />
+        </div>
+
+        {/* Row 3: 险种 (Category) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <HorizontalBarChart
-            data={coverageData}
-            title="保障额度"
-            icon={Shield}
-            color={CHART_COLORS.palette[1]}
+            data={categoryCountData}
+            title="险种构成"
+            icon={Layers}
+            color={CHART_COLORS.palette[2]}
+            formatValue={(v) => `${v}份`}
           />
-          <DonutChart data={channelData} title="渠道分布" icon={BarChart3} />
-        </div>
-
-        {/* Charts Row 3 */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <InsurerChart
-            data={data.charts.policyByInsurer}
-            title="保险公司"
-            icon={Building2}
-          />
-          <YearTrendChart
-            data={data.charts.policyByYear}
-            title="投保年份"
-            icon={CalendarDays}
-          />
-        </div>
-
-        {/* Charts Row 4 */}
-        <div className="grid gap-6 lg:grid-cols-1">
           <MemberCategoryChart
             data={data.charts.memberByCategory.data}
             categories={data.charts.memberByCategory.categories}
             title="成员险种分布"
             icon={Layers}
           />
+        </div>
+
+        {/* Row 4: 时间 (Time) */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TimelineChart
+            data={data.charts.renewalTimeline}
+            title="续费时间分布"
+            icon={CalendarClock}
+            emptyMessage="暂无续费数据"
+          />
+          <TimelineChart
+            data={data.charts.expiryTimeline}
+            title="到期时间分布"
+            icon={CalendarX}
+            emptyMessage="暂无到期数据"
+          />
+        </div>
+
+        {/* Row 5: 渠道 (Channel) */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <InsurerChart
+            data={data.charts.policyByInsurer}
+            title="保险公司分布"
+            icon={Building2}
+          />
+          <DonutChart data={channelData} title="渠道分布" icon={Building2} />
         </div>
       </div>
     </AppShell>

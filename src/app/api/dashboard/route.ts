@@ -96,36 +96,43 @@ export async function GET() {
     }))
     .sort((a, b) => b.sumAssured - a.sumAssured);
 
-  // Policies by year (for trend line)
-  const yearMap = new Map<string, { count: number; premium: number }>();
-  for (const p of activePolicies) {
-    const year = p.effectiveDate.substring(0, 4);
-    const existing = yearMap.get(year) ?? { count: 0, premium: 0 };
-    yearMap.set(year, {
-      count: existing.count + 1,
-      premium: existing.premium + p.premium,
-    });
-  }
-  const policyByYear = Array.from(yearMap.entries())
-    .map(([year, data]) => ({ year, ...data }))
-    .sort((a, b) => a.year.localeCompare(b.year));
-
-  // Member by category (for stacked bar chart)
-  const memberCategoryMap = new Map<number, Record<string, number>>();
+  // Member by category (for stacked bar chart - count based)
+  const memberCategoryCountMap = new Map<number, Record<string, number>>();
+  // Member by category - premium based
+  const memberCategoryPremiumMap = new Map<number, Record<string, number>>();
+  // Member by category - coverage based
+  const memberCategoryCoverageMap = new Map<number, Record<string, number>>();
+  
   for (const p of activePolicies) {
     if (p.insuredMemberId) {
-      const existing = memberCategoryMap.get(p.insuredMemberId) ?? {};
       const categoryLabel = categoryLabels[p.category] ?? p.category;
-      existing[categoryLabel] = (existing[categoryLabel] ?? 0) + 1;
-      memberCategoryMap.set(p.insuredMemberId, existing);
+      
+      // Count
+      const existingCount = memberCategoryCountMap.get(p.insuredMemberId) ?? {};
+      existingCount[categoryLabel] = (existingCount[categoryLabel] ?? 0) + 1;
+      memberCategoryCountMap.set(p.insuredMemberId, existingCount);
+      
+      // Premium
+      const existingPremium = memberCategoryPremiumMap.get(p.insuredMemberId) ?? {};
+      existingPremium[categoryLabel] = (existingPremium[categoryLabel] ?? 0) + p.premium;
+      memberCategoryPremiumMap.set(p.insuredMemberId, existingPremium);
+      
+      // Coverage
+      const existingCoverage = memberCategoryCoverageMap.get(p.insuredMemberId) ?? {};
+      existingCoverage[categoryLabel] = (existingCoverage[categoryLabel] ?? 0) + p.sumAssured;
+      memberCategoryCoverageMap.set(p.insuredMemberId, existingCoverage);
     }
   }
+  
   const allCategories = new Set<string>();
-  memberCategoryMap.forEach((categories) => {
+  memberCategoryCountMap.forEach((categories) => {
     Object.keys(categories).forEach((c) => allCategories.add(c));
   });
-  const memberByCategory = {
-    data: Array.from(memberCategoryMap.entries())
+  const sortedCategories = Array.from(allCategories).sort();
+  
+  // Helper to build stacked data from a map
+  const buildStackedData = (map: Map<number, Record<string, number>>) => 
+    Array.from(map.entries())
       .map(([memberId, categories]) => ({
         name: memberMap.get(memberId) ?? "未知",
         ...categories,
@@ -134,9 +141,62 @@ export async function GET() {
         const totalA = Object.values(a).filter((v) => typeof v === "number").reduce((s, n) => s + n, 0);
         const totalB = Object.values(b).filter((v) => typeof v === "number").reduce((s, n) => s + n, 0);
         return totalB - totalA;
-      }),
-    categories: Array.from(allCategories).sort(),
+      });
+  
+  const memberByCategory = {
+    data: buildStackedData(memberCategoryCountMap),
+    categories: sortedCategories,
   };
+  
+  const memberPremiumByCategory = {
+    data: buildStackedData(memberCategoryPremiumMap),
+    categories: sortedCategories,
+  };
+  
+  const memberCoverageByCategory = {
+    data: buildStackedData(memberCategoryCoverageMap),
+    categories: sortedCategories,
+  };
+
+  // Renewal timeline (upcoming 12 months)
+  const now = new Date();
+  const renewalMap = new Map<string, { count: number; premium: number }>();
+  const expiryMap = new Map<string, { count: number; premium: number }>();
+  
+  for (const p of activePolicies) {
+    // Renewal: use effectiveDate to calculate next renewal month
+    if (p.effectiveDate) {
+      const effectiveDate = new Date(p.effectiveDate);
+      // Calculate next renewal date (same month/day in current or next year)
+      let nextRenewal = new Date(now.getFullYear(), effectiveDate.getMonth(), effectiveDate.getDate());
+      if (nextRenewal <= now) {
+        nextRenewal = new Date(now.getFullYear() + 1, effectiveDate.getMonth(), effectiveDate.getDate());
+      }
+      const monthKey = `${nextRenewal.getFullYear()}-${String(nextRenewal.getMonth() + 1).padStart(2, "0")}`;
+      const existing = renewalMap.get(monthKey) ?? { count: 0, premium: 0 };
+      renewalMap.set(monthKey, { count: existing.count + 1, premium: existing.premium + p.premium });
+    }
+    
+    // Expiry: use expiryDate if available
+    if (p.expiryDate) {
+      const expiryDate = new Date(p.expiryDate);
+      if (expiryDate >= now) {
+        const monthKey = `${expiryDate.getFullYear()}-${String(expiryDate.getMonth() + 1).padStart(2, "0")}`;
+        const existing = expiryMap.get(monthKey) ?? { count: 0, premium: 0 };
+        expiryMap.set(monthKey, { count: existing.count + 1, premium: existing.premium + p.premium });
+      }
+    }
+  }
+  
+  const renewalTimeline = Array.from(renewalMap.entries())
+    .map(([month, data]) => ({ month, ...data }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(0, 12);
+    
+  const expiryTimeline = Array.from(expiryMap.entries())
+    .map(([month, data]) => ({ month, ...data }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(0, 12);
 
   return NextResponse.json({
     stats: {
@@ -151,8 +211,11 @@ export async function GET() {
       policyByInsurer,
       policyByChannel,
       coverageByCategory,
-      policyByYear,
       memberByCategory,
+      memberPremiumByCategory,
+      memberCoverageByCategory,
+      renewalTimeline,
+      expiryTimeline,
     },
   });
 }

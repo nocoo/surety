@@ -48,6 +48,12 @@ export interface YearData {
   premium: number;
 }
 
+export interface TimelineData {
+  month: string;
+  count: number;
+  premium: number;
+}
+
 export interface MemberCategoryData {
   data: Array<{ name: string; [category: string]: string | number }>;
   categories: string[];
@@ -59,8 +65,11 @@ export interface DashboardCharts {
   policyByInsurer: InsurerData[];
   policyByChannel: ChannelData[];
   coverageByCategory: CoverageData[];
-  policyByYear: YearData[];
   memberByCategory: MemberCategoryData;
+  memberPremiumByCategory: MemberCategoryData;
+  memberCoverageByCategory: MemberCategoryData;
+  renewalTimeline: TimelineData[];
+  expiryTimeline: TimelineData[];
 }
 
 export interface DashboardData {

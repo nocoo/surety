@@ -301,4 +301,144 @@ export function MemberCategoryChart({ data, categories, title, icon }: MemberCat
   );
 }
 
+// Stacked bar chart for member-category with currency values (premium/coverage)
+interface StackedValueChartProps {
+  data: MemberCategoryItem[];
+  categories: string[];
+  title: string;
+  icon: LucideIcon;
+  valueLabel?: string; // "保费" or "保额"
+}
+
+function StackedValueTooltip({
+  active,
+  payload,
+  label,
+  valueLabel = "金额",
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; fill: string }>;
+  label?: string;
+  valueLabel?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const total = payload.reduce((sum, p) => sum + (p.value || 0), 0);
+  return (
+    <div className={TOOLTIP_STYLES.container}>
+      <p className={TOOLTIP_STYLES.title}>{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} className={TOOLTIP_STYLES.value} style={{ color: p.fill }}>
+          {p.name}: {formatCurrency(p.value)}
+        </p>
+      ))}
+      <p className="text-sm font-medium mt-1">合计{valueLabel}: {formatCurrency(total)}</p>
+    </div>
+  );
+}
+
+export function StackedValueChart({ data, categories, title, icon, valueLabel = "金额" }: StackedValueChartProps) {
+  return (
+    <ChartCard title={title} icon={icon}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ left: 20, right: 20 }}
+        >
+          <XAxis type="number" tickFormatter={formatCompact} {...AXIS_CONFIG} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={60}
+            {...AXIS_CONFIG}
+          />
+          <Tooltip content={<StackedValueTooltip valueLabel={valueLabel} />} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          {categories.map((category, index) => (
+            <Bar
+              key={category}
+              dataKey={category}
+              stackId="a"
+              fill={getChartColor(index)}
+              {...(index === categories.length - 1 ? { radius: BAR_RADIUS.horizontal } : {})}
+            />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
+// Timeline bar chart for renewal/expiry dates
+export interface TimelineItem {
+  month: string;
+  count: number;
+  premium: number;
+}
+
+interface TimelineChartProps {
+  data: TimelineItem[];
+  title: string;
+  icon: LucideIcon;
+  emptyMessage?: string;
+}
+
+function TimelineTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: TimelineItem }>;
+}) {
+  if (!active || !payload?.length || !payload[0]) return null;
+  const data = payload[0].payload;
+  // Format month: "2026-03" -> "2026年3月"
+  const parts = data.month.split("-");
+  const year = parts[0] ?? "";
+  const month = parts[1] ?? "1";
+  const monthLabel = `${year}年${parseInt(month)}月`;
+  return (
+    <div className={TOOLTIP_STYLES.container}>
+      <p className={TOOLTIP_STYLES.title}>{monthLabel}</p>
+      <p className={TOOLTIP_STYLES.value}>保单: {data.count} 份</p>
+      <p className={TOOLTIP_STYLES.value}>保费: {formatCurrency(data.premium)}</p>
+    </div>
+  );
+}
+
+export function TimelineChart({ data, title, icon, emptyMessage = "暂无数据" }: TimelineChartProps) {
+  // Format month for display: "2026-03" -> "3月"
+  const formattedData = data.map((item) => ({
+    ...item,
+    displayMonth: `${parseInt(item.month.split("-")[1] ?? "1")}月`,
+  }));
+  
+  if (data.length === 0) {
+    return (
+      <ChartCard title={title} icon={icon}>
+        <div className="flex items-center justify-center h-full text-muted-foreground">
+          {emptyMessage}
+        </div>
+      </ChartCard>
+    );
+  }
+  
+  return (
+    <ChartCard title={title} icon={icon}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={formattedData} margin={{ left: 10, right: 10 }}>
+          <XAxis dataKey="displayMonth" {...AXIS_CONFIG} />
+          <YAxis tickFormatter={(v) => `${v}份`} {...AXIS_CONFIG} />
+          <Tooltip content={<TimelineTooltip />} />
+          <Bar
+            dataKey="count"
+            fill={CHART_COLORS.palette[3]}
+            radius={BAR_RADIUS.vertical}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
 export { CHART_COLORS };
