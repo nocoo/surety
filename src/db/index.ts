@@ -11,10 +11,25 @@ export type DatabaseType = "production" | "example" | "test";
 // Project root directory (where db files live), resolved from this source file
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
+/**
+ * Data directory for database files.
+ * When SURETY_DATA_DIR is set (e.g., Railway Volume mount "/data"),
+ * production db files are stored there instead of PROJECT_ROOT.
+ * Example and test databases always stay in PROJECT_ROOT.
+ */
+function getDataDir(): string {
+  return process.env.SURETY_DATA_DIR || PROJECT_ROOT;
+}
+
 /** Resolve a database filename to an absolute path under the project root. */
 function resolveDbPath(filename: string): string {
   // In-memory and already-absolute paths are passed through
   if (filename === ":memory:" || filename.startsWith("/")) return filename;
+  // Production db goes to SURETY_DATA_DIR (for cloud volume mounts)
+  // Example and test dbs always stay in PROJECT_ROOT
+  if (filename === DATABASE_FILES.production) {
+    return resolve(getDataDir(), filename);
+  }
   return resolve(PROJECT_ROOT, filename);
 }
 
