@@ -414,6 +414,18 @@ export function initSchema(): void {
   `);
 }
 
+/**
+ * Get the raw SQLite driver instance.
+ * Used by backup/restore to run raw SQL outside of Drizzle.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getRawSqlite(): any {
+  if (!sqlite) {
+    throw new Error("No database connection. Call getDb() or createTestDb() first.");
+  }
+  return sqlite;
+}
+
 export function closeDb(): void {
   if (sqlite) {
     sqlite.close();
