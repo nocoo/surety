@@ -275,7 +275,11 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - ChartCard/StatCard: bg-secondary rounded-card, no border
    - font-display on stat numbers, strokeWidth={1.5} on icons
    - Removed hardcoded hex tick fill in InsurerChart
-9. Data table pages styling (members/policies/assets/insurers)
+9. ~~Data table pages styling (members/policies/assets/insurers)~~ ✅ `f1cb33f`
+   - Base UI: Button/Input/Select rounded-md → rounded-widget
+   - Table wrappers: rounded-card bg-secondary, no border
+   - Policy detail dialog/grouped view: same treatment
+   - Category badges rounded-widget, removed hardcoded hex fills
 10. Remaining pages styling (coverage-lookup/renewal-calendar/settings)
 11. Settings page: remove multi-color theme picker
 12. Mobile adaptation
