@@ -3,7 +3,8 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Github } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 function Barcode() {
   const bars = [2, 1, 3, 1, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1];
@@ -48,6 +49,19 @@ function LoginContent() {
           ].join(" "),
         }}
       />
+      {/* Top-right controls */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-1">
+        <a
+          href="https://github.com/nocoo/surety"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub repository"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+        </a>
+        <ThemeToggle />
+      </div>
       <div className="flex flex-col items-center">
         {/* Badge card — bank card flipped vertical: 54/86 */}
         <div
