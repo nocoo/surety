@@ -140,7 +140,7 @@ export default function AssetsPage() {
           </Button>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-card bg-secondary">
           <Table>
             <TableHeader>
               <TableRow>
@@ -169,7 +169,7 @@ export default function AssetsPage() {
                     <TableRow key={asset.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-md ${typeIconBgColors[asset.type]}`}>
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${typeIconBgColors[asset.type]}`}>
                             <Icon className={`h-4 w-4 ${typeIconColors[asset.type]}`} />
                           </div>
                           <span className="font-medium">{asset.name}</span>

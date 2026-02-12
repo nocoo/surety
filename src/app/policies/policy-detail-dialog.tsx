@@ -201,7 +201,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {/* Basic Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">基本信息</h3>
-              <div className="rounded-lg border p-4 space-y-1">
+              <div className="rounded-card bg-secondary p-4 space-y-1">
                 <InfoRow
                   label="保单号"
                   value={
@@ -240,7 +240,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {/* Insured Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">人员信息</h3>
-              <div className="rounded-lg border p-4 space-y-1">
+              <div className="rounded-card bg-secondary p-4 space-y-1">
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-muted-foreground">被保人</span>
                   <div className="flex items-center gap-2">
@@ -286,7 +286,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {/* Coverage Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">保障信息</h3>
-              <div className="rounded-lg border p-4 space-y-1">
+              <div className="rounded-card bg-secondary p-4 space-y-1">
                 <InfoRow label="保额" value={formatCurrency(policy.sumAssured)} />
                 {policy.deathBenefit && (
                   <>
@@ -300,7 +300,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {/* Payment Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">缴费信息</h3>
-              <div className="rounded-lg border p-4 space-y-1">
+              <div className="rounded-card bg-secondary p-4 space-y-1">
                 <InfoRow label="保费" value={formatCurrency(policy.premium)} />
                 <Separator />
                 <InfoRow label="缴费方式" value={paymentFrequencyLabels[policy.paymentFrequency] ?? policy.paymentFrequency} />
@@ -340,7 +340,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {/* Date Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">时间信息</h3>
-              <div className="rounded-lg border p-4 space-y-1">
+              <div className="rounded-card bg-secondary p-4 space-y-1">
                 <InfoRow label="生效日期" value={policy.effectiveDate} mono />
                 {policy.expiryDate && (
                   <>
@@ -367,7 +367,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {beneficiaries.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium mb-3">受益人</h3>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-card bg-secondary p-4">
                   <div className="space-y-2">
                     {beneficiaries.map((b) => (
                       <div key={b.id} className="flex items-center justify-between py-1">
@@ -394,7 +394,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {payments.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium mb-3">缴费记录</h3>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-card bg-secondary p-4">
                   <div className="space-y-2">
                     {payments.slice(0, 5).map((p) => (
                       <div key={p.id} className="flex items-center justify-between py-1">
@@ -419,7 +419,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {policy.notes && (
               <div>
                 <h3 className="text-sm font-medium mb-3">备注</h3>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-card bg-secondary p-4">
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{policy.notes}</p>
                 </div>
               </div>
@@ -429,7 +429,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             {policy.policyFilePath && (
               <div>
                 <h3 className="text-sm font-medium mb-3">保单文件</h3>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-card bg-secondary p-4">
                   <a
                     href={policy.policyFilePath}
                     target="_blank"

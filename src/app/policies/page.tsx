@@ -440,7 +440,7 @@ export default function PoliciesPage() {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="rounded-md border">
+          <div className="rounded-card bg-secondary">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -532,7 +532,7 @@ export default function PoliciesPage() {
                       </TableCell>
                       <TableCell>
                         <span className={cn(
-                          "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border",
+                          "inline-flex items-center rounded-widget px-2 py-1 text-xs font-medium border",
                           badgeColor.bg,
                           badgeColor.text,
                           badgeColor.border
@@ -696,8 +696,8 @@ export default function PoliciesPage() {
               const totalSumAssured = groupPolicies.reduce((sum, p) => sum + p.sumAssured, 0);
               
               return (
-                <div key={groupKey} className="rounded-lg border">
-                  <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b">
+                <div key={groupKey} className="rounded-card bg-secondary">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                     <div className="flex items-center gap-3">
                       {viewMode === "byInsured" && (
                         <Avatar className="h-8 w-8">
@@ -735,7 +735,7 @@ export default function PoliciesPage() {
                             <Badge variant={status.variant}>{status.label}</Badge>
                             {viewMode === "byInsured" && (
                               <span className={cn(
-                                "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border",
+                          "inline-flex items-center rounded-widget px-2 py-1 text-xs font-medium border",
                                 badgeColor.bg,
                                 badgeColor.text,
                                 badgeColor.border

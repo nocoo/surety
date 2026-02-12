@@ -102,7 +102,7 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
         {!loading && payments.length > 0 && (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between p-3 rounded-card bg-secondary">
               <div className="text-sm">
                 <span className="text-muted-foreground">已缴费</span>
                 <span className="ml-2 font-medium">{payments.filter((p) => p.status === "Paid").length}</span>
@@ -122,7 +122,7 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
                 <div
                   key={payment.id}
                   className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border",
+                    "flex items-center justify-between p-3 rounded-card",
                     payment.status === "Paid" && "bg-success/5 border-success/20",
                     payment.status === "Pending" && "bg-muted/30",
                     payment.status === "Overdue" && "bg-destructive/5 border-destructive/20"

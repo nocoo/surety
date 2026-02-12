@@ -114,7 +114,7 @@ export function MonthlyChart({ data, policyNames }: MonthlyChartProps) {
             {...AXIS_CONFIG}
             interval={0}
             tickFormatter={getShortLabel}
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11 }}
           />
           <YAxis tickFormatter={formatCompact} {...AXIS_CONFIG} />
           <Tooltip content={<ChartTooltip />} />

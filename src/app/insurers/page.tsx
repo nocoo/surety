@@ -110,7 +110,7 @@ export default function InsurersPage() {
           </Button>
         </div>
 
-        <div className="rounded-md border">
+        <div className="rounded-card bg-secondary">
           <Table>
             <TableHeader>
               <TableRow>
