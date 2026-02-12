@@ -107,7 +107,7 @@ export function MonthlyChart({ data, policyNames }: MonthlyChartProps) {
 
   return (
     <ChartCard title="月度续保分布" icon={CalendarDays} height="h-[400px]">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
         <BarChart data={chartData} margin={{ left: 10, right: 10, bottom: 10 }}>
           <XAxis
             dataKey="name"
