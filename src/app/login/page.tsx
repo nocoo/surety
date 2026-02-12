@@ -95,14 +95,14 @@ function LoginContent() {
           {/* Badge content */}
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Avatar placeholder */}
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary ring-1 ring-border">
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary ring-1 ring-border p-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-light-80.png"
                 alt="Surety"
                 width={96}
                 height={96}
-                className="h-full w-full object-cover dark:hidden"
+                className="h-full w-full object-contain dark:hidden"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -110,7 +110,7 @@ function LoginContent() {
                 alt="Surety"
                 width={96}
                 height={96}
-                className="hidden h-full w-full object-cover dark:block"
+                className="hidden h-full w-full object-contain dark:block"
               />
             </div>
 
