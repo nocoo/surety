@@ -1,19 +1,15 @@
 "use client";
 
-import { createContext, useContext, useLayoutEffect, useSyncExternalStore } from "react";
+import { createContext, useContext } from "react";
 
+/**
+ * ThemeProvider — simplified after migration to fixed Vermilion primary.
+ * Dark/light mode is handled by ThemeToggle (class-based).
+ * This provider is kept as a thin wrapper for layout compatibility.
+ */
+
+// Kept for backward compatibility — will be removed when settings page is updated
 export type ThemeColor = "orange" | "blue" | "green" | "purple" | "rose";
-
-const VALID_COLORS: ThemeColor[] = ["orange", "blue", "green", "purple", "rose"];
-
-function getStoredTheme(): ThemeColor {
-  if (typeof window === "undefined") return "orange";
-  const stored = localStorage.getItem("theme-color");
-  if (stored && VALID_COLORS.includes(stored as ThemeColor)) {
-    return stored as ThemeColor;
-  }
-  return "orange";
-}
 
 interface ThemeContextValue {
   themeColor: ThemeColor;
@@ -23,29 +19,14 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Use useSyncExternalStore pattern for SSR-safe localStorage access
-  const themeColor = useSyncExternalStore(
-    (callback) => {
-      window.addEventListener("storage", callback);
-      return () => window.removeEventListener("storage", callback);
-    },
-    getStoredTheme,
-    () => "orange" as ThemeColor // Server snapshot
-  );
-
-  // Use useLayoutEffect to update DOM synchronously (no setState, just DOM manipulation)
-  useLayoutEffect(() => {
-    document.documentElement.setAttribute("data-theme", themeColor);
-  }, [themeColor]);
-
-  const setThemeColor = (color: ThemeColor) => {
-    localStorage.setItem("theme-color", color);
-    // Dispatch storage event to trigger useSyncExternalStore
-    window.dispatchEvent(new StorageEvent("storage", { key: "theme-color", newValue: color }));
+  // No-op: fixed vermilion primary, no data-theme attribute needed
+  const value: ThemeContextValue = {
+    themeColor: "orange",
+    setThemeColor: () => {}, // no-op
   };
 
   return (
-    <ThemeContext.Provider value={{ themeColor, setThemeColor }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

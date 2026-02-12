@@ -245,7 +245,9 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
 
 ## Execution Order (Atomic Commits)
 
-1. Delete 5 unused shadcn components + 3 unused dependencies
+1. ~~Delete 5 unused shadcn components + 3 unused dependencies~~ ✅ `b27dd0d`
+   - Deleted: calendar, form, popover, scroll-area (toggle kept — toggle-group depends on it)
+   - Removed: react-hook-form, @hookform/resolvers, react-day-picker
 2. Replace `globals.css` — HSL tokens + 3-tier luminance + Vermilion primary + 24-color palette
 3. Replace font system (Inter + DM Sans)
 4. Import `palette.ts` + `withAlpha` utility
