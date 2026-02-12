@@ -296,4 +296,7 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
     - Mobile overlay: bg-black/50 backdrop-blur-xs, hamburger menu in header
     - Body scroll lock when mobile sidebar is open
     - Auto-close sidebar on route change
-13. Full test verification (UT + Lint + E2E)
+13. ~~Full test verification (UT + Lint + E2E)~~ ✅ `517acf6`
+    - UT: 487/487 pass, 1487 expect() calls, 31 files
+    - Lint: zero errors, zero warnings
+    - Build: TypeScript + Next.js production build success
