@@ -14,6 +14,7 @@ import {
   TOOLTIP_STYLES,
   formatCurrency,
   formatPercent,
+  RESPONSIVE_CONTAINER_PROPS,
 } from "@/lib/chart-config";
 import { ChartCard } from "./chart-card";
 
@@ -52,7 +53,7 @@ function ChartTooltip({
 export function DonutChart({ data, title, icon }: DonutChartProps) {
   return (
     <ChartCard title={title} icon={icon}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <PieChart>
           <Pie
             data={data}

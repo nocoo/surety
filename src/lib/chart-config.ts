@@ -85,6 +85,22 @@ export function formatPercent(value: number): string {
 }
 
 /**
+ * Shared ResponsiveContainer props to avoid repeated configuration.
+ * - minWidth/minHeight=0: prevent flex/grid sizing issues
+ * - initialDimension={1,1}: suppress recharts -1 initial size warning
+ * - debounce=300: throttle resize callbacks to avoid jank during
+ *   sidebar collapse/expand animation (also 300ms)
+ */
+export const RESPONSIVE_CONTAINER_PROPS = {
+  width: "100%" as const,
+  height: "100%" as const,
+  minWidth: 0,
+  minHeight: 0,
+  initialDimension: { width: 1, height: 1 },
+  debounce: 300,
+} as const;
+
+/**
  * Pie chart label line configuration
  */
 export const PIE_LABEL_LINE = {

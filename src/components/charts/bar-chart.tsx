@@ -18,6 +18,7 @@ import {
   formatCurrency,
   formatCompact,
   getChartColor,
+  RESPONSIVE_CONTAINER_PROPS,
 } from "@/lib/chart-config";
 import { ChartCard } from "./chart-card";
 
@@ -77,7 +78,7 @@ export function HorizontalBarChart({
   
   return (
     <ChartCard title={title} icon={icon}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart
           data={data}
           layout="vertical"
@@ -140,7 +141,7 @@ function YearTooltip({
 export function YearTrendChart({ data, title, icon }: YearTrendChartProps) {
   return (
     <ChartCard title={title} icon={icon} height="h-[320px]">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart data={data} margin={{ left: 10, right: 10 }}>
           <XAxis dataKey="year" {...AXIS_CONFIG} />
           <YAxis
@@ -206,7 +207,7 @@ function InsurerTooltip({
 export function InsurerChart({ data, title, icon }: InsurerChartProps) {
   return (
     <ChartCard title={title} icon={icon} height="h-[320px]">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart
           data={data}
           layout="vertical"
@@ -271,7 +272,7 @@ function MemberCategoryTooltip({
 export function MemberCategoryChart({ data, categories, title, icon }: MemberCategoryChartProps) {
   return (
     <ChartCard title={title} icon={icon}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart
           data={data}
           layout="vertical"
@@ -339,7 +340,7 @@ function StackedValueTooltip({
 export function StackedValueChart({ data, categories, title, icon, valueLabel = "金额" }: StackedValueChartProps) {
   return (
     <ChartCard title={title} icon={icon}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart
           data={data}
           layout="vertical"
@@ -430,7 +431,7 @@ export function StackedTimelineChart({
   
   return (
     <ChartCard title={title} icon={icon}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 1, height: 1 }}>
+      <ResponsiveContainer {...RESPONSIVE_CONTAINER_PROPS}>
         <BarChart data={data} margin={{ left: 10, right: 10 }}>
           <XAxis dataKey="label" {...AXIS_CONFIG} />
           <YAxis tickFormatter={(v) => `${v}份`} {...AXIS_CONFIG} />
