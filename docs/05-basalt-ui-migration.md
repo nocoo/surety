@@ -271,7 +271,10 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - Badge card (54:86 ratio), vermilion header, barcode, punch hole
    - Radial glow background, Google sign-in, secure auth footer
    - Preserved NextAuth signIn/error/Suspense; Card component now has 0 imports
-8. Dashboard page styling
+8. ~~Dashboard page styling~~ ✅ `32e8be5`
+   - ChartCard/StatCard: bg-secondary rounded-card, no border
+   - font-display on stat numbers, strokeWidth={1.5} on icons
+   - Removed hardcoded hex tick fill in InsurerChart
 9. Data table pages styling (members/policies/assets/insurers)
 10. Remaining pages styling (coverage-lookup/renewal-calendar/settings)
 11. Settings page: remove multi-color theme picker
