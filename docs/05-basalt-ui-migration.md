@@ -259,7 +259,10 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - Created palette.ts with 24 CSS-variable-based chart colors
    - Updated chart-config.ts to use palette (removed hardcoded hex colors)
    - Updated chart-config tests for new palette format
-5. Rewrite AppShell layout (floating island container)
+5. ~~Rewrite AppShell layout (floating island container)~~ ✅ `fa497ff`
+   - Removed header border-b, kept h-14 with shrink-0
+   - Floating island: rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5
+   - Outer wrapper: min-h-screen w-full (replaces h-screen overflow-hidden)
 6. Rewrite Sidebar visual
 7. Replace Login page with BadgeLogin
 8. Dashboard page styling
