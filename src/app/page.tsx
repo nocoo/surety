@@ -42,13 +42,13 @@ const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
 function StatCard({ label, value, iconName }: StatCardData) {
   const Icon = ICON_MAP[iconName];
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
+    <div className="rounded-card bg-secondary p-6">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className="h-4 w-4 text-primary" />
+        <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
       </div>
       <div className="mt-2">
-        <span className="text-2xl font-bold">{value}</span>
+        <span className="text-2xl font-bold font-display">{value}</span>
       </div>
     </div>
   );

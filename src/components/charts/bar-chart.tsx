@@ -217,7 +217,7 @@ export function InsurerChart({ data, title, icon }: InsurerChartProps) {
             type="category"
             dataKey="name"
             width={80}
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 11 }}
           />
           <Tooltip content={<InsurerTooltip />} />
           <Bar
