@@ -16,13 +16,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   const value = settingsRepo.get(key);
 
-  if (value === undefined) {
-    return NextResponse.json({ error: "Setting not found" }, { status: 404 });
-  }
-
   return NextResponse.json({
     key,
-    value,
+    value: value ?? null,
   });
 }
 

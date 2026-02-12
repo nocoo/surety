@@ -104,10 +104,11 @@ describe("Settings API E2E", () => {
       expect(status).toBe(200);
       expect(data.success).toBe(true);
 
-      const { status: getStatus } = await apiRequest<Setting>(
+      const { status: getStatus, data: getData } = await apiRequest<{ key: string; value: string | null }>(
         `/api/settings/${testKey}`
       );
-      expect(getStatus).toBe(404);
+      expect(getStatus).toBe(200);
+      expect(getData.value).toBeNull();
     });
   });
 
@@ -138,11 +139,13 @@ describe("Settings API E2E", () => {
       expect(data.error).toBeDefined();
     });
 
-    test("GET /api/settings/:key with non-existent key returns 404", async () => {
-      const { status } = await apiRequest<{ error: string }>(
+    test("GET /api/settings/:key with non-existent key returns 200 with null value", async () => {
+      const { status, data } = await apiRequest<{ key: string; value: string | null }>(
         "/api/settings/non_existent_key_12345"
       );
-      expect(status).toBe(404);
+      expect(status).toBe(200);
+      expect(data.key).toBe("non_existent_key_12345");
+      expect(data.value).toBeNull();
     });
 
     test("PUT /api/settings/:key with missing value returns 400", async () => {
