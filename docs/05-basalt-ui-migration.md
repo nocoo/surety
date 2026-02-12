@@ -263,7 +263,10 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - Removed header border-b, kept h-14 with shrink-0
    - Floating island: rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5
    - Outer wrapper: min-h-screen w-full (replaces h-screen overflow-hidden)
-6. Rewrite Sidebar visual
+6. ~~Rewrite Sidebar visual~~ ✅ `a7c77be`
+   - bg-background no border, w-[260px]/w-[68px], rounded-lg nav items
+   - strokeWidth={1.5} on all icons, bg-accent active state
+   - Collapse toggle moved to header, removed Separator dividers
 7. Replace Login page with BadgeLogin
 8. Dashboard page styling
 9. Data table pages styling (members/policies/assets/insurers)
