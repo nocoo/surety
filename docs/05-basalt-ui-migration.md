@@ -286,6 +286,9 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
     - Renewal monthly-details: 2× card border → rounded-card bg-secondary
     - Coverage-lookup policy-card: border border-border → rounded-card bg-secondary, inner rounded-widget
     - Coverage-lookup member/asset-selector: rounded-xl border bg-card → rounded-card bg-secondary
-11. Settings page: remove multi-color theme picker
+11. ~~Settings page: remove multi-color theme picker~~ ✅ `c6fe729`
+    - Removed ThemeColorPicker component + 5-color themeColors array + "外观设置" card
+    - Simplified ThemeProvider to passthrough (no context, no useTheme export)
+    - Removed unused imports: Palette, Check, cn, useTheme, ThemeColor
 12. Mobile adaptation
 13. Full test verification (UT + Lint + E2E)
