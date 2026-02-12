@@ -13,7 +13,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border border-border rounded-lg bg-card overflow-hidden">
+    <div className="rounded-card bg-secondary overflow-hidden">
       {/* Header - always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -52,7 +52,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
         <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
           {/* Insurer phone - prominent when available */}
           {policy.insurerPhone && (
-            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-widget">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">客服电话</span>
@@ -68,7 +68,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
           )}
 
           {!policy.insurerPhone && (
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-muted-foreground text-sm">
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-widget text-muted-foreground text-sm">
               <Phone className="h-4 w-4" />
               <span>暂无客服电话</span>
             </div>

@@ -216,10 +216,10 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-lg border p-6">
+          <div className="rounded-card bg-secondary p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
+                <Shield className="h-5 w-5 text-primary" strokeWidth={1.5} />
               </div>
               <div>
                 <h2 className="font-semibold">家庭财务</h2>
@@ -261,10 +261,10 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border p-6">
+          <div className="rounded-card bg-secondary p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-                <Bell className="h-5 w-5 text-orange-500" />
+                <Bell className="h-5 w-5 text-orange-500" strokeWidth={1.5} />
               </div>
               <div>
                 <h2 className="font-semibold">提醒设置</h2>
@@ -296,10 +296,10 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border p-6">
+          <div className="rounded-card bg-secondary p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                <Palette className="h-5 w-5 text-purple-500" />
+                <Palette className="h-5 w-5 text-purple-500" strokeWidth={1.5} />
               </div>
               <div>
                 <h2 className="font-semibold">外观设置</h2>
@@ -310,10 +310,10 @@ export default function SettingsPage() {
             <ThemeColorPicker />
           </div>
 
-          <div className="rounded-lg border p-6">
+          <div className="rounded-card bg-secondary p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <Database className="h-5 w-5 text-blue-500" />
+                <Database className="h-5 w-5 text-blue-500" strokeWidth={1.5} />
               </div>
               <div>
                 <h2 className="font-semibold">数据管理</h2>
@@ -361,14 +361,14 @@ export default function SettingsPage() {
                 </Button>
 
                 {importError && (
-                  <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
+                  <div className="flex items-start gap-2 rounded-widget border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
                     <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                     <p className="text-sm text-red-700 dark:text-red-300">{importError}</p>
                   </div>
                 )}
 
                 {importResult && (
-                  <div className="rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950">
+                  <div className="rounded-widget border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950">
                     <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">
                       导入成功
                     </p>
@@ -395,7 +395,7 @@ export default function SettingsPage() {
                 </AlertDialogHeader>
 
                 {importFile && (
-                  <div className="rounded-md border bg-muted/50 p-3 text-sm">
+                  <div className="rounded-widget border bg-muted/50 p-3 text-sm">
                     <p className="font-medium mb-2">文件: {importFile.name}</p>
                     <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-muted-foreground">
                       {Object.entries(importFile.data).map(([key, rows]) => (
@@ -422,11 +422,11 @@ export default function SettingsPage() {
             </AlertDialog>
           </div>
 
-          <div className="rounded-lg border p-6 lg:col-span-2">
+          <div className="rounded-card bg-secondary p-6 lg:col-span-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <Terminal className="h-5 w-5 text-emerald-500" />
+                  <Terminal className="h-5 w-5 text-emerald-500" strokeWidth={1.5} />
                 </div>
                 <div>
                   <h2 className="font-semibold">MCP 访问</h2>
@@ -445,12 +445,12 @@ export default function SettingsPage() {
             {mcpEnabled && (
               <>
                 <Separator className="my-4" />
-                <div className="rounded-md bg-muted/50 p-4">
+                <div className="rounded-widget bg-muted/50 p-4">
                   <p className="text-sm font-medium mb-2">配置方式</p>
                   <p className="text-xs text-muted-foreground mb-2">
                     在 AI 助手的 MCP 配置中添加以下内容：
                   </p>
-                  <pre className="text-xs bg-background border rounded-md p-3 overflow-x-auto">
+                  <pre className="text-xs bg-background rounded-widget p-3 overflow-x-auto">
 {`{
   "mcpServers": {
     "surety": {
@@ -469,7 +469,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+        <div className="rounded-card bg-blue-50 p-4 dark:bg-blue-950">
           <div className="flex gap-3">
             <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
             <div className="text-sm text-blue-800 dark:text-blue-200">

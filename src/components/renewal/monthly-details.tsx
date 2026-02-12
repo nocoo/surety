@@ -125,7 +125,7 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 export function MonthlyDetails({ data }: MonthlyDetailsProps) {
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-6">
+      <div className="rounded-card bg-secondary p-6">
         <p className="text-muted-foreground text-sm text-center">
           未来一年内没有需要续保的保单
         </p>
@@ -134,7 +134,7 @@ export function MonthlyDetails({ data }: MonthlyDetailsProps) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden">
+    <div className="rounded-card bg-secondary overflow-hidden">
       {data.map((month) => (
         <MonthSection key={month.month} month={month} />
       ))}

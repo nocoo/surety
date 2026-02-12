@@ -280,7 +280,12 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - Table wrappers: rounded-card bg-secondary, no border
    - Policy detail dialog/grouped view: same treatment
    - Category badges rounded-widget, removed hardcoded hex fills
-10. Remaining pages styling (coverage-lookup/renewal-calendar/settings)
+10. ~~Remaining pages styling (coverage-lookup/renewal-calendar/settings)~~ ✅ `PENDING`
+    - Settings: 5× rounded-lg border → rounded-card bg-secondary, 3× rounded-md → rounded-widget
+    - Renewal summary-cards: rounded-lg border bg-card → rounded-card bg-secondary, font-display on numbers
+    - Renewal monthly-details: 2× card border → rounded-card bg-secondary
+    - Coverage-lookup policy-card: border border-border → rounded-card bg-secondary, inner rounded-widget
+    - Coverage-lookup member/asset-selector: rounded-xl border bg-card → rounded-card bg-secondary
 11. Settings page: remove multi-color theme picker
 12. Mobile adaptation
 13. Full test verification (UT + Lint + E2E)

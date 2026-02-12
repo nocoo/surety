@@ -86,10 +86,10 @@ export function AssetSelector({
               key={asset.id}
               onClick={() => onSelectAsset(asset.id)}
               className={cn(
-                "flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl border transition-all min-w-[140px]",
+                "flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-card transition-all min-w-[140px]",
                 isSelected
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                  : "border-border bg-card hover:border-primary/50 hover:bg-muted/50"
+                  ? "bg-primary/5 ring-2 ring-primary/20"
+                  : "bg-secondary hover:bg-muted/50"
               )}
             >
               <div className={cn(
