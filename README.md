@@ -92,7 +92,8 @@ surety/
 │   ├── 01-design-overview.md     # 整体设计研究报告
 │   ├── 02-database-design.md     # 数据库设计
 │   ├── 03-google-oauth-setup.md  # Google OAuth 配置
-│   └── 04-mcp-setup.md          # MCP Server 配置
+│   ├── 04-mcp-setup.md          # MCP Server 配置
+│   └── 05-basalt-ui-migration.md # Basalt UI 迁移方案
 ├── 📂 drizzle/                   # 数据库迁移文件
 ├── 📂 public/                    # 静态资源
 ├── 📂 scripts/                   # 工具脚本
