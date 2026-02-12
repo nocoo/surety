@@ -290,5 +290,10 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
     - Removed ThemeColorPicker component + 5-color themeColors array + "外观设置" card
     - Simplified ThemeProvider to passthrough (no context, no useTheme export)
     - Removed unused imports: Palette, Check, cn, useTheme, ThemeColor
-12. Mobile adaptation
+12. ~~Mobile adaptation~~ ✅ `3ff0e5c`
+    - Added useIsMobile hook (768px breakpoint) at src/hooks/use-mobile.tsx
+    - AppShell: desktop shows sidebar normally, mobile shows overlay drawer
+    - Mobile overlay: bg-black/50 backdrop-blur-xs, hamburger menu in header
+    - Body scroll lock when mobile sidebar is open
+    - Auto-close sidebar on route change
 13. Full test verification (UT + Lint + E2E)
