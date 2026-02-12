@@ -14,22 +14,26 @@ interface AppShellProps {
 export function AppShell({ children, breadcrumbs = [] }: AppShellProps) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex min-h-screen w-full bg-background">
         <Sidebar />
 
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-14 items-center justify-between border-b border-border bg-background px-6">
+        <main className="flex flex-1 flex-col min-h-screen min-w-0">
+          {/* Header — no border, matching basalt */}
+          <header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
             <Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <DbSelector />
               <ThemeToggle />
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-background p-6">
-            {children}
-          </main>
-        </div>
+          {/* Floating island content area */}
+          <div className="flex-1 px-2 pb-2 md:px-3 md:pb-3">
+            <div className="h-full rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5 overflow-y-auto">
+              {children}
+            </div>
+          </div>
+        </main>
       </div>
     </SidebarProvider>
   );
