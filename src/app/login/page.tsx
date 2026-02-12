@@ -3,7 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { User } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 function Barcode() {
   const bars = [2, 1, 3, 1, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1];
@@ -80,7 +80,7 @@ function LoginContent() {
                   alt="Surety"
                   width={16}
                   height={16}
-                  className="shrink-0 brightness-0 invert"
+                  className="shrink-0"
                 />
                 <span className="text-sm font-semibold text-primary-foreground">surety</span>
               </div>
@@ -103,11 +103,11 @@ function LoginContent() {
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Avatar placeholder */}
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
-              <User className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
+              <ShieldCheck className="h-10 w-10 text-primary" strokeWidth={1.5} />
             </div>
 
-            <p className="mt-5 text-lg font-semibold text-foreground">欢迎</p>
-            <p className="mt-1 text-xs text-muted-foreground">登录以获取您的家庭保障徽章</p>
+            <p className="mt-5 text-lg font-semibold text-foreground">家庭保障管家</p>
+            <p className="mt-1 text-xs text-muted-foreground">登录后管理您的家庭保单与风险保障</p>
 
             {/* Error message */}
             {error && (
