@@ -297,7 +297,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -305,5 +305,5 @@
  * Custom utilities
  */
 @utility font-display {
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
 }
