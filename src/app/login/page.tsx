@@ -74,14 +74,7 @@ function LoginContent() {
                 }}
               />
               <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo-dark-24.png"
-                  alt="Surety"
-                  width={16}
-                  height={16}
-                  className="shrink-0"
-                />
+                <ShieldCheck className="h-4 w-4 text-primary-foreground" strokeWidth={1.5} />
                 <span className="text-sm font-semibold text-primary-foreground">surety</span>
               </div>
               <span className="text-[10px] font-medium uppercase tracking-widest text-primary-foreground/60">
@@ -102,8 +95,23 @@ function LoginContent() {
           {/* Badge content */}
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Avatar placeholder */}
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-secondary ring-1 ring-border">
-              <ShieldCheck className="h-10 w-10 text-primary" strokeWidth={1.5} />
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary ring-1 ring-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-light-80.png"
+                alt="Surety"
+                width={96}
+                height={96}
+                className="h-full w-full object-cover dark:hidden"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-dark-80.png"
+                alt="Surety"
+                width={96}
+                height={96}
+                className="hidden h-full w-full object-cover dark:block"
+              />
             </div>
 
             <p className="mt-5 text-lg font-semibold text-foreground">家庭保障管家</p>
