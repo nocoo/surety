@@ -147,7 +147,7 @@ export default function Home() {
             data={categoryCountData}
             title="险种构成"
             icon={Layers}
-            color={CHART_COLORS.palette[2]}
+            color={CHART_COLORS.palette[2]!}
             formatValue={(v) => `${v}份`}
           />
           <MemberCategoryChart

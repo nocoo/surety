@@ -252,7 +252,9 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
    - oklch → HSL, 3-tier luminance (L0/L1/L2), Vermilion primary (15 85% 52%)
    - 24 sequential chart colors, semantic badge colors preserved
    - Removed 5-color data-theme variants, simplified ThemeProvider to no-op
-3. Replace font system (Inter + DM Sans)
+3. ~~Replace font system (Inter + DM Sans)~~ ✅ `4f419c1`
+   - Geist Sans/Mono → Inter (body) + DM Sans (display, via `font-display` utility)
+   - Loaded via next/font/google with CSS variable fallback
 4. Import `palette.ts` + `withAlpha` utility
 5. Rewrite AppShell layout (floating island container)
 6. Rewrite Sidebar visual

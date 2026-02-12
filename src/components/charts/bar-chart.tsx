@@ -163,13 +163,13 @@ export function YearTrendChart({ data, title, icon }: YearTrendChartProps) {
           <Bar
             yAxisId="left"
             dataKey="count"
-            fill={CHART_COLORS.palette[3]}
+            fill={CHART_COLORS.palette[3]!}
             radius={BAR_RADIUS.vertical}
           />
           <Bar
             yAxisId="right"
             dataKey="premium"
-            fill={CHART_COLORS.palette[4]}
+            fill={CHART_COLORS.palette[4]!}
             radius={BAR_RADIUS.vertical}
           />
         </BarChart>
@@ -222,7 +222,7 @@ export function InsurerChart({ data, title, icon }: InsurerChartProps) {
           <Tooltip content={<InsurerTooltip />} />
           <Bar
             dataKey="count"
-            fill={CHART_COLORS.palette[2]}
+            fill={CHART_COLORS.palette[2]!}
             radius={BAR_RADIUS.horizontal}
           />
         </BarChart>

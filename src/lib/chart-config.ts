@@ -3,41 +3,38 @@
  * Provides unified color palette, axis settings, and formatters for recharts
  */
 
-// Unified color palette - using direct color values since recharts doesn't support CSS variables
+import { CHART_COLORS as PALETTE_COLORS, chartAxis, chartMuted } from "./palette";
+
+// Re-export the CSS-variable-based palette as the primary chart color source
+export { PALETTE_COLORS };
+
+/**
+ * Legacy CHART_COLORS — maps old hardcoded API to new palette.
+ * Semantic aliases use CSS variables so they respond to theme changes.
+ */
 export const CHART_COLORS = {
-  // Primary palette for categorical data
-  palette: [
-    "#3b82f6", // blue-500
-    "#10b981", // emerald-500
-    "#f59e0b", // amber-500
-    "#8b5cf6", // violet-500
-    "#ef4444", // red-500
-    "#06b6d4", // cyan-500
-    "#f97316", // orange-500
-    "#84cc16", // lime-500
-  ],
-  // Semantic colors
-  primary: "#3b82f6",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  muted: "#94a3b8",
+  palette: PALETTE_COLORS,
+  primary: PALETTE_COLORS[0]!,   // vermilion
+  success: PALETTE_COLORS[4]!,   // green
+  warning: PALETTE_COLORS[6]!,   // amber
+  danger: PALETTE_COLORS[9]!,    // red
+  muted: chartMuted,
 } as const;
 
 /**
  * Get color from palette by index (wraps around)
  */
 export function getChartColor(index: number): string {
-  return CHART_COLORS.palette[index % CHART_COLORS.palette.length] || CHART_COLORS.primary;
+  return PALETTE_COLORS[index % PALETTE_COLORS.length]!;
 }
 
 /**
- * Common axis configuration
+ * Common axis configuration — uses CSS variable tokens
  */
 export const AXIS_CONFIG = {
-  tick: { fontSize: 12, fill: "#64748b" },
-  axisLine: { stroke: "#e2e8f0" },
-  tickLine: { stroke: "#e2e8f0" },
+  tick: { fontSize: 12, fill: chartAxis },
+  axisLine: false as const,
+  tickLine: false as const,
 } as const;
 
 /**
@@ -91,7 +88,7 @@ export function formatPercent(value: number): string {
  * Pie chart label line configuration
  */
 export const PIE_LABEL_LINE = {
-  stroke: "#94a3b8",
+  stroke: chartMuted,
   strokeWidth: 1,
 } as const;
 

@@ -14,14 +14,14 @@ import {
 
 describe("chart-config", () => {
   describe("CHART_COLORS", () => {
-    test("palette has 8 colors", () => {
-      expect(CHART_COLORS.palette).toHaveLength(8);
+    test("palette has 24 colors", () => {
+      expect(CHART_COLORS.palette).toHaveLength(24);
     });
 
-    test("all palette colors are valid hex colors", () => {
-      const hexPattern = /^#[0-9a-fA-F]{6}$/;
+    test("all palette colors are CSS variable references", () => {
+      const cssVarPattern = /^hsl\(var\(--chart-\d+\)\)$/;
       for (const color of CHART_COLORS.palette) {
-        expect(color).toMatch(hexPattern);
+        expect(color).toMatch(cssVarPattern);
       }
     });
 
@@ -36,20 +36,14 @@ describe("chart-config", () => {
 
   describe("getChartColor", () => {
     test("returns color at index", () => {
-      expect(getChartColor(0)).toBe(CHART_COLORS.palette[0]);
-      expect(getChartColor(1)).toBe(CHART_COLORS.palette[1]);
+      expect(getChartColor(0)).toBe(CHART_COLORS.palette[0]!);
+      expect(getChartColor(1)).toBe(CHART_COLORS.palette[1]!);
     });
 
     test("wraps around for index >= palette length", () => {
-      expect(getChartColor(8)).toBe(CHART_COLORS.palette[0]);
-      expect(getChartColor(9)).toBe(CHART_COLORS.palette[1]);
-      expect(getChartColor(16)).toBe(CHART_COLORS.palette[0]);
-    });
-
-    test("handles negative index gracefully", () => {
-      // JavaScript modulo can return negative, but our implementation should handle it
-      const result = getChartColor(-1);
-      expect(typeof result).toBe("string");
+      expect(getChartColor(24)).toBe(CHART_COLORS.palette[0]!);
+      expect(getChartColor(25)).toBe(CHART_COLORS.palette[1]!);
+      expect(getChartColor(48)).toBe(CHART_COLORS.palette[0]!);
     });
   });
 
@@ -114,8 +108,8 @@ describe("chart-config", () => {
     test("AXIS_CONFIG has required properties", () => {
       expect(AXIS_CONFIG.tick).toBeDefined();
       expect(AXIS_CONFIG.tick.fontSize).toBe(12);
-      expect(AXIS_CONFIG.axisLine).toBeDefined();
-      expect(AXIS_CONFIG.tickLine).toBeDefined();
+      expect(AXIS_CONFIG.axisLine).toBe(false);
+      expect(AXIS_CONFIG.tickLine).toBe(false);
     });
 
     test("BAR_RADIUS has horizontal and vertical configs", () => {
