@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import LoadingScreen from "@/components/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -331,7 +330,13 @@ export default function PoliciesPage() {
   };
 
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <AppShell breadcrumbs={[{ label: "保单" }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">加载中...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import LoadingScreen from "@/components/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -118,7 +117,13 @@ export default function MembersPage() {
   };
 
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">加载中...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (

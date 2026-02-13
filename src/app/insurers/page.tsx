@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Phone, Globe, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import LoadingScreen from "@/components/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -86,7 +85,13 @@ export default function InsurersPage() {
   };
 
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <AppShell breadcrumbs={[{ label: "保险公司" }]}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">加载中...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   return (
