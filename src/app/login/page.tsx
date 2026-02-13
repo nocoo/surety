@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ShieldCheck, Github } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import LoadingScreen from "@/components/loading-screen";
 
 function Barcode() {
   const bars = [2, 1, 3, 1, 2, 1, 1, 3, 1, 2, 1, 3, 2, 1, 1, 2, 3, 1, 2, 1];
@@ -24,6 +25,8 @@ function Barcode() {
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const year = new Date().getFullYear();
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/" });
@@ -98,7 +101,7 @@ function LoginContent() {
             {/* Barcode row */}
             <div className="mt-3 flex items-center justify-between">
               <span className="text-[9px] font-mono text-primary-foreground/40 tracking-wider">
-                ID 2026-0213
+                ID {year}-{today.slice(4)}
               </span>
               <div className="h-6">
                 <Barcode />
@@ -109,7 +112,7 @@ function LoginContent() {
           {/* Badge content */}
           <div className="flex flex-1 flex-col items-center px-6 pt-6 pb-14">
             {/* Avatar placeholder */}
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary ring-1 ring-border p-2.5">
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border p-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/logo-light-80.png"
@@ -193,11 +196,7 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">加载中...</div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen />}>
       <LoginContent />
     </Suspense>
   );
