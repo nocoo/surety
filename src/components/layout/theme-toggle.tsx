@@ -4,6 +4,8 @@ import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 
+const THEME_CHANGE_EVENT = "theme-change";
+
 let themeInitialized = false;
 
 function initializeTheme() {
@@ -18,9 +20,15 @@ function initializeTheme() {
 
 function subscribeToTheme(callback: () => void) {
   initializeTheme();
+  // Re-render on OS-level color scheme change
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   mediaQuery.addEventListener("change", callback);
-  return () => mediaQuery.removeEventListener("change", callback);
+  // Re-render on manual toggle
+  window.addEventListener(THEME_CHANGE_EVENT, callback);
+  return () => {
+    mediaQuery.removeEventListener("change", callback);
+    window.removeEventListener(THEME_CHANGE_EVENT, callback);
+  };
 }
 
 function getSnapshot() {
@@ -49,6 +57,8 @@ export function ThemeToggle() {
       root.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   };
 
   return (
