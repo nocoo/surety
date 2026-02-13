@@ -23,6 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Logo } from "@/components/logo";
 import { useSidebar } from "./sidebar-context";
 
 const navItems = [
@@ -59,22 +60,7 @@ export function Sidebar() {
           <div className="flex h-screen w-[68px] flex-col items-center">
             {/* Logo */}
             <div className="flex h-14 items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-light-24.png"
-                alt="Surety"
-                width={24}
-                height={24}
-                className="block shrink-0 dark:hidden"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-dark-24.png"
-                alt="Surety"
-                width={24}
-                height={24}
-                className="hidden shrink-0 dark:block"
-              />
+              <Logo size="sm" />
             </div>
 
             {/* Expand toggle */}
@@ -153,22 +139,7 @@ export function Sidebar() {
             <div className="px-3 h-14 flex items-center">
               <div className="flex w-full items-center justify-between px-3">
                 <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo-light-24.png"
-                    alt="Surety"
-                    width={24}
-                    height={24}
-                    className="block shrink-0 dark:hidden"
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo-dark-24.png"
-                    alt="Surety"
-                    width={24}
-                    height={24}
-                    className="hidden shrink-0 dark:block"
-                  />
+                  <Logo size="sm" />
                   <span className="text-lg font-bold tracking-tighter">surety</span>
                 </div>
                 <button
