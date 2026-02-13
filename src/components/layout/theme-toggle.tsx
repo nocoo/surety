@@ -6,20 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const THEME_CHANGE_EVENT = "theme-change";
 
-let themeInitialized = false;
-
-function initializeTheme() {
-  if (themeInitialized || typeof window === "undefined") return;
-  themeInitialized = true;
-  const stored = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  if (stored === "dark" || (!stored && prefersDark)) {
-    document.documentElement.classList.add("dark");
-  }
-}
-
 function subscribeToTheme(callback: () => void) {
-  initializeTheme();
   // Re-render on OS-level color scheme change
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   mediaQuery.addEventListener("change", callback);
