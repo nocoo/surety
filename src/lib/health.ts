@@ -49,14 +49,14 @@ export function checkHealth(deps: HealthDeps): HealthResult {
     const row = sqlite.prepare("SELECT 1 AS alive").get();
     if (!row) {
       return {
-        ...base,
         status: "error",
+        ...base,
         database: { connected: false, error: "empty result from probe query" },
       };
     }
     return {
-      ...base,
       status: "ok",
+      ...base,
       database: { connected: true },
     };
   } catch (err: unknown) {
@@ -65,8 +65,8 @@ export function checkHealth(deps: HealthDeps): HealthResult {
     // Sanitise: never leak "ok" into an error response
     const safeMessage = message.replace(/\bok\b/gi, "***");
     return {
-      ...base,
       status: "error",
+      ...base,
       database: { connected: false, error: safeMessage },
     };
   }
