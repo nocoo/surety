@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Users, Building2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import LoadingScreen from "@/components/loading-screen";
 import { Button } from "@/components/ui/button";
 import { MemberSelector, AssetSelector, CategorySection } from "@/components/coverage-lookup";
 import {
@@ -64,13 +65,7 @@ export default function CoverageLookupPage() {
   };
 
   if (loading && !data) {
-    return (
-      <AppShell breadcrumbs={breadcrumbs}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
-      </AppShell>
-    );
+    return <LoadingScreen />;
   }
 
   if (error || !data) {

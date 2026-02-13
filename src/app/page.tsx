@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import LoadingScreen from "@/components/loading-screen";
 import {
   DonutChart,
   HorizontalBarChart,
@@ -68,13 +69,7 @@ export default function Home() {
   }, []);
 
   if (loading || !data) {
-    return (
-      <AppShell>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
-      </AppShell>
-    );
+    return <LoadingScreen />;
   }
 
   const statCards = createStatCards(data.stats);
