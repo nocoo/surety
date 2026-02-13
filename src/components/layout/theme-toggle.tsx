@@ -63,7 +63,7 @@ export function ThemeToggle() {
 
   return (
     <Button variant="ghost" size="icon" onClick={toggle}>
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
       <span className="sr-only">切换主题</span>
     </Button>
   );
