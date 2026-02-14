@@ -6,7 +6,8 @@ import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn, getAvatarColor, getBadgeColor } from "@/lib/utils";
+import { cn, getAvatarColor } from "@/lib/utils";
+import { getCategoryConfig } from "@/lib/category-config";
 import {
   Select,
   SelectContent,
@@ -524,21 +525,16 @@ export default function PoliciesPage() {
                 {filteredPolicies.map((policy) => {
                   const status = statusConfig[policy.status];
                   const categoryLabel = categoryLabels[policy.category] ?? policy.category;
-                  const badgeColor = getBadgeColor(categoryLabel);
+                  const categoryConfig = getCategoryConfig(policy.category);
                   return (
                     <TableRow key={policy.id} className="hover:bg-muted/50">
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
                       <TableCell>
-                        <span className={cn(
-                          "inline-flex items-center rounded-widget px-2 py-1 text-xs font-medium border",
-                          badgeColor.bg,
-                          badgeColor.text,
-                          badgeColor.border
-                        )}>
+                        <Badge variant={categoryConfig.variant}>
                           {categoryLabel}
-                        </span>
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -728,20 +724,15 @@ export default function PoliciesPage() {
                     {groupPolicies.map((policy) => {
                       const status = statusConfig[policy.status];
                       const categoryLabel = categoryLabels[policy.category] ?? policy.category;
-                      const badgeColor = getBadgeColor(categoryLabel);
+                      const categoryConfig = getCategoryConfig(policy.category);
                       return (
                         <div key={policy.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30">
                           <div className="flex items-center gap-4">
                             <Badge variant={status.variant}>{status.label}</Badge>
                             {viewMode === "byInsured" && (
-                              <span className={cn(
-                          "inline-flex items-center rounded-widget px-2 py-1 text-xs font-medium border",
-                                badgeColor.bg,
-                                badgeColor.text,
-                                badgeColor.border
-                              )}>
+                              <Badge variant={categoryConfig.variant}>
                                 {categoryLabel}
-                              </span>
+                              </Badge>
                             )}
                             {viewMode === "byCategory" && (
                               <div className="flex items-center gap-2">

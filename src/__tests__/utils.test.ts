@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cn, hashString, getAvatarColor, getBadgeColor } from "@/lib/utils";
+import { cn, hashString, getAvatarColor } from "@/lib/utils";
 
 describe("cn utility", () => {
   test("merges class names", () => {
@@ -66,25 +66,4 @@ describe("getAvatarColor", () => {
   });
 });
 
-describe("getBadgeColor", () => {
-  test("returns consistent colors for same label", () => {
-    const color1 = getBadgeColor("寿险");
-    const color2 = getBadgeColor("寿险");
-    expect(color1).toEqual(color2);
-  });
 
-  test("returns object with bg, text, border", () => {
-    const color = getBadgeColor("重疾险");
-    expect(color).toHaveProperty("bg");
-    expect(color).toHaveProperty("text");
-    expect(color).toHaveProperty("border");
-  });
-
-  test("different labels may have different colors", () => {
-    const color1 = getBadgeColor("寿险");
-    const color2 = getBadgeColor("医疗险");
-    // They might be the same by chance, but structure should be correct
-    expect(color1.bg).toMatch(/^bg-\w+-\d+$/);
-    expect(color2.bg).toMatch(/^bg-\w+-\d+$/);
-  });
-});

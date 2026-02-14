@@ -49,8 +49,8 @@ const typeIcons: Record<AssetType, typeof Home> = {
 };
 
 const typeBadgeColors: Record<AssetType, string> = {
-  RealEstate: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  Vehicle: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+  RealEstate: "bg-blue-500/10 text-blue-500",
+  Vehicle: "bg-green-500/10 text-green-500",
 };
 
 const typeIconBgColors: Record<AssetType, string> = {
