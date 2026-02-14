@@ -282,6 +282,9 @@ export function resetTestDb(): void {
     createTestDb();
     return; // createTestDb already initializes an empty schema
   }
+
+  // Ensure schema is up-to-date (handles stale db files missing new tables)
+  initSchema();
   
   sqlite!.exec(`
     DELETE FROM policy_extensions;
