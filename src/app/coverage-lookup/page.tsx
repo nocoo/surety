@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Users, Building2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { MemberSelector, AssetSelector, CategorySection } from "@/components/coverage-lookup";
 import {
   fetchCoverageLookupData,
+  groupPoliciesByCategory,
   type CoverageLookupData,
   type SelectionType,
+  type CategoryGroup,
 } from "@/lib/coverage-lookup-vm";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +23,25 @@ export default function CoverageLookupPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectionType, setSelectionType] = useState<SelectionType>("member");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
+
+  // Filter category groups based on showInactive toggle
+  const filteredGroups: CategoryGroup[] = useMemo(() => {
+    if (!data) return [];
+    if (showInactive) return data.categoryGroups;
+    const activeOnly = data.categoryGroups
+      .map((g) => g.policies.filter((p) => p.isActive))
+      .flat();
+    return groupPoliciesByCategory(activeOnly);
+  }, [data, showInactive]);
+
+  // Count inactive policies across all groups
+  const inactiveCount = useMemo(() => {
+    if (!data) return 0;
+    return data.categoryGroups
+      .flatMap((g) => g.policies)
+      .filter((p) => !p.isActive).length;
+  }, [data]);
 
   const loadData = useCallback(async (type: SelectionType, id?: number) => {
     try {
@@ -149,15 +171,38 @@ export default function CoverageLookupPage() {
         {/* Category Sections */}
         {data.categoryGroups.length > 0 ? (
           <div className="space-y-6">
-            {data.categoryGroups.map((group) => (
-              <CategorySection
-                key={group.category}
-                categoryLabel={group.categoryLabel}
-                categoryVariant={group.categoryVariant}
-                policies={group.policies}
-                totalSumAssured={group.totalSumAssured}
-              />
-            ))}
+            {/* Inactive filter toggle */}
+            {inactiveCount > 0 && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-inactive"
+                  checked={showInactive}
+                  onCheckedChange={setShowInactive}
+                />
+                <label
+                  htmlFor="show-inactive"
+                  className="text-sm text-muted-foreground select-none cursor-pointer"
+                >
+                  显示已过期/退保 ({inactiveCount})
+                </label>
+              </div>
+            )}
+
+            {filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
+                <CategorySection
+                  key={group.category}
+                  categoryLabel={group.categoryLabel}
+                  categoryVariant={group.categoryVariant}
+                  policies={group.policies}
+                  totalSumAssured={group.totalSumAssured}
+                />
+              ))
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>所有保单均已过期或退保</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
