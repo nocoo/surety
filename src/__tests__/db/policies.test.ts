@@ -44,6 +44,27 @@ describe("policiesRepo", () => {
       expect(policy.sumAssured).toBe(500000);
     });
 
+    test("creates medical policy with guaranteedRenewalYears", () => {
+      const policy = policiesRepo.create(
+        createTestPolicy({
+          category: "Medical",
+          productName: "蓝医保长期医疗险",
+          policyNumber: "POL-MED-001",
+          guaranteedRenewalYears: 20,
+          waitingDays: 90,
+        })
+      );
+
+      expect(policy.category).toBe("Medical");
+      expect(policy.guaranteedRenewalYears).toBe(20);
+      expect(policy.waitingDays).toBe(90);
+    });
+
+    test("guaranteedRenewalYears defaults to null when omitted", () => {
+      const policy = policiesRepo.create(createTestPolicy());
+      expect(policy.guaranteedRenewalYears).toBeNull();
+    });
+
     test("creates property policy with asset", () => {
       const policy = policiesRepo.create(
         createTestPolicy({

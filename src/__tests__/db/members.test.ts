@@ -30,13 +30,46 @@ describe("membersRepo", () => {
         gender: "F",
         birthDate: "1988-03-20",
         idCard: "110101198803201234",
+        idType: "身份证",
+        idExpiry: "2021-10-05|2041-10-05",
         phone: "13800138000",
+        hasSocialInsurance: true,
       });
 
       expect(member.name).toBe("李四");
       expect(member.gender).toBe("F");
       expect(member.idCard).toBe("110101198803201234");
+      expect(member.idType).toBe("身份证");
+      expect(member.idExpiry).toBe("2021-10-05|2041-10-05");
       expect(member.phone).toBe("13800138000");
+      expect(member.hasSocialInsurance).toBe(true);
+    });
+
+    test("creates a member with id type 户口本", () => {
+      const member = membersRepo.create({
+        name: "王小明",
+        relation: "Child",
+        gender: "M",
+        birthDate: "2025-02-25",
+        idCard: "110114202502257530",
+        idType: "户口本",
+        idExpiry: "2025-03-11",
+        hasSocialInsurance: false,
+      });
+
+      expect(member.idType).toBe("户口本");
+      expect(member.hasSocialInsurance).toBe(false);
+    });
+
+    test("new fields default to null when omitted", () => {
+      const member = membersRepo.create({
+        name: "赵五",
+        relation: "Parent",
+      });
+
+      expect(member.idType).toBeNull();
+      expect(member.idExpiry).toBeNull();
+      expect(member.hasSocialInsurance).toBeNull();
     });
   });
 
