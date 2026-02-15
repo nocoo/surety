@@ -14,7 +14,11 @@ export async function GET() {
     relation: m.relation,
     gender: m.gender,
     birthDate: m.birthDate,
+    idCard: m.idCard,
+    idType: m.idType,
+    idExpiry: m.idExpiry,
     phone: m.phone,
+    hasSocialInsurance: m.hasSocialInsurance,
     policyCount: policiesRepo.findByInsuredMemberId(m.id).length,
   }));
 
@@ -40,7 +44,10 @@ export async function POST(request: NextRequest) {
     gender: body.gender || null,
     birthDate: body.birthDate || null,
     idCard: body.idCard || null,
+    idType: body.idType || null,
+    idExpiry: body.idExpiry || null,
     phone: body.phone || null,
+    hasSocialInsurance: body.hasSocialInsurance ?? null,
   });
 
   return NextResponse.json(
@@ -50,7 +57,11 @@ export async function POST(request: NextRequest) {
       relation: member.relation,
       gender: member.gender,
       birthDate: member.birthDate,
+      idCard: member.idCard,
+      idType: member.idType,
+      idExpiry: member.idExpiry,
       phone: member.phone,
+      hasSocialInsurance: member.hasSocialInsurance,
     },
     { status: 201 }
   );

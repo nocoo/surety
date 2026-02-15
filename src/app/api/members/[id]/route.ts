@@ -27,7 +27,11 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     relation: member.relation,
     gender: member.gender,
     birthDate: member.birthDate,
+    idCard: member.idCard,
+    idType: member.idType,
+    idExpiry: member.idExpiry,
     phone: member.phone,
+    hasSocialInsurance: member.hasSocialInsurance,
   });
 }
 
@@ -49,7 +53,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     gender: body.gender,
     birthDate: body.birthDate,
     idCard: body.idCard,
+    idType: body.idType,
+    idExpiry: body.idExpiry,
     phone: body.phone,
+    hasSocialInsurance: body.hasSocialInsurance,
   });
 
   if (!updated) {
@@ -62,7 +69,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     relation: updated.relation,
     gender: updated.gender,
     birthDate: updated.birthDate,
+    idCard: updated.idCard,
+    idType: updated.idType,
+    idExpiry: updated.idExpiry,
     phone: updated.phone,
+    hasSocialInsurance: updated.hasSocialInsurance,
   });
 }
 
