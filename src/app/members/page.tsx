@@ -35,7 +35,11 @@ interface Member {
   relation: Relation;
   gender: "M" | "F" | null;
   birthDate: string | null;
+  idCard: string | null;
+  idType: string | null;
+  idExpiry: string | null;
   phone: string | null;
+  hasSocialInsurance: boolean | null;
   policyCount?: number;
 }
 
@@ -152,6 +156,7 @@ export default function MembersPage() {
                 <TableHead>年龄</TableHead>
                 <TableHead>出生日期</TableHead>
                 <TableHead>手机号</TableHead>
+                <TableHead className="text-center">社保</TableHead>
                 <TableHead className="text-center">保单数</TableHead>
                 <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
@@ -194,6 +199,15 @@ export default function MembersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {member.phone ?? "-"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {member.hasSocialInsurance === true ? (
+                        <Badge variant="secondary" className="text-xs">有</Badge>
+                      ) : member.hasSocialInsurance === false ? (
+                        <span className="text-muted-foreground text-xs">无</span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       {member.policyCount && member.policyCount > 0 ? (

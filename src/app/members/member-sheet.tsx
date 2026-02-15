@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 interface MemberFormData {
   name: string;
@@ -26,7 +27,11 @@ interface MemberFormData {
   gender: string;
   birthDate: string;
   idCard: string;
+  idType: string;
+  idExpiryStart: string;
+  idExpiryEnd: string;
   phone: string;
+  hasSocialInsurance: boolean;
 }
 
 interface Member {
@@ -36,7 +41,10 @@ interface Member {
   gender: string | null;
   birthDate: string | null;
   idCard?: string | null;
+  idType?: string | null;
+  idExpiry?: string | null;
   phone: string | null;
+  hasSocialInsurance?: boolean | null;
 }
 
 interface MemberSheetProps {
@@ -58,15 +66,32 @@ const genders = [
   { value: "F", label: "女" },
 ];
 
+const idTypes = [
+  { value: "身份证", label: "身份证" },
+  { value: "户口本", label: "户口本" },
+  { value: "护照", label: "护照" },
+];
+
+function parseIdExpiry(idExpiry: string | null | undefined): { start: string; end: string } {
+  if (!idExpiry) return { start: "", end: "" };
+  const parts = idExpiry.split("|");
+  return { start: parts[0] ?? "", end: parts[1] ?? "" };
+}
+
 function createFormData(member: Member | null | undefined): MemberFormData {
   if (member) {
+    const expiry = parseIdExpiry(member.idExpiry);
     return {
       name: member.name,
       relation: member.relation,
       gender: member.gender ?? "",
       birthDate: member.birthDate ?? "",
       idCard: member.idCard ?? "",
+      idType: member.idType ?? "",
+      idExpiryStart: expiry.start,
+      idExpiryEnd: expiry.end,
       phone: member.phone ?? "",
+      hasSocialInsurance: member.hasSocialInsurance ?? false,
     };
   }
   return {
@@ -75,7 +100,11 @@ function createFormData(member: Member | null | undefined): MemberFormData {
     gender: "",
     birthDate: "",
     idCard: "",
+    idType: "",
+    idExpiryStart: "",
+    idExpiryEnd: "",
     phone: "",
+    hasSocialInsurance: false,
   };
 }
 
@@ -115,7 +144,12 @@ function MemberForm({
           gender: formData.gender || null,
           birthDate: formData.birthDate || null,
           idCard: formData.idCard || null,
+          idType: formData.idType || null,
+          idExpiry: formData.idExpiryStart && formData.idExpiryEnd
+            ? `${formData.idExpiryStart}|${formData.idExpiryEnd}`
+            : null,
           phone: formData.phone || null,
+          hasSocialInsurance: formData.hasSocialInsurance,
         }),
       });
 
@@ -206,13 +240,67 @@ function MemberForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="idCard">身份证号</Label>
+            <Label htmlFor="idCard">证件号码</Label>
             <Input
               id="idCard"
               placeholder="可选，用于保单录入"
               value={formData.idCard}
               onChange={(e) => handleChange("idCard", e.target.value)}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>证件类型</Label>
+              <Select
+                value={formData.idType}
+                onValueChange={(value) => handleChange("idType", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {idTypes.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>有社保</Label>
+              <div className="flex items-center h-9 pt-1">
+                <Switch
+                  checked={formData.hasSocialInsurance}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, hasSocialInsurance: checked }))
+                  }
+                />
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {formData.hasSocialInsurance ? "有" : "无"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>证件有效期</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                placeholder="起始日期"
+                value={formData.idExpiryStart}
+                onChange={(e) => handleChange("idExpiryStart", e.target.value)}
+              />
+              <Input
+                type="date"
+                placeholder="到期日期"
+                value={formData.idExpiryEnd}
+                onChange={(e) => handleChange("idExpiryEnd", e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
