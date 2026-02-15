@@ -44,7 +44,7 @@ describe("category-config", () => {
     test("returns correct config for valid categories", () => {
       expect(getCategoryConfig("Life").label).toBe("寿险");
       expect(getCategoryConfig("Medical").variant).toBe("success");
-      expect(getCategoryConfig("Property").bgColor).toBe("bg-slate-500");
+      expect(getCategoryConfig("Property").bgColor).toBe("bg-teal-500");
     });
 
     test("returns default config for unknown category", () => {

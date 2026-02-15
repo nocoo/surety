@@ -8,7 +8,7 @@ import type { PolicyCategory } from "@/db/types";
 export interface CategoryConfig {
   label: string;
   /** Badge variant from shadcn/ui */
-  variant: "default" | "secondary" | "success" | "warning" | "info" | "purple" | "destructive";
+  variant: "default" | "secondary" | "success" | "warning" | "info" | "purple" | "teal" | "destructive";
   /** Tailwind background color for avatars and charts */
   bgColor: string;
   /** Tailwind text color */
@@ -52,9 +52,9 @@ export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
   },
   Property: {
     label: "财产险",
-    variant: "secondary",
-    bgColor: "bg-slate-500",
-    textColor: "text-slate-500",
+    variant: "teal",
+    bgColor: "bg-teal-500",
+    textColor: "text-teal-500",
   },
 };
 
@@ -66,7 +66,7 @@ export function getCategoryConfig(category: string): CategoryConfig {
   return (
     CATEGORY_CONFIG[category as PolicyCategory] ?? {
       label: category,
-      variant: "secondary",
+      variant: "secondary" as const,
       bgColor: "bg-slate-500",
       textColor: "text-slate-500",
     }

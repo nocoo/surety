@@ -31,7 +31,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-medium truncate">{policy.productName}</p>
               {!policy.isActive && (
-                <Badge variant="secondary" className="shrink-0">
+                <Badge variant="outline" className="shrink-0">
                   {policy.statusLabel}
                 </Badge>
               )}

@@ -93,10 +93,10 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" | "destructive" }> = {
+const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }> = {
   Active: { label: "生效中", variant: "success" },
   Expired: { label: "已过期", variant: "destructive" },
-  Lapsed: { label: "已失效", variant: "secondary" },
+  Lapsed: { label: "已失效", variant: "outline" },
   Surrendered: { label: "已退保", variant: "warning" },
   Claimed: { label: "已理赔", variant: "purple" },
 };
@@ -803,7 +803,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm">{formatCurrency(p.amount)}</span>
-                          <Badge variant={p.status === "Paid" ? "success" : p.status === "Overdue" ? "destructive" : "secondary"}>
+                          <Badge variant={p.status === "Paid" ? "success" : p.status === "Overdue" ? "destructive" : "outline"}>
                             {p.status === "Paid" ? "已缴" : p.status === "Overdue" ? "逾期" : "待缴"}
                           </Badge>
                         </div>

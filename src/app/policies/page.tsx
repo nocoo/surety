@@ -75,10 +75,10 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "secondary" | "warning" | "purple" | "destructive" }> = {
+const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }> = {
   Active: { label: "生效中", variant: "success" },
   Expired: { label: "已过期", variant: "destructive" },
-  Lapsed: { label: "已失效", variant: "secondary" },
+  Lapsed: { label: "已失效", variant: "outline" },
   Surrendered: { label: "已退保", variant: "warning" },
   Claimed: { label: "已理赔", variant: "purple" },
 };

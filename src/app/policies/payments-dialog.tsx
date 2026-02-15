@@ -146,7 +146,7 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
                           ? "success"
                           : payment.status === "Overdue"
                           ? "destructive"
-                          : "secondary"
+                          : "outline"
                       }
                       className="w-12 justify-center"
                     >
