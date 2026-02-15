@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Trash2, Shield } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -82,6 +85,29 @@ interface Member {
   id: number;
   name: string;
   relation: string;
+}
+
+interface CoverageItem {
+  id: number;
+  policyId: number;
+  name: string;
+  periodLimit: number | null;
+  lifetimeLimit: number | null;
+  deductible: number | null;
+  coveragePercent: number | null;
+  isOptional: boolean | number;
+  notes: string | null;
+  sortOrder: number;
+}
+
+interface CoverageItemDraft {
+  name: string;
+  periodLimit: string;
+  lifetimeLimit: string;
+  deductible: string;
+  coveragePercent: string;
+  isOptional: boolean;
+  notes: string;
 }
 
 interface PolicySheetProps {
@@ -193,6 +219,8 @@ function PolicyForm({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
+  const [coverageItems, setCoverageItems] = useState<CoverageItem[]>([]);
+  const [newItem, setNewItem] = useState<CoverageItemDraft | null>(null);
 
   useEffect(() => {
     fetch("/api/members")
@@ -200,6 +228,16 @@ function PolicyForm({
       .then((data) => setMembers(data))
       .catch(console.error);
   }, []);
+
+  // Fetch coverage items when editing
+  useEffect(() => {
+    if (policy?.id) {
+      fetch(`/api/policies/${policy.id}/coverage-items`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setCoverageItems(data))
+        .catch(() => setCoverageItems([]));
+    }
+  }, [policy?.id]);
 
   const handleChange = (field: keyof PolicyFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -625,6 +663,168 @@ function PolicyForm({
             />
           </div>
         </fieldset>
+
+        {/* Section 7: Coverage Items (edit mode only) */}
+        {isEditing && policy && (
+          <fieldset className="space-y-4">
+            <legend className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              保障明细
+              {coverageItems.length > 0 && (
+                <Badge variant="secondary" className="text-xs">{coverageItems.length}</Badge>
+              )}
+            </legend>
+
+            {coverageItems.map((item) => (
+              <div key={item.id} className="flex items-start gap-2 rounded-md border p-3 bg-secondary">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{item.name}</span>
+                    {(item.isOptional === true || item.isOptional === 1) && (
+                      <Badge variant="outline" className="text-xs">可选</Badge>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                    {item.periodLimit != null && <span>年度限额: {(item.periodLimit / 10000).toFixed(0)}万</span>}
+                    {item.deductible != null && <span>免赔额: {item.deductible.toLocaleString()}</span>}
+                    {item.coveragePercent != null && <span>赔付: {item.coveragePercent}%</span>}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    const res = await fetch(
+                      `/api/policies/${policy.id}/coverage-items/${item.id}`,
+                      { method: "DELETE", headers: { "Content-Type": "application/json" } }
+                    );
+                    if (res.ok) {
+                      setCoverageItems((prev) => prev.filter((i) => i.id !== item.id));
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+
+            {newItem ? (
+              <div className="space-y-3 rounded-md border p-3 bg-background">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">保障名称 *</Label>
+                  <Input
+                    placeholder="如：住院医疗"
+                    value={newItem.name}
+                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">年度限额</Label>
+                    <Input
+                      type="number"
+                      placeholder="6000000"
+                      value={newItem.periodLimit}
+                      onChange={(e) => setNewItem({ ...newItem, periodLimit: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">免赔额</Label>
+                    <Input
+                      type="number"
+                      placeholder="10000"
+                      value={newItem.deductible}
+                      onChange={(e) => setNewItem({ ...newItem, deductible: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">赔付比例 (%)</Label>
+                    <Input
+                      type="number"
+                      placeholder="100"
+                      value={newItem.coveragePercent}
+                      onChange={(e) => setNewItem({ ...newItem, coveragePercent: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="flex items-end gap-2 pb-0.5">
+                    <Switch
+                      checked={newItem.isOptional}
+                      onCheckedChange={(v) => setNewItem({ ...newItem, isOptional: v })}
+                    />
+                    <Label className="text-xs">可选保障</Label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setNewItem(null)}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!newItem.name.trim()}
+                    onClick={async () => {
+                      const res = await fetch(`/api/policies/${policy.id}/coverage-items`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: newItem.name.trim(),
+                          periodLimit: newItem.periodLimit ? Number(newItem.periodLimit) : null,
+                          lifetimeLimit: newItem.lifetimeLimit ? Number(newItem.lifetimeLimit) : null,
+                          deductible: newItem.deductible ? Number(newItem.deductible) : null,
+                          coveragePercent: newItem.coveragePercent ? Number(newItem.coveragePercent) : null,
+                          isOptional: newItem.isOptional,
+                          notes: newItem.notes || null,
+                          sortOrder: coverageItems.length,
+                        }),
+                      });
+                      if (res.ok) {
+                        const created = await res.json();
+                        setCoverageItems((prev) => [...prev, created]);
+                        setNewItem(null);
+                      }
+                    }}
+                  >
+                    添加
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() =>
+                  setNewItem({
+                    name: "",
+                    periodLimit: "",
+                    lifetimeLimit: "",
+                    deductible: "",
+                    coveragePercent: "",
+                    isOptional: false,
+                    notes: "",
+                  })
+                }
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                添加保障项目
+              </Button>
+            )}
+          </fieldset>
+        )}
 
         <SheetFooter className="flex-row justify-end gap-2 pt-4 border-t">
           <Button
