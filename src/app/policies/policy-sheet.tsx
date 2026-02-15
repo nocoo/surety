@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Sheet,
   SheetContent,
@@ -25,12 +26,26 @@ interface PolicyFormData {
   insurerName: string;
   policyNumber: string;
   category: string;
+  subCategory: string;
+  channel: string;
   applicantId: string;
   insuredMemberId: string;
   sumAssured: string;
   premium: string;
+  paymentFrequency: string;
+  paymentYears: string;
+  totalPayments: string;
+  renewalType: string;
+  paymentAccount: string;
+  nextDueDate: string;
   effectiveDate: string;
   expiryDate: string;
+  hesitationEndDate: string;
+  waitingDays: string;
+  guaranteedRenewalYears: string;
+  deathBenefit: string;
+  notes: string;
+  status: string;
 }
 
 interface Policy {
@@ -47,9 +62,19 @@ interface Policy {
   effectiveDate?: string | null;
   expiryDate?: string | null;
   subCategory?: string | null;
-  status?: string;
-  nextDueDate?: string | null;
   channel?: string | null;
+  paymentFrequency?: string | null;
+  paymentYears?: number | null;
+  totalPayments?: number | null;
+  renewalType?: string | null;
+  paymentAccount?: string | null;
+  nextDueDate?: string | null;
+  hesitationEndDate?: string | null;
+  waitingDays?: number | null;
+  guaranteedRenewalYears?: number | null;
+  deathBenefit?: string | null;
+  notes?: string | null;
+  status?: string;
   archived?: boolean | null;
 }
 
@@ -75,6 +100,25 @@ const categories = [
   { value: "Property", label: "财产险" },
 ];
 
+const paymentFrequencies = [
+  { value: "Single", label: "趸交" },
+  { value: "Monthly", label: "月缴" },
+  { value: "Yearly", label: "年缴" },
+];
+
+const renewalTypes = [
+  { value: "Manual", label: "手动续保" },
+  { value: "Auto", label: "自动续保" },
+  { value: "Yearly", label: "一年期" },
+];
+
+const statuses = [
+  { value: "Active", label: "生效中" },
+  { value: "Lapsed", label: "已失效" },
+  { value: "Surrendered", label: "已退保" },
+  { value: "Claimed", label: "已理赔" },
+];
+
 function createFormData(policy: Policy | null | undefined): PolicyFormData {
   if (policy) {
     return {
@@ -82,14 +126,28 @@ function createFormData(policy: Policy | null | undefined): PolicyFormData {
       insurerName: policy.insurerName,
       policyNumber: policy.policyNumber,
       category: policy.category,
+      subCategory: policy.subCategory ?? "",
+      channel: policy.channel ?? "",
       applicantId: policy.applicantId ? String(policy.applicantId) : "",
       insuredMemberId: policy.insuredMemberId
         ? String(policy.insuredMemberId)
         : "",
       sumAssured: String(policy.sumAssured),
       premium: String(policy.premium),
+      paymentFrequency: policy.paymentFrequency ?? "Yearly",
+      paymentYears: policy.paymentYears != null ? String(policy.paymentYears) : "",
+      totalPayments: policy.totalPayments != null ? String(policy.totalPayments) : "",
+      renewalType: policy.renewalType ?? "",
+      paymentAccount: policy.paymentAccount ?? "",
+      nextDueDate: policy.nextDueDate ?? "",
       effectiveDate: policy.effectiveDate ?? "",
       expiryDate: policy.expiryDate ?? "",
+      hesitationEndDate: policy.hesitationEndDate ?? "",
+      waitingDays: policy.waitingDays != null ? String(policy.waitingDays) : "",
+      guaranteedRenewalYears: policy.guaranteedRenewalYears != null ? String(policy.guaranteedRenewalYears) : "",
+      deathBenefit: policy.deathBenefit ?? "",
+      notes: policy.notes ?? "",
+      status: policy.status ?? "Active",
     };
   }
   return {
@@ -97,12 +155,26 @@ function createFormData(policy: Policy | null | undefined): PolicyFormData {
     insurerName: "",
     policyNumber: "",
     category: "",
+    subCategory: "",
+    channel: "",
     applicantId: "",
     insuredMemberId: "",
     sumAssured: "",
     premium: "",
+    paymentFrequency: "Yearly",
+    paymentYears: "",
+    totalPayments: "",
+    renewalType: "",
+    paymentAccount: "",
+    nextDueDate: "",
     effectiveDate: "",
     expiryDate: "",
+    hesitationEndDate: "",
+    waitingDays: "",
+    guaranteedRenewalYears: "",
+    deathBenefit: "",
+    notes: "",
+    status: "Active",
   };
 }
 
@@ -149,6 +221,8 @@ function PolicyForm({
           insurerName: formData.insurerName,
           policyNumber: formData.policyNumber,
           category: formData.category,
+          subCategory: formData.subCategory || null,
+          channel: formData.channel || null,
           applicantId: formData.applicantId
             ? Number(formData.applicantId)
             : null,
@@ -158,9 +232,20 @@ function PolicyForm({
             : null,
           sumAssured: formData.sumAssured ? Number(formData.sumAssured) : 0,
           premium: formData.premium ? Number(formData.premium) : 0,
-          paymentFrequency: "Yearly",
+          paymentFrequency: formData.paymentFrequency || "Yearly",
+          paymentYears: formData.paymentYears ? Number(formData.paymentYears) : null,
+          totalPayments: formData.totalPayments ? Number(formData.totalPayments) : null,
+          renewalType: formData.renewalType || null,
+          paymentAccount: formData.paymentAccount || null,
+          nextDueDate: formData.nextDueDate || null,
           effectiveDate: formData.effectiveDate || null,
           expiryDate: formData.expiryDate || null,
+          hesitationEndDate: formData.hesitationEndDate || null,
+          waitingDays: formData.waitingDays ? Number(formData.waitingDays) : null,
+          guaranteedRenewalYears: formData.guaranteedRenewalYears ? Number(formData.guaranteedRenewalYears) : null,
+          deathBenefit: formData.deathBenefit || null,
+          notes: formData.notes || null,
+          status: formData.status || "Active",
         }),
       });
 
@@ -187,7 +272,10 @@ function PolicyForm({
       </SheetHeader>
 
       <form onSubmit={onSubmit} className="flex-1 space-y-6 overflow-y-auto px-4 py-6">
-        <div className="space-y-4">
+        {/* Section 1: Product Info */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">产品信息</legend>
+
           <div className="space-y-2">
             <Label htmlFor="productName">产品名称</Label>
             <Input
@@ -242,6 +330,54 @@ function PolicyForm({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="subCategory">子类别</Label>
+              <Input
+                id="subCategory"
+                placeholder="如：百万医疗险"
+                value={formData.subCategory}
+                onChange={(e) => handleChange("subCategory", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="channel">购买渠道</Label>
+              <Input
+                id="channel"
+                placeholder="如：支付宝"
+                value={formData.channel}
+                onChange={(e) => handleChange("channel", e.target.value)}
+              />
+            </div>
+          </div>
+
+          {isEditing && (
+            <div className="space-y-2">
+              <Label>保单状态</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleChange("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </fieldset>
+
+        {/* Section 2: People */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">人员信息</legend>
+
           <div className="space-y-2">
             <Label>投保人</Label>
             <Select
@@ -279,6 +415,11 @@ function PolicyForm({
               </SelectContent>
             </Select>
           </div>
+        </fieldset>
+
+        {/* Section 3: Coverage */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">保障信息</legend>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -294,7 +435,24 @@ function PolicyForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="premium">年保费 (元)</Label>
+              <Label htmlFor="deathBenefit">身故保障</Label>
+              <Input
+                id="deathBenefit"
+                placeholder="如：赔付已交保费"
+                value={formData.deathBenefit}
+                onChange={(e) => handleChange("deathBenefit", e.target.value)}
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Section 4: Payment */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">缴费信息</legend>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="premium">保费 (元)</Label>
               <Input
                 id="premium"
                 type="number"
@@ -304,7 +462,96 @@ function PolicyForm({
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>缴费方式</Label>
+              <Select
+                value={formData.paymentFrequency}
+                onValueChange={(value) => handleChange("paymentFrequency", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择方式" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentFrequencies.map((pf) => (
+                    <SelectItem key={pf.value} value={pf.value}>
+                      {pf.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentYears">缴费年限</Label>
+              <Input
+                id="paymentYears"
+                type="number"
+                placeholder="20"
+                value={formData.paymentYears}
+                onChange={(e) => handleChange("paymentYears", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="totalPayments">总期数</Label>
+              <Input
+                id="totalPayments"
+                type="number"
+                placeholder="20"
+                value={formData.totalPayments}
+                onChange={(e) => handleChange("totalPayments", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>续保方式</Label>
+              <Select
+                value={formData.renewalType}
+                onValueChange={(value) => handleChange("renewalType", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择续保" />
+                </SelectTrigger>
+                <SelectContent>
+                  {renewalTypes.map((rt) => (
+                    <SelectItem key={rt.value} value={rt.value}>
+                      {rt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="paymentAccount">扣款账户</Label>
+              <Input
+                id="paymentAccount"
+                placeholder="如：工行尾号1234"
+                value={formData.paymentAccount}
+                onChange={(e) => handleChange("paymentAccount", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nextDueDate">下次缴费日</Label>
+            <Input
+              id="nextDueDate"
+              type="date"
+              value={formData.nextDueDate}
+              onChange={(e) => handleChange("nextDueDate", e.target.value)}
+            />
+          </div>
+        </fieldset>
+
+        {/* Section 5: Dates */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">时间信息</legend>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -327,7 +574,57 @@ function PolicyForm({
               />
             </div>
           </div>
-        </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="hesitationEndDate">犹豫期结束</Label>
+              <Input
+                id="hesitationEndDate"
+                type="date"
+                value={formData.hesitationEndDate}
+                onChange={(e) => handleChange("hesitationEndDate", e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="waitingDays">等待期 (天)</Label>
+              <Input
+                id="waitingDays"
+                type="number"
+                placeholder="90"
+                value={formData.waitingDays}
+                onChange={(e) => handleChange("waitingDays", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="guaranteedRenewalYears">保证续保 (年)</Label>
+            <Input
+              id="guaranteedRenewalYears"
+              type="number"
+              placeholder="如：20"
+              value={formData.guaranteedRenewalYears}
+              onChange={(e) => handleChange("guaranteedRenewalYears", e.target.value)}
+            />
+          </div>
+        </fieldset>
+
+        {/* Section 6: Notes */}
+        <fieldset className="space-y-4">
+          <legend className="text-sm font-medium text-muted-foreground">附加信息</legend>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">备注</Label>
+            <Textarea
+              id="notes"
+              placeholder="其他需要记录的信息"
+              value={formData.notes}
+              onChange={(e) => handleChange("notes", e.target.value)}
+              rows={3}
+            />
+          </div>
+        </fieldset>
 
         <SheetFooter className="flex-row justify-end gap-2 pt-4 border-t">
           <Button

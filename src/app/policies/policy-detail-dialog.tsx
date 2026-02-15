@@ -39,6 +39,7 @@ interface PolicyDetail {
   expiryDate: string | null;
   hesitationEndDate: string | null;
   waitingDays: number | null;
+  guaranteedRenewalYears: number | null;
   deathBenefit: string | null;
   policyFilePath: string | null;
   notes: string | null;
@@ -358,6 +359,12 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                   <>
                     <Separator />
                     <InfoRow label="等待期" value={`${policy.waitingDays} 天`} />
+                  </>
+                )}
+                {policy.guaranteedRenewalYears && (
+                  <>
+                    <Separator />
+                    <InfoRow label="保证续保" value={`${policy.guaranteedRenewalYears} 年`} />
                   </>
                 )}
               </div>
