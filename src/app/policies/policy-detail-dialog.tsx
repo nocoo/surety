@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Copy, Check, ExternalLink, Building2 } from "lucide-react";
+import { Copy, Check, ExternalLink, Building2, Shield } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,19 @@ interface PolicyDetail {
   deathBenefit: string | null;
   policyFilePath: string | null;
   notes: string | null;
+}
+
+interface CoverageItem {
+  id: number;
+  policyId: number;
+  name: string;
+  periodLimit: number | null;
+  lifetimeLimit: number | null;
+  deductible: number | null;
+  coveragePercent: number | null;
+  isOptional: boolean | number;
+  notes: string | null;
+  sortOrder: number;
 }
 
 interface Beneficiary {
@@ -121,6 +134,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
   const [policy, setPolicy] = useState<PolicyDetail | null>(null);
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [coverageItems, setCoverageItems] = useState<CoverageItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loadedPolicyId, setLoadedPolicyId] = useState<number | null>(null);
@@ -128,14 +142,16 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
   const fetchPolicyData = useCallback(async (id: number) => {
     setLoading(true);
     try {
-      const [policyData, beneficiariesData, paymentsData] = await Promise.all([
+      const [policyData, beneficiariesData, paymentsData, coverageItemsData] = await Promise.all([
         fetch(`/api/policies/${id}`).then(res => res.json()),
         fetch(`/api/policies/${id}/beneficiaries`).then(res => res.ok ? res.json() : []).catch(() => []),
         fetch(`/api/policies/${id}/payments`).then(res => res.ok ? res.json() : []).catch(() => []),
+        fetch(`/api/policies/${id}/coverage-items`).then(res => res.ok ? res.json() : []).catch(() => []),
       ]);
       setPolicy(policyData);
       setBeneficiaries(beneficiariesData);
       setPayments(paymentsData);
+      setCoverageItems(coverageItemsData);
       setLoadedPolicyId(id);
     } catch {
       // Failed to load
@@ -154,6 +170,7 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
     setPolicy(null);
     setBeneficiaries([]);
     setPayments([]);
+    setCoverageItems([]);
     setLoadedPolicyId(null);
   }
 
@@ -297,6 +314,64 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                 )}
               </div>
             </div>
+
+            {/* Coverage Items */}
+            {coverageItems.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  保障明细
+                </h3>
+                <div className="rounded-card bg-secondary p-4">
+                  <div className="space-y-3">
+                    {coverageItems.map((item, idx) => (
+                      <div key={item.id}>
+                        {idx > 0 && <Separator className="mb-3" />}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {item.name}
+                              {(item.isOptional === true || item.isOptional === 1) && (
+                                <Badge variant="outline" className="ml-2 text-xs">可选</Badge>
+                              )}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                            {item.periodLimit !== null && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">年度限额</span>
+                                <span>{formatCurrency(item.periodLimit)}</span>
+                              </div>
+                            )}
+                            {item.lifetimeLimit !== null && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">终身限额</span>
+                                <span>{formatCurrency(item.lifetimeLimit)}</span>
+                              </div>
+                            )}
+                            {item.deductible !== null && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">免赔额</span>
+                                <span>{formatCurrency(item.deductible)}</span>
+                              </div>
+                            )}
+                            {item.coveragePercent !== null && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">赔付比例</span>
+                                <span>{item.coveragePercent}%</span>
+                              </div>
+                            )}
+                          </div>
+                          {item.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Payment Info */}
             <div>
