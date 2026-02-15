@@ -19,6 +19,10 @@ interface PolicyCreated {
   status: string;
 }
 
+interface PolicyDetail extends PolicyCreated {
+  guaranteedRenewalYears: number | null;
+}
+
 interface Member {
   id: number;
   name: string;
@@ -332,6 +336,117 @@ describe("Policies API E2E", () => {
     test("cleanup: delete edge case policy", async () => {
       const { status } = await apiRequest<{ success: boolean }>(
         `/api/policies/${edgeCasePolicyId}`,
+        { method: "DELETE" }
+      );
+      expect(status).toBe(200);
+    });
+  });
+
+  describe("New field: guaranteedRenewalYears", () => {
+    let policyId: number;
+
+    test("POST /api/policies with guaranteedRenewalYears", async () => {
+      const { status, data } = await apiRequest<PolicyCreated>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            applicantId: testMemberId,
+            insuredType: "Member",
+            insuredMemberId: testMemberId,
+            category: "Medical",
+            insurerName: "续保测试保险公司",
+            productName: "续保测试百万医疗",
+            policyNumber: `GRY-${Date.now()}`,
+            sumAssured: 6000000,
+            premium: 1200,
+            paymentFrequency: "Yearly",
+            effectiveDate: "2026-01-01",
+            expiryDate: "2026-12-31",
+            guaranteedRenewalYears: 20,
+          }),
+        }
+      );
+
+      expect(status).toBe(201);
+      policyId = data.id;
+    });
+
+    test("GET /api/policies/:id returns guaranteedRenewalYears", async () => {
+      const { status, data } = await apiRequest<PolicyDetail>(
+        `/api/policies/${policyId}`
+      );
+
+      expect(status).toBe(200);
+      expect(data.guaranteedRenewalYears).toBe(20);
+    });
+
+    test("GET /api/policies list includes guaranteedRenewalYears", async () => {
+      const { status, data } = await apiRequest<(PolicyListItem & { guaranteedRenewalYears: number | null })[]>(
+        "/api/policies"
+      );
+
+      expect(status).toBe(200);
+      const target = data.find((p) => p.id === policyId);
+      expect(target).toBeDefined();
+      expect(target!.guaranteedRenewalYears).toBe(20);
+    });
+
+    test("PUT /api/policies/:id updates guaranteedRenewalYears", async () => {
+      const { status } = await apiRequest<PolicyCreated>(
+        `/api/policies/${policyId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            guaranteedRenewalYears: 6,
+          }),
+        }
+      );
+
+      expect(status).toBe(200);
+
+      // Verify via GET
+      const { data } = await apiRequest<PolicyDetail>(
+        `/api/policies/${policyId}`
+      );
+      expect(data.guaranteedRenewalYears).toBe(6);
+    });
+
+    test("POST /api/policies without guaranteedRenewalYears defaults to null", async () => {
+      const { status, data } = await apiRequest<PolicyCreated>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            applicantId: testMemberId,
+            insuredType: "Member",
+            insuredMemberId: testMemberId,
+            category: "Accident",
+            insurerName: "默认值测试公司",
+            productName: "默认值测试产品",
+            policyNumber: `GRY-NULL-${Date.now()}`,
+            sumAssured: 1000000,
+            premium: 360,
+            paymentFrequency: "Yearly",
+            effectiveDate: "2026-01-01",
+          }),
+        }
+      );
+
+      expect(status).toBe(201);
+
+      const { data: detail } = await apiRequest<PolicyDetail>(
+        `/api/policies/${data.id}`
+      );
+      expect(detail.guaranteedRenewalYears).toBeNull();
+
+      // cleanup
+      await apiRequest(`/api/policies/${data.id}`, { method: "DELETE" });
+    });
+
+    test("cleanup: delete test policy", async () => {
+      const { status } = await apiRequest<{ success: boolean }>(
+        `/api/policies/${policyId}`,
         { method: "DELETE" }
       );
       expect(status).toBe(200);
