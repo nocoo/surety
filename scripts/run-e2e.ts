@@ -13,7 +13,7 @@ import { spawn, type Subprocess } from "bun";
 import { existsSync, unlinkSync, rmSync } from "fs";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
-const E2E_DB_FILE = "surety.e2e.db";
+const E2E_DB_FILE = "database/surety.e2e.db";
 const E2E_DIST_DIR = ".next-e2e";
 
 let serverProcess: Subprocess | null = null;

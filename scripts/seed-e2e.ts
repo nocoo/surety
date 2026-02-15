@@ -2,7 +2,7 @@
  * E2E Seed Script
  * Creates and populates the E2E test database.
  * 
- * Usage: SURETY_DB=surety.e2e.db bun run scripts/seed-e2e.ts
+ * Usage: SURETY_DB=database/surety.e2e.db bun run scripts/seed-e2e.ts
  */
 
 import { getDb, initSchema, resetTestDb } from "../src/db";

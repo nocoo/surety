@@ -3,7 +3,7 @@ import { spawn, type Subprocess } from "bun";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${E2E_PORT}`;
-const E2E_DB_FILE = "surety.e2e.db";
+const E2E_DB_FILE = "database/surety.e2e.db";
 const E2E_DIST_DIR = ".next-e2e";
 
 // Skip setup/teardown when running via run-e2e.ts script

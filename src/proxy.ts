@@ -7,9 +7,9 @@ const SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
 
 // Database file mapping
 const DATABASE_FILES: Record<string, string> = {
-  production: "surety.db",
-  example: "surety.example.db",
-  test: "surety.e2e.db",
+  production: "database/surety.db",
+  example: "database/surety.example.db",
+  test: "database/surety.e2e.db",
 };
 
 // Build redirect URL respecting reverse proxy headers

@@ -1,4 +1,4 @@
-import { resolve, dirname } from "path";
+import { resolve, dirname, basename } from "path";
 import { fileURLToPath } from "url";
 import * as schema from "./schema";
 
@@ -26,18 +26,22 @@ function resolveDbPath(filename: string): string {
   // In-memory and already-absolute paths are passed through
   if (filename === ":memory:" || filename.startsWith("/")) return filename;
   // Production db goes to SURETY_DATA_DIR (for cloud volume mounts)
-  // Example and test dbs always stay in PROJECT_ROOT
+  // When SURETY_DATA_DIR is set, strip any directory prefix (e.g., "database/")
+  // so the file resolves correctly under the volume mount point.
   if (filename === DATABASE_FILES.production) {
-    return resolve(getDataDir(), filename);
+    const dataDir = getDataDir();
+    if (dataDir !== PROJECT_ROOT) {
+      return resolve(dataDir, basename(filename));
+    }
   }
   return resolve(PROJECT_ROOT, filename);
 }
 
-// Database file mapping (relative names, resolved at use-site)
+// Database file mapping (relative to PROJECT_ROOT)
 const DATABASE_FILES: Record<DatabaseType, string> = {
-  production: "surety.db",
-  example: "surety.example.db",
-  test: "surety.e2e.db",
+  production: "database/surety.db",
+  example: "database/surety.example.db",
+  test: "database/surety.e2e.db",
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +54,7 @@ let currentDbFile: string | null = null;
 const isBun = typeof globalThis.Bun !== "undefined";
 
 // Database file paths
-const E2E_DB_FILE = "surety.e2e.db";
+const E2E_DB_FILE = "database/surety.e2e.db";
 
 /**
  * Get the current database type from environment or cookie.
@@ -80,8 +84,8 @@ export function getDatabaseFile(dbType: DatabaseType): string {
 // Files that must NEVER be opened during test runs.
 // Tests have historically deleted these files, destroying user data.
 const PROTECTED_FILES = new Set([
-  resolveDbPath("surety.db"),
-  resolveDbPath("surety.example.db"),
+  resolveDbPath("database/surety.db"),
+  resolveDbPath("database/surety.example.db"),
 ]);
 
 function isTestEnv(): boolean {

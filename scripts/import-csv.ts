@@ -5,9 +5,9 @@
  * It will DELETE ALL existing data before importing.
  *
  * Usage:
- *   bun scripts/import-csv.ts                          # targets surety.db (requires --confirm)
- *   SURETY_DB=surety.e2e.db bun scripts/import-csv.ts  # targets E2E db
- *   bun scripts/import-csv.ts --confirm                # explicit confirmation for production
+ *   bun scripts/import-csv.ts                                     # targets database/surety.db (requires --confirm)
+ *   SURETY_DB=database/surety.e2e.db bun scripts/import-csv.ts    # targets E2E db
+ *   bun scripts/import-csv.ts --confirm                           # explicit confirmation for production
  */
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -15,18 +15,18 @@ import { fileURLToPath } from "url";
 import { Database } from "bun:sqlite";
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const DB_FILE = process.env.SURETY_DB || "surety.db";
+const DB_FILE = process.env.SURETY_DB || "database/surety.db";
 const DB_PATH = resolve(PROJECT_ROOT, DB_FILE);
 
 // Safety guard: require --confirm for production database
-const PROTECTED_FILES = ["surety.db", "surety.example.db"];
+const PROTECTED_FILES = ["database/surety.db", "database/surety.example.db"];
 if (PROTECTED_FILES.includes(DB_FILE) && !process.argv.includes("--confirm")) {
   console.error(
     `❌ BLOCKED: This script will DELETE ALL DATA in "${DB_FILE}" before importing.\n\n` +
     `   If you really mean to wipe and re-import production data, run:\n` +
     `     bun scripts/import-csv.ts --confirm\n\n` +
     `   Or target a safe database:\n` +
-    `     SURETY_DB=surety.e2e.db bun scripts/import-csv.ts\n`
+    `     SURETY_DB=database/surety.e2e.db bun scripts/import-csv.ts\n`
   );
   process.exit(1);
 }

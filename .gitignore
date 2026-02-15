@@ -42,14 +42,13 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-*.db.bak
-!surety.example.db
-!surety.test.db
-surety.e2e.db
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+database/*.db.bak
+!database/surety.example.db
+!database/surety.test.db
 .next-e2e
 
 # source logo files (large, in root only)

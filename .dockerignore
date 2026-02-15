@@ -5,10 +5,10 @@ node_modules
 .gitignore
 .env*
 !.env.example
-*.db
-*.db-journal
-*.db-wal
-*.db.bak
+database/*.db
+database/*.db-journal
+database/*.db-wal
+database/*.db.bak
 coverage
 docs
 scripts

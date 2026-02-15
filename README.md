@@ -72,9 +72,9 @@ bun run db:push
 bun run db:seed
 ```
 
-数据库文件会自动创建在项目根目录：
-- `surety.db` — 生产数据
-- `surety.example.db` — 示例数据（用于演示）
+数据库文件会自动创建在 `database/` 目录下：
+- `database/surety.db` — 生产数据
+- `database/surety.example.db` — 示例数据（用于演示）
 
 ### 4️⃣ 启动开发服务器
 
@@ -88,6 +88,10 @@ bun dev
 
 ```
 surety/
+├── 📂 database/                  # SQLite 数据库文件
+│   ├── surety.db                 # 生产数据 (gitignored)
+│   ├── surety.example.db         # 示例数据 (git-tracked)
+│   └── surety.test.db            # 测试 fixture (git-tracked)
 ├── 📂 docs/                      # 项目文档
 │   ├── 01-design-overview.md     # 整体设计研究报告
 │   ├── 02-database-design.md     # 数据库设计
@@ -168,8 +172,8 @@ surety/
 
 应用支持多数据库切换，在设置页面可以选择：
 
-- **生产数据** (`surety.db`) — 真实数据
-- **示例数据** (`surety.example.db`) — 演示用
+- **生产数据** (`database/surety.db`) — 真实数据
+- **示例数据** (`database/surety.example.db`) — 演示用
 
 ### 使用 Drizzle Studio
 

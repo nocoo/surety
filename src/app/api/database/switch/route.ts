@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 const VALID_DATABASES = ["production", "example", "test"] as const;
 
 const DATABASE_FILES: Record<DatabaseType, string> = {
-  production: "surety.db",
-  example: "surety.example.db",
-  test: "surety.e2e.db",
+  production: "database/surety.db",
+  example: "database/surety.example.db",
+  test: "database/surety.e2e.db",
 };
 
 export async function POST(request: NextRequest) {

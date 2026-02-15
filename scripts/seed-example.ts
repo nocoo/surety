@@ -11,10 +11,10 @@ import { getDb, initSchema, closeDb } from "../src/db/index";
 import { seedExampleDatabase } from "../src/db/seed-example";
 
 // Set environment to use example database
-process.env.SURETY_DB = "surety.example.db";
+process.env.SURETY_DB = "database/surety.example.db";
 
 console.log("🗃️  Creating example database...");
-console.log("   Database file: surety.example.db\n");
+console.log("   Database file: database/surety.example.db\n");
 
 // Initialize database connection first
 console.log("📋 Initializing schema...");

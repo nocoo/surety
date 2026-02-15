@@ -5,7 +5,7 @@
  * Creates and populates a dedicated test database for MCP E2E tests.
  * This is separate from the web E2E test database.
  *
- * Usage: SURETY_DB=surety.mcp-test.db bun run scripts/seed-mcp-test.ts
+ * Usage: SURETY_DB=database/surety.mcp-test.db bun run scripts/seed-mcp-test.ts
  */
 
 import { getDb, initSchema, resetTestDb } from "../src/db";

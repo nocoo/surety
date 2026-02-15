@@ -20,7 +20,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { resolve } from "path";
 
 const MCP_ENTRY = resolve(import.meta.dir, "../index.ts");
-const TEST_DB = resolve(import.meta.dir, "../../surety.mcp-test.db");
+const TEST_DB = resolve(import.meta.dir, "../../database/surety.mcp-test.db");
 
 // ---------------------------------------------------------------------------
 // Helper: create a fresh MCP client connected via stdio

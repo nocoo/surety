@@ -44,9 +44,9 @@ describe("Database Switch API E2E", () => {
       );
 
       const expectedFiles: Record<string, string> = {
-        production: "surety.db",
-        example: "surety.example.db",
-        test: "surety.e2e.db",
+        production: "database/surety.db",
+        example: "database/surety.example.db",
+        test: "database/surety.e2e.db",
       };
 
       expect(data.file).toBe(expectedFiles[data.database] ?? "");
@@ -89,9 +89,9 @@ describe("Database Switch API E2E", () => {
 
     test("returns correct file for each database type", async () => {
       const dbFiles: Array<{ type: string; file: string }> = [
-        { type: "production", file: "surety.db" },
-        { type: "example", file: "surety.example.db" },
-        { type: "test", file: "surety.e2e.db" },
+        { type: "production", file: "database/surety.db" },
+        { type: "example", file: "database/surety.example.db" },
+        { type: "test", file: "database/surety.e2e.db" },
       ];
 
       for (const { type, file } of dbFiles) {
