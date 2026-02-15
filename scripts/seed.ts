@@ -1,7 +1,42 @@
+/**
+ * Seed script — populates a database with demo data.
+ *
+ * SAFETY: This script REFUSES to operate on surety.db (production) or
+ * surety.example.db. You must explicitly set SURETY_DB to a safe target:
+ *
+ *   SURETY_DB=surety.e2e.db bun scripts/seed.ts
+ */
 import { initSchema, resetTestDb } from "../src/db";
 import { seedDatabase } from "../src/db/seed";
 
+const BLOCKED_TARGETS = ["surety.db", "surety.example.db"];
+
+function assertNotProduction(): void {
+  const target = process.env.SURETY_DB;
+  if (!target) {
+    console.error(
+      "❌ BLOCKED: SURETY_DB is not set. This script defaults to surety.db (production),\n" +
+      "   which would DESTROY all real policy data.\n\n" +
+      "   To seed the E2E database:\n" +
+      "     SURETY_DB=surety.e2e.db bun scripts/seed.ts\n"
+    );
+    process.exit(1);
+  }
+
+  if (BLOCKED_TARGETS.includes(target)) {
+    console.error(
+      `❌ BLOCKED: Refusing to seed "${target}" — this is a protected database.\n\n` +
+      "   To seed the E2E database:\n" +
+      "     SURETY_DB=surety.e2e.db bun scripts/seed.ts\n"
+    );
+    process.exit(1);
+  }
+}
+
 async function seed() {
+  assertNotProduction();
+
+  console.log(`Seeding database: ${process.env.SURETY_DB}`);
   console.log("Initializing database schema...");
   initSchema();
 

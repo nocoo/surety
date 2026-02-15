@@ -254,6 +254,14 @@ export function resetE2EDb(): void {
   if (!sqlite) {
     createDatabase(E2E_DB_FILE);
   }
+
+  // Guard: NEVER wipe production or example databases
+  if (currentDbFile && PROTECTED_FILES.has(currentDbFile)) {
+    throw new Error(
+      `BLOCKED: resetE2EDb() refused to wipe protected database "${currentDbFile}". ` +
+      `This function may only operate on E2E test databases.`
+    );
+  }
   
   sqlite!.exec(`
     DELETE FROM coverage_items;
@@ -278,6 +286,14 @@ export function getE2EDbPath(): string {
 }
 
 export function resetTestDb(): void {
+  // Guard: NEVER wipe production or example databases
+  if (currentDbFile && PROTECTED_FILES.has(currentDbFile)) {
+    throw new Error(
+      `BLOCKED: resetTestDb() refused to wipe protected database "${currentDbFile}". ` +
+      `This function may only operate on :memory: or test databases.`
+    );
+  }
+
   // Ensure test database is initialized
   if (!sqlite) {
     createTestDb();

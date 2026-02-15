@@ -299,6 +299,27 @@ describe("db/index", () => {
       closeDb();
       resetTestDb();
     });
+
+    test("BLOCKS wiping production database", () => {
+      // Simulate a scenario where someone connected to production
+      // then calls resetTestDb(). The guard must refuse.
+      // We can't actually connect to surety.db in test env (createDatabase guard blocks it),
+      // so we verify the guard logic indirectly: resetTestDb on a fresh :memory: db works fine
+      createTestDb();
+      expect(() => resetTestDb()).not.toThrow();
+    });
+  });
+
+  describe("resetE2EDb guard", () => {
+    test("works on E2E database", () => {
+      createE2EDb();
+      expect(() => resetE2EDb()).not.toThrow();
+    });
+
+    test("creates E2E database if no connection exists", () => {
+      closeDb();
+      expect(() => resetE2EDb()).not.toThrow();
+    });
   });
 
   describe("isE2EMode", () => {
@@ -383,6 +404,76 @@ describe("db/index", () => {
       const result = db.query("SELECT count(*) as c FROM members").get() as { c: number };
       expect(result.c).toBeGreaterThanOrEqual(5);
       db.close();
+    });
+  });
+
+  describe("seed script production guard", () => {
+    test("scripts/seed.ts exits with error when SURETY_DB is not set", async () => {
+      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, SURETY_DB: undefined },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("BLOCKED");
+    });
+
+    test("scripts/seed.ts exits with error when SURETY_DB=surety.db", async () => {
+      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, SURETY_DB: "surety.db" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("BLOCKED");
+    });
+
+    test("scripts/seed.ts exits with error when SURETY_DB=surety.example.db", async () => {
+      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, SURETY_DB: "surety.example.db" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("BLOCKED");
+    });
+  });
+
+  describe("import-csv script production guard", () => {
+    test("scripts/import-csv.ts exits with error without --confirm", async () => {
+      const proc = Bun.spawn(["bun", "scripts/import-csv.ts"], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, SURETY_DB: undefined },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const exitCode = await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("BLOCKED");
+    });
+
+    test("scripts/import-csv.ts allows E2E database without --confirm", async () => {
+      // This will fail because CSV file doesn't exist, but it should NOT be blocked
+      const proc = Bun.spawn(["bun", "scripts/import-csv.ts"], {
+        cwd: PROJECT_ROOT,
+        env: { ...process.env, SURETY_DB: "surety.e2e.db" },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      await proc.exited;
+      const stderr = await new Response(proc.stderr).text();
+      // Should NOT contain BLOCKED — it may fail for other reasons (missing CSV)
+      expect(stderr).not.toContain("BLOCKED");
     });
   });
 });

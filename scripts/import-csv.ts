@@ -1,10 +1,13 @@
 /**
- * Import policies from Notion CSV export into surety.db.
+ * Import policies from Notion CSV export.
  *
- * Usage: bun scripts/import-csv.ts
+ * SAFETY: This script REFUSES to run without explicit confirmation.
+ * It will DELETE ALL existing data before importing.
  *
- * This script uses bun:sqlite directly (bypasses createDatabase guard)
- * because it intentionally writes to the production database.
+ * Usage:
+ *   bun scripts/import-csv.ts                          # targets surety.db (requires --confirm)
+ *   SURETY_DB=surety.e2e.db bun scripts/import-csv.ts  # targets E2E db
+ *   bun scripts/import-csv.ts --confirm                # explicit confirmation for production
  */
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
@@ -12,7 +15,21 @@ import { fileURLToPath } from "url";
 import { Database } from "bun:sqlite";
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const DB_PATH = resolve(PROJECT_ROOT, "surety.db");
+const DB_FILE = process.env.SURETY_DB || "surety.db";
+const DB_PATH = resolve(PROJECT_ROOT, DB_FILE);
+
+// Safety guard: require --confirm for production database
+const PROTECTED_FILES = ["surety.db", "surety.example.db"];
+if (PROTECTED_FILES.includes(DB_FILE) && !process.argv.includes("--confirm")) {
+  console.error(
+    `❌ BLOCKED: This script will DELETE ALL DATA in "${DB_FILE}" before importing.\n\n` +
+    `   If you really mean to wipe and re-import production data, run:\n` +
+    `     bun scripts/import-csv.ts --confirm\n\n` +
+    `   Or target a safe database:\n` +
+    `     SURETY_DB=surety.e2e.db bun scripts/import-csv.ts\n`
+  );
+  process.exit(1);
+}
 
 const CSV_PATH =
   "/Users/nocoo/Downloads/ExportBlock-4ae5e7df-985f-4378-9a18-3e28abf5c788-Part-1/保单数据库 1e078b6d9ee0806fa64cc15e570c8a6c_all.csv";
