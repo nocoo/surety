@@ -7,7 +7,11 @@ interface Member {
   relation: string;
   gender: string | null;
   birthDate: string | null;
+  idCard: string | null;
+  idType: string | null;
+  idExpiry: string | null;
   phone: string | null;
+  hasSocialInsurance: boolean | null;
 }
 
 describe("Members API E2E", () => {
@@ -235,6 +239,101 @@ describe("Members API E2E", () => {
     test("cleanup: delete edge case member", async () => {
       const { status } = await apiRequest<{ success: boolean }>(
         `/api/members/${edgeCaseMemberId}`,
+        { method: "DELETE" }
+      );
+      expect(status).toBe(200);
+    });
+  });
+
+  describe("New fields: idType, idExpiry, hasSocialInsurance", () => {
+    let memberId: number;
+
+    test("POST /api/members with new fields", async () => {
+      const { status, data } = await apiRequest<Member>("/api/members", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "新字段测试",
+          relation: "Self",
+          gender: "M",
+          birthDate: "1986-03-15",
+          idCard: "110101198603150099",
+          idType: "身份证",
+          idExpiry: "2021-10-05|2041-10-05",
+          phone: "13800000099",
+          hasSocialInsurance: true,
+        }),
+      });
+
+      expect(status).toBe(201);
+      expect(data.idType).toBe("身份证");
+      expect(data.idExpiry).toBe("2021-10-05|2041-10-05");
+      expect(data.hasSocialInsurance).toBe(true);
+      expect(data.idCard).toBe("110101198603150099");
+      memberId = data.id;
+    });
+
+    test("GET /api/members/:id returns new fields", async () => {
+      const { status, data } = await apiRequest<Member>(
+        `/api/members/${memberId}`
+      );
+
+      expect(status).toBe(200);
+      expect(data.idType).toBe("身份证");
+      expect(data.idExpiry).toBe("2021-10-05|2041-10-05");
+      expect(data.hasSocialInsurance).toBe(true);
+    });
+
+    test("GET /api/members list includes new fields", async () => {
+      const { status, data } = await apiRequest<Member[]>("/api/members");
+
+      expect(status).toBe(200);
+      const target = data.find((m) => m.id === memberId);
+      expect(target).toBeDefined();
+      expect(target!.idType).toBe("身份证");
+      expect(target!.idExpiry).toBe("2021-10-05|2041-10-05");
+      expect(target!.hasSocialInsurance).toBe(true);
+    });
+
+    test("PUT /api/members/:id updates new fields", async () => {
+      const { status, data } = await apiRequest<Member>(
+        `/api/members/${memberId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            idType: "护照",
+            idExpiry: "2025-01-01|2035-01-01",
+            hasSocialInsurance: false,
+          }),
+        }
+      );
+
+      expect(status).toBe(200);
+      expect(data.idType).toBe("护照");
+      expect(data.idExpiry).toBe("2025-01-01|2035-01-01");
+      expect(data.hasSocialInsurance).toBe(false);
+    });
+
+    test("POST /api/members without new fields defaults to null", async () => {
+      const { status, data } = await apiRequest<Member>("/api/members", {
+        method: "POST",
+        body: JSON.stringify({
+          name: "无新字段测试",
+          relation: "Child",
+        }),
+      });
+
+      expect(status).toBe(201);
+      expect(data.idType).toBeNull();
+      expect(data.idExpiry).toBeNull();
+      expect(data.hasSocialInsurance).toBeNull();
+
+      // cleanup
+      await apiRequest(`/api/members/${data.id}`, { method: "DELETE" });
+    });
+
+    test("cleanup: delete test member", async () => {
+      const { status } = await apiRequest<{ success: boolean }>(
+        `/api/members/${memberId}`,
         { method: "DELETE" }
       );
       expect(status).toBe(200);
