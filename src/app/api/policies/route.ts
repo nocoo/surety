@@ -33,6 +33,7 @@ export async function GET() {
     nextDueDate: p.nextDueDate ?? p.effectiveDate,
     effectiveDate: p.effectiveDate,
     expiryDate: p.expiryDate,
+    guaranteedRenewalYears: p.guaranteedRenewalYears,
     channel: p.channel,
     archived: p.archived,
   }));
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
     expiryDate: body.expiryDate ?? null,
     hesitationEndDate: body.hesitationEndDate ?? null,
     waitingDays: body.waitingDays ?? null,
+    guaranteedRenewalYears: body.guaranteedRenewalYears ?? null,
     status: body.status ?? "Active",
     deathBenefit: body.deathBenefit ?? null,
     archived: body.archived ?? false,
