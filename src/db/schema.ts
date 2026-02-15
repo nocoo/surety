@@ -12,7 +12,10 @@ export const members = sqliteTable("members", {
   gender: text("gender", { enum: ["M", "F"] }),
   birthDate: text("birth_date"),
   idCard: text("id_card"),
+  idType: text("id_type"), // 证件类型: 身份证/户口本/护照
+  idExpiry: text("id_expiry"), // 证件有效期, e.g. "2021-10-05|2041-10-05"
   phone: text("phone"),
+  hasSocialInsurance: integer("has_social_insurance", { mode: "boolean" }), // 是否有社保/医保
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -115,6 +118,7 @@ export const policies = sqliteTable("policies", {
   expiryDate: text("expiry_date"),
   hesitationEndDate: text("hesitation_end_date"),
   waitingDays: integer("waiting_days"),
+  guaranteedRenewalYears: integer("guaranteed_renewal_years"), // 保证续保期间（年）
 
   // 状态
   status: text("status", {
@@ -209,7 +213,28 @@ export type PolicyExtension = typeof policyExtensions.$inferSelect;
 export type NewPolicyExtension = typeof policyExtensions.$inferInsert;
 
 // ============================================================================
-// 9. settings - 全局设置
+// 9. coverageItems - 保障权益明细
+// ============================================================================
+export const coverageItems = sqliteTable("coverage_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  policyId: integer("policy_id")
+    .notNull()
+    .references(() => policies.id),
+  name: text("name").notNull(), // 保障项名称, e.g. "一般医疗保险金"
+  periodLimit: real("period_limit"), // 保险期间内赔付限额（元）
+  lifetimeLimit: real("lifetime_limit"), // 保证续保期间内赔付限额（元）
+  deductible: real("deductible"), // 免赔额
+  coveragePercent: real("coverage_percent"), // 赔付比例, e.g. 100
+  isOptional: integer("is_optional", { mode: "boolean" }).default(false),
+  notes: text("notes"),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export type CoverageItem = typeof coverageItems.$inferSelect;
+export type NewCoverageItem = typeof coverageItems.$inferInsert;
+
+// ============================================================================
+// 10. settings - 全局设置
 // ============================================================================
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),

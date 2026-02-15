@@ -256,6 +256,7 @@ export function resetE2EDb(): void {
   }
   
   sqlite!.exec(`
+    DELETE FROM coverage_items;
     DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
@@ -287,6 +288,7 @@ export function resetTestDb(): void {
   initSchema();
   
   sqlite!.exec(`
+    DELETE FROM coverage_items;
     DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
@@ -316,7 +318,10 @@ export function initSchema(): void {
       gender TEXT,
       birth_date TEXT,
       id_card TEXT,
+      id_type TEXT,
+      id_expiry TEXT,
       phone TEXT,
+      has_social_insurance INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -366,6 +371,7 @@ export function initSchema(): void {
       expiry_date TEXT,
       hesitation_end_date TEXT,
       waiting_days INTEGER,
+      guaranteed_renewal_years INTEGER,
       status TEXT NOT NULL DEFAULT 'Active',
       death_benefit TEXT,
       archived INTEGER DEFAULT 0,
@@ -407,6 +413,19 @@ export function initSchema(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       policy_id INTEGER NOT NULL UNIQUE REFERENCES policies(id),
       data TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS coverage_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      policy_id INTEGER NOT NULL REFERENCES policies(id),
+      name TEXT NOT NULL,
+      period_limit REAL,
+      lifetime_limit REAL,
+      deductible REAL,
+      coverage_percent REAL,
+      is_optional INTEGER DEFAULT 0,
+      notes TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS settings (
