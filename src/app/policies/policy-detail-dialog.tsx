@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Copy, Check, ExternalLink, Building2, Shield } from "lucide-react";
+import { Copy, Check, ExternalLink, Building2, Shield, Plus, Pencil, Trash2, X, Save } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
@@ -126,6 +130,369 @@ function InfoRow({ label, value, mono = false }: { label: string; value: React.R
     <div className="flex items-start justify-between py-2">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className={cn("text-sm text-right", mono && "font-mono")}>{value || "-"}</span>
+    </div>
+  );
+}
+
+interface CoverageItemFormData {
+  name: string;
+  periodLimit: string;
+  lifetimeLimit: string;
+  deductible: string;
+  coveragePercent: string;
+  isOptional: boolean;
+  notes: string;
+}
+
+const emptyCoverageForm: CoverageItemFormData = {
+  name: "",
+  periodLimit: "",
+  lifetimeLimit: "",
+  deductible: "",
+  coveragePercent: "",
+  isOptional: false,
+  notes: "",
+};
+
+function coverageItemToForm(item: CoverageItem): CoverageItemFormData {
+  return {
+    name: item.name,
+    periodLimit: item.periodLimit != null ? String(item.periodLimit) : "",
+    lifetimeLimit: item.lifetimeLimit != null ? String(item.lifetimeLimit) : "",
+    deductible: item.deductible != null ? String(item.deductible) : "",
+    coveragePercent: item.coveragePercent != null ? String(item.coveragePercent) : "",
+    isOptional: item.isOptional === true || item.isOptional === 1,
+    notes: item.notes ?? "",
+  };
+}
+
+function CoverageItemForm({
+  form,
+  onChange,
+  onSave,
+  onCancel,
+  saving,
+  saveLabel,
+}: {
+  form: CoverageItemFormData;
+  onChange: (form: CoverageItemFormData) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  saving: boolean;
+  saveLabel: string;
+}) {
+  const update = (field: keyof CoverageItemFormData, value: string | boolean) =>
+    onChange({ ...form, [field]: value });
+
+  return (
+    <div className="space-y-3 p-3 rounded-md border bg-background">
+      <div className="space-y-1.5">
+        <Label className="text-xs">保障名称 *</Label>
+        <Input
+          placeholder="如：住院医疗"
+          value={form.name}
+          onChange={(e) => update("name", e.target.value)}
+          className="h-8 text-sm"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">年度限额</Label>
+          <Input
+            type="number"
+            placeholder="6000000"
+            value={form.periodLimit}
+            onChange={(e) => update("periodLimit", e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">终身限额</Label>
+          <Input
+            type="number"
+            placeholder="可选"
+            value={form.lifetimeLimit}
+            onChange={(e) => update("lifetimeLimit", e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">免赔额</Label>
+          <Input
+            type="number"
+            placeholder="10000"
+            value={form.deductible}
+            onChange={(e) => update("deductible", e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">赔付比例 (%)</Label>
+          <Input
+            type="number"
+            placeholder="100"
+            value={form.coveragePercent}
+            onChange={(e) => update("coveragePercent", e.target.value)}
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">备注</Label>
+        <Input
+          placeholder="如：含ICU"
+          value={form.notes}
+          onChange={(e) => update("notes", e.target.value)}
+          className="h-8 text-sm"
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={form.isOptional}
+            onCheckedChange={(v) => update("isOptional", v)}
+          />
+          <Label className="text-xs">可选保障</Label>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+            <X className="h-3.5 w-3.5 mr-1" />
+            取消
+          </Button>
+          <Button type="button" size="sm" onClick={onSave} disabled={saving || !form.name.trim()}>
+            <Save className="h-3.5 w-3.5 mr-1" />
+            {saving ? "保存中..." : saveLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CoverageItemsSection({
+  policyId,
+  items,
+  onItemsChange,
+  formatCurrency: fmtCurrency,
+}: {
+  policyId: number;
+  items: CoverageItem[];
+  onItemsChange: (items: CoverageItem[]) => void;
+  formatCurrency: (v: number) => string;
+}) {
+  const [addingForm, setAddingForm] = useState<CoverageItemFormData | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingForm, setEditingForm] = useState<CoverageItemFormData>(emptyCoverageForm);
+  const [saving, setSaving] = useState(false);
+
+  const handleAdd = async () => {
+    if (!addingForm || !addingForm.name.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/policies/${policyId}/coverage-items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: addingForm.name.trim(),
+          periodLimit: addingForm.periodLimit ? Number(addingForm.periodLimit) : null,
+          lifetimeLimit: addingForm.lifetimeLimit ? Number(addingForm.lifetimeLimit) : null,
+          deductible: addingForm.deductible ? Number(addingForm.deductible) : null,
+          coveragePercent: addingForm.coveragePercent ? Number(addingForm.coveragePercent) : null,
+          isOptional: addingForm.isOptional,
+          notes: addingForm.notes || null,
+          sortOrder: items.length,
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        onItemsChange([...items, created]);
+        setAddingForm(null);
+      }
+    } catch (e) {
+      console.error("Failed to add coverage item:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (editingId === null || !editingForm.name.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/policies/${policyId}/coverage-items/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editingForm.name.trim(),
+          periodLimit: editingForm.periodLimit ? Number(editingForm.periodLimit) : null,
+          lifetimeLimit: editingForm.lifetimeLimit ? Number(editingForm.lifetimeLimit) : null,
+          deductible: editingForm.deductible ? Number(editingForm.deductible) : null,
+          coveragePercent: editingForm.coveragePercent ? Number(editingForm.coveragePercent) : null,
+          isOptional: editingForm.isOptional,
+          notes: editingForm.notes || null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        onItemsChange(items.map((i) => (i.id === editingId ? updated : i)));
+        setEditingId(null);
+      }
+    } catch (e) {
+      console.error("Failed to update coverage item:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (itemId: number) => {
+    try {
+      const res = await fetch(`/api/policies/${policyId}/coverage-items/${itemId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        onItemsChange(items.filter((i) => i.id !== itemId));
+      }
+    } catch (e) {
+      console.error("Failed to delete coverage item:", e);
+    }
+  };
+
+  const startEdit = (item: CoverageItem) => {
+    setEditingId(item.id);
+    setEditingForm(coverageItemToForm(item));
+    setAddingForm(null);
+  };
+
+  const startAdd = () => {
+    setAddingForm({ ...emptyCoverageForm });
+    setEditingId(null);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium flex items-center gap-2">
+          <Shield className="h-4 w-4" />
+          保障明细
+          {items.length > 0 && (
+            <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+          )}
+        </h3>
+        {!addingForm && editingId === null && (
+          <Button type="button" variant="ghost" size="sm" onClick={startAdd}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            添加
+          </Button>
+        )}
+      </div>
+
+      {items.length > 0 && (
+        <div className="rounded-card bg-secondary p-4">
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <div key={item.id}>
+                {idx > 0 && <Separator className="mb-3" />}
+                {editingId === item.id ? (
+                  <CoverageItemForm
+                    form={editingForm}
+                    onChange={setEditingForm}
+                    onSave={handleUpdate}
+                    onCancel={() => setEditingId(null)}
+                    saving={saving}
+                    saveLabel="保存"
+                  />
+                ) : (
+                  <div className="space-y-1 group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {item.name}
+                        {(item.isOptional === true || item.isOptional === 1) && (
+                          <Badge variant="outline" className="ml-2 text-xs">可选</Badge>
+                        )}
+                      </span>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => startEdit(item)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      {item.periodLimit !== null && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">年度限额</span>
+                          <span>{fmtCurrency(item.periodLimit)}</span>
+                        </div>
+                      )}
+                      {item.lifetimeLimit !== null && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">终身限额</span>
+                          <span>{fmtCurrency(item.lifetimeLimit)}</span>
+                        </div>
+                      )}
+                      {item.deductible !== null && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">免赔额</span>
+                          <span>{fmtCurrency(item.deductible)}</span>
+                        </div>
+                      )}
+                      {item.coveragePercent !== null && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">赔付比例</span>
+                          <span>{item.coveragePercent}%</span>
+                        </div>
+                      )}
+                    </div>
+                    {item.notes && (
+                      <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 && !addingForm && (
+        <div className="rounded-card bg-secondary p-4 text-center">
+          <p className="text-sm text-muted-foreground">暂无保障明细</p>
+          <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={startAdd}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            添加保障项目
+          </Button>
+        </div>
+      )}
+
+      {addingForm && (
+        <div className="mt-3">
+          <CoverageItemForm
+            form={addingForm}
+            onChange={setAddingForm}
+            onSave={handleAdd}
+            onCancel={() => setAddingForm(null)}
+            saving={saving}
+            saveLabel="添加"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -316,62 +683,12 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
             </div>
 
             {/* Coverage Items */}
-            {coverageItems.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  保障明细
-                </h3>
-                <div className="rounded-card bg-secondary p-4">
-                  <div className="space-y-3">
-                    {coverageItems.map((item, idx) => (
-                      <div key={item.id}>
-                        {idx > 0 && <Separator className="mb-3" />}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              {item.name}
-                              {(item.isOptional === true || item.isOptional === 1) && (
-                                <Badge variant="outline" className="ml-2 text-xs">可选</Badge>
-                              )}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                            {item.periodLimit !== null && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">年度限额</span>
-                                <span>{formatCurrency(item.periodLimit)}</span>
-                              </div>
-                            )}
-                            {item.lifetimeLimit !== null && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">终身限额</span>
-                                <span>{formatCurrency(item.lifetimeLimit)}</span>
-                              </div>
-                            )}
-                            {item.deductible !== null && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">免赔额</span>
-                                <span>{formatCurrency(item.deductible)}</span>
-                              </div>
-                            )}
-                            {item.coveragePercent !== null && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">赔付比例</span>
-                                <span>{item.coveragePercent}%</span>
-                              </div>
-                            )}
-                          </div>
-                          {item.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">{item.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <CoverageItemsSection
+              policyId={policy.id}
+              items={coverageItems}
+              onItemsChange={setCoverageItems}
+              formatCurrency={formatCurrency}
+            />
 
             {/* Payment Info */}
             <div>
