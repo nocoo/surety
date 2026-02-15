@@ -9,7 +9,7 @@
  * - Pets: Pet medical insurance
  */
 
-import type { NewMember, NewAsset, NewPolicy, NewBeneficiary, NewInsurer } from "./schema";
+import type { NewMember, NewAsset, NewPolicy, NewBeneficiary, NewInsurer, NewCoverageItem } from "./schema";
 import {
   membersRepo,
   assetsRepo,
@@ -18,6 +18,7 @@ import {
   paymentsRepo,
   cashValuesRepo,
   policyExtensionsRepo,
+  coverageItemsRepo,
   settingsRepo,
   insurersRepo,
 } from "./repositories";
@@ -49,7 +50,9 @@ export const exampleMembers: NewMember[] = [
     gender: "M", 
     birthDate: "1984-06-15", 
     idCard: "310***********0011", 
-    phone: "138****0001" 
+    phone: "138****0001",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   { 
     name: "陈思雨", 
@@ -57,21 +60,27 @@ export const exampleMembers: NewMember[] = [
     gender: "F", 
     birthDate: "1986-09-22", 
     idCard: "310***********0022", 
-    phone: "138****0002" 
+    phone: "138****0002",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   { 
     name: "王小宇", 
     relation: "Child", 
     gender: "M", 
     birthDate: "2016-03-08", 
-    idCard: "310***********0033" 
+    idCard: "310***********0033",
+    idType: "户口本",
+    hasSocialInsurance: true,
   },
   { 
     name: "王小雪", 
     relation: "Child", 
     gender: "F", 
     birthDate: "2022-11-15", 
-    idCard: "310***********0044" 
+    idCard: "310***********0044",
+    idType: "户口本",
+    hasSocialInsurance: true,
   },
   // Paternal grandparents (王明远's parents)
   { 
@@ -80,7 +89,9 @@ export const exampleMembers: NewMember[] = [
     gender: "M", 
     birthDate: "1955-04-01", 
     idCard: "310***********0055", 
-    phone: "139****0003" 
+    phone: "139****0003",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   { 
     name: "李秀兰", 
@@ -88,7 +99,9 @@ export const exampleMembers: NewMember[] = [
     gender: "F", 
     birthDate: "1957-08-12", 
     idCard: "310***********0066", 
-    phone: "139****0004" 
+    phone: "139****0004",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   // Maternal grandparents (陈思雨's parents)
   { 
@@ -97,7 +110,9 @@ export const exampleMembers: NewMember[] = [
     gender: "M", 
     birthDate: "1958-12-28", 
     idCard: "320***********0077", 
-    phone: "137****0005" 
+    phone: "137****0005",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   { 
     name: "张美玲", 
@@ -105,7 +120,9 @@ export const exampleMembers: NewMember[] = [
     gender: "F", 
     birthDate: "1960-02-03", 
     idCard: "320***********0088", 
-    phone: "137****0006" 
+    phone: "137****0006",
+    idType: "身份证",
+    hasSocialInsurance: true,
   },
   // Pet
   { 
@@ -175,6 +192,7 @@ interface PolicySeed {
   beneficiaries?: { memberName?: string; externalName?: string; sharePercent: number; rankOrder: number }[];
   extension?: Record<string, unknown>;
   cashValueYears?: number[];
+  coverageItems?: Omit<NewCoverageItem, "policyId">[];
 }
 
 export const examplePolicies: PolicySeed[] = [
@@ -259,6 +277,13 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "王明远",
     insuredName: "王明远",
     extension: { deductible: 10000, hospitalDailyBenefit: 0, outpatientCovered: false },
+    coverageItems: [
+      { name: "一般医疗保险金", periodLimit: 3000000, deductible: 10000, coveragePercent: 100, sortOrder: 1 },
+      { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
+      { name: "质子重离子医疗", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 3 },
+      { name: "院外特定药品", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 4 },
+      { name: "重疾住院津贴", periodLimit: 18000, deductible: 0, coveragePercent: 100, notes: "100元/天，限180天", sortOrder: 5, isOptional: true },
+    ],
   },
   {
     policy: {
@@ -365,6 +390,12 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "陈思雨",
     insuredName: "陈思雨",
     extension: { deductible: 10000, maternityBenefit: true },
+    coverageItems: [
+      { name: "一般医疗保险金", periodLimit: 3000000, deductible: 10000, coveragePercent: 100, sortOrder: 1 },
+      { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
+      { name: "质子重离子医疗", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 3 },
+      { name: "院外特定药品", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 4 },
+    ],
   },
 
   // ============ 王小宇 (长子, 8岁) - 儿童配置：意外+医疗 ============
@@ -414,6 +445,12 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "王明远",
     insuredName: "王小宇",
     extension: { deductible: 0, childSpecialDisease: true },
+    coverageItems: [
+      { name: "一般医疗保险金", periodLimit: 3000000, deductible: 0, coveragePercent: 100, notes: "少儿版0免赔", sortOrder: 1 },
+      { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
+      { name: "少儿特定疾病", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 3 },
+      { name: "质子重离子医疗", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 4 },
+    ],
   },
 
   // ============ 王小雪 (幼女, 2岁) - 新生儿：仅医疗险 ============
@@ -439,6 +476,12 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "陈思雨",
     insuredName: "王小雪",
     extension: { deductible: 0, newbornJaundice: true },
+    coverageItems: [
+      { name: "一般医疗保险金", periodLimit: 3000000, deductible: 0, coveragePercent: 100, notes: "少儿版0免赔", sortOrder: 1 },
+      { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
+      { name: "少儿特定疾病", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 3 },
+      { name: "质子重离子医疗", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 4 },
+    ],
   },
 
   // ============ 老人 (4位) - 健康险难买，以普惠险/意外险为主 ============
@@ -910,6 +953,15 @@ export function seedExampleDatabase(): SeedResult {
     // Extensions
     if (seed.extension) {
       policyExtensionsRepo.upsertByPolicyId(policy.id, seed.extension);
+    }
+
+    // Coverage items
+    if (seed.coverageItems && seed.coverageItems.length > 0) {
+      const items = seed.coverageItems.map((item) => ({
+        ...item,
+        policyId: policy.id,
+      }));
+      coverageItemsRepo.createMany(items);
     }
   }
 
