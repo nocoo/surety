@@ -231,7 +231,6 @@ function main() {
   // ── 1. Clear existing data ───────────────────────────────────
   console.log("Clearing existing data...");
   db.exec(`
-    DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
     DELETE FROM beneficiaries;

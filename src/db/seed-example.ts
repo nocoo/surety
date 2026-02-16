@@ -17,7 +17,6 @@ import {
   beneficiariesRepo,
   paymentsRepo,
   cashValuesRepo,
-  policyExtensionsRepo,
   coverageItemsRepo,
   settingsRepo,
   insurersRepo,
@@ -190,7 +189,6 @@ interface PolicySeed {
   insuredName?: string;
   insuredAssetIdentifier?: string;
   beneficiaries?: { memberName?: string; externalName?: string; sharePercent: number; rankOrder: number }[];
-  extension?: Record<string, unknown>;
   cashValueYears?: number[];
   coverageItems?: Omit<NewCoverageItem, "policyId">[];
 }
@@ -224,7 +222,6 @@ export const examplePolicies: PolicySeed[] = [
       { memberName: "王小宇", sharePercent: 25, rankOrder: 1 },
       { memberName: "王小雪", sharePercent: 25, rankOrder: 1 },
     ],
-    extension: { maxAge: 60, coverType: "Death" },
     cashValueYears: [1, 2, 3, 4, 5],
   },
   {
@@ -248,12 +245,6 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "王明远",
     insuredName: "王明远",
     beneficiaries: [{ memberName: "陈思雨", sharePercent: 100, rankOrder: 1 }],
-    extension: { 
-      criticalIllnesses: 110, 
-      lightIllnesses: 50, 
-      lightIllnessBenefit: 150000,
-      cancerSecondPay: true 
-    },
     cashValueYears: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   },
   {
@@ -276,7 +267,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王明远",
-    extension: { deductible: 10000, hospitalDailyBenefit: 0, outpatientCovered: false },
     coverageItems: [
       { name: "一般医疗保险金", periodLimit: 3000000, deductible: 10000, coveragePercent: 100, sortOrder: 1 },
       { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
@@ -304,12 +294,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王明远",
-    extension: { 
-      accidentDeath: 1000000, 
-      accidentDisability: 1000000, 
-      accidentMedical: 50000,
-      transportBonus: 500000
-    },
   },
 
   // ============ 陈思雨 (配偶, 36岁) - 同样作为核心劳动力 ============
@@ -340,7 +324,6 @@ export const examplePolicies: PolicySeed[] = [
       { memberName: "王小宇", sharePercent: 25, rankOrder: 1 },
       { memberName: "王小雪", sharePercent: 25, rankOrder: 1 },
     ],
-    extension: { maxAge: 60, coverType: "Death" },
   },
   {
     policy: {
@@ -363,11 +346,6 @@ export const examplePolicies: PolicySeed[] = [
     applicantName: "陈思雨",
     insuredName: "陈思雨",
     beneficiaries: [{ memberName: "王明远", sharePercent: 100, rankOrder: 1 }],
-    extension: { 
-      criticalIllnesses: 110, 
-      lightIllnesses: 50, 
-      lightIllnessBenefit: 120000 
-    },
   },
   {
     policy: {
@@ -389,7 +367,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredName: "陈思雨",
-    extension: { deductible: 10000, maternityBenefit: true },
     coverageItems: [
       { name: "一般医疗保险金", periodLimit: 3000000, deductible: 10000, coveragePercent: 100, sortOrder: 1 },
       { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
@@ -418,11 +395,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王小宇",
-    extension: { 
-      accidentDeath: 200000, 
-      accidentMedical: 20000,
-      vaccinationReaction: 5000
-    },
   },
   {
     policy: {
@@ -444,7 +416,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王小宇",
-    extension: { deductible: 0, childSpecialDisease: true },
     coverageItems: [
       { name: "一般医疗保险金", periodLimit: 3000000, deductible: 0, coveragePercent: 100, notes: "少儿版0免赔", sortOrder: 1 },
       { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
@@ -475,7 +446,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredName: "王小雪",
-    extension: { deductible: 0, newbornJaundice: true },
     coverageItems: [
       { name: "一般医疗保险金", periodLimit: 3000000, deductible: 0, coveragePercent: 100, notes: "少儿版0免赔", sortOrder: 1 },
       { name: "重疾医疗保险金", periodLimit: 4000000, deductible: 0, coveragePercent: 100, sortOrder: 2 },
@@ -508,11 +478,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王建国",
-    extension: { 
-      deductible: 20000, 
-      preExistingConditions: ["高血压", "糖尿病前期"],
-      publicWelfare: true
-    },
   },
   {
     policy: {
@@ -533,11 +498,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "王建国",
-    extension: { 
-      accidentDeath: 100000, 
-      accidentMedical: 10000,
-      fractureBonus: 5000
-    },
   },
 
   // 李秀兰 (奶奶, 67岁) - 普惠险+意外险
@@ -561,7 +521,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "李秀兰",
-    extension: { deductible: 20000, publicWelfare: true },
   },
 
   // 陈国华 (外公, 66岁) - 只有普惠险
@@ -586,7 +545,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredName: "陈国华",
-    extension: { deductible: 20000, publicWelfare: true },
   },
 
   // 张美玲 (外婆, 64岁) - 普惠险+意外险
@@ -610,7 +568,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredName: "张美玲",
-    extension: { deductible: 20000, publicWelfare: true },
   },
   {
     policy: {
@@ -631,10 +588,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredName: "张美玲",
-    extension: { 
-      accidentDeath: 100000, 
-      accidentMedical: 10000 
-    },
   },
 
   // ============ 资产险 ============
@@ -658,12 +611,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredAssetIdentifier: "沪(2018)浦东新区不动产权第0088888号",
-    extension: { 
-      fireInsurance: 1000000, 
-      theftInsurance: 200000, 
-      waterDamage: 100000,
-      thirdPartyLiability: 500000
-    },
   },
   // 车险 - 特斯拉
   {
@@ -686,13 +633,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredAssetIdentifier: "沪A12345",
-    extension: { 
-      vehicleDamage: 280000, 
-      thirdPartyLiability: 2000000, 
-      driverSeat: 100000, 
-      passengerSeat: 100000,
-      scratchRepair: 5000
-    },
   },
   // 车险 - RAV4
   {
@@ -715,12 +655,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "陈思雨",
     insuredAssetIdentifier: "沪B67890",
-    extension: { 
-      vehicleDamage: 220000, 
-      thirdPartyLiability: 1500000, 
-      driverSeat: 50000, 
-      passengerSeat: 50000
-    },
   },
 
   // ============ 宠物险 - 豆豆 (作为家庭成员) ============
@@ -744,12 +678,6 @@ export const examplePolicies: PolicySeed[] = [
     },
     applicantName: "王明远",
     insuredName: "豆豆",
-    extension: { 
-      medicalCoverage: 20000, 
-      deductible: 200,
-      thirdPartyLiability: 10000,
-      petType: "Dog"
-    },
   },
 
   // ============ 年金险 (财务规划) ============
@@ -776,12 +704,6 @@ export const examplePolicies: PolicySeed[] = [
       { memberName: "王小宇", sharePercent: 20, rankOrder: 1 },
       { memberName: "王小雪", sharePercent: 20, rankOrder: 1 },
     ],
-    extension: { 
-      annuityStartAge: 60, 
-      annuityType: "Lifetime", 
-      guaranteedYears: 20,
-      bonusType: "增额终身寿"
-    },
     cashValueYears: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   },
 ];
@@ -948,11 +870,6 @@ export function seedExampleDatabase(): SeedResult {
         value: Math.round(seed.policy.premium * (idx + 1) * 0.4),
       }));
       cashValuesRepo.createMany(cvRecords);
-    }
-
-    // Extensions
-    if (seed.extension) {
-      policyExtensionsRepo.upsertByPolicyId(policy.id, seed.extension);
     }
 
     // Coverage items

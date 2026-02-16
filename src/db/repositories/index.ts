@@ -5,6 +5,5 @@ export { policiesRepo } from "./policies";
 export { beneficiariesRepo } from "./beneficiaries";
 export { paymentsRepo } from "./payments";
 export { cashValuesRepo } from "./cashValues";
-export { policyExtensionsRepo } from "./policyExtensions";
 export { coverageItemsRepo } from "./coverageItems";
 export { settingsRepo } from "./settings";

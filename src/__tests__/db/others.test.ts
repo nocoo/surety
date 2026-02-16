@@ -4,7 +4,6 @@ import {
   beneficiariesRepo,
   paymentsRepo,
   cashValuesRepo,
-  policyExtensionsRepo,
   settingsRepo,
   membersRepo,
   policiesRepo,
@@ -175,79 +174,6 @@ describe("Other Repositories", () => {
       ]);
 
       expect(cashValuesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
-    });
-  });
-
-  describe("policyExtensionsRepo", () => {
-    test("CRUD operations", () => {
-      const ext = policyExtensionsRepo.create({
-        policyId: testPolicyId,
-        data: JSON.stringify({ deductible: 10000 }),
-      });
-      expect(ext.id).toBe(1);
-
-      expect(policyExtensionsRepo.findAll()).toHaveLength(1);
-
-      expect(policyExtensionsRepo.findById(ext.id)?.data).toContain("deductible");
-      expect(policyExtensionsRepo.findById(999)).toBeUndefined();
-
-      expect(policyExtensionsRepo.findByPolicyId(testPolicyId)?.data).toContain(
-        "deductible"
-      );
-
-      const updated = policyExtensionsRepo.update(ext.id, {
-        data: JSON.stringify({ deductible: 20000 }),
-      });
-      expect(updated?.data).toContain("20000");
-      expect(policyExtensionsRepo.update(999, { data: "{}" })).toBeUndefined();
-
-      expect(policyExtensionsRepo.delete(ext.id)).toBe(true);
-      expect(policyExtensionsRepo.delete(999)).toBe(false);
-    });
-
-    test("upsertByPolicyId creates new", () => {
-      const ext = policyExtensionsRepo.upsertByPolicyId(testPolicyId, {
-        coverage: "全险",
-      });
-      expect(ext.data).toContain("全险");
-    });
-
-    test("upsertByPolicyId updates existing", () => {
-      policyExtensionsRepo.create({
-        policyId: testPolicyId,
-        data: JSON.stringify({ old: true }),
-      });
-
-      const ext = policyExtensionsRepo.upsertByPolicyId(testPolicyId, {
-        new: true,
-      });
-      expect(ext.data).toContain("new");
-      expect(ext.data).not.toContain("old");
-    });
-
-    test("parseData", () => {
-      const ext = policyExtensionsRepo.create({
-        policyId: testPolicyId,
-        data: JSON.stringify({ deductible: 10000, coverage: ["意外", "医疗"] }),
-      });
-
-      const parsed = policyExtensionsRepo.parseData<{
-        deductible: number;
-        coverage: string[];
-      }>(ext);
-
-      expect(parsed.deductible).toBe(10000);
-      expect(parsed.coverage).toEqual(["意外", "医疗"]);
-    });
-
-    test("deleteByPolicyId", () => {
-      policyExtensionsRepo.create({
-        policyId: testPolicyId,
-        data: "{}",
-      });
-
-      expect(policyExtensionsRepo.deleteByPolicyId(testPolicyId)).toBe(true);
-      expect(policyExtensionsRepo.deleteByPolicyId(testPolicyId)).toBe(false);
     });
   });
 

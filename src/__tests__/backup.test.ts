@@ -9,7 +9,6 @@ import {
   assetsRepo,
   paymentsRepo,
   cashValuesRepo,
-  policyExtensionsRepo,
 } from "@/db/repositories";
 import {
   buildBackup,
@@ -285,7 +284,7 @@ describe("backup service", () => {
           beneficiaries: [],
           payments: [],
           cashValues: [],
-          policyExtensions: [],
+          coverageItems: [],
           settings: [],
         },
       };
@@ -316,11 +315,10 @@ describe("backup service", () => {
       expect(backup2.data.beneficiaries).toEqual(backup1.data.beneficiaries);
       expect(backup2.data.payments).toEqual(backup1.data.payments);
       expect(backup2.data.cashValues).toEqual(backup1.data.cashValues);
-      expect(backup2.data.policyExtensions).toEqual(backup1.data.policyExtensions);
       expect(backup2.data.settings).toEqual(backup1.data.settings);
     });
 
-    test("restore handles payments, cashValues, and policyExtensions", () => {
+    test("restore handles payments and cashValues", () => {
       const m = membersRepo.create({ name: "Test", relation: "Self" });
       const p = policiesRepo.create({
         applicantId: m.id,
@@ -343,22 +341,18 @@ describe("backup service", () => {
         status: "Paid",
       });
       cashValuesRepo.create({ policyId: p.id, policyYear: 1, value: 3000 });
-      policyExtensionsRepo.create({ policyId: p.id, data: JSON.stringify({ deductible: 10000 }) });
 
       const backup = buildBackup();
       expect(backup.data.payments.length).toBe(1);
       expect(backup.data.cashValues.length).toBe(1);
-      expect(backup.data.policyExtensions.length).toBe(1);
 
       resetTestDb();
       const counts = restoreBackup(backup);
       expect(counts.payments).toBe(1);
       expect(counts.cashValues).toBe(1);
-      expect(counts.policyExtensions).toBe(1);
 
       expect(rawQuery("payments").length).toBe(1);
       expect(rawQuery("cash_values").length).toBe(1);
-      expect(rawQuery("policy_extensions").length).toBe(1);
     });
 
     test("restore is atomic: failed insert rolls back all changes", () => {

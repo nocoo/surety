@@ -28,7 +28,6 @@ export interface BackupData {
     beneficiaries: BackupRow[];
     payments: BackupRow[];
     cashValues: BackupRow[];
-    policyExtensions: BackupRow[];
     coverageItems: BackupRow[];
     settings: BackupRow[];
   };
@@ -42,7 +41,6 @@ export interface RestoreCounts {
   beneficiaries: number;
   payments: number;
   cashValues: number;
-  policyExtensions: number;
   coverageItems: number;
   settings: number;
 }
@@ -56,7 +54,6 @@ export const ALL_TABLE_KEYS = [
   "beneficiaries",
   "payments",
   "cashValues",
-  "policyExtensions",
   "coverageItems",
   "settings",
 ] as const;
@@ -75,7 +72,6 @@ const TABLE_NAME_MAP: Record<TableKey, string> = {
   beneficiaries: "beneficiaries",
   payments: "payments",
   cashValues: "cash_values",
-  policyExtensions: "policy_extensions",
   coverageItems: "coverage_items",
   settings: "settings",
 };
@@ -102,7 +98,6 @@ export function buildBackup(): BackupData {
       beneficiaries: query("beneficiaries"),
       payments: query("payments"),
       cashValues: query("cash_values"),
-      policyExtensions: query("policy_extensions"),
       coverageItems: query("coverage_items"),
       settings: query("settings"),
     },
@@ -149,7 +144,6 @@ export function validateBackup(payload: unknown): string | null {
  */
 const DELETE_ORDER: readonly TableKey[] = [
   "coverageItems",
-  "policyExtensions",
   "cashValues",
   "payments",
   "beneficiaries",
@@ -171,7 +165,6 @@ const INSERT_ORDER: readonly TableKey[] = [
   "beneficiaries",
   "payments",
   "cashValues",
-  "policyExtensions",
   "coverageItems",
   "settings",
 ];
@@ -214,7 +207,6 @@ export function restoreBackup(payload: BackupData): RestoreCounts {
       beneficiaries: 0,
       payments: 0,
       cashValues: 0,
-      policyExtensions: 0,
       coverageItems: 0,
       settings: 0,
     };

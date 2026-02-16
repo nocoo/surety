@@ -94,7 +94,6 @@ export default function SettingsPage() {
     beneficiaries: "受益人",
     payments: "缴费记录",
     cashValues: "现金价值",
-    policyExtensions: "保单扩展",
     settings: "设置",
   };
 

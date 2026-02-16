@@ -269,7 +269,6 @@ export function resetE2EDb(): void {
   
   sqlite!.exec(`
     DELETE FROM coverage_items;
-    DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
     DELETE FROM beneficiaries;
@@ -309,7 +308,6 @@ export function resetTestDb(): void {
   
   sqlite!.exec(`
     DELETE FROM coverage_items;
-    DELETE FROM policy_extensions;
     DELETE FROM cash_values;
     DELETE FROM payments;
     DELETE FROM beneficiaries;
@@ -426,12 +424,6 @@ export function initSchema(): void {
       policy_id INTEGER NOT NULL REFERENCES policies(id),
       policy_year INTEGER NOT NULL,
       value REAL NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS policy_extensions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      policy_id INTEGER NOT NULL UNIQUE REFERENCES policies(id),
-      data TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS coverage_items (

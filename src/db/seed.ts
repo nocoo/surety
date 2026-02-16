@@ -6,7 +6,6 @@ import {
   beneficiariesRepo,
   paymentsRepo,
   cashValuesRepo,
-  policyExtensionsRepo,
   settingsRepo,
 } from "./repositories";
 
@@ -54,7 +53,6 @@ interface PolicySeed {
   insuredName?: string;
   insuredAssetIdentifier?: string;
   beneficiaries?: { memberName?: string; externalName?: string; sharePercent: number; rankOrder: number }[];
-  extension?: Record<string, unknown>;
   cashValueYears?: number[];
 }
 
@@ -83,7 +81,6 @@ export const policySeedData: PolicySeed[] = [
       { memberName: "李娜", sharePercent: 60, rankOrder: 1 },
       { memberName: "张小明", sharePercent: 40, rankOrder: 1 },
     ],
-    extension: { deathBenefit: 1000000, accidentalDeathBenefit: 2000000 },
     cashValueYears: [1, 2, 3, 4, 5],
   },
   {
@@ -106,7 +103,6 @@ export const policySeedData: PolicySeed[] = [
     applicantName: "张伟",
     insuredName: "李娜",
     beneficiaries: [{ memberName: "张伟", sharePercent: 100, rankOrder: 1 }],
-    extension: { criticalIllnesses: 100, lightIllnesses: 50, lightIllnessBenefit: 150000 },
   },
   {
     policy: {
@@ -127,7 +123,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "张伟",
     insuredName: "张小明",
-    extension: { deductible: 10000, hospitalDailyBenefit: 200, outpatientCovered: false },
   },
   {
     policy: {
@@ -147,7 +142,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "张伟",
     insuredName: "张伟",
-    extension: { accidentDeath: 1000000, accidentDisability: 1000000, accidentMedical: 50000, transportAccident: 2000000 },
   },
   {
     policy: {
@@ -166,7 +160,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "张伟",
     insuredName: "张伟",
-    extension: { annuityStartAge: 60, annuityType: "Lifetime", guaranteedYears: 20 },
     cashValueYears: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   },
   {
@@ -187,7 +180,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "张伟",
     insuredAssetIdentifier: "京(2020)朝阳区不动产权第0012345号",
-    extension: { fireInsurance: 2000000, theftInsurance: 500000, waterDamage: 200000 },
   },
   {
     policy: {
@@ -207,7 +199,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "张伟",
     insuredAssetIdentifier: "京A88888",
-    extension: { vehicleDamage: 350000, thirdPartyLiability: 2000000, driverAccident: 100000, passengerAccident: 100000 },
   },
   {
     policy: {
@@ -228,7 +219,6 @@ export const policySeedData: PolicySeed[] = [
     },
     applicantName: "李娜",
     insuredName: "王秀英",
-    extension: { deductible: 10000, renewableToAge: 99 },
   },
 ];
 
@@ -347,11 +337,6 @@ export function seedDatabase(): SeedResult {
         value: Math.round(seed.policy.premium * (idx + 1) * 0.3),
       }));
       cashValuesRepo.createMany(cvRecords);
-    }
-
-    // Extensions
-    if (seed.extension) {
-      policyExtensionsRepo.upsertByPolicyId(policy.id, seed.extension);
     }
   }
 

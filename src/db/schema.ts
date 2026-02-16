@@ -197,22 +197,7 @@ export type CashValue = typeof cashValues.$inferSelect;
 export type NewCashValue = typeof cashValues.$inferInsert;
 
 // ============================================================================
-// 8. policyExtensions - 险种特有字段
-// ============================================================================
-export const policyExtensions = sqliteTable("policy_extensions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  policyId: integer("policy_id")
-    .notNull()
-    .unique()
-    .references(() => policies.id),
-  data: text("data").notNull(),
-});
-
-export type PolicyExtension = typeof policyExtensions.$inferSelect;
-export type NewPolicyExtension = typeof policyExtensions.$inferInsert;
-
-// ============================================================================
-// 9. coverageItems - 保障权益明细
+// 8. coverageItems - 保障权益明细
 // ============================================================================
 export const coverageItems = sqliteTable("coverage_items", {
   id: integer("id").primaryKey({ autoIncrement: true }),

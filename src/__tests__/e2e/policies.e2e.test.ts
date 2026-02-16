@@ -342,6 +342,57 @@ describe("Policies API E2E", () => {
     });
   });
 
+  describe("Beneficiaries API", () => {
+    let policyId: number;
+
+    test("setup: create test policy", async () => {
+      const { status, data } = await apiRequest<PolicyCreated>(
+        "/api/policies",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            applicantId: testMemberId,
+            insuredType: "Member",
+            insuredMemberId: testMemberId,
+            category: "Life",
+            insurerName: "受益人测试公司",
+            productName: "受益人测试产品",
+            policyNumber: `BEN-${Date.now()}`,
+            sumAssured: 500000,
+            premium: 10000,
+            paymentFrequency: "Yearly",
+            effectiveDate: "2026-01-01",
+          }),
+        }
+      );
+      expect(status).toBe(201);
+      policyId = data.id;
+    });
+
+    test("GET /api/policies/:id/beneficiaries returns empty array for new policy", async () => {
+      const { status, data } = await apiRequest<unknown[]>(
+        `/api/policies/${policyId}/beneficiaries`
+      );
+      expect(status).toBe(200);
+      expect(data).toEqual([]);
+    });
+
+    test("GET /api/policies/:id/beneficiaries returns 400 for invalid id", async () => {
+      const { status } = await apiRequest<{ error: string }>(
+        "/api/policies/invalid/beneficiaries"
+      );
+      expect(status).toBe(400);
+    });
+
+    test("cleanup: delete test policy", async () => {
+      const { status } = await apiRequest<{ success: boolean }>(
+        `/api/policies/${policyId}`,
+        { method: "DELETE" }
+      );
+      expect(status).toBe(200);
+    });
+  });
+
   describe("New field: guaranteedRenewalYears", () => {
     let policyId: number;
 
