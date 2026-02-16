@@ -18,7 +18,7 @@ export async function GET() {
   const members = membersRepo.findAll();
 
   const activePolicies = policies.filter(
-    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate) && !p.archived
+    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate)
   );
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 

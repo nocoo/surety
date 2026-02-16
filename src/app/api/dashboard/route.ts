@@ -21,7 +21,7 @@ export async function GET() {
   const members = membersRepo.findAll();
 
   const activePolicies = policies.filter(
-    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate) && !p.archived
+    (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate)
   );
   const totalPremium = activePolicies.reduce((sum, p) => sum + p.premium, 0);
   const totalSumAssured = activePolicies.reduce((sum, p) => sum + p.sumAssured, 0);
