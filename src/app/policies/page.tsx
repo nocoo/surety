@@ -135,6 +135,8 @@ export default function PoliciesPage() {
   const [filterInsured, setFilterInsured] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterAsset, setFilterAsset] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterArchived, setFilterArchived] = useState<string>("active"); // "active" = hide archived, "archived" = only archived, "all" = show all
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -147,7 +149,7 @@ export default function PoliciesPage() {
     fetch("/api/policies")
       .then((res) => res.json())
       .then((data: Policy[]) => {
-        setPolicies(data.filter((p) => !p.archived));
+        setPolicies(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -178,9 +180,23 @@ export default function PoliciesPage() {
     return Array.from(names).sort();
   }, [policies]);
 
+  // Get unique statuses for filter options
+  const statuses = useMemo(() => {
+    const s = new Set(policies.map((p) => p.status));
+    return Array.from(s);
+  }, [policies]);
+
   // Filter and sort policies
   const filteredPolicies = useMemo(() => {
     let result = [...policies];
+
+    // Apply archived filter (default: hide archived)
+    if (filterArchived === "active") {
+      result = result.filter((p) => !p.archived);
+    } else if (filterArchived === "archived") {
+      result = result.filter((p) => p.archived);
+    }
+    // "all" shows everything
 
     // Apply filters
     if (filterInsured !== "all") {
@@ -191,6 +207,9 @@ export default function PoliciesPage() {
     }
     if (filterAsset !== "all") {
       result = result.filter((p) => p.insuredAssetName === filterAsset);
+    }
+    if (filterStatus !== "all") {
+      result = result.filter((p) => p.status === filterStatus);
     }
 
     // Apply sorting
@@ -226,7 +245,7 @@ export default function PoliciesPage() {
     });
 
     return result;
-  }, [policies, filterInsured, filterCategory, filterAsset, sortField, sortDirection]);
+  }, [policies, filterInsured, filterCategory, filterAsset, filterStatus, filterArchived, sortField, sortDirection]);
 
   // Group policies by category
   const policiesByCategory = useMemo(() => {
@@ -348,7 +367,7 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterCategory !== "all") && 
+              {(filterInsured !== "all" || filterCategory !== "all" || filterStatus !== "all" || filterArchived !== "active") && 
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
@@ -412,7 +431,36 @@ export default function PoliciesPage() {
                 </Select>
               </div>
             )}
-            {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all") && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">状态:</span>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  {statuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {statusConfig[s].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">归档:</span>
+              <Select value={filterArchived} onValueChange={setFilterArchived}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">未归档</SelectItem>
+                  <SelectItem value="archived">已归档</SelectItem>
+                  <SelectItem value="all">全部</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all" || filterArchived !== "active") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -420,6 +468,8 @@ export default function PoliciesPage() {
                   setFilterInsured("all");
                   setFilterCategory("all");
                   setFilterAsset("all");
+                  setFilterStatus("all");
+                  setFilterArchived("active");
                 }}
               >
                 清除筛选
