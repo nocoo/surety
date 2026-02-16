@@ -78,7 +78,6 @@ interface Policy {
   deathBenefit?: string | null;
   notes?: string | null;
   status?: string;
-  archived?: boolean | null;
 }
 
 interface Member {
