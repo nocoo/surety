@@ -61,7 +61,6 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     guaranteedRenewalYears: policy.guaranteedRenewalYears,
     status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
     deathBenefit: policy.deathBenefit,
-    archived: policy.archived,
     policyFilePath: policy.policyFilePath,
     notes: policy.notes,
   });
@@ -105,7 +104,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     guaranteedRenewalYears: body.guaranteedRenewalYears,
     status: body.status,
     deathBenefit: body.deathBenefit,
-    archived: body.archived,
     policyFilePath: body.policyFilePath,
     notes: body.notes,
   });

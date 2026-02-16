@@ -35,7 +35,6 @@ export async function GET() {
     expiryDate: p.expiryDate,
     guaranteedRenewalYears: p.guaranteedRenewalYears,
     channel: p.channel,
-    archived: p.archived,
   }));
 
   return NextResponse.json(result);
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
     guaranteedRenewalYears: body.guaranteedRenewalYears ?? null,
     status: body.status ?? "Active",
     deathBenefit: body.deathBenefit ?? null,
-    archived: body.archived ?? false,
     policyFilePath: body.policyFilePath ?? null,
     notes: body.notes ?? null,
   });
