@@ -63,7 +63,6 @@ interface Policy {
   effectiveDate: string;
   expiryDate: string | null;
   channel: string | null;
-  archived: boolean | null;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -136,7 +135,6 @@ export default function PoliciesPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterAsset, setFilterAsset] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterArchived, setFilterArchived] = useState<string>("active"); // "active" = hide archived, "archived" = only archived, "all" = show all
 
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -190,14 +188,6 @@ export default function PoliciesPage() {
   const filteredPolicies = useMemo(() => {
     let result = [...policies];
 
-    // Apply archived filter (default: hide archived)
-    if (filterArchived === "active") {
-      result = result.filter((p) => !p.archived);
-    } else if (filterArchived === "archived") {
-      result = result.filter((p) => p.archived);
-    }
-    // "all" shows everything
-
     // Apply filters
     if (filterInsured !== "all") {
       result = result.filter((p) => p.insuredName === filterInsured);
@@ -245,7 +235,7 @@ export default function PoliciesPage() {
     });
 
     return result;
-  }, [policies, filterInsured, filterCategory, filterAsset, filterStatus, filterArchived, sortField, sortDirection]);
+  }, [policies, filterInsured, filterCategory, filterAsset, filterStatus, sortField, sortDirection]);
 
   // Group policies by category
   const policiesByCategory = useMemo(() => {
@@ -367,7 +357,7 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterCategory !== "all" || filterStatus !== "all" || filterArchived !== "active") && 
+              {(filterInsured !== "all" || filterCategory !== "all" || filterStatus !== "all") && 
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
@@ -447,20 +437,7 @@ export default function PoliciesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">归档:</span>
-              <Select value={filterArchived} onValueChange={setFilterArchived}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">未归档</SelectItem>
-                  <SelectItem value="archived">已归档</SelectItem>
-                  <SelectItem value="all">全部</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all" || filterArchived !== "active") && (
+            {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -469,7 +446,6 @@ export default function PoliciesPage() {
                   setFilterCategory("all");
                   setFilterAsset("all");
                   setFilterStatus("all");
-                  setFilterArchived("active");
                 }}
               >
                 清除筛选
