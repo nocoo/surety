@@ -306,7 +306,7 @@ function main() {
       sum_assured, premium, payment_frequency, payment_years,
       renewal_type, payment_account, next_due_date,
       effective_date, expiry_date, status, death_benefit,
-      archived, notes, created_at, updated_at
+      notes, created_at, updated_at
     ) VALUES (
       ?, ?, ?, ?,
       ?, ?, ?, ?,
@@ -314,7 +314,7 @@ function main() {
       ?, ?, ?, ?,
       ?, ?, ?,
       ?, ?, ?, ?,
-      ?, ?, ?, ?
+      ?, ?, ?
     )`,
   );
 
@@ -384,7 +384,7 @@ function main() {
     const deathBenefit = row["身故"]?.trim() || null;
     const channel = row["渠道"]?.trim() || null;
     const archivedRaw = row["存档"]?.trim() || "";
-    const archived = archivedRaw === "Yes" || archivedRaw === "是" ? 1 : 0;
+    const isArchived = archivedRaw === "Yes" || archivedRaw === "是";
 
     const insurerId = insurerMap.get(insurerName) ?? null;
 
@@ -398,7 +398,7 @@ function main() {
       insuredAssetId = matchAsset(insurerName, assetMatchMap);
     }
 
-    const status = archived ? "Surrendered" : "Active";
+    const status = isArchived ? "Surrendered" : "Active";
 
     // Beneficiary info
     const beneficiaryRaw = row["受益人"]?.trim() || "";
@@ -427,7 +427,6 @@ function main() {
         expiryDate,
         status,
         deathBenefit,
-        archived,
         null, // notes
         now,
         now,
