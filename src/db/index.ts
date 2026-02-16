@@ -394,7 +394,6 @@ export function initSchema(): void {
       guaranteed_renewal_years INTEGER,
       status TEXT NOT NULL DEFAULT 'Active',
       death_benefit TEXT,
-      archived INTEGER DEFAULT 0,
       policy_file_path TEXT,
       notes TEXT,
       created_at INTEGER NOT NULL,
