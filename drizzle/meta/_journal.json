@@ -15,6 +15,13 @@
       "when": 1770593024502,
       "tag": "0001_smart_jean_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771142400000,
+      "tag": "0002_drop_archived",
+      "breakpoints": true
     }
   ]
 }
