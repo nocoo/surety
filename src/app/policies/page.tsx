@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -130,18 +131,18 @@ export default function PoliciesPage() {
   const [paymentsPolicyId, setPaymentsPolicyId] = useState<number | null>(null);
   const [paymentsProductName, setPaymentsProductName] = useState<string>("");
 
-  // Filter state
-  const [filterInsured, setFilterInsured] = useState<string>("all");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterAsset, setFilterAsset] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  // Filter state (persisted to localStorage)
+  const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
+  const [filterCategory, setFilterCategory] = usePersistedState("surety-filter-category", "all");
+  const [filterAsset, setFilterAsset] = usePersistedState("surety-filter-asset", "all");
+  const [filterStatus, setFilterStatus] = usePersistedState("surety-filter-status", "all");
 
-  // View mode state
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  // View mode state (persisted to localStorage)
+  const [viewMode, setViewMode] = usePersistedState<ViewMode>("surety-view-mode", "list");
 
-  // Sort state
-  const [sortField, setSortField] = useState<SortField>("insuredName");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  // Sort state (persisted to localStorage)
+  const [sortField, setSortField] = usePersistedState<SortField>("surety-sort-field", "insuredName");
+  const [sortDirection, setSortDirection] = usePersistedState<SortDirection>("surety-sort-direction", "asc");
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -267,7 +268,7 @@ export default function PoliciesPage() {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
       setSortDirection("asc");
@@ -357,7 +358,7 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterCategory !== "all" || filterStatus !== "all") && 
+              {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && 
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
