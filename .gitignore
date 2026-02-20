@@ -50,6 +50,13 @@ database/*.db.bak
 !database/surety.example.db
 !database/surety.test.db
 .next-e2e
+.next-e2e-ui
+
+# playwright
+test-results/
+playwright-report/
+e2e/test-results/
+e2e/playwright-report/
 
 # source logo files (large, in root only)
 /logo-*.png

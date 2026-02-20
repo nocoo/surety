@@ -203,16 +203,13 @@ export function ensureDatabase(dbType: DatabaseType): DbInstance {
  * This ensures E2E tests (which set SURETY_DB) work correctly.
  */
 export function ensureDatabaseFromCookie(cookieValue: string | undefined): DbInstance {
-  // Environment variable takes precedence (for E2E tests)
+  // Environment variable takes precedence (for E2E tests).
+  // Use the raw SURETY_DB value directly — do NOT map through DatabaseType,
+  // because the value may point to a custom file (e.g., "database/surety.e2e-ui.db")
+  // that doesn't match any hardcoded DATABASE_FILES entry.
   const envDb = process.env.SURETY_DB;
   if (envDb) {
-    let envDbType: DatabaseType = "production";
-    if (envDb === E2E_DB_FILE || envDb.includes("e2e")) {
-      envDbType = "test";
-    } else if (envDb.includes("example")) {
-      envDbType = "example";
-    }
-    return ensureDatabase(envDbType);
+    return createDatabase(envDb);
   }
   
   // Fall back to cookie value

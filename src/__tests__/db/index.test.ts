@@ -231,11 +231,12 @@ describe("db/index", () => {
       expect(db).toBeDefined();
     });
 
-    test("uses env var mapped to production type (throws for non-e2e/example SURETY_DB)", () => {
-      // SURETY_DB=surety.ut-temp.db doesn't match e2e or example patterns,
-      // so ensureDatabaseFromCookie maps it to "production" → opens surety.db → BLOCKED
+    test("uses raw SURETY_DB value directly (non-protected file opens normally)", () => {
+      // SURETY_DB is used as-is — no mapping through DatabaseType.
+      // surety.ut-temp.db is not a protected file, so it opens normally.
       process.env.SURETY_DB = TEMP_DB;
-      expect(() => ensureDatabaseFromCookie("test")).toThrow("BLOCKED");
+      const db = ensureDatabaseFromCookie("test");
+      expect(db).toBeDefined();
     });
 
     test("falls back to cookie value 'test' when no env var", () => {

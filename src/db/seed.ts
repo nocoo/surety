@@ -7,6 +7,7 @@ import {
   paymentsRepo,
   cashValuesRepo,
   settingsRepo,
+  insurersRepo,
 } from "./repositories";
 
 // ============================================================================
@@ -294,6 +295,12 @@ export function seedDatabase(): SeedResult {
       details: asset.details,
     });
     assetMap.set(asset.identifier, created.id);
+  }
+
+  // Seed insurers (extract unique insurer names from policies)
+  const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
+  for (const name of uniqueInsurers) {
+    insurersRepo.findOrCreate(name);
   }
 
   // Seed policies with related data

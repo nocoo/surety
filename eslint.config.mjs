@@ -10,9 +10,12 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     ".next-e2e/**",
+    ".next-e2e-ui/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Playwright E2E tests (not React code):
+    "e2e/**",
   ]),
 ]);
 
