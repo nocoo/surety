@@ -23,7 +23,8 @@
 |------|------|----------|------|
 | UT | bun test | pre-commit | 覆盖率 90%+ |
 | Lint | eslint | pre-push | 零错误零警告 |
-| E2E | 待定 | pre-push | BDD 模式 |
+| API E2E | bun run test:e2e | pre-push | BDD 模式 (port 7016) |
+| UI E2E | bun run test:e2e:ui | pre-push | Playwright + Chromium (port 7017) |
 
 ### 核心原则
 
@@ -40,6 +41,8 @@ bun test             # 单元测试 (含 MCP)
 bun test --coverage  # 测试覆盖率
 bun run test:mcp     # MCP 单元测试
 bun run test:mcp:e2e # MCP E2E 测试
+bun run test:e2e     # API E2E 测试 (port 7016)
+bun run test:e2e:ui  # Playwright 浏览器 E2E 测试 (port 7017)
 bun run lint         # ESLint
 bun run db:push      # 推送 schema
 bun run db:studio    # 数据库可视化
