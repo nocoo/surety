@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.1] - 2026-02-23
+
+### Changed
+
+- Replace logo with transparent-background version; simplify to single `<img>` (no more dark/light variants)
+- Show user email instead of static "家庭管理员" label in sidebar
+- MCP server version now reads from `APP_VERSION` (no more hardcoded string)
+
+### Removed
+
+- Unused Next.js starter SVGs (file, globe, next, vercel, window)
+
 ## [v1.0.0] - 2026-02-23
 
 First stable release. A fully functional family insurance policy management tool

@@ -59,6 +59,7 @@ bun run mcp          # 启动 MCP Server (stdio)
    | `package.json` | `"version"` field |
    | `src/app/api/live/route.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
    | `src/services/backy.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
+   | `mcp/index.ts` | MCP server version via `APP_VERSION` (auto, no manual change needed) |
    | `src/__tests__/version.test.ts` | reads from package.json (auto, no manual change needed) |
 
 3. Commit: `chore: bump version to x.y.z`
