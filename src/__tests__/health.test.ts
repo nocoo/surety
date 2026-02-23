@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { checkHealth, type HealthDeps, type HealthResult } from "@/lib/health";
+import { APP_VERSION } from "@/lib/version";
 
 /** Build a default deps object where the database is healthy. */
 function healthyDeps(overrides: Partial<HealthDeps> = {}): HealthDeps {
@@ -9,7 +10,7 @@ function healthyDeps(overrides: Partial<HealthDeps> = {}): HealthDeps {
     }),
     uptime: 12345.678,
     runtime: "bun",
-    version: "0.1.0",
+    version: APP_VERSION,
     rssBytes: 128 * 1024 * 1024, // 128 MB
     ...overrides,
   };

@@ -114,7 +114,7 @@ describe("fetchBackyHistory", () => {
       environment: null,
       total_backups: 3,
       recent_backups: [
-        { id: "1", tag: "v0.1.0-2026-02-23-7mem-8pol-3ast-5ins", environment: "dev", file_size: 1024, is_single_json: 1, created_at: "2026-02-23T10:00:00Z" },
+        { id: "1", tag: "v1.0.0-2026-02-23-7mem-8pol-3ast-5ins", environment: "dev", file_size: 1024, is_single_json: 1, created_at: "2026-02-23T10:00:00Z" },
       ],
     };
 
