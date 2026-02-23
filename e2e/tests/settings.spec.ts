@@ -44,11 +44,4 @@ test.describe("Settings", () => {
       page.getByRole("button", { name: "已保存" })
     ).toBeVisible();
   });
-
-  test("data security info box is visible", async ({ page }) => {
-    await expect(page.getByText("关于数据安全")).toBeVisible();
-    await expect(
-      page.getByText("所有数据仅存储在本地 SQLite 数据库中")
-    ).toBeVisible();
-  });
 });

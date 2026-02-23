@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Save, Database, Bell, Shield, Info, Terminal, Download, Upload, AlertTriangle, Loader2, Cloud, RefreshCw, History, Plug, Send } from "lucide-react";
+import { Save, Database, Bell, Shield, Terminal, Download, Upload, AlertTriangle, Loader2, Cloud, RefreshCw, History, Plug, Send } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -538,6 +538,53 @@ export default function SettingsPage() {
             </AlertDialog>
           </div>
 
+          {/* MCP Access */}
+          <div className="rounded-card bg-secondary p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <Terminal className="h-5 w-5 text-emerald-500" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h2 className="font-semibold">MCP 访问</h2>
+                  <p className="text-sm text-muted-foreground">
+                    允许外部 AI 助手（Claude Code、Cursor 等）查询保单数据
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={mcpEnabled}
+                onCheckedChange={handleMcpToggle}
+                disabled={mcpLoading}
+                aria-label="Toggle MCP access"
+              />
+            </div>
+            {mcpEnabled && (
+              <>
+                <Separator className="my-4" />
+                <div className="rounded-widget bg-muted/50 p-4">
+                  <p className="text-sm font-medium mb-2">配置方式</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    在 AI 助手的 MCP 配置中添加以下内容：
+                  </p>
+                  <pre className="text-xs bg-background rounded-widget p-3 overflow-x-auto">
+{`{
+  "mcpServers": {
+    "surety": {
+      "command": "bun",
+      "args": ["run", "${typeof window !== "undefined" ? "" : ""}mcp/index.ts"]
+    }
+  }
+}`}
+                  </pre>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    请将路径替换为实际的项目目录路径。
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Backy Remote Backup */}
           <div className="rounded-card bg-secondary p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -717,65 +764,6 @@ export default function SettingsPage() {
                 </div>
               </>
             )}
-          </div>
-
-          <div className="rounded-card bg-secondary p-6 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <Terminal className="h-5 w-5 text-emerald-500" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <h2 className="font-semibold">MCP 访问</h2>
-                  <p className="text-sm text-muted-foreground">
-                    允许外部 AI 助手（Claude Code、Cursor 等）查询保单数据
-                  </p>
-                </div>
-              </div>
-              <Switch
-                checked={mcpEnabled}
-                onCheckedChange={handleMcpToggle}
-                disabled={mcpLoading}
-                aria-label="Toggle MCP access"
-              />
-            </div>
-            {mcpEnabled && (
-              <>
-                <Separator className="my-4" />
-                <div className="rounded-widget bg-muted/50 p-4">
-                  <p className="text-sm font-medium mb-2">配置方式</p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    在 AI 助手的 MCP 配置中添加以下内容：
-                  </p>
-                  <pre className="text-xs bg-background rounded-widget p-3 overflow-x-auto">
-{`{
-  "mcpServers": {
-    "surety": {
-      "command": "bun",
-      "args": ["run", "${typeof window !== "undefined" ? "" : ""}mcp/index.ts"]
-    }
-  }
-}`}
-                  </pre>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    请将路径替换为实际的项目目录路径。
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-card bg-blue-50 p-4 dark:bg-blue-950">
-          <div className="flex gap-3">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
-            <div className="text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-medium mb-1">关于数据安全</p>
-              <p className="text-blue-600 dark:text-blue-400">
-                所有数据仅存储在本地 SQLite 数据库中，不会上传至任何服务器。
-                建议定期备份数据库文件。
-              </p>
-            </div>
           </div>
         </div>
 
