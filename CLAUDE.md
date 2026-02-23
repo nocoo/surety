@@ -49,6 +49,25 @@ bun run db:studio    # 数据库可视化
 bun run mcp          # 启动 MCP Server (stdio)
 ```
 
+## Version Release Checklist
+
+1. Read current version from `package.json`, apply the requested bump (default: patch)
+2. Update **all version references** per this checklist:
+
+   | File | What to update |
+   |------|---------------|
+   | `package.json` | `"version"` field |
+   | `src/app/api/live/route.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
+   | `src/services/backy.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
+   | `src/__tests__/version.test.ts` | reads from package.json (auto, no manual change needed) |
+
+3. Commit: `chore: bump version to x.y.z`
+4. Push (triggers deployment)
+5. Create annotated tag: `git tag -a vx.y.z -m "vx.y.z"`
+6. Push tags: `git push --tags`
+
+Verification: `rg '旧版本号' --glob '*.ts' --glob '*.tsx'` to catch stragglers.
+
 ## Retrospective
 
 - **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。

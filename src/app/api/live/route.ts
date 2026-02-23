@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkHealth, type HealthDeps } from "@/lib/health";
+import { APP_VERSION } from "@/lib/version";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export async function GET() {
     },
     uptime: process.uptime(),
     runtime: isBun ? "bun" : "node",
-    version: process.env.npm_package_version ?? "0.1.0",
+    version: process.env.npm_package_version ?? APP_VERSION,
     rssBytes: process.memoryUsage().rss,
   };
 

@@ -10,6 +10,7 @@
 
 import { settingsRepo } from "@/db/repositories";
 import { buildBackup, buildBackupFilename, type BackupData } from "@/db/backup";
+import { APP_VERSION } from "@/lib/version";
 
 // ── Types ──
 
@@ -121,7 +122,7 @@ export async function pushBackupToBacky(
   const json = JSON.stringify(backup, null, 2);
 
   const environment = getEnvironment();
-  const version = process.env.npm_package_version ?? "0.1.0";
+  const version = process.env.npm_package_version ?? APP_VERSION;
 
   const date = new Date().toISOString().slice(0, 10);
   const stats = buildStatsLabel(backup);

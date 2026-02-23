@@ -16,7 +16,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
+import { APP_VERSION } from "@/lib/version";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -170,6 +172,9 @@ export function Sidebar() {
                     className="hidden shrink-0 dark:block"
                   />
                   <span className="text-lg font-bold tracking-tighter">surety</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
+                    v{APP_VERSION}
+                  </Badge>
                 </div>
                 <button
                   onClick={toggle}
