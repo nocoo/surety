@@ -45,6 +45,7 @@ export function Sidebar() {
 
   // Get user info from session (Google OAuth)
   const userName = session?.user?.name ?? "用户";
+  const userEmail = session?.user?.email ?? "";
   const userImage = session?.user?.image;
   const userInitial = userName[0] ?? "?";
 
@@ -209,7 +210,7 @@ export function Sidebar() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-                  <p className="text-xs text-muted-foreground truncate">家庭管理员</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
