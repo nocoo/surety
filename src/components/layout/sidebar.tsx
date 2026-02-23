@@ -63,19 +63,11 @@ export function Sidebar() {
             <div className="flex h-14 w-full items-center justify-start pl-6 pr-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-light-24.png"
+                src="/logo-24.png"
                 alt="Surety"
                 width={24}
                 height={24}
-                className="block shrink-0 dark:hidden"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-dark-24.png"
-                alt="Surety"
-                width={24}
-                height={24}
-                className="hidden shrink-0 dark:block"
+                className="shrink-0"
               />
             </div>
 
@@ -157,19 +149,11 @@ export function Sidebar() {
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/logo-light-24.png"
+                    src="/logo-24.png"
                     alt="Surety"
                     width={24}
                     height={24}
-                    className="block shrink-0 dark:hidden"
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo-dark-24.png"
-                    alt="Surety"
-                    width={24}
-                    height={24}
-                    className="hidden shrink-0 dark:block"
+                    className="shrink-0"
                   />
                   <span className="text-lg font-bold tracking-tighter">surety</span>
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">

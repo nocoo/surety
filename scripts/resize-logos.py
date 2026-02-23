@@ -1,85 +1,52 @@
 #!/usr/bin/env python3
 """
-Resize logo images for different use cases in the Surety app.
+Resize logo.png (transparent background) for different use cases.
 
 Generates:
-- Sidebar logos (24px height)
-- Login page logos (40px height)
-- Favicons (16x16, 32x32, apple-touch-icon 180x180)
+- Sidebar logo (24x24)
+- Login/loading page logo (80x80)
+- Favicons (16x16, 32x32, apple-touch-icon 180x180, .ico)
 """
 
 from PIL import Image
 from pathlib import Path
 
 
-def resize_maintaining_aspect(img: Image.Image, height: int) -> Image.Image:
-    """Resize image to specified height while maintaining aspect ratio."""
-    aspect_ratio = img.width / img.height
-    new_width = int(height * aspect_ratio)
-    return img.resize((new_width, height), Image.Resampling.LANCZOS)
-
-
-def resize_to_square(img: Image.Image, size: int) -> Image.Image:
-    """Resize image to square, centering on transparent background."""
-    # First resize maintaining aspect ratio to fit within square
-    aspect_ratio = img.width / img.height
-    if aspect_ratio > 1:
-        new_width = size
-        new_height = int(size / aspect_ratio)
-    else:
-        new_height = size
-        new_width = int(size * aspect_ratio)
-
-    resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-    # Create square canvas with transparent background
-    square = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-
-    # Paste centered
-    x = (size - new_width) // 2
-    y = (size - new_height) // 2
-    square.paste(resized, (x, y), resized if resized.mode == "RGBA" else None)
-
-    return square
+def resize_square(img: Image.Image, size: int) -> Image.Image:
+    """Resize square image to target size with LANCZOS resampling."""
+    return img.resize((size, size), Image.Resampling.LANCZOS)
 
 
 def main():
     root = Path(__file__).parent.parent
     public = root / "public"
+    public.mkdir(exist_ok=True)
 
-    # Load source images
-    light = Image.open(root / "logo-light.png").convert("RGBA")
-    dark = Image.open(root / "logo-dark.png").convert("RGBA")
+    # Load single source image (transparent background)
+    logo = Image.open(root / "logo.png").convert("RGBA")
+    print(f"Source logo: {logo.size}")
 
-    print(f"Light logo: {light.size}")
-    print(f"Dark logo: {dark.size}")
+    # Sidebar logo (24x24)
+    sidebar = resize_square(logo, 24)
+    sidebar.save(public / "logo-24.png")
+    print(f"Sidebar logo: {sidebar.size}")
 
-    # Generate sidebar logos (24px height)
-    sidebar_light = resize_maintaining_aspect(light, 24)
-    sidebar_dark = resize_maintaining_aspect(dark, 24)
-    sidebar_light.save(public / "logo-light-24.png")
-    sidebar_dark.save(public / "logo-dark-24.png")
-    print(f"Sidebar logos: {sidebar_light.size}")
+    # Login/loading page logo (80x80)
+    login = resize_square(logo, 80)
+    login.save(public / "logo-80.png")
+    print(f"Login logo: {login.size}")
 
-    # Generate login page logos (80px height - larger for vertical layout)
-    login_light = resize_maintaining_aspect(light, 80)
-    login_dark = resize_maintaining_aspect(dark, 80)
-    login_light.save(public / "logo-light-80.png")
-    login_dark.save(public / "logo-dark-80.png")
-    print(f"Login logos: {login_light.size}")
-
-    # Generate favicons (use light version)
-    favicon_16 = resize_to_square(light, 16)
-    favicon_32 = resize_to_square(light, 32)
-    apple_touch = resize_to_square(light, 180)
+    # Favicons
+    favicon_16 = resize_square(logo, 16)
+    favicon_32 = resize_square(logo, 32)
+    apple_touch = resize_square(logo, 180)
 
     favicon_16.save(public / "favicon-16.png")
     favicon_32.save(public / "favicon-32.png")
     apple_touch.save(public / "apple-touch-icon.png")
 
-    # Generate .ico file with multiple sizes
-    favicon_32_for_ico = resize_to_square(light, 32)
-    favicon_32_for_ico.save(public / "favicon.ico", format="ICO")
+    # .ico file (32x32)
+    favicon_32.save(public / "favicon.ico", format="ICO")
 
     print("Favicons generated: 16x16, 32x32, 180x180, .ico")
     print("Done!")

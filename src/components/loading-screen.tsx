@@ -10,19 +10,11 @@ export default function LoadingScreen() {
         <div className="flex h-72 w-72 items-center justify-center rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border overflow-hidden p-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-light-80.png"
+            src="/logo-80.png"
             alt="Surety"
             width={112}
             height={112}
-            className="h-28 w-28 object-contain dark:hidden"
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-dark-80.png"
-            alt="Surety"
-            width={112}
-            height={112}
-            className="hidden h-28 w-28 object-contain dark:block"
+            className="h-28 w-28 object-contain"
           />
         </div>
         {/* Orbital spinner — overlays the circle edge */}

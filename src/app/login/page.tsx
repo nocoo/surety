@@ -115,19 +115,11 @@ function LoginContent() {
             <div className="h-24 w-24 overflow-hidden rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border p-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo-light-80.png"
+                src="/logo-80.png"
                 alt="Surety"
                 width={96}
                 height={96}
-                className="h-full w-full object-contain dark:hidden"
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-dark-80.png"
-                alt="Surety"
-                width={96}
-                height={96}
-                className="hidden h-full w-full object-contain dark:block"
+                className="h-full w-full object-contain"
               />
             </div>
 
