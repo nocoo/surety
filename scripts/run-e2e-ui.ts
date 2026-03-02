@@ -3,14 +3,16 @@
  * Playwright E2E UI Test Runner
  *
  * This script:
- * 1. Creates and seeds E2E database
- * 2. Starts dev server on dedicated port
- * 3. Runs Playwright tests
- * 4. Cleans up
+ * 1. Ensures the target port is free
+ * 2. Creates and seeds E2E database
+ * 3. Starts dev server on dedicated port
+ * 4. Runs Playwright tests
+ * 5. Cleans up
  */
 
 import { spawn, type Subprocess } from "bun";
-import { existsSync, unlinkSync, rmSync } from "fs";
+import { existsSync, rmSync } from "fs";
+import { ensurePortFree, cleanupDbFiles } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "7017";
 const E2E_DB_FILE = "database/surety.e2e-ui.db";
@@ -40,13 +42,7 @@ async function cleanup() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  for (const suffix of ["", "-wal", "-shm", "-journal"]) {
-    const file = `${E2E_DB_FILE}${suffix}`;
-    if (existsSync(file)) {
-      unlinkSync(file);
-      console.log(`   Removed ${file}`);
-    }
-  }
+  cleanupDbFiles(E2E_DB_FILE);
 
   if (existsSync(E2E_DIST_DIR)) {
     rmSync(E2E_DIST_DIR, { recursive: true, force: true });
@@ -57,11 +53,11 @@ async function cleanup() {
 async function main() {
   console.log("🎭 Playwright E2E UI Test Runner\n");
 
+  // Step 0: Ensure port is free
+  await ensurePortFree(E2E_UI_PORT);
+
   // Cleanup any existing artifacts
-  for (const suffix of ["", "-wal", "-shm", "-journal"]) {
-    const file = `${E2E_DB_FILE}${suffix}`;
-    if (existsSync(file)) unlinkSync(file);
-  }
+  cleanupDbFiles(E2E_DB_FILE);
 
   // Step 1: Seed E2E database
   console.log("📦 Seeding E2E UI database...");
@@ -94,6 +90,15 @@ async function main() {
 
   const ready = await waitForServer();
   if (!ready) {
+    // Dump server output on failure for debugging
+    if (serverProcess) {
+      const stdout = serverProcess.stdout && typeof serverProcess.stdout !== "number"
+        ? await new Response(serverProcess.stdout).text() : "";
+      const stderr = serverProcess.stderr && typeof serverProcess.stderr !== "number"
+        ? await new Response(serverProcess.stderr).text() : "";
+      if (stdout) console.error("Server stdout:\n", stdout);
+      if (stderr) console.error("Server stderr:\n", stderr);
+    }
     console.error("❌ Failed to start E2E UI server");
     await cleanup();
     process.exit(1);

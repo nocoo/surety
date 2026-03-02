@@ -1,16 +1,18 @@
 #!/usr/bin/env bun
 /**
  * E2E Test Runner
- * 
+ *
  * This script:
- * 1. Creates and seeds E2E database
- * 2. Starts dev server on dedicated port
- * 3. Runs E2E tests
- * 4. Cleans up
+ * 1. Ensures the target port is free
+ * 2. Creates and seeds E2E database
+ * 3. Starts dev server on dedicated port
+ * 4. Runs E2E tests
+ * 5. Cleans up
  */
 
 import { spawn, type Subprocess } from "bun";
-import { existsSync, unlinkSync, rmSync } from "fs";
+import { existsSync, rmSync } from "fs";
+import { ensurePortFree, cleanupDbFiles } from "./e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
 const E2E_DB_FILE = "database/surety.e2e.db";
@@ -33,17 +35,14 @@ async function waitForServer(maxAttempts = 60): Promise<boolean> {
 
 async function cleanup() {
   console.log("\n🧹 Cleaning up...");
-  
+
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  if (existsSync(E2E_DB_FILE)) {
-    unlinkSync(E2E_DB_FILE);
-    console.log(`   Removed ${E2E_DB_FILE}`);
-  }
+  cleanupDbFiles(E2E_DB_FILE);
 
   if (existsSync(E2E_DIST_DIR)) {
     rmSync(E2E_DIST_DIR, { recursive: true, force: true });
@@ -54,10 +53,11 @@ async function cleanup() {
 async function main() {
   console.log("🚀 E2E Test Runner\n");
 
+  // Step 0: Ensure port is free
+  await ensurePortFree(E2E_PORT);
+
   // Cleanup any existing E2E artifacts
-  if (existsSync(E2E_DB_FILE)) {
-    unlinkSync(E2E_DB_FILE);
-  }
+  cleanupDbFiles(E2E_DB_FILE);
 
   // Step 1: Seed E2E database
   console.log("📦 Seeding E2E database...");
@@ -90,6 +90,15 @@ async function main() {
 
   const ready = await waitForServer();
   if (!ready) {
+    // Dump server output on failure for debugging
+    if (serverProcess) {
+      const stdout = serverProcess.stdout && typeof serverProcess.stdout !== "number"
+        ? await new Response(serverProcess.stdout).text() : "";
+      const stderr = serverProcess.stderr && typeof serverProcess.stderr !== "number"
+        ? await new Response(serverProcess.stderr).text() : "";
+      if (stdout) console.error("Server stdout:\n", stdout);
+      if (stderr) console.error("Server stderr:\n", stderr);
+    }
     console.error("❌ Failed to start E2E server");
     await cleanup();
     process.exit(1);
@@ -114,7 +123,12 @@ async function main() {
   // Step 4: Cleanup
   await cleanup();
 
-  console.log("\n" + (testResult.exitCode === 0 ? "✅ E2E tests passed!" : "❌ E2E tests failed!"));
+  console.log(
+    "\n" +
+      (testResult.exitCode === 0
+        ? "✅ E2E tests passed!"
+        : "❌ E2E tests failed!")
+  );
   process.exit(testResult.exitCode ?? 1);
 }
 
