@@ -95,10 +95,20 @@ Commit: `feat: enable eslint strict mode for four-layer compliance`
 
 ## Success Criteria
 
-- [ ] pre-commit blocks code with <90% coverage
-- [ ] pre-push only runs E2E tests (no redundant lint/coverage)
-- [ ] E2E scripts detect and kill stale port occupants
-- [ ] Both E2E runners clean WAL/SHM files
-- [ ] Server startup failures show useful logs
-- [ ] API E2E coverage >= 95%
-- [ ] ESLint strict mode active with zero warnings
+- [x] pre-commit blocks code with <90% coverage
+- [x] pre-push only runs E2E tests (no redundant lint/coverage)
+- [x] E2E scripts detect and kill stale port occupants
+- [x] Both E2E runners clean WAL/SHM files
+- [x] Server startup failures show useful logs
+- [x] API E2E coverage >= 95% (now 45/47 = 95.7%, only auth routes excluded)
+- [x] ESLint strict mode active with zero warnings
+
+## Completion Log
+
+| Step | Commit | Date |
+|------|--------|------|
+| Plan | `docs: add four-layer testing improvement plan` | 2026-03-03 |
+| Step 1 | `fix: align husky hooks with four-layer testing spec` | 2026-03-03 |
+| Steps 2-4 | `fix: add port pre-check, wal cleanup, and failure logs to e2e runners` | 2026-03-03 |
+| Step 5 | `test: add e2e tests for live endpoint and backup restore` | 2026-03-03 |
+| Step 6 | `feat: enable eslint strict mode for four-layer compliance` | 2026-03-03 |
