@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.0.2] - 2026-03-03
+
+### Added
+
+- ESLint strict mode: `no-explicit-any`, `no-unused-vars`, `no-console` (src/mcp only) enforced as errors
+- E2E tests for `GET /api/live` (health-check smoke test) and `POST /api/backup` (restore round-trip)
+- Port pre-check utility (`scripts/e2e-utils.ts`): detects and kills stale processes before starting E2E servers
+- Server failure log dump: E2E runners now output captured stdout/stderr when the dev server fails to start
+
+### Fixed
+
+- Husky hooks realigned with four-layer testing spec: coverage check moved to pre-commit, pre-push now only runs E2E
+- `run-e2e.ts` now cleans WAL/SHM/journal files (aligned with `run-e2e-ui.ts`)
+
+### Documentation
+
+- Four-layer testing improvement plan (`docs/06-testing-improvement-plan.md`)
+
 ## [v1.0.1] - 2026-02-23
 
 ### Changed
@@ -47,7 +65,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - **API E2E tests** — comprehensive BDD-style tests for all API routes (port 7016)
 - **Playwright E2E** — 58 browser tests across 9 specs covering navigation, CRUD, and settings (port 7017)
 - **MCP E2E tests** — subprocess-based integration tests for MCP server
-- **Pre-commit** (UT) and **pre-push** (UT + Lint + E2E) hooks via Husky
+- **Pre-commit** (UT + coverage + Lint) and **pre-push** (API E2E + UI E2E) hooks via Husky
 
 ### Infrastructure
 
