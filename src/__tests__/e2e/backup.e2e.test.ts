@@ -104,4 +104,65 @@ describe("Backup API E2E", () => {
     expect(parsed.version).toBe(1);
     expect(parsed.data).toBeDefined();
   });
+
+  // --- POST /api/backup (restore) ---
+
+  test("POST /api/backup restores from a valid backup", async () => {
+    // Step 1: Export current data
+    const exportRes = await fetch(`${getBaseUrl()}/api/backup`);
+    const backup: BackupData = await exportRes.json();
+
+    // Step 2: Restore the same data
+    const restoreRes = await fetch(`${getBaseUrl()}/api/backup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(backup),
+    });
+
+    expect(restoreRes.status).toBe(200);
+    const result = await restoreRes.json();
+    expect(result.success).toBe(true);
+    expect(result.restored).toBeDefined();
+  });
+
+  test("POST /api/backup rejects invalid payload", async () => {
+    const response = await fetch(`${getBaseUrl()}/api/backup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version: 999, data: {} }),
+    });
+
+    expect(response.status).toBe(400);
+    const result = await response.json();
+    expect(result.error).toBeDefined();
+  });
+
+  test("POST /api/backup rejects non-object payload", async () => {
+    const response = await fetch(`${getBaseUrl()}/api/backup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify("not an object"),
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  test("data integrity after round-trip restore", async () => {
+    // Export
+    const exportRes = await fetch(`${getBaseUrl()}/api/backup`);
+    const backup: BackupData = await exportRes.json();
+    const originalMemberCount = backup.data.members.length;
+
+    // Restore
+    await fetch(`${getBaseUrl()}/api/backup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(backup),
+    });
+
+    // Re-export and verify counts match
+    const reExportRes = await fetch(`${getBaseUrl()}/api/backup`);
+    const reBackup: BackupData = await reExportRes.json();
+    expect(reBackup.data.members.length).toBe(originalMemberCount);
+  });
 });
