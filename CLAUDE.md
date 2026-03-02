@@ -17,13 +17,13 @@
 | UI | Tailwind CSS + shadcn/ui |
 | Deployment | Localhost:7015 |
 
-## 三层测试框架
+## 四层测试框架
 
 | 层级 | 工具 | 触发时机 | 要求 |
 |------|------|----------|------|
 | UT | bun test | pre-commit | 覆盖率 90%+ |
-| Lint | eslint | pre-push | 零错误零警告 |
-| API E2E | bun run test:e2e | pre-push | BDD 模式 (port 7016) |
+| Lint | eslint | pre-commit | 零错误零警告 |
+| API E2E | bun run test:e2e | pre-push | 100% API 覆盖 (port 7016) |
 | UI E2E | bun run test:e2e:ui | pre-push | Playwright + Chromium (port 7017) |
 
 ### 核心原则
