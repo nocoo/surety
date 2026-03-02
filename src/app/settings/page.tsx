@@ -328,7 +328,6 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
-    console.log("Settings saved:", settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

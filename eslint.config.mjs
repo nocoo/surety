@@ -17,6 +17,24 @@ const eslintConfig = defineConfig([
     // Playwright E2E tests (not React code):
     "e2e/**",
   ]),
+  // Strict mode: four-layer testing compliance
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  // no-console for application code only (scripts use console legitimately)
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx", "mcp/**/*.ts"],
+    rules: {
+      "no-console": ["error", { allow: ["warn", "error"] }],
+    },
+  },
 ]);
 
 export default eslintConfig;
