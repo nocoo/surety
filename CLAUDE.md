@@ -24,7 +24,7 @@
 | UT | bun test | pre-commit | 覆盖率 90%+ |
 | Lint | eslint | pre-commit | 零错误零警告 |
 | API E2E | bun run test:e2e | pre-push | 100% API 覆盖 (port 7016) |
-| UI E2E | bun run test:e2e:ui | pre-push | Playwright + Chromium (port 7017) |
+| UI E2E | bun run test:e2e:ui | 按需执行 | Playwright + Chromium (port 7017) |
 
 ### 核心原则
 

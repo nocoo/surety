@@ -96,7 +96,7 @@ Commit: `feat: enable eslint strict mode for four-layer compliance`
 ## Success Criteria
 
 - [x] pre-commit blocks code with <90% coverage
-- [x] pre-push only runs E2E tests (no redundant lint/coverage)
+- [x] pre-push only runs API E2E tests (BDD E2E moved to on-demand via `bun run test:e2e:ui`)
 - [x] E2E scripts detect and kill stale port occupants
 - [x] Both E2E runners clean WAL/SHM files
 - [x] Server startup failures show useful logs
