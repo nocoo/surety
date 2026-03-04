@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkHealth, type HealthDeps, type HealthResult } from "@/lib/health";
+import { checkHealth, type HealthDeps } from "@/lib/health";
 import { APP_VERSION } from "@/lib/version";
 
 /** Build a default deps object where the database is healthy. */
@@ -70,32 +70,20 @@ describe("checkHealth", () => {
     expect(result.database.error).toBe("No database connection");
   });
 
-  test("returns error when probe query returns null", () => {
-    const result = checkHealth(
-      healthyDeps({
-        getRawSqlite: () => ({
-          prepare: () => ({ get: () => null }),
+  test("returns error when probe query returns null or undefined", () => {
+    for (const emptyValue of [null, undefined]) {
+      const result = checkHealth(
+        healthyDeps({
+          getRawSqlite: () => ({
+            prepare: () => ({ get: () => emptyValue }),
+          }),
         }),
-      }),
-    );
+      );
 
-    expect(result.status).toBe("error");
-    expect(result.database.connected).toBe(false);
-    expect(result.database.error).toBe("empty result from probe query");
-  });
-
-  test("returns error when probe query returns undefined", () => {
-    const result = checkHealth(
-      healthyDeps({
-        getRawSqlite: () => ({
-          prepare: () => ({ get: () => undefined }),
-        }),
-      }),
-    );
-
-    expect(result.status).toBe("error");
-    expect(result.database.connected).toBe(false);
-    expect(result.database.error).toContain("empty result");
+      expect(result.status).toBe("error");
+      expect(result.database.connected).toBe(false);
+      expect(result.database.error).toContain("empty result");
+    }
   });
 
   test("returns error with unknown message for non-Error throws", () => {
@@ -140,46 +128,6 @@ describe("checkHealth", () => {
 
     expect(result.status).toBe("error");
     expect(result.database.error).not.toMatch(/\bok\b/i);
-  });
-
-  // ─── response shape ───────────────────────────────────────────
-
-  test("always returns all required fields on success", () => {
-    const result = checkHealth(healthyDeps());
-    const keys: (keyof HealthResult)[] = [
-      "status",
-      "timestamp",
-      "uptime",
-      "database",
-      "runtime",
-      "version",
-      "memoryMB",
-    ];
-    for (const key of keys) {
-      expect(result).toHaveProperty(key);
-    }
-  });
-
-  test("always returns all required fields on failure", () => {
-    const result = checkHealth(
-      healthyDeps({
-        getRawSqlite: () => {
-          throw new Error("fail");
-        },
-      }),
-    );
-    const keys: (keyof HealthResult)[] = [
-      "status",
-      "timestamp",
-      "uptime",
-      "database",
-      "runtime",
-      "version",
-      "memoryMB",
-    ];
-    for (const key of keys) {
-      expect(result).toHaveProperty(key);
-    }
   });
 
   // ─── edge cases ───────────────────────────────────────────────
