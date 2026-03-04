@@ -43,12 +43,7 @@ describe("maskApiKey", () => {
 // ── getEnvironment ──
 
 describe("getEnvironment", () => {
-  test("returns 'dev' when NODE_ENV is not production", () => {
-    expect(getEnvironment()).toBe("dev");
-  });
-
-  test("returns 'dev' when NODE_ENV is 'test'", () => {
-    // In test runner, NODE_ENV is 'test'
+  test("returns 'dev' in test environment", () => {
     expect(getEnvironment()).toBe("dev");
   });
 });
