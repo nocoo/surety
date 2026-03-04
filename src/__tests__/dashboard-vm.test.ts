@@ -1,36 +1,12 @@
 import { describe, expect, test, afterEach, mock } from "bun:test";
 import {
   createStatCards,
-  formatStatCurrency,
   fetchDashboardData,
   type DashboardStats,
   type StatCardData,
 } from "@/lib/dashboard-vm";
 
 describe("dashboard-vm", () => {
-  describe("formatStatCurrency", () => {
-    test("formats small numbers with yen symbol", () => {
-      expect(formatStatCurrency(100)).toBe("¥100");
-      expect(formatStatCurrency(1000)).toBe("¥1,000");
-      expect(formatStatCurrency(9999)).toBe("¥9,999");
-    });
-
-    test("formats numbers >= 10000 in 万 units", () => {
-      expect(formatStatCurrency(10000)).toBe("¥1万");
-      expect(formatStatCurrency(15000)).toBe("¥1.5万");
-      expect(formatStatCurrency(100000)).toBe("¥10万");
-    });
-
-    test("removes decimal when divisible by 10000", () => {
-      expect(formatStatCurrency(20000)).toBe("¥2万");
-      expect(formatStatCurrency(50000)).toBe("¥5万");
-    });
-
-    test("handles zero", () => {
-      expect(formatStatCurrency(0)).toBe("¥0");
-    });
-  });
-
   describe("createStatCards", () => {
     const mockStats: DashboardStats = {
       policyCount: 28,

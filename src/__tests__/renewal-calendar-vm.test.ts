@@ -10,7 +10,6 @@ import {
   groupByMonth,
   calculateSummary,
   buildRenewalCalendarData,
-  formatCurrency,
   generateConsecutiveMonths,
   getUniquePolicyNames,
   fetchRenewalCalendarData,
@@ -427,19 +426,6 @@ describe("renewal-calendar-vm", () => {
       expect(data.monthlyData[0]?.month).toBe("2026-01");
       expect(data.monthlyData[11]?.month).toBe("2026-12");
       expect(data.summary.totalPremium).toBe(0);
-    });
-  });
-
-  describe("formatCurrency", () => {
-    it("formats small amounts", () => {
-      expect(formatCurrency(500)).toBe("¥500");
-      expect(formatCurrency(9999)).toBe("¥9,999");
-    });
-
-    it("formats large amounts in 万", () => {
-      expect(formatCurrency(10000)).toBe("¥1万");
-      expect(formatCurrency(15000)).toBe("¥1.5万");
-      expect(formatCurrency(100000)).toBe("¥10万");
     });
   });
 
