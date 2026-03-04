@@ -3,6 +3,8 @@
  * Separates data logic from UI for better testability
  */
 
+import { formatCurrency } from "./chart-config";
+
 // API response types
 export interface DashboardStats {
   policyCount: number;
@@ -101,25 +103,15 @@ export function createStatCards(stats: DashboardStats): StatCardData[] {
     },
     {
       label: "年保费",
-      value: formatStatCurrency(stats.totalPremium),
+      value: formatCurrency(stats.totalPremium),
       iconName: "TrendingUp",
     },
     {
       label: "总保额",
-      value: formatStatCurrency(stats.totalSumAssured),
+      value: formatCurrency(stats.totalSumAssured),
       iconName: "Shield",
     },
   ];
-}
-
-/**
- * Format currency for stat display
- */
-export function formatStatCurrency(value: number): string {
-  if (value >= 10000) {
-    return `¥${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
-  }
-  return `¥${value.toLocaleString()}`;
 }
 
 /**

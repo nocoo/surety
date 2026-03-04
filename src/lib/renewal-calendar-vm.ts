@@ -311,16 +311,6 @@ export function buildRenewalCalendarData(
 }
 
 /**
- * Format currency for display
- */
-export function formatCurrency(value: number): string {
-  if (value >= 10000) {
-    return `¥${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
-  }
-  return `¥${value.toLocaleString()}`;
-}
-
-/**
  * Fetch renewal calendar data from API
  */
 export async function fetchRenewalCalendarData(): Promise<RenewalCalendarData> {
