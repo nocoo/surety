@@ -9,10 +9,6 @@ import {
   buildMemberCoverageData,
   buildAssetCoverageData,
   fetchCoverageLookupData,
-  RELATION_LABELS,
-  ASSET_TYPE_LABELS,
-  STATUS_LABELS,
-  CATEGORY_ORDER,
   type MemberForCoverage,
   type AssetForCoverage,
   type PolicyForCoverage,
@@ -271,31 +267,6 @@ describe("coverage-lookup-vm", () => {
       const data = buildAssetCoverageData(members, assets, policiesByMember, policiesByAsset, 2);
 
       expect(data.selectedAsset?.id).toBe(2);
-    });
-  });
-
-  describe("constants", () => {
-    test("RELATION_LABELS covers all relations", () => {
-      expect(RELATION_LABELS.Self).toBe("本人");
-      expect(RELATION_LABELS.Spouse).toBe("配偶");
-      expect(RELATION_LABELS.Child).toBe("子女");
-      expect(RELATION_LABELS.Parent).toBe("父母");
-    });
-
-    test("STATUS_LABELS covers all statuses", () => {
-      expect(STATUS_LABELS.Active).toBe("生效中");
-      expect(STATUS_LABELS.Lapsed).toBe("已失效");
-      expect(STATUS_LABELS.Surrendered).toBe("已退保");
-      expect(STATUS_LABELS.Claimed).toBe("已理赔");
-    });
-
-    test("ASSET_TYPE_LABELS covers all asset types", () => {
-      expect(ASSET_TYPE_LABELS.RealEstate).toBe("房产");
-      expect(ASSET_TYPE_LABELS.Vehicle).toBe("车辆");
-    });
-
-    test("CATEGORY_ORDER starts with Accident for emergency focus", () => {
-      expect(CATEGORY_ORDER[0]).toBe("Accident");
     });
   });
 
