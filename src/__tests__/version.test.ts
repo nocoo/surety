@@ -10,8 +10,4 @@ describe("APP_VERSION", () => {
   test("is a valid semver string", () => {
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
-
-  test("is not empty", () => {
-    expect(APP_VERSION.length).toBeGreaterThan(0);
-  });
 });
