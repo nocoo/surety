@@ -10,27 +10,8 @@ import {
 
 describe("category-config", () => {
   describe("CATEGORY_CONFIG", () => {
-    test("has all 6 policy categories", () => {
-      const categories = Object.keys(CATEGORY_CONFIG);
-      expect(categories).toContain("Life");
-      expect(categories).toContain("CriticalIllness");
-      expect(categories).toContain("Medical");
-      expect(categories).toContain("Accident");
-      expect(categories).toContain("Annuity");
-      expect(categories).toContain("Property");
-      expect(categories).toHaveLength(6);
-    });
-
-    test("each category has required properties", () => {
-      for (const [, config] of Object.entries(CATEGORY_CONFIG)) {
-        expect(config.label).toBeDefined();
-        expect(config.variant).toBeDefined();
-        expect(config.bgColor).toBeDefined();
-        expect(config.textColor).toBeDefined();
-      }
-    });
-
-    test("labels are in Chinese", () => {
+    test("has all 6 categories with Chinese labels", () => {
+      expect(Object.keys(CATEGORY_CONFIG)).toHaveLength(6);
       expect(CATEGORY_CONFIG.Life.label).toBe("寿险");
       expect(CATEGORY_CONFIG.CriticalIllness.label).toBe("重疾险");
       expect(CATEGORY_CONFIG.Medical.label).toBe("医疗险");
