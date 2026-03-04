@@ -148,7 +148,6 @@ surety/
 │   │   ├── policy-status.test.ts # 保单状态推导
 │   │   ├── backup.test.ts        # 数据库备份
 │   │   ├── health.test.ts        # 健康检查
-│   │   ├── use-persisted-state.test.ts # 持久化状态 Hook
 │   │   └── utils.test.ts         # 工具函数
 │   ├── 📂 app/                   # Next.js App Router
 │   │   ├── 📂 api/               # API 路由
