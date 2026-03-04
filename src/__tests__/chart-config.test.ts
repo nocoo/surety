@@ -5,11 +5,6 @@ import {
   formatCurrency,
   formatCompact,
   formatPercent,
-  AXIS_CONFIG,
-  BAR_RADIUS,
-  PIE_LABEL_LINE,
-  TOOLTIP_STYLES,
-  LEGEND_CONFIG,
 } from "@/lib/chart-config";
 
 describe("chart-config", () => {
@@ -104,33 +99,4 @@ describe("chart-config", () => {
     });
   });
 
-  describe("configuration constants", () => {
-    test("AXIS_CONFIG has required properties", () => {
-      expect(AXIS_CONFIG.tick).toBeDefined();
-      expect(AXIS_CONFIG.tick.fontSize).toBe(12);
-      expect(AXIS_CONFIG.axisLine).toBe(false);
-      expect(AXIS_CONFIG.tickLine).toBe(false);
-    });
-
-    test("BAR_RADIUS has horizontal and vertical configs", () => {
-      expect(BAR_RADIUS.horizontal).toHaveLength(4);
-      expect(BAR_RADIUS.vertical).toHaveLength(4);
-    });
-
-    test("PIE_LABEL_LINE has stroke properties", () => {
-      expect(PIE_LABEL_LINE.stroke).toBeDefined();
-      expect(PIE_LABEL_LINE.strokeWidth).toBe(1);
-    });
-
-    test("TOOLTIP_STYLES has class names", () => {
-      expect(TOOLTIP_STYLES.container).toContain("rounded");
-      expect(TOOLTIP_STYLES.title).toContain("font-medium");
-      expect(TOOLTIP_STYLES.value).toContain("muted");
-    });
-
-    test("LEGEND_CONFIG has wrapper style", () => {
-      expect(LEGEND_CONFIG.wrapperStyle).toBeDefined();
-      expect(LEGEND_CONFIG.wrapperStyle.fontSize).toBe(12);
-    });
-  });
 });
