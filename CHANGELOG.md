@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.1.0] - 2026-03-06
+
+### Changed
+
+- Upgrade all dependencies to latest compatible versions (13 packages updated)
+- Remove unused `date-fns` dependency
+
+### Improved
+
+- Deduplicate `formatCurrency` to single source in `chart-config.ts`
+- Consolidate and clean up redundant unit tests (health, coverage-lookup-vm, chart-config, category-config, version, backy-service)
+- Move BDD E2E from pre-push hook to on-demand execution for faster push cycles
+
+### Documentation
+
+- Sync README project tree with current codebase structure
+- Sync database design docs with current schema (9 tables)
+- Fix pre-push hook description to match actual behavior
+
 ## [v1.0.2] - 2026-03-03
 
 ### Added
