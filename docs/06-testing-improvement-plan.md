@@ -34,7 +34,7 @@ Ordered by risk (low risk first) and dependency. Each step = one atomic commit.
 **Risk**: Zero. **ETA**: 5 min.
 
 - `pre-commit`: `bun run test:coverage && bun run lint`
-- `pre-push`: `bun run test:e2e && bun run test:e2e:ui`
+- `pre-push`: `bun run test:e2e` (BDD E2E is on-demand via `bun run test:e2e:ui`)
 
 Commit: `fix: align husky hooks with four-layer testing spec`
 
