@@ -97,7 +97,8 @@ surety/
 │   ├── 02-database-design.md     # 数据库设计
 │   ├── 03-google-oauth-setup.md  # Google OAuth 配置
 │   ├── 04-mcp-setup.md           # MCP Server 配置
-│   └── 05-basalt-ui-migration.md # Basalt UI 迁移方案
+│   ├── 05-basalt-ui-migration.md # Basalt UI 迁移方案
+│   └── 06-testing-improvement-plan.md # 四层测试改进计划
 ├── 📂 drizzle/                   # 数据库迁移文件
 ├── 📂 e2e/                       # Playwright 浏览器 E2E 测试
 │   ├── 📂 fixtures/              # 测试 fixture 与自定义 helpers
@@ -131,6 +132,7 @@ surety/
 │   ├── seed-insurer-contacts.ts  # 保险公司联系人数据
 │   ├── run-e2e.ts                # API E2E 运行器 (port 7016)
 │   ├── run-e2e-ui.ts             # Playwright E2E 运行器 (port 7017)
+│   ├── e2e-utils.ts              # E2E 共享工具 (端口检查等)
 │   ├── import-csv.ts             # CSV 导入脚本
 │   ├── check-coverage.ts         # 测试覆盖率检查
 │   ├── migrate-beneficiaries.ts  # 受益人数据迁移
@@ -139,16 +141,18 @@ surety/
 ├── 📂 src/
 │   ├── 📂 __tests__/             # 单元测试 + API E2E 测试
 │   │   ├── 📂 db/                # Repository 单元测试
-│   │   ├── 📂 e2e/               # API 端到端测试
-│   │   ├── dashboard-vm.test.ts  # 仪表盘 ViewModel
-│   │   ├── coverage-lookup-vm.test.ts # 保障速查 ViewModel
-│   │   ├── renewal-calendar-vm.test.ts # 续保日历 ViewModel
+│   │   ├── 📂 e2e/               # API 端到端测试 (14 specs)
+│   │   ├── backy-service.test.ts # Backy 远程备份服务
+│   │   ├── backup.test.ts        # 数据库备份
 │   │   ├── category-config.test.ts # 保险类别配置
 │   │   ├── chart-config.test.ts  # 图表配置
-│   │   ├── policy-status.test.ts # 保单状态推导
-│   │   ├── backup.test.ts        # 数据库备份
+│   │   ├── coverage-lookup-vm.test.ts # 保障速查 ViewModel
+│   │   ├── dashboard-vm.test.ts  # 仪表盘 ViewModel
 │   │   ├── health.test.ts        # 健康检查
-│   │   └── utils.test.ts         # 工具函数
+│   │   ├── policy-status.test.ts # 保单状态推导
+│   │   ├── renewal-calendar-vm.test.ts # 续保日历 ViewModel
+│   │   ├── utils.test.ts         # 工具函数
+│   │   └── version.test.ts       # 版本号一致性
 │   ├── 📂 app/                   # Next.js App Router
 │   │   ├── 📂 api/               # API 路由
 │   │   ├── 📂 assets/            # 资产页面
@@ -166,7 +170,9 @@ surety/
 │   │   ├── 📂 coverage-lookup/   # 保障速查组件
 │   │   ├── 📂 layout/            # 布局组件 (Sidebar 等)
 │   │   ├── 📂 renewal/           # 续保相关组件
-│   │   └── 📂 ui/                # shadcn/ui 基础组件
+│   │   ├── 📂 ui/                # shadcn/ui 基础组件
+│   │   ├── auth-provider.tsx     # 认证 Provider
+│   │   └── loading-screen.tsx    # 加载画面
 │   ├── 📂 db/                    # 数据库层
 │   │   ├── 📂 repositories/      # CRUD 操作
 │   │   ├── backup.ts             # 数据库备份/还原
@@ -187,7 +193,10 @@ surety/
 │   │   ├── health.ts             # 健康检查
 │   │   ├── palette.ts            # 调色板
 │   │   ├── renewal-calendar-vm.ts # 续保日历 ViewModel
-│   │   └── utils.ts              # 通用工具
+│   │   ├── utils.ts              # 通用工具
+│   │   └── version.ts            # 版本号管理 (APP_VERSION)
+│   ├── 📂 services/              # 业务服务
+│   │   └── backy.ts              # Backy 远程备份服务
 │   ├── auth.ts                   # NextAuth 配置
 │   └── proxy.ts                  # 代理中间件
 ├── 📂 mcp/                       # MCP Server
