@@ -224,6 +224,11 @@ type SortField = "category" | "productName" | "insurerName" | "insuredName" | "s
 type SortDirection = "asc" | "desc";
 type ViewMode = "list" | "byCategory" | "byInsured";
 
+function getAriaSort(field: SortField, activeField: SortField, direction: SortDirection): "ascending" | "descending" | "none" {
+  if (field !== activeField) return "none";
+  return direction === "asc" ? "ascending" : "descending";
+}
+
 export default function PoliciesPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -392,6 +397,26 @@ export default function PoliciesPage() {
       <ArrowDown className="ml-1 h-3 w-3" />
     );
   };
+
+  const renderSortableHeader = (
+    field: SortField,
+    label: string,
+    className?: string
+  ) => (
+    <TableHead className={className} aria-sort={getAriaSort(field, sortField, sortDirection)}>
+      <button
+        onClick={() => handleSort(field)}
+        className={cn(
+          "inline-flex items-center hover:text-foreground transition-colors",
+          className?.includes("text-right") && "justify-end w-full"
+        )}
+        aria-label={`${label}，当前${getAriaSort(field, sortField, sortDirection) === "none" ? "未排序" : getAriaSort(field, sortField, sortDirection) === "ascending" ? "升序" : "降序"}，点击切换排序`}
+      >
+        {label}
+        {renderSortIcon(field)}
+      </button>
+    </TableHead>
+  );
 
   const handleAdd = () => {
     setEditingPolicy(null);
@@ -596,78 +621,14 @@ export default function PoliciesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[80px]">状态</TableHead>
-                  <TableHead className="w-[90px]">
-                    <button
-                      onClick={() => handleSort("category")}
-                      className="inline-flex items-center hover:text-foreground transition-colors"
-                    >
-                      类型
-                      {renderSortIcon("category")}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("productName")}
-                      className="inline-flex items-center hover:text-foreground transition-colors"
-                    >
-                      产品名称
-                      {renderSortIcon("productName")}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("insurerName")}
-                      className="inline-flex items-center hover:text-foreground transition-colors"
-                    >
-                      保险公司
-                      {renderSortIcon("insurerName")}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("insuredName")}
-                      className="inline-flex items-center hover:text-foreground transition-colors"
-                    >
-                      被保人
-                      {renderSortIcon("insuredName")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <button
-                      onClick={() => handleSort("sumAssured")}
-                      className="inline-flex items-center justify-end w-full hover:text-foreground transition-colors"
-                    >
-                      保额
-                      {renderSortIcon("sumAssured")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <button
-                      onClick={() => handleSort("premium")}
-                      className="inline-flex items-center justify-end w-full hover:text-foreground transition-colors"
-                    >
-                      年保费
-                      {renderSortIcon("premium")}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("effectiveDate")}
-                      className="inline-flex items-center hover:text-foreground transition-colors font-mono"
-                    >
-                      生效日期
-                      {renderSortIcon("effectiveDate")}
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("nextDueDate")}
-                      className="inline-flex items-center hover:text-foreground transition-colors"
-                    >
-                      下次缴费
-                      {renderSortIcon("nextDueDate")}
-                    </button>
-                  </TableHead>
+                  {renderSortableHeader("category", "类型", "w-[90px]")}
+                  {renderSortableHeader("productName", "产品名称")}
+                  {renderSortableHeader("insurerName", "保险公司")}
+                  {renderSortableHeader("insuredName", "被保人")}
+                  {renderSortableHeader("sumAssured", "保额", "text-right")}
+                  {renderSortableHeader("premium", "年保费", "text-right")}
+                  {renderSortableHeader("effectiveDate", "生效日期")}
+                  {renderSortableHeader("nextDueDate", "下次缴费")}
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
