@@ -242,6 +242,7 @@ export default function PoliciesPage() {
   const [paymentsOpen, setPaymentsOpen] = useState(false);
   const [paymentsPolicyId, setPaymentsPolicyId] = useState<number | null>(null);
   const [paymentsProductName, setPaymentsProductName] = useState<string>("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Filter state (persisted to localStorage)
   const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
@@ -441,10 +442,14 @@ export default function PoliciesPage() {
         method: "DELETE",
       });
       if (response.ok) {
+        setActionError(null);
         fetchPolicies();
+      } else {
+        throw new Error("DELETE_FAILED");
       }
     } catch (error) {
       console.error("Error deleting policy:", error);
+      setActionError("删除保单失败，请重试");
     }
     setDeleteDialogOpen(false);
     setPolicyToDelete(null);
@@ -455,9 +460,11 @@ export default function PoliciesPage() {
     try {
       await navigator.clipboard.writeText(policy.policyNumber);
       setCopiedId(policy.id);
+      setActionError(null);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
       console.error("Failed to copy:", error);
+      setActionError("复制保单号失败，请手动复制");
     }
   };
 
@@ -897,6 +904,12 @@ export default function PoliciesPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {actionError && (
+          <div className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {actionError}
           </div>
         )}
       </div>

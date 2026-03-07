@@ -92,6 +92,7 @@ function AssetForm({
   );
   const [members, setMembers] = useState<Member[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/members")
@@ -102,6 +103,7 @@ function AssetForm({
 
   const handleChange = (field: keyof AssetFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setSubmitError(null);
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -128,10 +130,12 @@ function AssetForm({
         throw new Error("Failed to save asset");
       }
 
+      setSubmitError(null);
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Error saving asset:", error);
+      setSubmitError(isEditing ? "保存资产失败，请重试" : "创建资产失败，请重试");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,6 +165,12 @@ function AssetForm({
       </SheetHeader>
 
       <form onSubmit={onSubmit} className="flex-1 space-y-6 overflow-y-auto px-4 py-6">
+        {submitError && (
+          <div className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {submitError}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>资产类型</Label>

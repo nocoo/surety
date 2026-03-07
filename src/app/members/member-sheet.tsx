@@ -122,9 +122,11 @@ function MemberForm({
     createFormData(member)
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleChange = (field: keyof MemberFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setSubmitError(null);
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -157,10 +159,12 @@ function MemberForm({
         throw new Error("Failed to save member");
       }
 
+      setSubmitError(null);
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Error saving member:", error);
+      setSubmitError(isEditing ? "保存成员失败，请重试" : "创建成员失败，请重试");
     } finally {
       setIsSubmitting(false);
     }
@@ -176,6 +180,12 @@ function MemberForm({
       </SheetHeader>
 
       <form onSubmit={onSubmit} className="flex-1 space-y-6 overflow-y-auto px-4 py-6">
+        {submitError && (
+          <div className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {submitError}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">姓名</Label>
