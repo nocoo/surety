@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.1] - 2026-03-07
+
+### Fixed
+
+- Restore the dashboard client boundary so server-rendered data no longer passes functions into client chart components at runtime
+
 ## [v1.2.0] - 2026-03-07
 
 ### Fixed
