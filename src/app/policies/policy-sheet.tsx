@@ -335,7 +335,7 @@ function PolicyForm({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="policyNumber">保单号</Label>
               <Input
@@ -367,7 +367,7 @@ function PolicyForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="subCategory">子类别</Label>
               <Input
@@ -458,7 +458,7 @@ function PolicyForm({
         <fieldset className="space-y-4">
           <legend className="text-sm font-medium text-muted-foreground">保障信息</legend>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="sumAssured">保额 (元)</Label>
               <Input
@@ -487,7 +487,7 @@ function PolicyForm({
         <fieldset className="space-y-4">
           <legend className="text-sm font-medium text-muted-foreground">缴费信息</legend>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="premium">保费 (元)</Label>
               <Input
@@ -520,7 +520,7 @@ function PolicyForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="paymentYears">缴费年限</Label>
               <Input
@@ -544,7 +544,7 @@ function PolicyForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>续保方式</Label>
               <Select
@@ -590,7 +590,7 @@ function PolicyForm({
         <fieldset className="space-y-4">
           <legend className="text-sm font-medium text-muted-foreground">时间信息</legend>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="effectiveDate">生效日期</Label>
               <Input
@@ -612,7 +612,7 @@ function PolicyForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="hesitationEndDate">犹豫期结束</Label>
               <Input
@@ -720,7 +720,7 @@ function PolicyForm({
                     className="h-8 text-sm"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label className="text-xs">年度限额</Label>
                     <Input
@@ -742,7 +742,7 @@ function PolicyForm({
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label className="text-xs">赔付比例 (%)</Label>
                     <Input

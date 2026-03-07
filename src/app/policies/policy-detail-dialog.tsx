@@ -127,9 +127,9 @@ function formatCurrency(value: number): string {
 
 function InfoRow({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between py-2">
+    <div className="flex flex-col gap-1 py-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={cn("text-sm text-right", mono && "font-mono")}>{value || "-"}</span>
+      <span className={cn("text-sm sm:text-right", mono && "font-mono")}>{value || "-"}</span>
     </div>
   );
 }
@@ -195,7 +195,7 @@ function CoverageItemForm({
           className="h-8 text-sm"
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs">年度限额</Label>
           <Input
@@ -217,7 +217,7 @@ function CoverageItemForm({
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs">免赔额</Label>
           <Input

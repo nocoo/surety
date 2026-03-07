@@ -113,6 +113,113 @@ function formatDaysUntil(days: number | null): { text: string; variant: "default
   return { text: `${days} 天`, variant: "default" };
 }
 
+function PolicyMobileCard({
+  policy,
+  copied,
+  onViewDetail,
+  onCopyPolicyNumber,
+  onViewPayments,
+  onEdit,
+  onDelete,
+}: {
+  policy: Policy;
+  copied: boolean;
+  onViewDetail: (policy: Policy) => void;
+  onCopyPolicyNumber: (policy: Policy) => void;
+  onViewPayments: (policy: Policy) => void;
+  onEdit: (policy: Policy) => void;
+  onDelete: (policy: Policy) => void;
+}) {
+  const status = statusConfig[policy.status];
+  const categoryLabel = categoryLabels[policy.category] ?? policy.category;
+  const categoryConfig = getCategoryConfig(policy.category);
+  const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
+
+  return (
+    <div className="rounded-card border border-border/60 bg-card p-4 shadow-sm sm:hidden">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={status.variant}>{status.label}</Badge>
+            <Badge variant={categoryConfig.variant}>{categoryLabel}</Badge>
+          </div>
+          <button
+            onClick={() => onViewDetail(policy)}
+            className="text-left font-medium leading-6 hover:text-primary hover:underline"
+          >
+            {policy.productName}
+          </button>
+          <div className="text-sm text-muted-foreground">{policy.insurerName}</div>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => onCopyPolicyNumber(policy)}
+          aria-label={copied ? "已复制保单号" : "复制保单号"}
+        >
+          {copied ? <Check className="h-4 w-4 text-success" /> : <Info className="h-4 w-4" />}
+        </Button>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <div className="text-muted-foreground">被保人</div>
+          <div className="mt-1 flex items-center gap-2">
+            <Avatar className="h-6 w-6">
+              <AvatarFallback className={cn("text-xs text-white", getAvatarColor(policy.insuredName ?? ""))}>
+                {policy.insuredName?.[0] ?? "?"}
+              </AvatarFallback>
+            </Avatar>
+            <span>{policy.insuredName}</span>
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">保额</div>
+          <div className="mt-1 font-medium">{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">年保费</div>
+          <div className="mt-1">{policy.premium > 0 ? formatCurrency(policy.premium) : "-"}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">下次缴费</div>
+          <div className="mt-1 space-y-0.5">
+            <div className="font-mono text-xs">{policy.nextDueDate ?? "-"}</div>
+            {policy.nextDueDate && (
+              <div
+                className={cn(
+                  "text-xs",
+                  dueState.variant === "warning" && "text-warning",
+                  dueState.variant === "destructive" && "text-destructive",
+                  dueState.variant === "default" && "text-muted-foreground"
+                )}
+              >
+                {dueState.text}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => onViewPayments(policy)}>
+          <Receipt className="mr-1.5 h-4 w-4" />
+          缴费记录
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => onEdit(policy)}>
+          <Pencil className="mr-1.5 h-4 w-4" />
+          编辑
+        </Button>
+        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(policy)}>
+          <Trash2 className="mr-1.5 h-4 w-4" />
+          删除
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 type SortField = "category" | "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
 type SortDirection = "asc" | "desc";
 type ViewMode = "list" | "byCategory" | "byInsured";
@@ -468,8 +575,24 @@ export default function PoliciesPage() {
 
         {/* List View */}
         {viewMode === "list" && (
-          <div className="rounded-card bg-secondary">
-            <Table>
+          <>
+            <div className="space-y-3 sm:hidden">
+              {filteredPolicies.map((policy) => (
+                <PolicyMobileCard
+                  key={policy.id}
+                  policy={policy}
+                  copied={copiedId === policy.id}
+                  onViewDetail={handleViewDetail}
+                  onCopyPolicyNumber={handleCopyPolicyNumber}
+                  onViewPayments={handleViewPayments}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteClick}
+                />
+              ))}
+            </div>
+
+            <div className="hidden rounded-card bg-secondary sm:block">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[80px]">状态</TableHead>
@@ -705,7 +828,8 @@ export default function PoliciesPage() {
                 })}
               </TableBody>
             </Table>
-          </div>
+            </div>
+          </>
         )}
 
         {/* Grouped Views */}
