@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import {
   FileText,
   Users,
@@ -15,7 +12,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import LoadingScreen from "@/components/loading-screen";
 import {
   DonutChart,
   HorizontalBarChart,
@@ -25,14 +21,13 @@ import {
   StackedTimelineChart,
 } from "@/components/charts";
 import { CHART_COLORS } from "@/lib/chart-config";
-import {
-  createStatCards,
-  fetchDashboardData,
-  type DashboardData,
-  type StatCardData,
-} from "@/lib/dashboard-vm";
+import { createStatCards, type StatCardData } from "@/lib/dashboard-vm";
+import { getDashboardData } from "@/lib/dashboard-data";
+import { ensureDatabaseFromCookie } from "@/db/index";
+import { cookies } from "next/headers";
 
-// Icon map for stat cards
+export const dynamic = "force-dynamic";
+
 const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
   FileText,
   Users,
@@ -55,26 +50,13 @@ function StatCard({ label, value, iconName }: StatCardData) {
   );
 }
 
-export default function Home() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function Home() {
+  const cookieStore = await cookies();
+  ensureDatabaseFromCookie(cookieStore.get("surety-database")?.value);
 
-  useEffect(() => {
-    fetchDashboardData()
-      .then((d) => {
-        setData(d);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading || !data) {
-    return <LoadingScreen />;
-  }
-
+  const data = await getDashboardData();
   const statCards = createStatCards(data.stats);
 
-  // Transform data for charts
   const premiumByCategoryData = data.charts.premiumByCategory.map((item) => ({
     name: item.label,
     value: item.premium,
@@ -105,14 +87,12 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">家庭保障概览</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map((stat) => (
             <StatCard key={stat.label} {...stat} />
           ))}
         </div>
 
-        {/* Row 1: 保费 (Premium) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <DonutChart data={premiumByCategoryData} title="保费构成" icon={PieChart} />
           <StackedValueChart
@@ -124,7 +104,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Row 2: 保额 (Coverage) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <DonutChart data={coverageData} title="保障额度构成" icon={Shield} />
           <StackedValueChart
@@ -136,7 +115,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Row 3: 险种 (Category) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <HorizontalBarChart
             data={categoryCountData}
@@ -153,7 +131,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Row 4: 时间 (Time) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <StackedTimelineChart
             data={data.charts.renewalTimeline.data}
@@ -171,14 +148,13 @@ export default function Home() {
           />
         </div>
 
-        {/* Row 5: 渠道 (Channel) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <InsurerChart
             data={data.charts.policyByInsurer}
             title="保险公司分布"
             icon={Building2}
           />
-          <DonutChart data={channelData} title="渠道分布" icon={Building2} />
+          <DonutChart data={channelData} title="缴费渠道分布" icon={Wallet} />
         </div>
       </div>
     </AppShell>
