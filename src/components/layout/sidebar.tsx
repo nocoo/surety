@@ -38,9 +38,13 @@ const navItems = [
   { href: "/settings", label: "系统设置", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobile?: boolean;
+}
+
+export function Sidebar({ mobile = false }: SidebarProps) {
   const pathname = usePathname();
-  const { collapsed, toggle } = useSidebar();
+  const { collapsed, toggle, setMobileOpen } = useSidebar();
   const { data: session } = useSession();
 
   // Get user info from session (Google OAuth)
@@ -52,6 +56,7 @@ export function Sidebar() {
   return (
     <TooltipProvider delayDuration={0}>
       <aside
+        aria-label={mobile ? "主导航抽屉" : "主导航"}
         className={cn(
           "sticky top-0 flex h-screen shrink-0 flex-col bg-background transition-all duration-300 ease-in-out overflow-hidden",
           collapsed ? "w-[68px]" : "w-[260px]"
@@ -101,6 +106,7 @@ export function Sidebar() {
                     <TooltipTrigger asChild>
                       <Link
                         href={item.href}
+                        onClick={() => setMobileOpen(false)}
                         className={cn(
                           "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                           isActive
@@ -125,6 +131,7 @@ export function Sidebar() {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
+                    aria-label="退出登录"
                     className="cursor-pointer"
                   >
                     <Avatar className="h-9 w-9">
@@ -181,10 +188,11 @@ export function Sidebar() {
                       : pathname.startsWith(item.href);
 
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
                         isActive
                           ? "bg-accent text-foreground"

@@ -8,6 +8,13 @@ import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
 import { DbSelector } from "./db-selector";
 import { Breadcrumbs } from "./breadcrumbs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppShellProps {
@@ -42,17 +49,16 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
       {/* Desktop sidebar */}
       {!isMobile && <Sidebar />}
 
-      {/* Mobile overlay */}
-      {isMobile && mobileOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 z-50 w-[260px]">
-            <Sidebar />
-          </div>
-        </>
+      {isMobile && (
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetContent side="left" className="w-[260px] p-0 sm:max-w-[260px]" showCloseButton={false}>
+            <SheetHeader className="sr-only">
+              <SheetTitle>导航菜单</SheetTitle>
+              <SheetDescription>浏览 Surety 的主要页面</SheetDescription>
+            </SheetHeader>
+            <Sidebar mobile />
+          </SheetContent>
+        </Sheet>
       )}
 
       <main className="flex flex-1 flex-col min-h-screen min-w-0">
