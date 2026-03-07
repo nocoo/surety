@@ -34,14 +34,15 @@ test.describe("Settings", () => {
     await expect(settings.annualIncomeInput).toHaveValue("600000");
   });
 
-  test("save button changes to saved state after click", async ({ page }) => {
-    // Note: financial settings save is client-side only (not persisted to DB yet)
+  test("save button persists financial settings", async ({ page }) => {
     await settings.annualIncomeInput.fill("800000");
     await settings.saveButton.click();
 
-    // Button should briefly show "已保存"
     await expect(
       page.getByRole("button", { name: "已保存" })
     ).toBeVisible();
+
+    await page.reload();
+    await expect(settings.annualIncomeInput).toHaveValue("800000");
   });
 });

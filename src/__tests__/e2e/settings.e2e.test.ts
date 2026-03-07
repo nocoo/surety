@@ -218,4 +218,27 @@ describe("Settings API E2E", () => {
       await apiRequest("/api/settings/e2e_json", { method: "DELETE" });
     });
   });
+
+  describe("Expected settings keys", () => {
+    test("GET /api/settings/:key returns persisted financial settings", async () => {
+      await apiRequest("/api/settings/reminderDays", {
+        method: "PUT",
+        body: JSON.stringify({ value: "14" }),
+      });
+      await apiRequest("/api/settings/currency", {
+        method: "PUT",
+        body: JSON.stringify({ value: "USD" }),
+      });
+
+      const { data: reminderDays } = await apiRequest<Setting>(
+        "/api/settings/reminderDays"
+      );
+      const { data: currency } = await apiRequest<Setting>(
+        "/api/settings/currency"
+      );
+
+      expect(reminderDays.value).toBe("14");
+      expect(currency.value).toBe("USD");
+    });
+  });
 });

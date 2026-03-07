@@ -33,6 +33,12 @@ interface SettingsData {
   currency: string;
 }
 
+const DEFAULT_SETTINGS: SettingsData = {
+  annualIncome: "600000",
+  reminderDays: "30",
+  currency: "CNY",
+};
+
 // ── Backy types ──
 
 interface BackySettings {
@@ -99,12 +105,12 @@ function formatTimeAgo(dateStr: string): string {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData>({
-    annualIncome: "600000",
-    reminderDays: "30",
-    currency: "CNY",
+    ...DEFAULT_SETTINGS,
   });
 
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [mcpEnabled, setMcpEnabled] = useState(false);
   const [mcpLoading, setMcpLoading] = useState(true);
 
@@ -127,6 +133,35 @@ export default function SettingsPage() {
   const [backyPushResult, setBackyPushResult] = useState<BackyPushResponse | null>(null);
   const [backyHistory, setBackyHistory] = useState<BackyHistoryData | null>(null);
   const [backyHistoryLoading, setBackyHistoryLoading] = useState(false);
+
+  const loadSettings = useCallback(async () => {
+    try {
+      const responses = await Promise.all([
+        fetch("/api/settings/annualIncome"),
+        fetch("/api/settings/reminderDays"),
+        fetch("/api/settings/currency"),
+      ]);
+
+      if (responses.every((response) => response.ok)) {
+        const settingsResponses = await Promise.all(
+          responses.map(async (response) => response.json() as Promise<{ value: string | null }>)
+        );
+        const [annualIncomeSetting, reminderDaysSetting, currencySetting] = settingsResponses as [
+          { value: string | null },
+          { value: string | null },
+          { value: string | null },
+        ];
+
+        setSettings({
+          annualIncome: annualIncomeSetting.value ?? DEFAULT_SETTINGS.annualIncome,
+          reminderDays: reminderDaysSetting.value ?? DEFAULT_SETTINGS.reminderDays,
+          currency: currencySetting.value ?? DEFAULT_SETTINGS.currency,
+        });
+      }
+    } catch {
+      // ignore and keep defaults
+    }
+  }, []);
 
   // Load MCP setting from backend
   const loadMcpSetting = useCallback(async () => {
@@ -175,11 +210,12 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    void loadSettings();
     void loadMcpSetting();
     void loadBackySettings().then(() => {
       // Auto-load history after settings are loaded (if configured)
     });
-  }, [loadMcpSetting, loadBackySettings]);
+  }, [loadSettings, loadMcpSetting, loadBackySettings]);
 
   // Auto-load history when backy settings are loaded and configured
   useEffect(() => {
@@ -325,11 +361,43 @@ export default function SettingsPage() {
   const handleChange = (field: keyof SettingsData, value: string) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
     setSaved(false);
+    setSaveError(null);
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      const responses = await Promise.all([
+        fetch("/api/settings/annualIncome", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: settings.annualIncome }),
+        }),
+        fetch("/api/settings/reminderDays", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: settings.reminderDays }),
+        }),
+        fetch("/api/settings/currency", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ value: settings.currency }),
+        }),
+      ]);
+
+      if (!responses.every((response) => response.ok)) {
+        throw new Error("SAVE_FAILED");
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setSaveError("保存失败，请重试");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const backyConfigured = backySettings?.hasApiKey && backySettings.webhookUrl;
@@ -766,10 +834,15 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saved}>
+        <div className="flex flex-col items-end gap-2">
+          {saveError && (
+            <p className="text-sm text-destructive" role="alert">
+              {saveError}
+            </p>
+          )}
+          <Button onClick={() => void handleSave()} disabled={saving || saved}>
             <Save className="mr-2 h-4 w-4" />
-            {saved ? "已保存" : "保存设置"}
+            {saving ? "保存中..." : saved ? "已保存" : "保存设置"}
           </Button>
         </div>
       </div>
