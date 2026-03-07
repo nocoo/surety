@@ -123,6 +123,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 
 ### 6. 展开和滚动控件缺少关键可访问性状态
 
+- 状态：已修复（`a69fd8b` `fix: add coverage lookup aria state`）
+
 - 位置：`src/components/coverage-lookup/policy-card.tsx:18`、`src/components/coverage-lookup/member-selector.tsx:62`、`src/components/coverage-lookup/asset-selector.tsx:64`
 - 类别：Accessibility
 - 描述：可展开卡片没有 `aria-expanded`；左右滚动按钮没有明确 `aria-label`。
@@ -131,6 +133,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 
 ### 7. 排序表头缺少排序语义
 
+- 状态：已修复（`044f2cd` `fix: add policy sort aria state`）
+
 - 位置：`src/app/policies/page.tsx:476`
 - 类别：Accessibility
 - 描述：表头用按钮实现排序，但没有暴露 `aria-sort` 等状态。
@@ -138,6 +142,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 - 建议：将排序状态映射到表头语义中。
 
 ### 8. 图表在数据量增加时可读性和性能都会下降
+
+- 状态：已修复（`7608657` `fix: compact crowded donut labels`）
 
 - 位置：`src/components/charts/donut-chart.tsx:67`
 - 类别：Performance / Data visualization
@@ -150,6 +156,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 
 ### 9. 全站偏向 mount 后取数，首屏体验仍有优化空间
 
+- 状态：部分修复（`34898a7` `refactor: render dashboard on server`）；首页仪表盘已改为 server render，但其他核心页面仍可继续评估。
+
 - 位置：`src/app/page.tsx:58`、`src/app/policies/page.tsx:147` 等多个页面
 - 类别：Performance
 - 描述：多个核心页面使用 client component + `useEffect` 拉取数据。
@@ -157,6 +165,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 - 建议：对核心页面评估 server-side data loading 或更轻量的数据预取策略。
 
 ### 10. 数据库切换交互较生硬
+
+- 状态：已修复（`e3f26bb` `fix: smooth database switching`）
 
 - 位置：`src/components/layout/db-selector.tsx:82`
 - 类别：Interaction
