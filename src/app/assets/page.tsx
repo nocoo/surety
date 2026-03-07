@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getCategoryConfig } from "@/lib/category-config";
 import { AssetSheet } from "./asset-sheet";
 
@@ -203,16 +204,26 @@ export default function AssetsPage() {
                             <Pencil className="h-4 w-4" />
                             <span className="sr-only">编辑</span>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            disabled={hasPolicies}
-                            onClick={() => handleDeleteClick(asset)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">删除</span>
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={hasPolicies}
+                                    onClick={() => handleDeleteClick(asset)}
+                                    aria-label={hasPolicies ? "已有保单关联，无法删除资产" : "删除资产"}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">删除</span>
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {hasPolicies && <TooltipContent>已有保单关联，无法删除</TooltipContent>}
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </TableCell>
                     </TableRow>

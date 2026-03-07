@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Phone, Globe, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -187,16 +188,26 @@ export default function InsurersPage() {
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">编辑</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          disabled={(insurer.policyCount ?? 0) > 0}
-                          onClick={() => handleDeleteClick(insurer)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">删除</span>
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  disabled={(insurer.policyCount ?? 0) > 0}
+                                  onClick={() => handleDeleteClick(insurer)}
+                                  aria-label={(insurer.policyCount ?? 0) > 0 ? "已有保单关联，无法删除保险公司" : "删除保险公司"}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">删除</span>
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {(insurer.policyCount ?? 0) > 0 && <TooltipContent>已有保单关联，无法删除</TooltipContent>}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                   </TableRow>

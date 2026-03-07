@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
@@ -230,16 +231,26 @@ export default function MembersPage() {
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">编辑</span>
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          disabled={member.relation === "Self"}
-                          onClick={() => handleDeleteClick(member)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">删除</span>
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span tabIndex={0}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  disabled={member.relation === "Self"}
+                                  onClick={() => handleDeleteClick(member)}
+                                  aria-label={member.relation === "Self" ? "本人记录不能删除" : "删除成员"}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">删除</span>
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {member.relation === "Self" && <TooltipContent>本人记录不能删除</TooltipContent>}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                   </TableRow>
