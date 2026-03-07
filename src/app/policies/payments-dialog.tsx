@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Receipt } from "lucide-react";
 import {
   Dialog,
@@ -57,16 +57,18 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
     }
   }, []);
 
-  // Fetch when needed
-  if (open && policyId && policyId !== loadedPolicyId && !loading) {
-    fetchPayments(policyId);
-  }
+  useEffect(() => {
+    if (open && policyId && policyId !== loadedPolicyId) {
+      void fetchPayments(policyId);
+    }
+  }, [fetchPayments, loadedPolicyId, open, policyId]);
 
-  // Reset when closed
-  if (!open && loadedPolicyId !== null) {
-    setPayments([]);
-    setLoadedPolicyId(null);
-  }
+  useEffect(() => {
+    if (!open) {
+      setPayments([]);
+      setLoadedPolicyId(null);
+    }
+  }, [open]);
 
   if (!open) return null;
 

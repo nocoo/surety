@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Copy, Check, ExternalLink, Building2, Shield, Plus, Pencil, Trash2, X, Save } from "lucide-react";
 import {
   Dialog,
@@ -527,19 +527,21 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
     }
   }, []);
 
-  // Fetch when needed
-  if (open && policyId && policyId !== loadedPolicyId && !loading) {
-    fetchPolicyData(policyId);
-  }
+  useEffect(() => {
+    if (open && policyId && policyId !== loadedPolicyId) {
+      void fetchPolicyData(policyId);
+    }
+  }, [fetchPolicyData, loadedPolicyId, open, policyId]);
 
-  // Reset when closed
-  if (!open && loadedPolicyId !== null) {
-    setPolicy(null);
-    setBeneficiaries([]);
-    setPayments([]);
-    setCoverageItems([]);
-    setLoadedPolicyId(null);
-  }
+  useEffect(() => {
+    if (!open) {
+      setPolicy(null);
+      setBeneficiaries([]);
+      setPayments([]);
+      setCoverageItems([]);
+      setLoadedPolicyId(null);
+    }
+  }, [open]);
 
   const handleCopyPolicyNumber = async () => {
     if (!policy?.policyNumber) return;
