@@ -11,12 +11,15 @@ interface PolicyCardProps {
 
 export function PolicyCard({ policy }: PolicyCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const detailsId = `policy-card-details-${policy.id}`;
 
   return (
     <div className="rounded-card bg-secondary overflow-hidden">
       {/* Header - always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={detailsId}
         className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -49,7 +52,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 
       {/* Expanded content */}
       {expanded && (
-        <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
+        <div id={detailsId} className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
           {/* Insurer phone - prominent when available */}
           {policy.insurerPhone && (
             <div className="flex items-center justify-between p-3 bg-primary/5 rounded-widget">

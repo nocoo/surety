@@ -64,6 +64,7 @@ export function MemberSelector({
           size="icon"
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background shadow-md"
           onClick={() => scroll("left")}
+          aria-label="向左滚动成员列表"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -123,6 +124,7 @@ export function MemberSelector({
           size="icon"
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background shadow-md"
           onClick={() => scroll("right")}
+          aria-label="向右滚动成员列表"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
