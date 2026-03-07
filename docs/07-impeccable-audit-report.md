@@ -176,6 +176,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 
 ### 11. 多处失败只记录到 console，缺少用户可见反馈
 
+- 状态：部分修复（`7712713` `fix: show errors for failed actions`）；已为保单/成员/资产关键提交与保单删除、复制失败补充用户可见反馈，其它失败路径仍可继续收口。
+
 - 位置：`src/app/policies/page.tsx:314`、`src/app/policies/policy-detail-dialog.tsx:523` 等
 - 类别：Resilience
 - 描述：失败时常常只 `console.error` 或静默忽略。
@@ -186,6 +188,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 
 ### 12. 禁用删除按钮没有解释原因
 
+- 状态：已修复（`11d49ab` `fix: explain disabled delete actions`）
+
 - 位置：`src/app/insurers/page.tsx:190`，类似问题也出现在成员和资产页面
 - 类别：UX 文案
 - 描述：按钮被禁用，但用户不知道是因为已有保单引用还是其他限制。
@@ -193,6 +197,8 @@ Surety 当前的界面整体克制、专业，主应用并不属于典型的“A
 - 建议：在 tooltip 或说明文案中写明禁用原因。
 
 ### 13. 面包屑语义还可以更完整
+
+- 状态：已修复（`520fec2` `fix: complete breadcrumb semantics`）
 
 - 位置：`src/components/layout/breadcrumbs.tsx:15`
 - 类别：Accessibility
