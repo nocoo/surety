@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-03-07
+
+### Fixed
+
+- Persist financial settings instead of showing a false saved state
+- Replace the mobile sidebar overlay with an accessible sheet and move policy dialog side effects into `useEffect`
+- Improve policy mobile layouts, sorting semantics, coverage lookup accessibility, crowded donut chart fallback, and database switching feedback
+- Add user-visible error messages for failed actions, explain disabled delete buttons, and complete breadcrumb semantics
+
+### Changed
+
+- Render the dashboard on the server for a faster first paint and lower client-side loading cost
+- Normalize semantic color usage across shared config and asset presentation
+
 ## [v1.1.0] - 2026-03-06
 
 ### Changed
