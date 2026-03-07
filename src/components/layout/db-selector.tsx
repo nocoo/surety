@@ -1,7 +1,8 @@
 "use client";
 
 import { Database, ChevronDown } from "lucide-react";
-import { useSyncExternalStore, useCallback } from "react";
+import { useSyncExternalStore, useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -78,33 +79,45 @@ export function useDatabase() {
 
 export function DbSelector() {
   const currentDb = useDatabase();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingDb, setPendingDb] = useState<DatabaseType | null>(null);
 
   const setDatabase = useCallback(async (db: DatabaseType) => {
+    if (db === currentDb) return;
+
+    setPendingDb(db);
     localStorage.setItem(STORAGE_KEY, db);
-    
-    // Notify the server about the database change
+
     try {
-      await fetch("/api/database/switch", {
+      const response = await fetch("/api/database/switch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ database: db }),
       });
-    } catch {
-      // Silently fail, will retry on next request
-    }
-    
-    // Reload the page to apply the new database
-    window.location.reload();
-  }, []);
 
-  const currentOption = DATABASE_OPTIONS.find((opt) => opt.value === currentDb);
+      if (!response.ok) {
+        throw new Error("SWITCH_FAILED");
+      }
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch {
+      localStorage.setItem(STORAGE_KEY, currentDb);
+      setPendingDb(null);
+    }
+  }, [currentDb, router]);
+
+  const activeDb = pendingDb ?? currentDb;
+  const currentOption = DATABASE_OPTIONS.find((opt) => opt.value === activeDb);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2">
+        <Button variant="ghost" size="sm" className="gap-2" disabled={isPending}>
           <Database className="h-4 w-4" />
-          <span className="hidden sm:inline">{currentOption?.label}</span>
+          <span className="hidden sm:inline">{isPending ? "切换中..." : currentOption?.label}</span>
           <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
@@ -113,7 +126,8 @@ export function DbSelector() {
           <DropdownMenuItem
             key={option.value}
             onClick={() => setDatabase(option.value)}
-            className={currentDb === option.value ? "bg-accent" : ""}
+            className={activeDb === option.value ? "bg-accent" : ""}
+            disabled={isPending}
           >
             <div className="flex flex-col">
               <span className="font-medium">{option.label}</span>
