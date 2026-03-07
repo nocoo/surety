@@ -62,8 +62,7 @@ describe("getAvatarColor", () => {
 
   test("returns bg-* class", () => {
     const color = getAvatarColor("李四");
-    expect(color).toMatch(/^bg-\w+-\d+$/);
+    expect(color).toMatch(/^bg-[a-z-]+(?:\/\d+)?$/);
   });
 });
-
 

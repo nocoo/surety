@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getCategoryConfig } from "@/lib/category-config";
 import { AssetSheet } from "./asset-sheet";
 
 type AssetType = "RealEstate" | "Vehicle";
@@ -48,19 +49,15 @@ const typeIcons: Record<AssetType, typeof Home> = {
   Vehicle: Car,
 };
 
-const typeBadgeColors: Record<AssetType, string> = {
-  RealEstate: "bg-blue-500/10 text-blue-500",
-  Vehicle: "bg-green-500/10 text-green-500",
-};
-
-const typeIconBgColors: Record<AssetType, string> = {
-  RealEstate: "bg-blue-100 dark:bg-blue-900",
-  Vehicle: "bg-green-100 dark:bg-green-900",
-};
-
-const typeIconColors: Record<AssetType, string> = {
-  RealEstate: "text-blue-600 dark:text-blue-400",
-  Vehicle: "text-green-600 dark:text-green-400",
+const typeStyleConfig: Record<AssetType, { badgeClass: string; iconClass: string }> = {
+  RealEstate: {
+    badgeClass: getCategoryConfig("Property").accentSoftClass,
+    iconClass: getCategoryConfig("Property").accentSoftClass,
+  },
+  Vehicle: {
+    badgeClass: getCategoryConfig("Accident").accentSoftClass,
+    iconClass: getCategoryConfig("Accident").accentSoftClass,
+  },
 };
 
 export default function AssetsPage() {
@@ -165,18 +162,19 @@ export default function AssetsPage() {
                 assets.map((asset) => {
                   const Icon = typeIcons[asset.type];
                   const hasPolicies = asset.policyCount > 0;
+                  const styleConfig = typeStyleConfig[asset.type];
                   return (
                     <TableRow key={asset.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${typeIconBgColors[asset.type]}`}>
-                            <Icon className={`h-4 w-4 ${typeIconColors[asset.type]}`} />
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${styleConfig.iconClass}`}>
+                            <Icon className="h-4 w-4" />
                           </div>
                           <span className="font-medium">{asset.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={typeBadgeColors[asset.type]}>{typeLabels[asset.type]}</Badge>
+                        <Badge className={styleConfig.badgeClass}>{typeLabels[asset.type]}</Badge>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-muted-foreground">
                         {asset.identifier}

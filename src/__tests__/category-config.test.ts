@@ -25,15 +25,15 @@ describe("category-config", () => {
     test("returns correct config for valid categories", () => {
       expect(getCategoryConfig("Life").label).toBe("寿险");
       expect(getCategoryConfig("Medical").variant).toBe("success");
-      expect(getCategoryConfig("Property").bgColor).toBe("bg-teal-500");
+      expect(getCategoryConfig("Property").accentClass).toBe("text-teal");
     });
 
     test("returns default config for unknown category", () => {
       const config = getCategoryConfig("UnknownCategory");
       expect(config.label).toBe("UnknownCategory");
       expect(config.variant).toBe("secondary");
-      expect(config.bgColor).toBe("bg-slate-500");
-      expect(config.textColor).toBe("text-slate-500");
+      expect(config.accentClass).toBe("text-muted-foreground");
+      expect(config.accentSoftClass).toBe("bg-muted text-muted-foreground");
     });
 
     test("returns default config for empty string", () => {

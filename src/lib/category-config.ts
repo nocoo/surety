@@ -9,10 +9,9 @@ export interface CategoryConfig {
   label: string;
   /** Badge variant from shadcn/ui */
   variant: "default" | "secondary" | "success" | "warning" | "info" | "purple" | "teal" | "destructive";
-  /** Tailwind background color for avatars and charts */
-  bgColor: string;
-  /** Tailwind text color */
-  textColor: string;
+  /** Semantic accent classes for icon and lightweight surfaces */
+  accentClass: string;
+  accentSoftClass: string;
 }
 
 /**
@@ -23,38 +22,38 @@ export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
   Life: {
     label: "寿险",
     variant: "info",
-    bgColor: "bg-blue-500",
-    textColor: "text-blue-500",
+    accentClass: "text-info",
+    accentSoftClass: "bg-info/10 text-info",
   },
   CriticalIllness: {
     label: "重疾险",
     variant: "destructive",
-    bgColor: "bg-red-500",
-    textColor: "text-red-500",
+    accentClass: "text-destructive",
+    accentSoftClass: "bg-destructive/10 text-destructive",
   },
   Medical: {
     label: "医疗险",
     variant: "success",
-    bgColor: "bg-emerald-500",
-    textColor: "text-emerald-500",
+    accentClass: "text-success",
+    accentSoftClass: "bg-success/10 text-success",
   },
   Accident: {
     label: "意外险",
     variant: "warning",
-    bgColor: "bg-amber-500",
-    textColor: "text-amber-500",
+    accentClass: "text-warning",
+    accentSoftClass: "bg-warning/15 text-warning",
   },
   Annuity: {
     label: "年金险",
     variant: "purple",
-    bgColor: "bg-purple-500",
-    textColor: "text-purple-500",
+    accentClass: "text-purple",
+    accentSoftClass: "bg-purple/10 text-purple",
   },
   Property: {
     label: "财产险",
     variant: "teal",
-    bgColor: "bg-teal-500",
-    textColor: "text-teal-500",
+    accentClass: "text-teal",
+    accentSoftClass: "bg-teal/10 text-teal",
   },
 };
 
@@ -67,8 +66,8 @@ export function getCategoryConfig(category: string): CategoryConfig {
     CATEGORY_CONFIG[category as PolicyCategory] ?? {
       label: category,
       variant: "secondary" as const,
-      bgColor: "bg-slate-500",
-      textColor: "text-slate-500",
+      accentClass: "text-muted-foreground",
+      accentSoftClass: "bg-muted text-muted-foreground",
     }
   );
 }
@@ -78,14 +77,14 @@ export function getCategoryConfig(category: string): CategoryConfig {
  * A set of distinct colors for member avatars
  */
 export const MEMBER_AVATAR_COLORS = [
-  { bg: "bg-blue-500", text: "text-white" },
-  { bg: "bg-emerald-500", text: "text-white" },
-  { bg: "bg-amber-500", text: "text-white" },
-  { bg: "bg-purple-500", text: "text-white" },
-  { bg: "bg-rose-500", text: "text-white" },
-  { bg: "bg-cyan-500", text: "text-white" },
-  { bg: "bg-orange-500", text: "text-white" },
-  { bg: "bg-indigo-500", text: "text-white" },
+  { bg: "bg-info", text: "text-info-foreground" },
+  { bg: "bg-success", text: "text-success-foreground" },
+  { bg: "bg-warning", text: "text-warning-foreground" },
+  { bg: "bg-purple", text: "text-purple-foreground" },
+  { bg: "bg-badge-red", text: "text-badge-red-foreground" },
+  { bg: "bg-teal", text: "text-teal-foreground" },
+  { bg: "bg-primary", text: "text-primary-foreground" },
+  { bg: "bg-muted-foreground", text: "text-background" },
 ] as const;
 
 /**
