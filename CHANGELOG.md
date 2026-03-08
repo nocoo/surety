@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.2] - 2026-03-09
+
+### Added
+
+- Collapsible navigation groups in sidebar (总览 / 数据管理 / 系统) with smooth CSS Grid animation
+- Radix Collapsible UI primitive (`@radix-ui/react-collapsible`)
+- Unit tests for sidebar navigation group data structure and type contracts
+
+### Fixed
+
+- Align logo assets with single-source convention
+
 ## [v1.2.1] - 2026-03-07
 
 ### Fixed
