@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -14,6 +15,7 @@ import {
   ShieldCheck,
   Landmark,
   LogOut,
+  ChevronUp,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
@@ -25,18 +27,127 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useSidebar } from "./sidebar-context";
 
-const navItems = [
-  { href: "/", label: "仪表盘", icon: LayoutDashboard },
-  { href: "/coverage-lookup", label: "保障速查", icon: ShieldCheck },
-  { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
-  { href: "/policies", label: "保单管理", icon: FileText },
-  { href: "/members", label: "家庭成员", icon: Users },
-  { href: "/insurers", label: "保险公司", icon: Landmark },
-  { href: "/assets", label: "资产管理", icon: Building2 },
-  { href: "/settings", label: "系统设置", icon: Settings },
+// ── Types ──
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+// ── Navigation config ──
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "总览",
+    defaultOpen: true,
+    items: [
+      { href: "/", label: "仪表盘", icon: LayoutDashboard },
+      { href: "/coverage-lookup", label: "保障速查", icon: ShieldCheck },
+      { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
+    ],
+  },
+  {
+    label: "数据管理",
+    defaultOpen: true,
+    items: [
+      { href: "/policies", label: "保单管理", icon: FileText },
+      { href: "/members", label: "家庭成员", icon: Users },
+      { href: "/insurers", label: "保险公司", icon: Landmark },
+      { href: "/assets", label: "资产管理", icon: Building2 },
+    ],
+  },
+  {
+    label: "系统",
+    defaultOpen: true,
+    items: [
+      { href: "/settings", label: "系统设置", icon: Settings },
+    ],
+  },
 ];
+
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+
+// ── Sub-components ──
+
+function NavGroupSection({
+  group,
+  pathname,
+  onNavigate,
+}: {
+  group: NavGroup;
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  const [open, setOpen] = useState(group.defaultOpen ?? true);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="px-3 mt-2">
+        <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {group.label}
+          </span>
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+            <ChevronUp
+              className={cn(
+                "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
+                !open && "rotate-180"
+              )}
+              strokeWidth={1.5}
+            />
+          </span>
+        </CollapsibleTrigger>
+      </div>
+      <div
+        className="grid overflow-hidden"
+        style={{
+          gridTemplateRows: open ? "1fr" : "0fr",
+          transition: "grid-template-rows 200ms ease-out",
+        }}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-0.5 px-3">
+            {group.items.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
+                    isActive
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </Collapsible>
+  );
+}
+
+// ── Main component ──
 
 interface SidebarProps {
   mobile?: boolean;
@@ -52,6 +163,8 @@ export function Sidebar({ mobile = false }: SidebarProps) {
   const userEmail = session?.user?.email ?? "";
   const userImage = session?.user?.image;
   const userInitial = userName[0] ?? "?";
+
+  const handleNavigate = () => setMobileOpen(false);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -93,9 +206,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
               </TooltipContent>
             </Tooltip>
 
-            {/* Navigation */}
+            {/* Navigation — flat icon list, no groups */}
             <nav className="flex-1 flex flex-col items-center gap-1 overflow-y-auto pt-1">
-              {navItems.map((item) => {
+              {ALL_NAV_ITEMS.map((item) => {
                 const isActive =
                   item.href === "/"
                     ? pathname === "/"
@@ -106,7 +219,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
                     <TooltipTrigger asChild>
                       <Link
                         href={item.href}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={handleNavigate}
                         className={cn(
                           "relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
                           isActive
@@ -178,33 +291,16 @@ export function Sidebar({ mobile = false }: SidebarProps) {
               </div>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation — grouped with collapsible sections */}
             <nav className="flex-1 overflow-y-auto pt-1">
-              <div className="flex flex-col gap-0.5 px-3">
-                {navItems.map((item) => {
-                  const isActive =
-                    item.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(item.href);
-
-                  return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
-                        isActive
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                      <span className="flex-1 text-left">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
+              {NAV_GROUPS.map((group) => (
+                <NavGroupSection
+                  key={group.label}
+                  group={group}
+                  pathname={pathname}
+                  onNavigate={handleNavigate}
+                />
+              ))}
             </nav>
 
             {/* User info + sign out */}
@@ -240,3 +336,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
     </TooltipProvider>
   );
 }
+
+// Export for testing
+export { NAV_GROUPS, ALL_NAV_ITEMS };
+export type { NavItem, NavGroup };
