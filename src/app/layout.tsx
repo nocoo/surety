@@ -15,8 +15,17 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXTAUTH_URL || "http://localhost:7015"
+  ),
   title: "Surety - 家庭保单管理工具",
   description: "极简、本地化、隐私安全的家庭保障工具",
+  openGraph: {
+    title: "Surety - 家庭保单管理工具",
+    description: "极简、本地化、隐私安全的家庭保障工具",
+    type: "website",
+    // opengraph-image.png in src/app/ is auto-discovered by Next.js
+  },
 };
 
 export default function RootLayout({

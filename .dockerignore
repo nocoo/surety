@@ -16,6 +16,7 @@ mcp
 src/__tests__
 *.md
 !README.md
+logo.png
 logo-*.png
 .husky
 drizzle
