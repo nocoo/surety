@@ -57,8 +57,11 @@ function getMasterKeyHex(): string {
   return hex;
 }
 
+const SURETY_TOTP_ISSUER =
+  process.env.NODE_ENV === "production" ? "Surety" : "Surety(开发)";
+
 const SURETY_TOTP_CONFIG: TotpConfig = {
-  issuer: "Surety",
+  issuer: SURETY_TOTP_ISSUER,
   trustedDeviceCookieName: "surety-2fa-trusted",
   hmacSecret: "", // lazy — set at service creation time
   masterKeyHex: "", // lazy — set at service creation time

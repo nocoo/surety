@@ -824,7 +824,7 @@ export default function SettingsPage() {
                       使用 Google Authenticator 或其他 TOTP 应用扫描二维码，然后输入 6 位验证码确认。
                     </p>
                     {/* QR code */}
-                    <div className="flex justify-center">
+                    <div>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={tfaSetupData.qrDataURL}
