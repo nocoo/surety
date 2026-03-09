@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { verifyTrustedDeviceCookie, TRUSTED_DEVICE_COOKIE_NAME } from "@/lib/totp";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -43,9 +44,11 @@ const authHandler = auth((req) => {
   const isLoggedIn = !!req.auth;
   const isLoginPage = req.nextUrl.pathname === "/login";
   const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
+  const isVerify2FAPage = req.nextUrl.pathname === "/verify-2fa";
+  const isVerify2FAApi = req.nextUrl.pathname === "/api/auth/verify-2fa";
 
-  // Allow auth routes
-  if (isAuthRoute) {
+  // Allow auth routes (OAuth flow + 2FA verification API)
+  if (isAuthRoute || isVerify2FAApi) {
     return NextResponse.next();
   }
 
@@ -57,6 +60,36 @@ const authHandler = auth((req) => {
   // Redirect to login if not logged in and trying to access protected page
   if (!isLoginPage && !isLoggedIn) {
     return NextResponse.redirect(buildRedirectUrl(req, "/login"));
+  }
+
+  // --- 2FA guard ---
+  // Check if user needs 2FA verification
+  if (isLoggedIn && !isVerify2FAPage) {
+    const session = req.auth;
+    const twoFactorVerified = session?.user?.twoFactorVerified;
+
+    if (twoFactorVerified === false) {
+      // Check trusted device cookie before redirecting
+      const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+      const email = session?.user?.email;
+
+      if (trustedCookie && email && verifyTrustedDeviceCookie(trustedCookie, email)) {
+        // Trusted device — allow through (verify-2fa page will auto-update JWT)
+        // We can't update JWT from proxy, but the user is trusted
+        return NextResponse.next();
+      }
+
+      // Not verified and not trusted — redirect to 2FA page
+      return NextResponse.redirect(buildRedirectUrl(req, "/verify-2fa"));
+    }
+  }
+
+  // If user is on /verify-2fa but already verified, redirect home
+  if (isVerify2FAPage && isLoggedIn) {
+    const session = req.auth;
+    if (session?.user?.twoFactorVerified !== false) {
+      return NextResponse.redirect(buildRedirectUrl(req, "/"));
+    }
   }
 
   return NextResponse.next();
