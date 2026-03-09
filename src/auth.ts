@@ -182,6 +182,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }: { session: DefaultSession & { user: DefaultSession["user"] & { twoFactorVerified?: boolean } }; token: JWT }) {
+      // NOTE: twoFactorVerified reflects explicit nonce promotion only.
+      // Trusted-device cookie is a request-scoped bypass checked in proxy.
+      // Effective 2FA satisfied = twoFactorVerified || trusted cookie valid.
+      // Proxy is the sole enforcement point for access control.
       session.user.twoFactorVerified = token.twoFactorVerified ?? true;
       return session;
     },

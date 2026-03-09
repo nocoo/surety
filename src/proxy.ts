@@ -26,6 +26,29 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
   return new URL(pathname, req.nextUrl.origin);
 }
 
+/**
+ * Check if the request carries a valid trusted-device cookie for the given email.
+ * Returns true if the device is trusted and 2FA can be skipped for this request.
+ *
+ * NOTE: This is a request-scoped check (cookie), NOT a session-level state.
+ * session.user.twoFactorVerified tracks explicit nonce promotion only.
+ * Effective 2FA satisfied = twoFactorVerified || isTrustedDevice.
+ * Proxy is the enforcement point for access control.
+ */
+async function isTrustedDevice(req: NextRequest, email: string): Promise<boolean> {
+  try {
+    const { getTotpService, TRUSTED_DEVICE_COOKIE_NAME } = await import("@/lib/totp");
+    const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
+    if (!trustedCookie) return false;
+
+    const totp = await getTotpService();
+    return totp.verifyTrustedCookie(trustedCookie, email);
+  } catch {
+    // DB not available — can't validate trusted device
+    return false;
+  }
+}
+
 // Next.js 16 proxy convention (replaces middleware.ts)
 // NextAuth's auth() returns a middleware-compatible handler
 const authHandler = auth(async (req) => {
@@ -67,45 +90,36 @@ const authHandler = auth(async (req) => {
   }
 
   // --- 2FA guard ---
-  // Check if user needs 2FA verification
-  if (isLoggedIn && !isVerify2FAPage) {
+  // Effective 2FA satisfied = JWT twoFactorVerified || trusted device cookie valid
+  if (isLoggedIn) {
     const session = req.auth;
     const twoFactorVerified = session?.user?.twoFactorVerified;
 
     if (twoFactorVerified === false) {
-      // Check trusted device cookie before redirecting
       const email = session?.user?.email;
+      const trusted = email ? await isTrustedDevice(req, email) : false;
 
-      if (email) {
-        try {
-          const { getTotpService, TRUSTED_DEVICE_COOKIE_NAME } = await import("@/lib/totp");
-          const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
-
-          if (trustedCookie) {
-            const totp = await getTotpService();
-            if (totp.verifyTrustedCookie(trustedCookie, email)) {
-              // Trusted device — allow through
-              return NextResponse.next();
-            }
-          }
-        } catch {
-          // DB not available — can't validate trusted device
+      if (trusted) {
+        // Trusted device — if user is on /verify-2fa, redirect home (no re-prompt needed)
+        if (isVerify2FAPage) {
+          return NextResponse.redirect(buildRedirectUrl(req, "/"));
         }
+        // Otherwise allow through normally
+        return NextResponse.next();
       }
 
-      // Not verified and not trusted
-      if (isApiRoute) {
-        return NextResponse.json({ error: "2FA verification required" }, { status: 403 });
+      // Not verified and not trusted — block access (except /verify-2fa itself)
+      if (!isVerify2FAPage) {
+        if (isApiRoute) {
+          return NextResponse.json({ error: "2FA verification required" }, { status: 403 });
+        }
+        return NextResponse.redirect(buildRedirectUrl(req, "/verify-2fa"));
       }
-      return NextResponse.redirect(buildRedirectUrl(req, "/verify-2fa"));
-    }
-  }
-
-  // If user is on /verify-2fa but already verified, redirect home
-  if (isVerify2FAPage && isLoggedIn) {
-    const session = req.auth;
-    if (session?.user?.twoFactorVerified !== false) {
-      return NextResponse.redirect(buildRedirectUrl(req, "/"));
+    } else {
+      // Already verified via nonce — if on /verify-2fa, redirect home
+      if (isVerify2FAPage) {
+        return NextResponse.redirect(buildRedirectUrl(req, "/"));
+      }
     }
   }
 
