@@ -174,4 +174,49 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 - [x] Step 7: 修改 Settings 页面 (`47bbeef`)
 - [x] Step 8: 更新 `.env.example` + `.env` (`d0ba138`)
 - [x] Step 9: Build + Lint 验证 ✅
-- [x] Step 10: 单元测试 (32 tests)
+- [x] Step 10: 单元测试 (32 tests, `30c5877`)
+
+## 三方安全 Review (Claude Code / Codex GPT-5.4 / Gemini)
+
+日期：2026-03-09
+
+### 三方共识 (3/3)
+
+| # | 严重度 | 问题 | 位置 |
+|---|--------|------|------|
+| 1 | Critical | `updateSession()` 可绕过 2FA — `trigger==="update"` 无条件设 `twoFactorVerified=true` | `src/auth.ts:148-151` |
+| 2 | Critical | API 路由不检查 2FA 状态 — proxy matcher 排除 `/api/*`，业务 API 对未验证 2FA 的用户完全开放 | `src/proxy.ts:106` |
+| 3 | High | verify-setup / disable 端点无暴力破解保护 | `verify-setup/route.ts`, `disable/route.ts` |
+
+### 两方共识 (2/3)
+
+| # | 严重度 | 问题 | 提出者 |
+|---|--------|------|--------|
+| 4 | High | `isTwoFactorEnabled()` catch 静默返回 `false`，DB 异常导致 2FA 绕过 | Claude + Gemini |
+| 5 | High | Trusted device cookie 无法撤销，不绑定 enrollment 版本 | Codex + Claude |
+| 6 | Medium | `process.env.SURETY_DB` 并发竞态（已知限制，单用户场景可接受） | Codex + Gemini |
+| 7 | Medium | Master key 只检查长度不验证 hex 格式 | Claude + Codex |
+
+### 单方发现
+
+| # | 严重度 | 问题 | 发现者 |
+|---|--------|------|--------|
+| 8 | Medium | Settings API 暴露 `totp.*` 敏感 key | Gemini |
+| 9 | Low | Recovery code 不 trim 空格 | Codex |
+| 10 | Low | UI 硬编码 `rememberDevice: true` | Codex |
+| 11 | Low | 手写 timing-safe 比较，应用 `crypto.timingSafeEqual` | Gemini |
+
+### 修复计划
+
+| 优先级 | 问题 # | 修复方案 | 状态 |
+|--------|--------|----------|------|
+| P0 | 1 | JWT callback 改用服务端签名 nonce 验证，非盲信 trigger | [ ] |
+| P0 | 2 | 创建 `ensure2FA()` helper，所有业务 API 路由加 2FA 检查 | [ ] |
+| P1 | 3 | verify-setup / disable 加 brute force 保护 | [ ] |
+| P1 | 4 | `isTwoFactorEnabled()` 加 `console.error` + fail-closed 选项 | [ ] |
+| P1 | 5 | Cookie 绑定 `totp.enrollVersion`，版本变更时旧 cookie 失效 | [ ] |
+| P2 | 7 | Master key 加 `/^[0-9a-fA-F]{64}$/` 正则 | [ ] |
+| P2 | 8 | Settings API 过滤 `totp.*` 前缀 key，`[key]` 路由拒绝 `totp.*` 写入 | [ ] |
+| P2 | 9 | `normalizeRecoveryCode()` 加 `.replace(/\s/g, "")` | [ ] |
+| P3 | 11 | 替换手写循环为 `crypto.timingSafeEqual` | [ ] |
+| P3 | 10 | verify-2fa 页面加 "记住此设备" 复选框 | [ ] |
