@@ -65,6 +65,9 @@ export interface SetupResult {
 export interface VerifySetupResult {
   success: true;
   recoveryCode: string;
+  /** Nonce for JWT promotion — setup proves authenticator ownership */
+  nonce: string;
+  nonceSig: string;
 }
 
 export interface VerifyLoginResult {

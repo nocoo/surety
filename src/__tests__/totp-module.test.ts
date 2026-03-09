@@ -474,6 +474,35 @@ describe("TotpService", () => {
       expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeHash)).toBeDefined();
     });
 
+    test("returns nonce + sig for JWT promotion on success", async () => {
+      const { service, store } = createService();
+      const setupResult = await service.setup("user@example.com");
+
+      const totp = new OTPAuth.TOTP({
+        issuer: TEST_ISSUER,
+        label: "user@example.com",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(setupResult.secret),
+      });
+      const token = totp.generate();
+
+      const result = await service.verifySetup(token, "user@example.com");
+      expect("nonce" in result).toBe(true);
+      expect("nonceSig" in result).toBe(true);
+      if ("nonce" in result && "nonceSig" in result) {
+        expect(typeof result.nonce).toBe("string");
+        expect(typeof result.nonceSig).toBe("string");
+        // Nonce should be stored for consumption by auth layer
+        expect(store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBe(result.nonce);
+        // Nonce should be consumable
+        expect(service.consumeNonce(result.nonce, result.nonceSig)).toBe(true);
+        // Can't reuse
+        expect(service.consumeNonce(result.nonce, result.nonceSig)).toBe(false);
+      }
+    });
+
     test("returns error on invalid token", async () => {
       const { service } = createService();
       await service.setup("user@example.com");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { Save, Database, Bell, Shield, Terminal, Download, Upload, AlertTriangle, Loader2, Cloud, RefreshCw, History, Plug, Send, ShieldCheck, Copy, Check, Eye, EyeOff } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export default function SettingsPage() {
+  const { update: updateSession } = useSession();
   const [settings, setSettings] = useState<SettingsData>({
     ...DEFAULT_SETTINGS,
   });
@@ -282,6 +284,14 @@ export default function SettingsPage() {
       setTfaRecoveryCode(data.recoveryCode);
       setTfaSetupData(null);
       setTfaSetupCode("");
+
+      // Promote JWT: setup proves authenticator ownership, exempt current session
+      if (data.twoFactorNonce && data.twoFactorSig) {
+        await updateSession({
+          twoFactorNonce: data.twoFactorNonce,
+          twoFactorSig: data.twoFactorSig,
+        });
+      }
     } catch {
       setTfaError("Network error");
     } finally {

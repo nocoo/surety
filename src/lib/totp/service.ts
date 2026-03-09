@@ -228,7 +228,13 @@ export class TotpService {
     // Reset brute force counters
     this.resetBruteForceState();
 
-    return { success: true, recoveryCode };
+    // Generate nonce for JWT promotion — setup proves authenticator ownership,
+    // so the current session should be exempted from 2FA verification.
+    const nonce = generateVerificationNonce();
+    const nonceSig = signNonce(nonce, this.config.hmacSecret);
+    this.store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+
+    return { success: true, recoveryCode, nonce, nonceSig };
   }
 
   // -------------------------------------------------------------------------
