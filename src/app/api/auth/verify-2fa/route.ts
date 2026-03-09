@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
     twoFactorSig: result.nonceSig,
   });
 
-  if (rememberDevice) {
+  // Recovery code is a break-glass credential — never grant persistent device trust.
+  // Only TOTP verification can issue a trusted-device cookie.
+  if (rememberDevice && type !== "recovery") {
     const cookieValue = totp.createTrustedCookieValue(session.user.email);
     response.cookies.set(TRUSTED_DEVICE_COOKIE_NAME, cookieValue, {
       httpOnly: true,

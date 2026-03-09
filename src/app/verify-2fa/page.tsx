@@ -238,16 +238,7 @@ export default function VerifyTwoFactorPage() {
                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
                       disabled:opacity-50 transition-colors"
                   />
-                  {/* Remember device toggle */}
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberDevice}
-                      onChange={(e) => setRememberDevice(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-border accent-primary"
-                    />
-                    <span className="text-xs text-muted-foreground">Trust this device for 30 days</span>
-                  </label>
+                  {/* No "Trust this device" for recovery — break-glass credential should not grant persistent trust */}
                   <button
                     type="submit"
                     disabled={loading || !recoveryCode.trim()}
