@@ -1,6 +1,9 @@
 /**
  * POST /api/settings/2fa/disable
- * Disable 2FA. Requires a valid TOTP token for confirmation.
+ * Disable 2FA.
+ * - Normal: requires a valid TOTP token for confirmation.
+ * - Force: when recovery code has been used (authenticator lost),
+ *   accepts { force: true } without a TOTP token.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
@@ -17,16 +20,27 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const token = body.token as string | undefined;
+  const force = body.force === true;
 
+  await ensureDbFromRequest();
+  const totp = await getTotpService();
+
+  // Force-disable path: recovery code was used, authenticator is lost
+  if (force) {
+    const result = totp.forceDisable();
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  // Normal path: requires TOTP token
   if (!token || !/^\d{6}$/.test(token)) {
     return NextResponse.json(
       { error: "A 6-digit code is required to disable 2FA" },
       { status: 400 },
     );
   }
-
-  await ensureDbFromRequest();
-  const totp = await getTotpService();
 
   const result = totp.disable(token, session.user.email);
 

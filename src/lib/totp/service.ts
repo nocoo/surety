@@ -327,6 +327,30 @@ export class TotpService {
     return { success: true };
   }
 
+  /**
+   * Force-disable 2FA without TOTP verification.
+   * Only allowed when the recovery code has been used (authenticator lost).
+   * The user already proved identity via recovery code during login.
+   */
+  forceDisable(): { error: string } | { success: true } {
+    if (!this.isEnabled()) {
+      return { error: "2FA is not enabled" };
+    }
+
+    const recoveryUsed = this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed) === "true";
+    if (!recoveryUsed) {
+      return { error: "Force disable is only allowed when recovery code has been used" };
+    }
+
+    // Delete all TOTP settings
+    this.resetBruteForceState();
+    for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
+      this.store.delete(key);
+    }
+
+    return { success: true };
+  }
+
   // -------------------------------------------------------------------------
   // Nonce operations (used by auth layer)
   // -------------------------------------------------------------------------

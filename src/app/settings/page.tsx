@@ -332,6 +332,35 @@ export default function SettingsPage() {
     }
   };
 
+  // 2FA: force disable (when recovery code has been used, no authenticator available)
+  const handleTfaForceDisable = async () => {
+    setTfaProcessing(true);
+    setTfaError(null);
+    try {
+      const res = await fetch("/api/settings/2fa/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setTfaError(data.error || "Failed to disable 2FA");
+        return;
+      }
+      if (data.success) {
+        setTfaEnabled(false);
+        setTfaShowDisable(false);
+        setTfaDisableCode("");
+        setTfaRecoveryCode(null);
+        setTfaRecoveryCodeUsed(false);
+      }
+    } catch {
+      setTfaError("Network error");
+    } finally {
+      setTfaProcessing(false);
+    }
+  };
+
   // 2FA: copy recovery code
   const handleCopyRecoveryCode = async () => {
     if (!tfaRecoveryCode) return;
@@ -955,6 +984,31 @@ export default function SettingsPage() {
                   >
                     禁用双因素认证
                   </Button>
+                ) : tfaRecoveryCodeUsed ? (
+                  /* Recovery code used — authenticator lost, allow force disable */
+                  <div className="space-y-3 rounded-widget border border-destructive/20 bg-destructive/5 p-4">
+                    <p className="text-sm font-medium text-destructive">
+                      由于 Recovery code 已使用，您可以直接禁用双因素认证。禁用后建议重新启用以获取新的 recovery code。
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => void handleTfaForceDisable()}
+                        disabled={tfaProcessing}
+                      >
+                        {tfaProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        确认禁用
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setTfaShowDisable(false); setTfaError(null); }}
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3 rounded-widget border border-destructive/20 bg-destructive/5 p-4">
                     <p className="text-sm font-medium text-destructive">

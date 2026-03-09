@@ -644,6 +644,78 @@ describe("TotpService", () => {
     });
   });
 
+  describe("forceDisable", () => {
+    async function setupWithRecoveryUsed() {
+      const { service, store } = createService();
+      const setupResult = await service.setup("user@example.com");
+
+      const totpInstance = new OTPAuth.TOTP({
+        issuer: TEST_ISSUER,
+        label: "user@example.com",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(setupResult.secret),
+      });
+      const token = totpInstance.generate();
+      const verifyResult = await service.verifySetup(token, "user@example.com");
+      const recoveryCode = (verifyResult as { recoveryCode: string }).recoveryCode;
+
+      // Use recovery code
+      await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
+      expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
+
+      return { service, store };
+    }
+
+    test("disables 2FA when recovery code has been used", async () => {
+      const { service, store } = await setupWithRecoveryUsed();
+      expect(service.isEnabled()).toBe(true);
+
+      const result = service.forceDisable();
+      expect("success" in result && result.success).toBe(true);
+      expect(service.isEnabled()).toBe(false);
+
+      // All TOTP keys should be deleted
+      for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
+        expect(store.get(key)).toBeUndefined();
+      }
+    });
+
+    test("rejects when recovery code has NOT been used", async () => {
+      const { service } = createService();
+      const setupResult = await service.setup("user@example.com");
+
+      const totpInstance = new OTPAuth.TOTP({
+        issuer: TEST_ISSUER,
+        label: "user@example.com",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(setupResult.secret),
+      });
+      const token = totpInstance.generate();
+      await service.verifySetup(token, "user@example.com");
+
+      const result = service.forceDisable();
+      expect("error" in result).toBe(true);
+      if ("error" in result) {
+        expect(result.error).toContain("recovery code has been used");
+      }
+      // 2FA should still be enabled
+      expect(service.isEnabled()).toBe(true);
+    });
+
+    test("returns error when 2FA is not enabled", () => {
+      const { service } = createService();
+      const result = service.forceDisable();
+      expect("error" in result).toBe(true);
+      if ("error" in result) {
+        expect(result.error).toContain("not enabled");
+      }
+    });
+  });
+
   describe("consumeNonce", () => {
     test("consumes a valid nonce", () => {
       const { service, store } = createService();
