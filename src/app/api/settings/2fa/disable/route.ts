@@ -2,8 +2,10 @@
  * POST /api/settings/2fa/disable
  * Disable 2FA.
  * - Normal: requires a valid TOTP token for confirmation.
- * - Force: when recovery code has been used (authenticator lost),
- *   accepts { force: true } without a TOTP token.
+ * - Force: when the current session was authenticated via recovery code
+ *   (session-scoped JWT claim), accepts { force: true } without a TOTP token.
+ *   Authorization is session-scoped, not global — only the session that
+ *   actually used the recovery code can force-disable.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
@@ -25,8 +27,14 @@ export async function POST(request: NextRequest) {
   await ensureDbFromRequest();
   const totp = await getTotpService();
 
-  // Force-disable path: recovery code was used, authenticator is lost
+  // Force-disable path: session-scoped authorization via recovery code JWT claim
   if (force) {
+    if (!session.user.recoverySession) {
+      return NextResponse.json(
+        { error: "Force disable is only allowed for sessions authenticated via recovery code" },
+        { status: 403 },
+      );
+    }
     const result = totp.forceDisable();
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 400 });

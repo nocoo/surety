@@ -10,6 +10,8 @@ declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
       twoFactorVerified?: boolean;
+      /** True when this session was authenticated via recovery code (not TOTP) */
+      recoverySession?: boolean;
     };
   }
 }
@@ -17,6 +19,8 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     twoFactorVerified?: boolean;
+    /** True when this session was authenticated via recovery code (not TOTP) */
+    recoverySession?: boolean;
   }
 }
 
@@ -174,6 +178,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const valid = await consumeVerificationNonce(nonce, sig);
           if (valid) {
             token.twoFactorVerified = true;
+            // Carry forward recovery session flag from client (set when login was via recovery code)
+            if (sessionUpdate?.recoverySession === true) {
+              token.recoverySession = true;
+            }
           }
         }
         // If no nonce or invalid nonce, twoFactorVerified remains unchanged
@@ -181,12 +189,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return token;
     },
-    async session({ session, token }: { session: DefaultSession & { user: DefaultSession["user"] & { twoFactorVerified?: boolean } }; token: JWT }) {
+    async session({ session, token }: { session: DefaultSession & { user: DefaultSession["user"] & { twoFactorVerified?: boolean; recoverySession?: boolean } }; token: JWT }) {
       // NOTE: twoFactorVerified reflects explicit nonce promotion only.
       // Trusted-device cookie is a request-scoped bypass checked in proxy.
       // Effective 2FA satisfied = twoFactorVerified || trusted cookie valid.
       // Proxy is the sole enforcement point for access control.
       session.user.twoFactorVerified = token.twoFactorVerified ?? true;
+      session.user.recoverySession = token.recoverySession ?? false;
       return session;
     },
   },

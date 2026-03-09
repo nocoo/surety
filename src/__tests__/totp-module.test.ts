@@ -645,7 +645,49 @@ describe("TotpService", () => {
   });
 
   describe("forceDisable", () => {
-    async function setupWithRecoveryUsed() {
+    async function setupEnabled() {
+      const { service, store } = createService();
+      const setupResult = await service.setup("user@example.com");
+
+      const totpInstance = new OTPAuth.TOTP({
+        issuer: TEST_ISSUER,
+        label: "user@example.com",
+        algorithm: "SHA1",
+        digits: 6,
+        period: 30,
+        secret: OTPAuth.Secret.fromBase32(setupResult.secret),
+      });
+      const token = totpInstance.generate();
+      await service.verifySetup(token, "user@example.com");
+
+      return { service, store };
+    }
+
+    test("unconditionally disables 2FA when enabled", async () => {
+      const { service, store } = await setupEnabled();
+      expect(service.isEnabled()).toBe(true);
+
+      const result = service.forceDisable();
+      expect("success" in result && result.success).toBe(true);
+      expect(service.isEnabled()).toBe(false);
+
+      // All TOTP keys should be deleted
+      for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
+        expect(store.get(key)).toBeUndefined();
+      }
+    });
+
+    test("works regardless of recovery code usage status", async () => {
+      // forceDisable no longer checks recoveryCodeUsed — caller handles authorization
+      const { service } = await setupEnabled();
+      expect(service.isEnabled()).toBe(true);
+
+      const result = service.forceDisable();
+      expect("success" in result && result.success).toBe(true);
+      expect(service.isEnabled()).toBe(false);
+    });
+
+    test("also works when recovery code has been used", async () => {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
 
@@ -665,45 +707,9 @@ describe("TotpService", () => {
       await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
       expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
 
-      return { service, store };
-    }
-
-    test("disables 2FA when recovery code has been used", async () => {
-      const { service, store } = await setupWithRecoveryUsed();
-      expect(service.isEnabled()).toBe(true);
-
       const result = service.forceDisable();
       expect("success" in result && result.success).toBe(true);
       expect(service.isEnabled()).toBe(false);
-
-      // All TOTP keys should be deleted
-      for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
-        expect(store.get(key)).toBeUndefined();
-      }
-    });
-
-    test("rejects when recovery code has NOT been used", async () => {
-      const { service } = createService();
-      const setupResult = await service.setup("user@example.com");
-
-      const totpInstance = new OTPAuth.TOTP({
-        issuer: TEST_ISSUER,
-        label: "user@example.com",
-        algorithm: "SHA1",
-        digits: 6,
-        period: 30,
-        secret: OTPAuth.Secret.fromBase32(setupResult.secret),
-      });
-      const token = totpInstance.generate();
-      await service.verifySetup(token, "user@example.com");
-
-      const result = service.forceDisable();
-      expect("error" in result).toBe(true);
-      if ("error" in result) {
-        expect(result.error).toContain("recovery code has been used");
-      }
-      // 2FA should still be enabled
-      expect(service.isEnabled()).toBe(true);
     });
 
     test("returns error when 2FA is not enabled", () => {

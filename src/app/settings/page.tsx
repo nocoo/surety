@@ -105,7 +105,7 @@ function formatTimeAgo(dateStr: string): string {
 }
 
 export default function SettingsPage() {
-  const { update: updateSession } = useSession();
+  const { data: sessionData, update: updateSession } = useSession();
   const [settings, setSettings] = useState<SettingsData>({
     ...DEFAULT_SETTINGS,
   });
@@ -143,7 +143,6 @@ export default function SettingsPage() {
   const [tfaSetupCode, setTfaSetupCode] = useState("");
   const [tfaDisableCode, setTfaDisableCode] = useState("");
   const [tfaRecoveryCode, setTfaRecoveryCode] = useState<string | null>(null);
-  const [tfaRecoveryCodeUsed, setTfaRecoveryCodeUsed] = useState(false);
   const [tfaError, setTfaError] = useState<string | null>(null);
   const [tfaProcessing, setTfaProcessing] = useState(false);
   const [tfaShowSecret, setTfaShowSecret] = useState(false);
@@ -232,7 +231,6 @@ export default function SettingsPage() {
       if (res.ok) {
         const data = await res.json();
         setTfaEnabled(data.enabled);
-        setTfaRecoveryCodeUsed(data.recoveryCodeUsed);
       }
     } catch {
       // ignore
@@ -323,7 +321,6 @@ export default function SettingsPage() {
         setTfaShowDisable(false);
         setTfaDisableCode("");
         setTfaRecoveryCode(null);
-        setTfaRecoveryCodeUsed(false);
       }
     } catch {
       setTfaError("Network error");
@@ -332,7 +329,7 @@ export default function SettingsPage() {
     }
   };
 
-  // 2FA: force disable (when recovery code has been used, no authenticator available)
+  // 2FA: force disable (recovery session — no authenticator available)
   const handleTfaForceDisable = async () => {
     setTfaProcessing(true);
     setTfaError(null);
@@ -352,7 +349,6 @@ export default function SettingsPage() {
         setTfaShowDisable(false);
         setTfaDisableCode("");
         setTfaRecoveryCode(null);
-        setTfaRecoveryCodeUsed(false);
       }
     } catch {
       setTfaError("Network error");
@@ -945,9 +941,9 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p>TOTP 双因素认证已启用。每次登录需要验证码。</p>
-                  {tfaRecoveryCodeUsed && (
+                  {sessionData?.user?.recoverySession && (
                     <p className="text-amber-600 dark:text-amber-400">
-                      Recovery code 已使用。建议禁用后重新启用以获取新的 recovery code。
+                      当前会话通过 Recovery code 登录。建议禁用后重新启用以获取新的 recovery code。
                     </p>
                   )}
                 </div>
@@ -984,11 +980,11 @@ export default function SettingsPage() {
                   >
                     禁用双因素认证
                   </Button>
-                ) : tfaRecoveryCodeUsed ? (
-                  /* Recovery code used — authenticator lost, allow force disable */
+                ) : sessionData?.user?.recoverySession ? (
+                  /* Recovery session — authenticator lost, allow force disable */
                   <div className="space-y-3 rounded-widget border border-destructive/20 bg-destructive/5 p-4">
                     <p className="text-sm font-medium text-destructive">
-                      由于 Recovery code 已使用，您可以直接禁用双因素认证。禁用后建议重新启用以获取新的 recovery code。
+                      当前会话通过 Recovery code 登录，您可以直接禁用双因素认证。禁用后建议重新启用以获取新的 recovery code。
                     </p>
                     <div className="flex items-center gap-2">
                       <Button

@@ -50,6 +50,8 @@ export default function VerifyTwoFactorPage() {
       await updateSession({
         twoFactorNonce: data.twoFactorNonce,
         twoFactorSig: data.twoFactorSig,
+        // Recovery code login: set session-scoped claim for force-disable authorization
+        ...(data.recoverySession && { recoverySession: true }),
       });
 
       // Redirect to home

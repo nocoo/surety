@@ -55,6 +55,9 @@ export async function POST(request: NextRequest) {
     success: true,
     twoFactorNonce: result.nonce,
     twoFactorSig: result.nonceSig,
+    // Recovery code login → flag in response so client can set session-scoped JWT claim.
+    // This replaces the global DB flag for force-disable authorization.
+    ...(type === "recovery" && { recoverySession: true }),
   });
 
   // Recovery code is a break-glass credential — never grant persistent device trust.
