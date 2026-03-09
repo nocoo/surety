@@ -35,6 +35,7 @@ describe("resolveProxyAction", () => {
       pathname: "/",
       twoFactorVerified: true,
       isTrusted: false,
+      twoFactorEnabled: true,
       ...overrides,
     };
   }
@@ -141,6 +142,35 @@ describe("resolveProxyAction", () => {
     });
 
     test("[REGRESSION] /verify-2fa → redirect to / (trusted device should not re-prompt)", () => {
+      const action = resolveProxyAction(ctx({ ...base, pathname: "/verify-2fa" }));
+      expect(action).toEqual({ type: "redirect", to: "/" });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // [REGRESSION] JWT stale: twoFactorVerified=false but 2FA disabled in DB
+  // Covers deadlock: proxy redirects to /verify-2fa, but API says "2FA not enabled"
+  // -----------------------------------------------------------------------
+
+  describe("2FA disabled in DB but JWT stale (twoFactorVerified=false)", () => {
+    const base: Partial<ProxyContext> = {
+      isLoggedIn: true,
+      twoFactorVerified: false,
+      isTrusted: false,
+      twoFactorEnabled: false,
+    };
+
+    test("[REGRESSION] normal page → allow through (2FA no longer active)", () => {
+      const action = resolveProxyAction(ctx({ ...base, pathname: "/dashboard" }));
+      expect(action).toEqual({ type: "next" });
+    });
+
+    test("[REGRESSION] API request → allow through (2FA no longer active)", () => {
+      const action = resolveProxyAction(ctx({ ...base, pathname: "/api/policies" }));
+      expect(action).toEqual({ type: "next" });
+    });
+
+    test("[REGRESSION] /verify-2fa → redirect to / (no 2FA to verify)", () => {
       const action = resolveProxyAction(ctx({ ...base, pathname: "/verify-2fa" }));
       expect(action).toEqual({ type: "redirect", to: "/" });
     });

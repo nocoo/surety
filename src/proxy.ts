@@ -89,14 +89,24 @@ const authHandler = auth(async (req) => {
   const session = req.auth;
   const twoFactorVerified = session?.user?.twoFactorVerified;
 
-  // Resolve trusted device status when needed (2FA enabled but not verified via nonce)
+  // Resolve trusted device status and DB 2FA state when needed
   let isTrusted = false;
+  let twoFactorEnabled = true; // fail closed by default
   if (isLoggedIn && twoFactorVerified === false) {
     const email = session?.user?.email;
     isTrusted = email ? await isTrustedDevice(req, email) : false;
+
+    // Check DB truth: 2FA may have been disabled since login (JWT stale)
+    try {
+      const { getTotpService } = await import("@/lib/totp");
+      const totp = await getTotpService();
+      twoFactorEnabled = totp.isEnabled();
+    } catch {
+      // DB unavailable — fail closed (assume 2FA still enabled)
+    }
   }
 
-  const action = resolveProxyAction({ isLoggedIn, pathname, twoFactorVerified, isTrusted });
+  const action = resolveProxyAction({ isLoggedIn, pathname, twoFactorVerified, isTrusted, twoFactorEnabled });
   return actionToResponse(action, req);
 });
 

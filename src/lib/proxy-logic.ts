@@ -21,6 +21,9 @@ export interface ProxyContext {
   pathname: string;
   twoFactorVerified: boolean | undefined;
   isTrusted: boolean;
+  /** Whether 2FA is currently enabled in the DB. Used to break deadlock when
+   *  JWT says unverified but 2FA has been disabled since login. */
+  twoFactorEnabled: boolean;
 }
 
 /**
@@ -51,6 +54,15 @@ export function resolveProxyAction(ctx: ProxyContext): ProxyAction {
   // --- 2FA guard ---
   if (ctx.isLoggedIn) {
     if (ctx.twoFactorVerified === false) {
+      // JWT says unverified — but 2FA may have been disabled since login.
+      // Check DB truth to avoid deadlock (/verify-2fa ↔ "2FA not enabled").
+      if (!ctx.twoFactorEnabled) {
+        if (isVerify2FAPage) {
+          return { type: "redirect", to: "/" };
+        }
+        return { type: "next" };
+      }
+
       if (ctx.isTrusted) {
         // Trusted device — redirect away from /verify-2fa, allow everything else
         if (isVerify2FAPage) {
