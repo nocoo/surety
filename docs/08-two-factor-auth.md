@@ -222,3 +222,22 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 | P2 | 9 | `normalizeRecoveryCode()` 加 `.replace(/\s/g, "")` | [x] `2506ab1` |
 | P3 | 11 | 替换手写循环为 `crypto.timingSafeEqual` | [x] `2506ab1` |
 | P3 | 10 | verify-2fa 页面加 "记住此设备" 复选框 | [x] `2cdde1b` |
+
+## 模块化重构
+
+日期：2026-03-09
+
+将 TOTP 实现从单一文件 `src/lib/totp.ts` 重构为独立可复用模块 `src/lib/totp/`。
+
+详见 **[docs/09-totp-module.md](./09-totp-module.md)** — 模块独立文档。
+
+### 重构要点
+
+| 变更 | 说明 |
+|------|------|
+| 模块位置 | `src/lib/totp/` — types / crypto / service / index 四文件 |
+| 适配器 | `src/lib/totp.ts` 改为薄适配层（读 env、绑 settingsRepo、re-export） |
+| HMAC 密钥 | 新增 `TOTP_HMAC_SECRET` 环境变量，不再依赖 `NEXTAUTH_SECRET` |
+| 集成方式 | `TotpService` 类 + `TotpStore` 接口（依赖注入） |
+| 测试 | 73 个独立测试，100% 覆盖率，纯内存 store，无 env 依赖 |
+| Commit | `93cdd77` |
