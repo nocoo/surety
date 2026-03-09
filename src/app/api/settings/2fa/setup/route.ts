@@ -6,12 +6,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
-import {
-  generateSecret,
-  encryptSecret,
-  generateQRDataURL,
-  TOTP_SETTINGS_KEYS,
-} from "@/lib/totp";
+import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
@@ -22,28 +17,20 @@ export async function POST() {
   }
 
   await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const totp = await getTotpService();
 
   // Check if already enabled
-  const alreadyEnabled = settingsRepo.get(TOTP_SETTINGS_KEYS.enabled) === "true";
-  if (alreadyEnabled) {
+  if (totp.isEnabled()) {
     return NextResponse.json(
       { error: "2FA is already enabled. Disable it first to re-setup." },
       { status: 409 },
     );
   }
 
-  // Generate and store encrypted secret (not yet enabled)
-  const secretBase32 = generateSecret();
-  const encrypted = encryptSecret(secretBase32);
-  settingsRepo.set(TOTP_SETTINGS_KEYS.encryptedSecret, encrypted);
-  settingsRepo.set(TOTP_SETTINGS_KEYS.enabled, "false");
-
-  // Generate QR code
-  const qrDataURL = await generateQRDataURL(secretBase32, session.user.email);
+  const result = await totp.setup(session.user.email);
 
   return NextResponse.json({
-    qrDataURL,
-    secret: secretBase32,
+    qrDataURL: result.qrDataURL,
+    secret: result.secret,
   });
 }

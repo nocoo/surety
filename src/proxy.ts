@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { verifyTrustedDeviceCookie, TRUSTED_DEVICE_COOKIE_NAME, TOTP_SETTINGS_KEYS } from "@/lib/totp";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -75,22 +74,22 @@ const authHandler = auth(async (req) => {
 
     if (twoFactorVerified === false) {
       // Check trusted device cookie before redirecting
-      const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
       const email = session?.user?.email;
 
-      if (trustedCookie && email) {
-        // Get current enrollment version for cookie validation
-        let enrollVersion: string | undefined;
+      if (email) {
         try {
-          const { settingsRepo } = await import("@/db/repositories/settings");
-          enrollVersion = settingsRepo.get(TOTP_SETTINGS_KEYS.enrollVersion) ?? "1";
-        } catch {
-          // DB not available — can't validate enrollment version
-        }
+          const { getTotpService, TRUSTED_DEVICE_COOKIE_NAME } = await import("@/lib/totp");
+          const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
 
-        if (verifyTrustedDeviceCookie(trustedCookie, email, enrollVersion)) {
-          // Trusted device — allow through
-          return NextResponse.next();
+          if (trustedCookie) {
+            const totp = await getTotpService();
+            if (totp.verifyTrustedCookie(trustedCookie, email)) {
+              // Trusted device — allow through
+              return NextResponse.next();
+            }
+          }
+        } catch {
+          // DB not available — can't validate trusted device
         }
       }
 

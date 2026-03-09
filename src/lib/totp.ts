@@ -1,252 +1,111 @@
 /**
- * TOTP two-factor authentication utilities.
+ * Surety adapter for the TOTP module.
  *
- * - AES-256-GCM for secret encryption at rest
- * - otpauth for TOTP generation/verification
- * - qrcode for QR data URL generation
- * - Brute force protection with lockout
+ * This is the ONLY file that couples the generic totp/ module to the Surety app.
+ * It reads env vars, binds settingsRepo as the TotpStore, and re-exports
+ * everything consumers need so existing import paths (`@/lib/totp`) keep working.
  */
-import * as OTPAuth from "otpauth";
-import QRCode from "qrcode";
-import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { TotpService, type TotpStore, type TotpConfig } from "./totp/index";
+
+// Re-export everything from the module for backward compatibility
+export {
+  TotpService,
+  type TotpStore,
+  type TotpConfig,
+  type BruteForceState,
+  type SetupResult,
+  type VerifySetupResult,
+  type VerifyLoginResult,
+  type StatusResult,
+  type BruteForceError,
+  TOTP_SETTINGS_KEYS,
+  SENSITIVE_KEY_PREFIX,
+  // Pure crypto re-exports (used by existing tests and API routes)
+  encryptSecret,
+  decryptSecret,
+  generateSecret,
+  verifyToken,
+  generateQRDataURL,
+  generateRecoveryCode,
+  hashRecoveryCode,
+  verifyRecoveryCode,
+  isLockedOut,
+  lockoutRemainingSeconds,
+  recordFailedAttempt,
+  resetBruteForce,
+  createTrustedDeviceCookieValue,
+  verifyTrustedDeviceCookie,
+  generateVerificationNonce,
+  signNonce,
+  verifyNonceSignature,
+} from "./totp/index";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Surety-specific config
 // ---------------------------------------------------------------------------
 
-const TOTP_ISSUER = "Surety";
-const TOTP_WINDOW = 1; // accept ±1 time step (±30s)
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_MINUTES = 15;
-const TRUSTED_DEVICE_DAYS = 30;
-const RECOVERY_CODE_BYTES = 16; // 32 hex chars
-
-// ---------------------------------------------------------------------------
-// Master key helpers
-// ---------------------------------------------------------------------------
-
-function getMasterKey(): Buffer {
-  const hex = process.env.TOTP_MASTER_KEY;
-  if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
-    throw new Error("TOTP_MASTER_KEY must be a 64-char hex string (32 bytes). Generate with: openssl rand -hex 32");
-  }
-  return Buffer.from(hex, "hex");
-}
-
-// ---------------------------------------------------------------------------
-// AES-256-GCM encrypt / decrypt
-// ---------------------------------------------------------------------------
-
-export function encryptSecret(plaintext: string): string {
-  const key = getMasterKey();
-  const iv = randomBytes(12); // 96-bit IV recommended for GCM
-  const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  // format: iv:ciphertext:tag (all hex)
-  return `${iv.toString("hex")}:${encrypted.toString("hex")}:${tag.toString("hex")}`;
-}
-
-export function decryptSecret(stored: string): string {
-  const key = getMasterKey();
-  const parts = stored.split(":");
-  if (parts.length !== 3) {
-    throw new Error("Invalid encrypted secret format");
-  }
-  const [ivHex, ciphertextHex, tagHex] = parts as [string, string, string];
-  const iv = Buffer.from(ivHex, "hex");
-  const ciphertext = Buffer.from(ciphertextHex, "hex");
-  const tag = Buffer.from(tagHex, "hex");
-  const decipher = createDecipheriv("aes-256-gcm", key, iv);
-  decipher.setAuthTag(tag);
-  return decipher.update(ciphertext) + decipher.final("utf8");
-}
-
-// ---------------------------------------------------------------------------
-// TOTP generation & verification
-// ---------------------------------------------------------------------------
-
-export function generateSecret(): string {
-  const secret = new OTPAuth.Secret({ size: 20 }); // 160-bit
-  return secret.base32;
-}
-
-export function createTOTP(secretBase32: string, label: string): OTPAuth.TOTP {
-  return new OTPAuth.TOTP({
-    issuer: TOTP_ISSUER,
-    label,
-    algorithm: "SHA1",
-    digits: 6,
-    period: 30,
-    secret: OTPAuth.Secret.fromBase32(secretBase32),
-  });
-}
-
-export function verifyToken(secretBase32: string, token: string, label: string): boolean {
-  const totp = createTOTP(secretBase32, label);
-  const delta = totp.validate({ token, window: TOTP_WINDOW });
-  return delta !== null;
-}
-
-// ---------------------------------------------------------------------------
-// QR code generation
-// ---------------------------------------------------------------------------
-
-export async function generateQRDataURL(secretBase32: string, label: string): Promise<string> {
-  const totp = createTOTP(secretBase32, label);
-  const uri = totp.toString();
-  return QRCode.toDataURL(uri, { width: 256, margin: 2 });
-}
-
-// ---------------------------------------------------------------------------
-// Recovery code
-// ---------------------------------------------------------------------------
-
-export function generateRecoveryCode(): string {
-  // 32-char hex string, formatted as 8 groups of 4 for readability
-  const raw = randomBytes(RECOVERY_CODE_BYTES).toString("hex");
-  return raw.replace(/(.{4})/g, "$1-").slice(0, -1); // e.g. "a1b2-c3d4-e5f6-..."
-}
-
-export async function hashRecoveryCode(code: string): Promise<string> {
-  // Use Bun's built-in bcrypt-compatible password hashing
-  return Bun.password.hash(normalizeRecoveryCode(code));
-}
-
-export async function verifyRecoveryCode(code: string, hash: string): Promise<boolean> {
-  return Bun.password.verify(normalizeRecoveryCode(code), hash);
-}
-
-function normalizeRecoveryCode(code: string): string {
-  // strip dashes, whitespace, and lowercase for flexible input
-  return code.replace(/[-\s]/g, "").toLowerCase();
-}
-
-// ---------------------------------------------------------------------------
-// Brute force protection
-// ---------------------------------------------------------------------------
-
-export interface BruteForceState {
-  failedAttempts: number;
-  lockUntil: string | null; // ISO 8601
-}
-
-export function isLockedOut(state: BruteForceState): boolean {
-  if (!state.lockUntil) return false;
-  return new Date(state.lockUntil) > new Date();
-}
-
-export function lockoutRemainingSeconds(state: BruteForceState): number {
-  if (!state.lockUntil) return 0;
-  const diff = new Date(state.lockUntil).getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / 1000));
-}
-
-export function recordFailedAttempt(state: BruteForceState): BruteForceState {
-  const attempts = state.failedAttempts + 1;
-  if (attempts >= MAX_FAILED_ATTEMPTS) {
-    const lockUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000).toISOString();
-    return { failedAttempts: attempts, lockUntil };
-  }
-  return { failedAttempts: attempts, lockUntil: null };
-}
-
-export function resetBruteForce(): BruteForceState {
-  return { failedAttempts: 0, lockUntil: null };
-}
-
-// ---------------------------------------------------------------------------
-// Trusted device cookie (HMAC-SHA256)
-// ---------------------------------------------------------------------------
-
-function getHmacKey(): string {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error("NEXTAUTH_SECRET is required for trusted device cookies");
+function getHmacSecret(): string {
+  // Prefer dedicated TOTP_HMAC_SECRET; fall back to NEXTAUTH_SECRET for migration
+  const secret = process.env.TOTP_HMAC_SECRET ?? process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("TOTP_HMAC_SECRET (or NEXTAUTH_SECRET as fallback) is required");
   return secret;
 }
 
-export function createTrustedDeviceCookieValue(email: string, enrollVersion: string): string {
-  const expiry = new Date(Date.now() + TRUSTED_DEVICE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const payload = `${email}|${expiry}|${enrollVersion}`;
-  const signature = createHmac("sha256", getHmacKey()).update(payload).digest("hex");
-  return `${payload}|${signature}`;
+function getMasterKeyHex(): string {
+  const hex = process.env.TOTP_MASTER_KEY;
+  if (!hex) throw new Error("TOTP_MASTER_KEY is required");
+  return hex;
 }
 
-export function verifyTrustedDeviceCookie(cookieValue: string, email: string, currentEnrollVersion?: string): boolean {
-  const parts = cookieValue.split("|");
-  if (parts.length !== 4) return false;
-  const [cookieEmail, expiry, enrollVer, signature] = parts as [string, string, string, string];
+const SURETY_TOTP_CONFIG: TotpConfig = {
+  issuer: "Surety",
+  trustedDeviceCookieName: "surety-2fa-trusted",
+  hmacSecret: "", // lazy — set at service creation time
+  masterKeyHex: "", // lazy — set at service creation time
+};
 
-  // verify email matches
-  if (cookieEmail !== email) return false;
+// ---------------------------------------------------------------------------
+// Lazy singleton — created on first use to avoid env var issues at import time
+// ---------------------------------------------------------------------------
 
-  // verify not expired
-  if (new Date(expiry) <= new Date()) return false;
+let _service: TotpService | null = null;
 
-  // verify enrollment version matches (if provided)
-  if (currentEnrollVersion && enrollVer !== currentEnrollVersion) return false;
+/**
+ * Get the Surety TotpService instance. Lazily creates a singleton bound to settingsRepo.
+ * Must be called after DB is initialized (not at module top level).
+ */
+export async function getTotpService(): Promise<TotpService> {
+  if (_service) return _service;
 
-  // verify signature
-  const payload = `${cookieEmail}|${expiry}|${enrollVer}`;
-  const expected = createHmac("sha256", getHmacKey()).update(payload).digest("hex");
+  const { settingsRepo } = await import("@/db/repositories/settings");
 
-  // timing-safe comparison
-  const sigBuf = Buffer.from(signature, "hex");
-  const expBuf = Buffer.from(expected, "hex");
-  if (sigBuf.length !== expBuf.length) return false;
-  return timingSafeEqual(sigBuf, expBuf);
+  // settingsRepo already satisfies TotpStore interface (get/set/delete)
+  const store: TotpStore = {
+    get: (key: string) => settingsRepo.get(key),
+    set: (key: string, value: string) => { settingsRepo.set(key, value); },
+    delete: (key: string) => settingsRepo.delete(key),
+  };
+
+  const config: TotpConfig = {
+    ...SURETY_TOTP_CONFIG,
+    hmacSecret: getHmacSecret(),
+    masterKeyHex: getMasterKeyHex(),
+  };
+
+  _service = new TotpService(store, config);
+  return _service;
 }
+
+/**
+ * Reset the singleton (for testing only).
+ */
+export function _resetTotpService(): void {
+  _service = null;
+}
+
+// ---------------------------------------------------------------------------
+// Backward-compatible constants (cookie name & max age)
+// ---------------------------------------------------------------------------
 
 export const TRUSTED_DEVICE_COOKIE_NAME = "surety-2fa-trusted";
-export const TRUSTED_DEVICE_MAX_AGE = TRUSTED_DEVICE_DAYS * 24 * 60 * 60; // seconds
-
-// ---------------------------------------------------------------------------
-// Settings key constants
-// ---------------------------------------------------------------------------
-
-export const TOTP_SETTINGS_KEYS = {
-  enabled: "totp.enabled",
-  encryptedSecret: "totp.encryptedSecret",
-  recoveryCodeHash: "totp.recoveryCodeHash",
-  recoveryCodeUsed: "totp.recoveryCodeUsed",
-  failedAttempts: "totp.failedAttempts",
-  lockUntil: "totp.lockUntil",
-  enrollVersion: "totp.enrollVersion",
-  twoFactorNonce: "totp.twoFactorNonce",
-} as const;
-
-// ---------------------------------------------------------------------------
-// Sensitive key prefix — used to block generic Settings API access
-// ---------------------------------------------------------------------------
-
-export const SENSITIVE_KEY_PREFIX = "totp.";
-
-// ---------------------------------------------------------------------------
-// 2FA verification nonce (server-side signed, single-use)
-// ---------------------------------------------------------------------------
-
-/**
- * Generate a cryptographically random nonce, store it in DB, return it.
- * The nonce is single-use: consumed when the JWT callback validates it.
- */
-export function generateVerificationNonce(): string {
-  return randomBytes(32).toString("hex");
-}
-
-/**
- * Create HMAC signature for a nonce to prevent tampering.
- */
-export function signNonce(nonce: string): string {
-  return createHmac("sha256", getHmacKey()).update(nonce).digest("hex");
-}
-
-/**
- * Verify a nonce + signature pair.
- */
-export function verifyNonceSignature(nonce: string, signature: string): boolean {
-  const expected = signNonce(nonce);
-  const sigBuf = Buffer.from(signature, "hex");
-  const expBuf = Buffer.from(expected, "hex");
-  if (sigBuf.length !== expBuf.length) return false;
-  return timingSafeEqual(sigBuf, expBuf);
-}
+export const TRUSTED_DEVICE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds

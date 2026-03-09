@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
-import { TOTP_SETTINGS_KEYS } from "@/lib/totp";
+import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +16,8 @@ export async function GET() {
   }
 
   await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const totp = await getTotpService();
+  const status = totp.getStatus();
 
-  const enabled = settingsRepo.get(TOTP_SETTINGS_KEYS.enabled) === "true";
-  const recoveryCodeUsed = settingsRepo.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed) === "true";
-
-  return NextResponse.json({
-    enabled,
-    recoveryCodeUsed: enabled ? recoveryCodeUsed : false,
-  });
+  return NextResponse.json(status);
 }

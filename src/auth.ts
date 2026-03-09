@@ -47,8 +47,9 @@ const skipAuth = process.env.E2E_SKIP_AUTH === "true";
  */
 async function isTwoFactorEnabled(): Promise<boolean> {
   try {
-    const { settingsRepo } = await import("@/db/repositories/settings");
-    return settingsRepo.get("totp.enabled") === "true";
+    const { getTotpService } = await import("@/lib/totp");
+    const totp = await getTotpService();
+    return totp.isEnabled();
   } catch (err) {
     // During build, DB is unavailable — safe to skip
     if (process.env.NODE_ENV === "production" && typeof (globalThis as Record<string, unknown>).EdgeRuntime === "undefined") {
@@ -66,19 +67,9 @@ async function isTwoFactorEnabled(): Promise<boolean> {
  */
 async function consumeVerificationNonce(nonce: string, signature: string): Promise<boolean> {
   try {
-    const { settingsRepo } = await import("@/db/repositories/settings");
-    const { verifyNonceSignature, TOTP_SETTINGS_KEYS } = await import("@/lib/totp");
-    
-    // Verify HMAC signature
-    if (!verifyNonceSignature(nonce, signature)) return false;
-    
-    // Verify nonce matches stored value
-    const storedNonce = settingsRepo.get(TOTP_SETTINGS_KEYS.twoFactorNonce);
-    if (!storedNonce || storedNonce !== nonce) return false;
-    
-    // Consume: delete the nonce so it can't be reused
-    settingsRepo.delete(TOTP_SETTINGS_KEYS.twoFactorNonce);
-    return true;
+    const { getTotpService } = await import("@/lib/totp");
+    const totp = await getTotpService();
+    return totp.consumeNonce(nonce, signature);
   } catch {
     return false;
   }
