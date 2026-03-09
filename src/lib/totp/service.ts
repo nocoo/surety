@@ -212,16 +212,16 @@ export class TotpService {
       return this.handleFailedAttempt();
     }
 
-    // Enable 2FA
-    this.store.set(TOTP_SETTINGS_KEYS.enabled, "true");
-
-    // Set enrollment version (used for trusted device cookie invalidation)
+    // --- Compute all derived values BEFORE writing any state ---
+    // This ensures atomicity: if any step throws (e.g. hash failure),
+    // no partial state is written to the store.
     const enrollVersion = String(Date.now());
-    this.store.set(TOTP_SETTINGS_KEYS.enrollVersion, enrollVersion);
-
-    // Generate and store recovery code
     const recoveryCode = generateRecoveryCode(this.config.recoveryCodeBytes);
     const recoveryHash = await hashRecoveryCode(recoveryCode);
+
+    // --- All values ready — commit to store ---
+    this.store.set(TOTP_SETTINGS_KEYS.enabled, "true");
+    this.store.set(TOTP_SETTINGS_KEYS.enrollVersion, enrollVersion);
     this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeHash, recoveryHash);
     this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "false");
 
