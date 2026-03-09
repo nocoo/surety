@@ -11,7 +11,12 @@ import {
   verifyToken,
   generateRecoveryCode,
   hashRecoveryCode,
+  isLockedOut,
+  lockoutRemainingSeconds,
+  recordFailedAttempt,
+  resetBruteForce,
   TOTP_SETTINGS_KEYS,
+  type BruteForceState,
 } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +40,20 @@ export async function POST(request: NextRequest) {
   await ensureDbFromRequest();
   const { settingsRepo } = await import("@/db/repositories");
 
+  // --- Brute force check ---
+  const bruteState: BruteForceState = {
+    failedAttempts: Number(settingsRepo.get(TOTP_SETTINGS_KEYS.failedAttempts) ?? "0"),
+    lockUntil: settingsRepo.get(TOTP_SETTINGS_KEYS.lockUntil) ?? null,
+  };
+
+  if (isLockedOut(bruteState)) {
+    const remaining = lockoutRemainingSeconds(bruteState);
+    return NextResponse.json(
+      { error: `Too many attempts. Try again in ${Math.ceil(remaining / 60)} minute(s).` },
+      { status: 429 },
+    );
+  }
+
   // Must have a pending secret
   const encrypted = settingsRepo.get(TOTP_SETTINGS_KEYS.encryptedSecret);
   if (!encrypted) {
@@ -57,8 +76,20 @@ export async function POST(request: NextRequest) {
   const valid = verifyToken(secretBase32, token, session.user.email);
 
   if (!valid) {
+    // Record failed attempt
+    const newState = recordFailedAttempt(bruteState);
+    settingsRepo.set(TOTP_SETTINGS_KEYS.failedAttempts, String(newState.failedAttempts));
+    if (newState.lockUntil) {
+      settingsRepo.set(TOTP_SETTINGS_KEYS.lockUntil, newState.lockUntil);
+    }
+
+    const attemptsLeft = 5 - newState.failedAttempts;
     return NextResponse.json(
-      { error: "Invalid code. Please try again." },
+      {
+        error: newState.lockUntil
+          ? "Too many attempts. Account locked for 15 minutes."
+          : `Invalid code. ${attemptsLeft > 0 ? `${attemptsLeft} attempt(s) remaining.` : ""} Please try again.`,
+      },
       { status: 400 },
     );
   }
@@ -77,7 +108,8 @@ export async function POST(request: NextRequest) {
   settingsRepo.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "false");
 
   // Reset brute force counters
-  settingsRepo.set(TOTP_SETTINGS_KEYS.failedAttempts, "0");
+  const reset = resetBruteForce();
+  settingsRepo.set(TOTP_SETTINGS_KEYS.failedAttempts, String(reset.failedAttempts));
   settingsRepo.delete(TOTP_SETTINGS_KEYS.lockUntil);
 
   return NextResponse.json({
