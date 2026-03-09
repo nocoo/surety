@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
 import { getTotpService, TRUSTED_DEVICE_COOKIE_NAME, TRUSTED_DEVICE_MAX_AGE } from "@/lib/totp";
+import { shouldIssueTrustedCookie } from "@/lib/proxy-logic";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   // Recovery code is a break-glass credential — never grant persistent device trust.
   // Only TOTP verification can issue a trusted-device cookie.
-  if (rememberDevice && type !== "recovery") {
+  if (shouldIssueTrustedCookie(type as "totp" | "recovery", rememberDevice)) {
     const cookieValue = totp.createTrustedCookieValue(session.user.email);
     response.cookies.set(TRUSTED_DEVICE_COOKIE_NAME, cookieValue, {
       httpOnly: true,

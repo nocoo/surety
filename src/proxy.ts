@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { resolveProxyAction, checkTrustedDevice, type ProxyAction } from "@/lib/proxy-logic";
 
 // Skip auth in E2E test environment
 const SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
@@ -38,14 +39,28 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
 async function isTrustedDevice(req: NextRequest, email: string): Promise<boolean> {
   try {
     const { getTotpService, TRUSTED_DEVICE_COOKIE_NAME } = await import("@/lib/totp");
-    const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
-    if (!trustedCookie) return false;
+    const cookieValue = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
 
     const totp = await getTotpService();
-    return totp.verifyTrustedCookie(trustedCookie, email);
+    return checkTrustedDevice(cookieValue, email, (cv, em) => totp.verifyTrustedCookie(cv, em));
   } catch {
     // DB not available — can't validate trusted device
     return false;
+  }
+}
+
+/** Convert a ProxyAction into a NextResponse */
+function actionToResponse(action: ProxyAction, req: NextRequest): NextResponse {
+  switch (action.type) {
+    case "next":
+      return NextResponse.next();
+    case "redirect":
+      return NextResponse.redirect(buildRedirectUrl(req, action.to));
+    case "json":
+      if (action.status === 401) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.json({ error: "2FA verification required" }, { status: 403 });
   }
 }
 
@@ -63,67 +78,26 @@ const authHandler = auth(async (req) => {
     return NextResponse.next();
   }
 
-  const isLoggedIn = !!req.auth;
   const pathname = req.nextUrl.pathname;
-  const isApiRoute = pathname.startsWith("/api/");
-  const isLoginPage = pathname === "/login";
-  const isAuthRoute = pathname.startsWith("/api/auth");
-  const isVerify2FAPage = pathname === "/verify-2fa";
-  const isVerify2FAApi = pathname === "/api/auth/verify-2fa";
 
-  // Allow auth routes (OAuth flow + 2FA verification API)
-  if (isAuthRoute || isVerify2FAApi) {
+  // Allow auth routes (OAuth flow + 2FA verification API) — pre-filter before decision logic
+  if (pathname.startsWith("/api/auth") || pathname === "/api/auth/verify-2fa") {
     return NextResponse.next();
   }
 
-  // Redirect to home if logged in and trying to access login page
-  if (isLoginPage && isLoggedIn) {
-    return NextResponse.redirect(buildRedirectUrl(req, "/"));
+  const isLoggedIn = !!req.auth;
+  const session = req.auth;
+  const twoFactorVerified = session?.user?.twoFactorVerified;
+
+  // Resolve trusted device status when needed (2FA enabled but not verified via nonce)
+  let isTrusted = false;
+  if (isLoggedIn && twoFactorVerified === false) {
+    const email = session?.user?.email;
+    isTrusted = email ? await isTrustedDevice(req, email) : false;
   }
 
-  // Not authenticated
-  if (!isLoginPage && !isLoggedIn) {
-    if (isApiRoute) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.redirect(buildRedirectUrl(req, "/login"));
-  }
-
-  // --- 2FA guard ---
-  // Effective 2FA satisfied = JWT twoFactorVerified || trusted device cookie valid
-  if (isLoggedIn) {
-    const session = req.auth;
-    const twoFactorVerified = session?.user?.twoFactorVerified;
-
-    if (twoFactorVerified === false) {
-      const email = session?.user?.email;
-      const trusted = email ? await isTrustedDevice(req, email) : false;
-
-      if (trusted) {
-        // Trusted device — if user is on /verify-2fa, redirect home (no re-prompt needed)
-        if (isVerify2FAPage) {
-          return NextResponse.redirect(buildRedirectUrl(req, "/"));
-        }
-        // Otherwise allow through normally
-        return NextResponse.next();
-      }
-
-      // Not verified and not trusted — block access (except /verify-2fa itself)
-      if (!isVerify2FAPage) {
-        if (isApiRoute) {
-          return NextResponse.json({ error: "2FA verification required" }, { status: 403 });
-        }
-        return NextResponse.redirect(buildRedirectUrl(req, "/verify-2fa"));
-      }
-    } else {
-      // Already verified via nonce — if on /verify-2fa, redirect home
-      if (isVerify2FAPage) {
-        return NextResponse.redirect(buildRedirectUrl(req, "/"));
-      }
-    }
-  }
-
-  return NextResponse.next();
+  const action = resolveProxyAction({ isLoggedIn, pathname, twoFactorVerified, isTrusted });
+  return actionToResponse(action, req);
 });
 
 // Export as named 'proxy' function for Next.js 16
