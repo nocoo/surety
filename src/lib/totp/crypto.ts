@@ -6,7 +6,8 @@
  */
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
-import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual, scrypt as scryptCb } from "node:crypto";
+import { promisify } from "node:util";
 import type { BruteForceState } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -93,12 +94,26 @@ export function generateRecoveryCode(bytes: number): string {
   return raw.replace(/(.{4})/g, "$1-").slice(0, -1); // e.g. "a1b2-c3d4-e5f6-..."
 }
 
+const scrypt = promisify(scryptCb);
+
+const SCRYPT_KEYLEN = 64;
+const SCRYPT_SALT_LEN = 16;
+
 export async function hashRecoveryCode(code: string): Promise<string> {
-  return Bun.password.hash(normalizeRecoveryCode(code));
+  const salt = randomBytes(SCRYPT_SALT_LEN);
+  const derived = (await scrypt(normalizeRecoveryCode(code), salt, SCRYPT_KEYLEN)) as Buffer;
+  return `${salt.toString("hex")}:${derived.toString("hex")}`;
 }
 
 export async function verifyRecoveryCode(code: string, hash: string): Promise<boolean> {
-  return Bun.password.verify(normalizeRecoveryCode(code), hash);
+  const parts = hash.split(":");
+  if (parts.length !== 2) return false;
+  const [saltHex, keyHex] = parts as [string, string];
+  const salt = Buffer.from(saltHex, "hex");
+  const storedKey = Buffer.from(keyHex, "hex");
+  const derived = (await scrypt(normalizeRecoveryCode(code), salt, SCRYPT_KEYLEN)) as Buffer;
+  if (derived.length !== storedKey.length) return false;
+  return timingSafeEqual(derived, storedKey);
 }
 
 export function normalizeRecoveryCode(code: string): string {
