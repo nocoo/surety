@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.0] - 2026-03-09
+
+### Added
+
+- **Two-factor authentication (TOTP 2FA)** — full implementation including setup, login verification, recovery code, trusted device, and force-disable flows
+- TOTP core utilities (encrypt/decrypt secret, QR code generation, brute-force protection, nonce-based session promotion)
+- 2FA guard in proxy with trusted-device cookie bypass
+- 2FA verification page with 6-digit input, recovery code mode, and "trust this device" toggle
+- 2FA settings card (setup, disable, force-disable for recovery sessions)
+- Remember device toggle on 2FA verification page
+- Independent TOTP module (`src/lib/totp/`) with zero host-app coupling, `TotpStore` interface, and 100% test coverage
+- Proxy decision logic extracted to `src/lib/proxy-logic.ts` with 44 regression tests
+- TOTP module documentation (`docs/09-totp-module.md`)
+
+### Fixed
+
+- **Security**: Prevent 2FA bypass via `updateSession()` — require server-signed nonce for JWT promotion
+- **Security**: Filter `totp.*` sensitive keys from generic Settings API endpoints
+- **Security**: Add brute-force protection to verify-setup and disable endpoints
+- **Security**: Enforce auth and 2FA checks on all API routes via proxy
+- **Security**: Block trusted-device cookie issuance on recovery code login (break-glass credential)
+- **Security**: Remove unconditional trusted-device cookie from verify-setup route (require explicit user consent)
+- **Security**: Scope `forceDisable` authorization to session via JWT `recoverySession` claim instead of global DB flag
+- **Security**: Revoke `recoverySession` JWT claim after force-disable and on re-setup (prevent sticky one-time privilege)
+- Replace `Bun.password` with `node:crypto` scrypt for Next.js server runtime compatibility
+- Ensure `verifySetup` computes all derived values before writing state (atomic operation)
+- Resolve 2FA deadlock when JWT is stale after disabling 2FA (proxy checks DB truth)
+- Exempt current session from 2FA after initial setup via nonce-based JWT promotion
+- Redirect trusted-device users away from `/verify-2fa`
+- Left-align QR code and show environment tag in TOTP issuer
+
+### Changed
+
+- Refactored TOTP from single file into independent reusable module with adapter pattern
+
+### Documentation
+
+- 2FA security review findings and retrospective learnings (3-agent review, 2FA spec)
+- TOTP module architecture documentation
+- Retrospective entries for Bun.password, atomicity, JWT desync, session-scoped auth, sticky JWT claims
+
 ## [v1.2.2] - 2026-03-09
 
 ### Added
