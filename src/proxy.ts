@@ -42,10 +42,12 @@ const authHandler = auth(async (req) => {
   }
 
   const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname === "/login";
-  const isAuthRoute = req.nextUrl.pathname.startsWith("/api/auth");
-  const isVerify2FAPage = req.nextUrl.pathname === "/verify-2fa";
-  const isVerify2FAApi = req.nextUrl.pathname === "/api/auth/verify-2fa";
+  const pathname = req.nextUrl.pathname;
+  const isApiRoute = pathname.startsWith("/api/");
+  const isLoginPage = pathname === "/login";
+  const isAuthRoute = pathname.startsWith("/api/auth");
+  const isVerify2FAPage = pathname === "/verify-2fa";
+  const isVerify2FAApi = pathname === "/api/auth/verify-2fa";
 
   // Allow auth routes (OAuth flow + 2FA verification API)
   if (isAuthRoute || isVerify2FAApi) {
@@ -57,8 +59,11 @@ const authHandler = auth(async (req) => {
     return NextResponse.redirect(buildRedirectUrl(req, "/"));
   }
 
-  // Redirect to login if not logged in and trying to access protected page
+  // Not authenticated
   if (!isLoginPage && !isLoggedIn) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(buildRedirectUrl(req, "/login"));
   }
 
@@ -89,7 +94,10 @@ const authHandler = auth(async (req) => {
         }
       }
 
-      // Not verified and not trusted — redirect to 2FA page
+      // Not verified and not trusted
+      if (isApiRoute) {
+        return NextResponse.json({ error: "2FA verification required" }, { status: 403 });
+      }
       return NextResponse.redirect(buildRedirectUrl(req, "/verify-2fa"));
     }
   }
@@ -112,7 +120,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except static files and api routes (except auth)
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.ico$|.*\\.svg$|api/(?!auth)).*)",
+    // Match all paths except static files and health check
+    // API routes ARE included (auth/2FA enforced at proxy level)
+    // /api/auth/* and /api/live are allowed through in the handler above
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.ico$|.*\\.svg$|api/live).*)",
   ],
 };
