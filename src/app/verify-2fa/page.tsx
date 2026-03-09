@@ -45,8 +45,11 @@ export default function VerifyTwoFactorPage() {
         return;
       }
 
-      // Update NextAuth JWT to set twoFactorVerified = true
-      await updateSession({});
+      // Update NextAuth JWT with server-signed nonce (prevents bypass)
+      await updateSession({
+        twoFactorNonce: data.twoFactorNonce,
+        twoFactorSig: data.twoFactorSig,
+      });
 
       // Redirect to home
       router.push("/");

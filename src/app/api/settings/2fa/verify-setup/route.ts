@@ -66,6 +66,10 @@ export async function POST(request: NextRequest) {
   // Enable 2FA
   settingsRepo.set(TOTP_SETTINGS_KEYS.enabled, "true");
 
+  // Set enrollment version (used for trusted device cookie invalidation)
+  const enrollVersion = String(Date.now());
+  settingsRepo.set(TOTP_SETTINGS_KEYS.enrollVersion, enrollVersion);
+
   // Generate and store recovery code
   const recoveryCode = generateRecoveryCode();
   const recoveryHash = await hashRecoveryCode(recoveryCode);

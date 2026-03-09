@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { verifyTrustedDeviceCookie, TRUSTED_DEVICE_COOKIE_NAME } from "@/lib/totp";
+import { verifyTrustedDeviceCookie, TRUSTED_DEVICE_COOKIE_NAME, TOTP_SETTINGS_KEYS } from "@/lib/totp";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -29,7 +29,7 @@ function buildRedirectUrl(req: NextRequest, pathname: string): URL {
 
 // Next.js 16 proxy convention (replaces middleware.ts)
 // NextAuth's auth() returns a middleware-compatible handler
-const authHandler = auth((req) => {
+const authHandler = auth(async (req) => {
   // Read database selection from cookie and set environment variable
   const dbCookie = req.cookies.get("surety-database")?.value;
   if (dbCookie && DATABASE_FILES[dbCookie]) {
@@ -73,10 +73,20 @@ const authHandler = auth((req) => {
       const trustedCookie = req.cookies.get(TRUSTED_DEVICE_COOKIE_NAME)?.value;
       const email = session?.user?.email;
 
-      if (trustedCookie && email && verifyTrustedDeviceCookie(trustedCookie, email)) {
-        // Trusted device — allow through (verify-2fa page will auto-update JWT)
-        // We can't update JWT from proxy, but the user is trusted
-        return NextResponse.next();
+      if (trustedCookie && email) {
+        // Get current enrollment version for cookie validation
+        let enrollVersion: string | undefined;
+        try {
+          const { settingsRepo } = await import("@/db/repositories/settings");
+          enrollVersion = settingsRepo.get(TOTP_SETTINGS_KEYS.enrollVersion) ?? "1";
+        } catch {
+          // DB not available — can't validate enrollment version
+        }
+
+        if (verifyTrustedDeviceCookie(trustedCookie, email, enrollVersion)) {
+          // Trusted device — allow through
+          return NextResponse.next();
+        }
       }
 
       // Not verified and not trusted — redirect to 2FA page

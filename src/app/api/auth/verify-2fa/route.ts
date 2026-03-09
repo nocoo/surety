@@ -15,6 +15,8 @@ import {
   recordFailedAttempt,
   resetBruteForce,
   createTrustedDeviceCookieValue,
+  generateVerificationNonce,
+  signNonce,
   TRUSTED_DEVICE_COOKIE_NAME,
   TRUSTED_DEVICE_MAX_AGE,
   TOTP_SETTINGS_KEYS,
@@ -127,11 +129,21 @@ export async function POST(request: NextRequest) {
   settingsRepo.set(TOTP_SETTINGS_KEYS.failedAttempts, String(reset.failedAttempts));
   settingsRepo.delete(TOTP_SETTINGS_KEYS.lockUntil);
 
-  // Build response with trusted device cookie
-  const response = NextResponse.json({ success: true });
+  // Generate server-signed nonce for secure JWT update
+  const nonce = generateVerificationNonce();
+  const nonceSig = signNonce(nonce);
+  settingsRepo.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+
+  // Build response with nonce and optional trusted device cookie
+  const response = NextResponse.json({
+    success: true,
+    twoFactorNonce: nonce,
+    twoFactorSig: nonceSig,
+  });
 
   if (rememberDevice) {
-    const cookieValue = createTrustedDeviceCookieValue(session.user.email);
+    const enrollVersion = settingsRepo.get(TOTP_SETTINGS_KEYS.enrollVersion) ?? "1";
+    const cookieValue = createTrustedDeviceCookieValue(session.user.email, enrollVersion);
     response.cookies.set(TRUSTED_DEVICE_COOKIE_NAME, cookieValue, {
       httpOnly: true,
       sameSite: "lax",

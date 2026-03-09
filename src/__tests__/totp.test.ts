@@ -20,9 +20,13 @@ import {
   resetBruteForce,
   createTrustedDeviceCookieValue,
   verifyTrustedDeviceCookie,
+  generateVerificationNonce,
+  signNonce,
+  verifyNonceSignature,
   TRUSTED_DEVICE_COOKIE_NAME,
   TRUSTED_DEVICE_MAX_AGE,
   TOTP_SETTINGS_KEYS,
+  SENSITIVE_KEY_PREFIX,
   type BruteForceState,
 } from "@/lib/totp";
 
@@ -166,6 +170,14 @@ describe("recovery code", () => {
     const variant = code.replace(/-/g, "").toUpperCase();
     expect(await verifyRecoveryCode(variant, hash)).toBe(true);
   });
+
+  test("verification ignores whitespace", async () => {
+    const code = generateRecoveryCode();
+    const hash = await hashRecoveryCode(code);
+    // Add spaces around the code
+    const withSpaces = ` ${code.replace(/-/g, " ")} `;
+    expect(await verifyRecoveryCode(withSpaces, hash)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -230,37 +242,54 @@ describe("brute force protection", () => {
 describe("trusted device cookie", () => {
   test("creates and verifies a cookie value", () => {
     const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email);
-    expect(verifyTrustedDeviceCookie(cookieValue, email)).toBe(true);
+    const cookieValue = createTrustedDeviceCookieValue(email, "v1");
+    expect(verifyTrustedDeviceCookie(cookieValue, email, "v1")).toBe(true);
   });
 
   test("rejects cookie with wrong email", () => {
-    const cookieValue = createTrustedDeviceCookieValue("user@example.com");
-    expect(verifyTrustedDeviceCookie(cookieValue, "other@example.com")).toBe(false);
+    const cookieValue = createTrustedDeviceCookieValue("user@example.com", "v1");
+    expect(verifyTrustedDeviceCookie(cookieValue, "other@example.com", "v1")).toBe(false);
   });
 
   test("rejects tampered signature", () => {
     const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email);
+    const cookieValue = createTrustedDeviceCookieValue(email, "v1");
     const parts = cookieValue.split("|");
-    // Tamper the signature
-    const tampered = parts[0] + "|" + parts[1] + "|" + "f".repeat(64);
-    expect(verifyTrustedDeviceCookie(tampered, email)).toBe(false);
+    // Tamper the signature (last part)
+    const tampered = parts.slice(0, -1).join("|") + "|" + "f".repeat(64);
+    expect(verifyTrustedDeviceCookie(tampered, email, "v1")).toBe(false);
   });
 
   test("rejects invalid format", () => {
     expect(verifyTrustedDeviceCookie("invalid", "user@example.com")).toBe(false);
     expect(verifyTrustedDeviceCookie("a|b", "user@example.com")).toBe(false);
+    expect(verifyTrustedDeviceCookie("a|b|c", "user@example.com")).toBe(false);
   });
 
-  test("cookie value contains email and expiry", () => {
+  test("cookie value contains email, expiry, and enrollVersion", () => {
     const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email);
+    const cookieValue = createTrustedDeviceCookieValue(email, "v1");
     const parts = cookieValue.split("|");
-    expect(parts).toHaveLength(3);
+    expect(parts).toHaveLength(4);
     expect(parts[0]).toBe(email);
     // Expiry should be a valid ISO date
     expect(new Date(parts[1]!).toISOString()).toBe(parts[1]!);
+    // Enrollment version
+    expect(parts[2]).toBe("v1");
+  });
+
+  test("rejects cookie with wrong enrollment version", () => {
+    const email = "user@example.com";
+    const cookieValue = createTrustedDeviceCookieValue(email, "v1");
+    // Version mismatch
+    expect(verifyTrustedDeviceCookie(cookieValue, email, "v2")).toBe(false);
+  });
+
+  test("accepts cookie when no enrollment version check is required", () => {
+    const email = "user@example.com";
+    const cookieValue = createTrustedDeviceCookieValue(email, "v1");
+    // No currentEnrollVersion → skip version check
+    expect(verifyTrustedDeviceCookie(cookieValue, email)).toBe(true);
   });
 
   test("TRUSTED_DEVICE_COOKIE_NAME is correct", () => {
@@ -284,5 +313,63 @@ describe("TOTP_SETTINGS_KEYS", () => {
     expect(TOTP_SETTINGS_KEYS.recoveryCodeUsed).toBe("totp.recoveryCodeUsed");
     expect(TOTP_SETTINGS_KEYS.failedAttempts).toBe("totp.failedAttempts");
     expect(TOTP_SETTINGS_KEYS.lockUntil).toBe("totp.lockUntil");
+    expect(TOTP_SETTINGS_KEYS.enrollVersion).toBe("totp.enrollVersion");
+    expect(TOTP_SETTINGS_KEYS.twoFactorNonce).toBe("totp.twoFactorNonce");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sensitive key prefix
+// ---------------------------------------------------------------------------
+
+describe("SENSITIVE_KEY_PREFIX", () => {
+  test("is 'totp.'", () => {
+    expect(SENSITIVE_KEY_PREFIX).toBe("totp.");
+  });
+
+  test("all TOTP_SETTINGS_KEYS start with the prefix", () => {
+    for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
+      expect(key.startsWith(SENSITIVE_KEY_PREFIX)).toBe(true);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Verification nonce (server-signed, single-use)
+// ---------------------------------------------------------------------------
+
+describe("verification nonce", () => {
+  test("generateVerificationNonce returns 64-char hex string", () => {
+    const nonce = generateVerificationNonce();
+    expect(nonce).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("generates unique nonces each time", () => {
+    const nonces = new Set(Array.from({ length: 10 }, () => generateVerificationNonce()));
+    expect(nonces.size).toBe(10);
+  });
+
+  test("signNonce returns a hex string", () => {
+    const nonce = generateVerificationNonce();
+    const sig = signNonce(nonce);
+    expect(sig).toMatch(/^[0-9a-f]+$/);
+  });
+
+  test("verifyNonceSignature validates correct signature", () => {
+    const nonce = generateVerificationNonce();
+    const sig = signNonce(nonce);
+    expect(verifyNonceSignature(nonce, sig)).toBe(true);
+  });
+
+  test("verifyNonceSignature rejects wrong signature", () => {
+    const nonce = generateVerificationNonce();
+    expect(verifyNonceSignature(nonce, "f".repeat(64))).toBe(false);
+  });
+
+  test("verifyNonceSignature rejects signature for different nonce", () => {
+    const nonce1 = generateVerificationNonce();
+    const nonce2 = generateVerificationNonce();
+    const sig1 = signNonce(nonce1);
+    expect(verifyNonceSignature(nonce2, sig1)).toBe(false);
   });
 });

@@ -8,7 +8,7 @@
  */
 import * as OTPAuth from "otpauth";
 import QRCode from "qrcode";
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -27,7 +27,7 @@ const RECOVERY_CODE_BYTES = 16; // 32 hex chars
 
 function getMasterKey(): Buffer {
   const hex = process.env.TOTP_MASTER_KEY;
-  if (!hex || hex.length !== 64) {
+  if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
     throw new Error("TOTP_MASTER_KEY must be a 64-char hex string (32 bytes). Generate with: openssl rand -hex 32");
   }
   return Buffer.from(hex, "hex");
@@ -118,8 +118,8 @@ export async function verifyRecoveryCode(code: string, hash: string): Promise<bo
 }
 
 function normalizeRecoveryCode(code: string): string {
-  // strip dashes and lowercase for flexible input
-  return code.replace(/-/g, "").toLowerCase();
+  // strip dashes, whitespace, and lowercase for flexible input
+  return code.replace(/[-\s]/g, "").toLowerCase();
 }
 
 // ---------------------------------------------------------------------------
@@ -165,17 +165,17 @@ function getHmacKey(): string {
   return secret;
 }
 
-export function createTrustedDeviceCookieValue(email: string): string {
+export function createTrustedDeviceCookieValue(email: string, enrollVersion: string): string {
   const expiry = new Date(Date.now() + TRUSTED_DEVICE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const payload = `${email}|${expiry}`;
+  const payload = `${email}|${expiry}|${enrollVersion}`;
   const signature = createHmac("sha256", getHmacKey()).update(payload).digest("hex");
   return `${payload}|${signature}`;
 }
 
-export function verifyTrustedDeviceCookie(cookieValue: string, email: string): boolean {
+export function verifyTrustedDeviceCookie(cookieValue: string, email: string, currentEnrollVersion?: string): boolean {
   const parts = cookieValue.split("|");
-  if (parts.length !== 3) return false;
-  const [cookieEmail, expiry, signature] = parts as [string, string, string];
+  if (parts.length !== 4) return false;
+  const [cookieEmail, expiry, enrollVer, signature] = parts as [string, string, string, string];
 
   // verify email matches
   if (cookieEmail !== email) return false;
@@ -183,21 +183,18 @@ export function verifyTrustedDeviceCookie(cookieValue: string, email: string): b
   // verify not expired
   if (new Date(expiry) <= new Date()) return false;
 
+  // verify enrollment version matches (if provided)
+  if (currentEnrollVersion && enrollVer !== currentEnrollVersion) return false;
+
   // verify signature
-  const payload = `${cookieEmail}|${expiry}`;
+  const payload = `${cookieEmail}|${expiry}|${enrollVer}`;
   const expected = createHmac("sha256", getHmacKey()).update(payload).digest("hex");
 
   // timing-safe comparison
-  if (signature.length !== expected.length) return false;
   const sigBuf = Buffer.from(signature, "hex");
   const expBuf = Buffer.from(expected, "hex");
   if (sigBuf.length !== expBuf.length) return false;
-
-  let diff = 0;
-  for (let i = 0; i < sigBuf.length; i++) {
-    diff |= (sigBuf[i] ?? 0) ^ (expBuf[i] ?? 0);
-  }
-  return diff === 0;
+  return timingSafeEqual(sigBuf, expBuf);
 }
 
 export const TRUSTED_DEVICE_COOKIE_NAME = "surety-2fa-trusted";
@@ -214,4 +211,42 @@ export const TOTP_SETTINGS_KEYS = {
   recoveryCodeUsed: "totp.recoveryCodeUsed",
   failedAttempts: "totp.failedAttempts",
   lockUntil: "totp.lockUntil",
+  enrollVersion: "totp.enrollVersion",
+  twoFactorNonce: "totp.twoFactorNonce",
 } as const;
+
+// ---------------------------------------------------------------------------
+// Sensitive key prefix — used to block generic Settings API access
+// ---------------------------------------------------------------------------
+
+export const SENSITIVE_KEY_PREFIX = "totp.";
+
+// ---------------------------------------------------------------------------
+// 2FA verification nonce (server-side signed, single-use)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a cryptographically random nonce, store it in DB, return it.
+ * The nonce is single-use: consumed when the JWT callback validates it.
+ */
+export function generateVerificationNonce(): string {
+  return randomBytes(32).toString("hex");
+}
+
+/**
+ * Create HMAC signature for a nonce to prevent tampering.
+ */
+export function signNonce(nonce: string): string {
+  return createHmac("sha256", getHmacKey()).update(nonce).digest("hex");
+}
+
+/**
+ * Verify a nonce + signature pair.
+ */
+export function verifyNonceSignature(nonce: string, signature: string): boolean {
+  const expected = signNonce(nonce);
+  const sigBuf = Buffer.from(signature, "hex");
+  const expBuf = Buffer.from(expected, "hex");
+  if (sigBuf.length !== expBuf.length) return false;
+  return timingSafeEqual(sigBuf, expBuf);
+}

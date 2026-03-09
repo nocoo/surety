@@ -43,13 +43,43 @@ const skipAuth = process.env.E2E_SKIP_AUTH === "true";
 /**
  * Check if TOTP 2FA is enabled by reading the settings DB.
  * Lazy-imported to avoid circular dependency and keep auth.ts lightweight.
+ * Fails closed (returns true = 2FA required) on DB error in non-build contexts.
  */
 async function isTwoFactorEnabled(): Promise<boolean> {
   try {
     const { settingsRepo } = await import("@/db/repositories/settings");
     return settingsRepo.get("totp.enabled") === "true";
+  } catch (err) {
+    // During build, DB is unavailable — safe to skip
+    if (process.env.NODE_ENV === "production" && typeof (globalThis as Record<string, unknown>).EdgeRuntime === "undefined") {
+      console.error("[2FA] Failed to check isTwoFactorEnabled, failing closed:", err);
+      return true; // fail closed: require 2FA
+    }
+    // Build-time / edge compilation — treat as disabled
+    return false;
+  }
+}
+
+/**
+ * Verify a 2FA nonce from session update. Consumes the nonce (single-use).
+ * Returns true only if the nonce is valid and matches the stored value.
+ */
+async function consumeVerificationNonce(nonce: string, signature: string): Promise<boolean> {
+  try {
+    const { settingsRepo } = await import("@/db/repositories/settings");
+    const { verifyNonceSignature, TOTP_SETTINGS_KEYS } = await import("@/lib/totp");
+    
+    // Verify HMAC signature
+    if (!verifyNonceSignature(nonce, signature)) return false;
+    
+    // Verify nonce matches stored value
+    const storedNonce = settingsRepo.get(TOTP_SETTINGS_KEYS.twoFactorNonce);
+    if (!storedNonce || storedNonce !== nonce) return false;
+    
+    // Consume: delete the nonce so it can't be reused
+    settingsRepo.delete(TOTP_SETTINGS_KEYS.twoFactorNonce);
+    return true;
   } catch {
-    // DB not available (e.g. during build) — treat as disabled
     return false;
   }
 }
@@ -131,7 +161,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, trigger }: { token: JWT; trigger?: string }) {
+    async jwt({ token, trigger, session: sessionUpdate }: { token: JWT; trigger?: string; session?: Record<string, unknown> }) {
       if (skipAuth) {
         token.twoFactorVerified = true;
         return token;
@@ -146,9 +176,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
 
       if (trigger === "update") {
-        // Called from verify-2fa API after successful TOTP verification
-        // The API sets twoFactorVerified via session update
-        token.twoFactorVerified = true;
+        // Only promote to verified if the client presents a valid server-signed nonce
+        const nonce = sessionUpdate?.twoFactorNonce as string | undefined;
+        const sig = sessionUpdate?.twoFactorSig as string | undefined;
+        if (nonce && sig) {
+          const valid = await consumeVerificationNonce(nonce, sig);
+          if (valid) {
+            token.twoFactorVerified = true;
+          }
+        }
+        // If no nonce or invalid nonce, twoFactorVerified remains unchanged
       }
 
       return token;
