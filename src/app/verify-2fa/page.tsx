@@ -13,6 +13,7 @@ export default function VerifyTwoFactorPage() {
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [recoveryCode, setRecoveryCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -30,7 +31,7 @@ export default function VerifyTwoFactorPage() {
       const res = await fetch("/api/auth/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, type, rememberDevice: true }),
+        body: JSON.stringify({ token, type, rememberDevice }),
       });
 
       const data = await res.json();
@@ -59,7 +60,7 @@ export default function VerifyTwoFactorPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, updateSession]);
+  }, [router, updateSession, rememberDevice]);
 
   // Handle individual digit input
   const handleDigitChange = useCallback((index: number, value: string) => {
@@ -202,6 +203,17 @@ export default function VerifyTwoFactorPage() {
                   ))}
                 </div>
 
+                {/* Remember device toggle */}
+                <label className="mt-4 flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberDevice}
+                    onChange={(e) => setRememberDevice(e.target.checked)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary"
+                  />
+                  <span className="text-xs text-muted-foreground">Trust this device for 30 days</span>
+                </label>
+
                 {/* Switch to recovery */}
                 <button
                   onClick={() => { setMode("recovery"); setError(""); }}
@@ -226,6 +238,16 @@ export default function VerifyTwoFactorPage() {
                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary
                       disabled:opacity-50 transition-colors"
                   />
+                  {/* Remember device toggle */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberDevice}
+                      onChange={(e) => setRememberDevice(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-border accent-primary"
+                    />
+                    <span className="text-xs text-muted-foreground">Trust this device for 30 days</span>
+                  </label>
                   <button
                     type="submit"
                     disabled={loading || !recoveryCode.trim()}
