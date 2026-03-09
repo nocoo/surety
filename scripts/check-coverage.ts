@@ -21,6 +21,7 @@ async function main() {
       "src/__tests__/category-config.test.ts",
       "src/__tests__/chart-config.test.ts",
       "src/__tests__/backy-service.test.ts",
+      "src/__tests__/totp-module.test.ts",
       "mcp/__tests__/guard.test.ts",
       "mcp/__tests__/tools-members.test.ts",
       "mcp/__tests__/tools-policies.test.ts",
