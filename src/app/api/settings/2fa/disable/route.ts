@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
-    return NextResponse.json({ success: true });
+    // Signal client to clear the one-time recoverySession JWT claim
+    return NextResponse.json({ success: true, clearRecoverySession: true });
   }
 
   // Normal path: requires TOTP token

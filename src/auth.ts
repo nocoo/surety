@@ -178,11 +178,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const valid = await consumeVerificationNonce(nonce, sig);
           if (valid) {
             token.twoFactorVerified = true;
-            // Carry forward recovery session flag from client (set when login was via recovery code)
-            if (sessionUpdate?.recoverySession === true) {
-              token.recoverySession = true;
-            }
+            // Sync recoverySession: set to true only when explicitly flagged (recovery code login),
+            // otherwise clear it. This ensures re-setup or normal TOTP verification revokes the
+            // one-time force-disable privilege granted by recovery code authentication.
+            token.recoverySession = sessionUpdate?.recoverySession === true;
           }
+        }
+        // Allow clearing recoverySession without a nonce (e.g. after force-disable)
+        if (sessionUpdate?.clearRecoverySession === true) {
+          token.recoverySession = false;
         }
         // If no nonce or invalid nonce, twoFactorVerified remains unchanged
       }

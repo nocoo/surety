@@ -349,6 +349,10 @@ export default function SettingsPage() {
         setTfaShowDisable(false);
         setTfaDisableCode("");
         setTfaRecoveryCode(null);
+        // Revoke the one-time force-disable privilege from JWT
+        if (data.clearRecoverySession) {
+          await updateSession({ clearRecoverySession: true });
+        }
       }
     } catch {
       setTfaError("Network error");
