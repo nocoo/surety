@@ -1,13 +1,16 @@
 /**
  * POST /api/settings/2fa/verify-setup
  * Verify the TOTP token to confirm 2FA setup.
- * On success: enables 2FA, returns recovery code + nonce for JWT promotion,
- * and issues a trusted-device cookie (user proved authenticator ownership).
+ * On success: enables 2FA, returns recovery code + nonce for JWT promotion.
+ *
+ * NOTE: No trusted-device cookie is issued here. The nonce-based JWT promotion
+ * already exempts the current session. Trusted-device cookies should only be
+ * issued during login verification with explicit user consent ("remember device").
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { ensureDbFromRequest } from "@/lib/api-helpers";
-import { getTotpService, TRUSTED_DEVICE_COOKIE_NAME, TRUSTED_DEVICE_MAX_AGE } from "@/lib/totp";
+import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
@@ -45,25 +48,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
-  // Setup proves authenticator ownership — issue trusted-device cookie
-  // so the user is exempted from 2FA on next login (within trust window).
-  const response = NextResponse.json({
+  return NextResponse.json({
     success: true,
     recoveryCode: result.recoveryCode,
     twoFactorNonce: result.nonce,
     twoFactorSig: result.nonceSig,
   });
-
-  const cookieValue = totp.createTrustedCookieValue(session.user.email);
-  response.cookies.set(TRUSTED_DEVICE_COOKIE_NAME, cookieValue, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    secure: process.env.NODE_ENV === "production" ||
-      process.env.USE_SECURE_COOKIES === "true" ||
-      (process.env.NEXTAUTH_URL?.startsWith("https://") ?? false),
-    maxAge: TRUSTED_DEVICE_MAX_AGE,
-  });
-
-  return response;
 }
