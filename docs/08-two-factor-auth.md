@@ -1,7 +1,7 @@
 # 08 — Two-Factor Authentication (TOTP)
 
 日期：2026-03-09
-状态：实施中
+状态：完成
 
 ## 目标
 
@@ -175,6 +175,8 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 - [x] Step 8: 更新 `.env.example` + `.env` (`d0ba138`)
 - [x] Step 9: Build + Lint 验证 ✅
 - [x] Step 10: 单元测试 (32 tests, `30c5877`)
+- [x] Step 11: 三方安全 Review 文档 (`87621ad`)
+- [x] Step 12: P0/P1/P2/P3 全部修复完成 (`2506ab1` ~ `2cdde1b`)
 
 ## 三方安全 Review (Claude Code / Codex GPT-5.4 / Gemini)
 
@@ -210,13 +212,13 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 
 | 优先级 | 问题 # | 修复方案 | 状态 |
 |--------|--------|----------|------|
-| P0 | 1 | JWT callback 改用服务端签名 nonce 验证，非盲信 trigger | [ ] |
-| P0 | 2 | 创建 `ensure2FA()` helper，所有业务 API 路由加 2FA 检查 | [ ] |
-| P1 | 3 | verify-setup / disable 加 brute force 保护 | [ ] |
-| P1 | 4 | `isTwoFactorEnabled()` 加 `console.error` + fail-closed 选项 | [ ] |
-| P1 | 5 | Cookie 绑定 `totp.enrollVersion`，版本变更时旧 cookie 失效 | [ ] |
-| P2 | 7 | Master key 加 `/^[0-9a-fA-F]{64}$/` 正则 | [ ] |
-| P2 | 8 | Settings API 过滤 `totp.*` 前缀 key，`[key]` 路由拒绝 `totp.*` 写入 | [ ] |
-| P2 | 9 | `normalizeRecoveryCode()` 加 `.replace(/\s/g, "")` | [ ] |
-| P3 | 11 | 替换手写循环为 `crypto.timingSafeEqual` | [ ] |
-| P3 | 10 | verify-2fa 页面加 "记住此设备" 复选框 | [ ] |
+| P0 | 1 | JWT callback 改用服务端签名 nonce 验证，非盲信 trigger | [x] `2506ab1` |
+| P0 | 2 | proxy matcher 扩展覆盖 API 路由，返回 401/403 JSON | [x] `44ce36f` |
+| P1 | 3 | verify-setup / disable 加 brute force 保护 | [x] `da914e6` |
+| P1 | 4 | `isTwoFactorEnabled()` 加 `console.error` + fail-closed | [x] `2506ab1` |
+| P1 | 5 | Cookie 绑定 `totp.enrollVersion`，版本变更时旧 cookie 失效 | [x] `2506ab1` |
+| P2 | 7 | Master key 加 `/^[0-9a-fA-F]{64}$/` 正则 | [x] `2506ab1` |
+| P2 | 8 | Settings API 过滤 `totp.*` 前缀 key，`[key]` 路由拒绝 `totp.*` 读写 | [x] `7565d2b` |
+| P2 | 9 | `normalizeRecoveryCode()` 加 `.replace(/\s/g, "")` | [x] `2506ab1` |
+| P3 | 11 | 替换手写循环为 `crypto.timingSafeEqual` | [x] `2506ab1` |
+| P3 | 10 | verify-2fa 页面加 "记住此设备" 复选框 | [x] `2cdde1b` |
