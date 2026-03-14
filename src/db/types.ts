@@ -1,7 +1,3 @@
-export type Relation = "Self" | "Spouse" | "Child" | "Parent";
-export type Gender = "M" | "F";
-export type AssetType = "RealEstate" | "Vehicle";
-export type InsuredType = "Member" | "Asset";
 export type PolicyCategory =
   | "Life"
   | "CriticalIllness"
@@ -9,7 +5,6 @@ export type PolicyCategory =
   | "Accident"
   | "Annuity"
   | "Property";
-export type PaymentFrequency = "Single" | "Monthly" | "Yearly";
 export type PolicyDbStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
 export type PolicyStatus = PolicyDbStatus | "Expired";
 
@@ -40,4 +35,3 @@ export function isEffectivelyActive(
 ): boolean {
   return deriveDisplayStatus(dbStatus, expiryDate, now) === "Active";
 }
-export type PaymentStatus = "Pending" | "Paid" | "Overdue";
