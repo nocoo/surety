@@ -135,8 +135,6 @@ surety/
 │   ├── e2e-utils.ts              # E2E 共享工具 (端口检查等)
 │   ├── import-csv.ts             # CSV 导入脚本
 │   ├── check-coverage.ts         # 测试覆盖率检查
-│   ├── migrate-beneficiaries.ts  # 受益人数据迁移
-│   ├── migrate-insurers.ts       # 保险公司数据迁移
 │   └── resize-logos.py           # Logo 处理脚本
 ├── 📂 src/
 │   ├── 📂 __tests__/             # 单元测试 + API E2E 测试
