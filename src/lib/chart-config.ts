@@ -3,14 +3,48 @@
  * Provides unified color palette, axis settings, and formatters for recharts
  */
 
-import { CHART_COLORS as PALETTE_COLORS, chartAxis, chartMuted } from "./palette";
+// ── Color palette (CSS custom properties from globals.css) ──
 
-// Re-export the CSS-variable-based palette as the primary chart color source
-export { PALETTE_COLORS };
+/** Helper — wraps a CSS custom property name for inline style usage. */
+const v = (token: string) => `hsl(var(--${token}))`;
+
+const chart = {
+  vermilion: v("chart-1"),  // Brand vermilion (= --primary)
+  sky:       v("chart-2"),
+  teal:      v("chart-3"),
+  jade:      v("chart-4"),
+  green:     v("chart-5"),
+  lime:      v("chart-6"),
+  amber:     v("chart-7"),
+  orange:    v("chart-8"),
+  blue:      v("chart-9"),
+  red:       v("chart-10"),
+  rose:      v("chart-11"),
+  magenta:   v("chart-12"),
+  orchid:    v("chart-13"),
+  purple:    v("chart-14"),
+  indigo:    v("chart-15"),
+  cobalt:    v("chart-16"),
+  steel:     v("chart-17"),
+  cadet:     v("chart-18"),
+  seafoam:   v("chart-19"),
+  olive:     v("chart-20"),
+  gold:      v("chart-21"),
+  tangerine: v("chart-22"),
+  crimson:   v("chart-23"),
+  gray:      v("chart-24"),
+} as const;
+
+/** Ordered array — use for pie / donut / bar where you need N colors by index. */
+const PALETTE_COLORS = Object.values(chart);
+
+const chartAxis = v("chart-axis");
+const chartMuted = v("chart-muted");
+
+// ── Public API ──
 
 /**
- * Legacy CHART_COLORS — maps old hardcoded API to new palette.
- * Semantic aliases use CSS variables so they respond to theme changes.
+ * CHART_COLORS — semantic color map built from the CSS-variable palette.
  */
 export const CHART_COLORS = {
   palette: PALETTE_COLORS,
@@ -106,11 +140,4 @@ export const RESPONSIVE_CONTAINER_PROPS = {
 export const PIE_LABEL_LINE = {
   stroke: chartMuted,
   strokeWidth: 1,
-} as const;
-
-/**
- * Legend configuration
- */
-export const LEGEND_CONFIG = {
-  wrapperStyle: { fontSize: 12 },
 } as const;
