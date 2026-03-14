@@ -99,13 +99,6 @@ export async function getTotpService(): Promise<TotpService> {
   return _service;
 }
 
-/**
- * Reset the singleton (for testing only).
- */
-export function _resetTotpService(): void {
-  _service = null;
-}
-
 // ---------------------------------------------------------------------------
 // Backward-compatible constants (cookie name & max age)
 // ---------------------------------------------------------------------------
