@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.1] - 2026-03-15
+
+### Removed
+
+- Unused `ui/card.tsx` shadcn component (zero imports)
+- Completed one-time migration scripts (`migrate-beneficiaries.ts`, `migrate-insurers.ts`)
+- `@radix-ui/react-collapsible` dependency (migrated to `radix-ui` unified package)
+- Dead exports from `palette.ts`, `chart-config.ts`, `charts/index.ts`, `db/types.ts`
+- Unused `_resetTotpService()` function from TOTP adapter
+- `palette.ts` merged into `chart-config.ts` (single consumer, 7 dead exports)
+
+### Fixed
+
+- 3 test files (`backup`, `policy-status`, `sidebar-nav`) were not included in pre-commit CI coverage — now added (50 tests)
+- README project tree still listed deleted migration scripts
+
+### Documentation
+
+- TOTP implementation details document (Chinese)
+
 ## [v1.3.0] - 2026-03-09
 
 ### Added
