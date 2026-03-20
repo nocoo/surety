@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>家庭保单管理工具</strong><br>
-  极简 · 本地化 · 隐私安全
+  极简 · Self-host · 隐私安全
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js">
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript">
-  <img src="https://img.shields.io/badge/SQLite-local-green" alt="SQLite">
+  <img src="https://img.shields.io/badge/Cloudflare_D1-database-orange" alt="Cloudflare D1">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
 
@@ -26,7 +26,7 @@
 - 📅 **续保日历** — 一目了然的保单到期提醒
 - 🏢 **保险公司** — 管理保险公司和代理人联系方式
 - 🏠 **资产管理** — 房产、车辆等财产保险关联
-- 🔒 **隐私优先** — 数据完全存储在本地 SQLite
+- 🔒 **隐私优先** — 数据存储在自己的 Cloudflare D1 数据库
 - 🤖 **MCP 接入** — 支持 AI 助手通过 MCP 协议查询保单数据
 
 ## 🚀 快速开始
@@ -88,7 +88,7 @@ bun dev
 
 ```
 surety/
-├── 📂 database/                  # SQLite 数据库文件
+├── 📂 database/                  # 本地 SQLite 数据库文件 (测试/迁移用)
 │   ├── surety.db                 # 生产数据 (gitignored)
 │   ├── surety.example.db         # 示例数据 (git-tracked)
 │   └── surety.test.db            # 测试 fixture (git-tracked)
@@ -231,7 +231,7 @@ surety/
 | ⚡ Runtime | [Bun](https://bun.sh) |
 | 🖥️ Framework | [Next.js 16](https://nextjs.org) (App Router) |
 | 📝 Language | TypeScript (strict mode) |
-| 🗄️ Database | SQLite + [Drizzle ORM](https://orm.drizzle.team) |
+| 🗄️ Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) |
 | 🎨 UI | [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
 | 🔐 Auth | [NextAuth.js](https://next-auth.js.org) (Google OAuth) |
 

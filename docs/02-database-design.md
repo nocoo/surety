@@ -2,7 +2,26 @@
 
 ## 概述
 
-基于 SQLite + Drizzle ORM 的本地化数据存储方案。
+基于 Cloudflare D1 + Drizzle ORM 的数据存储方案。运行时通过 Cloudflare Worker proxy 访问 D1，单元测试使用本地 `:memory:` SQLite。
+
+### 架构
+
+```
+Production:  Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
+Unit Test:   bun:sqlite :memory: (无网络)
+E2E Test:    bun:sqlite file (本地) 或 D1 隔离数据库
+Management:  drizzle-kit + d1-http driver (开发时 schema push)
+```
+
+### DB 注入模式
+
+所有 repository 使用 factory pattern，由调用方传入 request-scoped db instance：
+
+```typescript
+const db = getDbForRequest(request);
+const repos = createAllRepos(db);
+const members = await repos.members.findAll();
+```
 
 ## 实体关系
 

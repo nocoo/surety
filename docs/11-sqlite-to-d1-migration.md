@@ -736,7 +736,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 ## Atomic Commits Plan
 
-### Commit 1: `feat: add cloudflare worker d1 proxy`
+### Commit 1: `feat: add cloudflare worker d1 proxy` ✅
 
 **Files**:
 - New: `worker/` 目录 (index.ts, auth.ts, db.ts, routes/query.ts, routes/batch.ts, routes/health.ts)
@@ -745,7 +745,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Worker 本地测试 (`wrangler dev` + curl)
 
-### Commit 2: `feat: add worker-db-client and sqlite-proxy foundation`
+### Commit 2: `feat: add worker-db-client and sqlite-proxy foundation` ✅
 
 **Files**:
 - New: `src/db/worker-db-client.ts`
@@ -754,7 +754,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Unit test for WorkerDbClient (mock fetch, verify request/response format)
 
-### Commit 3: `refactor: rewrite db/index.ts for request-scoped d1 access`
+### Commit 3: `refactor: rewrite db/index.ts for request-scoped d1 access` ✅
 
 **Files**:
 - Rewrite: `src/db/index.ts`
@@ -767,7 +767,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Spike test 验证 `await db.select()` 在 bun-sqlite 下的行为
 
-### Commit 4: `refactor: repo factory pattern (members, insurers, assets)`
+### Commit 4: `refactor: repo factory pattern (members, insurers, assets)` ✅
 
 **Files**:
 - Update: `src/db/repositories/members.ts` — `membersRepo` → `createMembersRepo(db)`, all methods async
@@ -777,7 +777,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: 现有单元测试改用 factory + await，验证通过
 
-### Commit 5: `refactor: repo factory pattern (policies, beneficiaries, payments)`
+### Commit 5: `refactor: repo factory pattern (policies, beneficiaries, payments)` ✅
 
 **Files**:
 - Update: `src/db/repositories/policies.ts` — same factory pattern
@@ -787,7 +787,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: 现有单元测试改用 factory + await，验证通过
 
-### Commit 6: `refactor: repo factory pattern (cashValues, coverageItems, settings)`
+### Commit 6: `refactor: repo factory pattern (cashValues, coverageItems, settings)` ✅
 
 **Files**:
 - Update: `src/db/repositories/cashValues.ts` — same factory pattern
@@ -798,7 +798,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: 现有单元测试改用 factory + await，验证通过
 
-### Commit 7: `refactor: async api routes (members, policies, assets, insurers)`
+### Commit 7: `refactor: async api routes (members, policies, assets, insurers)` ✅
 
 **Files**:
 - Update: `src/app/api/members/route.ts`, `src/app/api/members/[id]/route.ts`
@@ -813,7 +813,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: `bun run lint` pass (no floating promises)
 
-### Commit 8: `refactor: async api routes (settings, lookup, calendar, live)`
+### Commit 8: `refactor: async api routes (settings, lookup, calendar, live)` ✅
 
 **Files**:
 - Update: `src/app/api/settings/route.ts`, `src/app/api/settings/[key]/route.ts`
@@ -825,7 +825,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: `bun run lint` pass
 
-### Commit 9: `refactor: async dashboard, totp, auth routes`
+### Commit 9: `refactor: async dashboard, totp, auth routes` ✅
 
 **Files**:
 - Update: `src/app/page.tsx` (request-scoped DB)
@@ -836,7 +836,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Unit tests pass; TOTP tests pass
 
-### Commit 10: `refactor: async backup, health, backy service`
+### Commit 10: `refactor: async backup, health, backy service` ✅
 
 **Files**:
 - Rewrite: `src/db/backup.ts` (remove raw SQL → Drizzle ORM + Worker `/batch`)
@@ -847,7 +847,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Backup/restore unit tests pass
 
-### Commit 11: `refactor: request-scoped db switching, remove global state`
+### Commit 11: `refactor: request-scoped db switching, remove global state` ✅
 
 **Files**:
 - Update: `src/proxy.ts` (remove `process.env.SURETY_DB`; pass `targetDb` via request context)
@@ -857,7 +857,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: DB switching behavior test; proxy-logic tests pass
 
-### Commit 12: `refactor: async mcp tools and server`
+### Commit 12: `refactor: async mcp tools and server` ✅
 
 **Files**:
 - Update: `mcp/guard.ts` → `await settingsRepo.get()`
@@ -867,7 +867,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: MCP unit tests pass
 
-### Commit 13: `refactor: async seed scripts and e2e utils`
+### Commit 13: `refactor: async seed scripts and e2e utils` ✅
 
 **Files**:
 - Update: `src/db/seed.ts` → async
@@ -879,7 +879,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Seed scripts execute successfully
 
-### Commit 14: `chore: update dockerfile, remove native sqlite deps`
+### Commit 14: `chore: update dockerfile, remove native sqlite deps` ✅
 
 **Files**:
 - Update: `Dockerfile` (remove python3/make/g++, remove /data volume)
@@ -887,7 +887,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: `docker build` succeeds
 
-### Commit 15: `test: update e2e tests for isolated d1 databases`
+### Commit 15: `test: update e2e tests for isolated d1 databases` ✅
 
 **Files**:
 - Update: `src/__tests__/e2e/*.test.ts` → `SURETY_TARGET_DB=api-e2e`
@@ -896,7 +896,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Full test suite pass (`bun run test:all`)
 
-### Commit 16: `docs: update project description for self-host + d1 model`
+### Commit 16: `docs: update project description for self-host + d1 model` ✅
 
 **Files**:
 - Update: `README.md` (SQLite → D1, 本地化 → Self-host, architecture diagram)

@@ -1,6 +1,6 @@
 # Surety
 
-家庭保单管理工具。极简、本地化、隐私安全。
+家庭保单管理工具。极简、Self-host、隐私安全。
 
 ## 目标用户
 
@@ -13,9 +13,17 @@
 | Runtime | Bun |
 | Framework | Next.js 16 (App Router) |
 | Language | TypeScript (严格模式) |
-| Database | SQLite + Drizzle ORM |
+| Database | Cloudflare D1 (via Worker proxy) + Drizzle ORM |
 | UI | Tailwind CSS + shadcn/ui |
-| Deployment | Localhost:7015 |
+| Deployment | Railway (Next.js) + Cloudflare Workers (D1 proxy) |
+
+### 数据库架构
+
+- **运行时**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
+- **单元测试**：bun:sqlite `:memory:` (无网络)
+- **E2E 测试**：本地 bun:sqlite 文件 (Worker 未部署时) 或 D1 隔离数据库
+- **管理面**：drizzle-kit + d1-http driver (开发时 schema push)
+- **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
 
 ## 四层测试框架
 
