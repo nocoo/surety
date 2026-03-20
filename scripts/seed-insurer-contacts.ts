@@ -1,4 +1,6 @@
 /**
+ * @deprecated This script uses local bun:sqlite. Use D1 management tools instead.
+ *
  * Seed script: Populate insurer contact information
  *
  * This script updates insurers with their official customer service hotlines and websites.

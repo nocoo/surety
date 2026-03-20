@@ -1,12 +1,12 @@
 /**
  * Database module — request-scoped D1 access via Worker proxy.
  *
- * Production: sqlite-proxy → Cloudflare Worker → D1 binding
- * Test: bun:sqlite :memory: (no network, instant)
+ * Production / E2E: sqlite-proxy → Cloudflare Worker → D1 binding
+ * Unit tests: bun:sqlite :memory: (no network, instant)
  *
  * The key design principle is request-scoped database access:
  * each API route calls getDbForRequest(request) to get a db instance
- * bound to the correct target database (production, api-e2e, etc.).
+ * bound to the correct target database (production, dev).
  */
 
 import * as schema from "./schema";
@@ -22,13 +22,6 @@ export type { TargetDb };
 
 function isTestEnv(): boolean {
   return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
-}
-
-/**
- * Check if Worker proxy is configured. When false, falls back to local bun:sqlite.
- */
-function hasWorkerConfig(): boolean {
-  return !!process.env.SURETY_WORKER_URL && !!process.env.SURETY_WORKER_SECRET;
 }
 
 function getWorkerUrl(): string {
@@ -106,98 +99,39 @@ export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
   );
 }
 
-// ---------- Local database fallback (bun:sqlite file) ----------
-
-// Cache for local file-based SQLite connections (E2E / dev without Worker)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let localSqlite: any = null;
-let localDbInstance: DbInstance = null;
-let localDbPath: string | null = null;
-
-/**
- * Create or get a Drizzle instance backed by a local SQLite file.
- * Used when Worker proxy is not configured (E2E tests, local dev).
- */
-function getLocalDb(): DbInstance {
-  const dbPath = process.env.SURETY_DB;
-  if (!dbPath) {
-    throw new Error(
-      "Neither SURETY_WORKER_URL nor SURETY_DB is set. " +
-      "Set SURETY_WORKER_URL for D1 access, or SURETY_DB for local SQLite."
-    );
-  }
-
-  // Return cached instance if path hasn't changed
-  if (localDbInstance && localDbPath === dbPath) return localDbInstance;
-
-  // Close previous connection if path changed
-  if (localSqlite) {
-    localSqlite.close();
-    localSqlite = null;
-    localDbInstance = null;
-    localDbPath = null;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { resolve, dirname } = require("path");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { fileURLToPath } = require("url");
-
-  // Resolve relative to project root
-  const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-  const absolutePath = resolve(projectRoot, dbPath);
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Database } = require("bun:sqlite");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/bun-sqlite");
-
-  localSqlite = new Database(absolutePath);
-  localDbInstance = drizzle(localSqlite, { schema });
-  localDbPath = dbPath;
-
-  return localDbInstance;
-}
+// ---------- Request-scoped database access ----------
 
 /**
  * Get a request-scoped database instance.
  *
- * Routing priority:
- * 1. Test env → in-memory SQLite
- * 2. Worker configured (SURETY_WORKER_URL) → remote D1 via sqlite-proxy
- * 3. Local file (SURETY_DB) → local bun:sqlite fallback (E2E / dev)
+ * Routing:
+ * 1. Test env → in-memory SQLite (bun:sqlite :memory:)
+ * 2. Non-test → remote D1 via sqlite-proxy (requires SURETY_WORKER_URL)
  *
  * @param requestOrTargetDb - Either a Request (reads cookie) or a TargetDb string
  */
 export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInstance {
   if (isTestEnv()) {
-    // In test environment, always use in-memory SQLite
     return getTestDb();
   }
 
-  // If Worker proxy is configured, use remote D1
-  if (hasWorkerConfig()) {
-    let targetDb: TargetDb;
+  // Non-test: always use remote D1
+  let targetDb: TargetDb;
 
-    if (typeof requestOrTargetDb === "string") {
-      targetDb = requestOrTargetDb;
-    } else if (requestOrTargetDb instanceof Request) {
-      // Extract target DB from cookie
-      const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
-      const match = cookieHeader.match(/surety-database=([^;]+)/);
-      targetDb = resolveTargetDb(match?.[1]);
-    } else {
-      targetDb = resolveTargetDb();
-    }
-
-    return createRemoteDb(targetDb);
+  if (typeof requestOrTargetDb === "string") {
+    targetDb = requestOrTargetDb;
+  } else if (requestOrTargetDb instanceof Request) {
+    const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
+    const match = cookieHeader.match(/surety-database=([^;]+)/);
+    targetDb = resolveTargetDb(match?.[1]);
+  } else {
+    targetDb = resolveTargetDb();
   }
 
-  // Fallback: local SQLite file (E2E tests, local dev without Worker)
-  return getLocalDb();
+  return createRemoteDb(targetDb);
 }
 
-// ---------- Test database (local bun:sqlite :memory:) ----------
+// ---------- Test database (bun:sqlite :memory:) ----------
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let testSqlite: any = null;
@@ -419,9 +353,7 @@ export function closeDb(): void {
  * Dynamic db Proxy — routes to the correct database instance.
  *
  * In test environment: uses in-memory SQLite.
- * In production (Worker configured): remote D1 via sqlite-proxy.
- * Fallback (no Worker): local SQLite file via SURETY_DB.
- * Kept for backward compatibility during migration.
+ * In production: remote D1 via sqlite-proxy.
  */
 export const db = new Proxy({} as DbInstance, {
   get(_, prop) {
@@ -429,13 +361,7 @@ export const db = new Proxy({} as DbInstance, {
       if (!testDbInstance) createTestDb();
       return testDbInstance[prop];
     }
-    // Production with Worker: use remote D1
-    if (hasWorkerConfig()) {
-      const remoteDb = createRemoteDb(resolveTargetDb());
-      return remoteDb[prop];
-    }
-    // Fallback: local SQLite file
-    const localDb = getLocalDb();
-    return localDb[prop];
+    const remoteDb = createRemoteDb(resolveTargetDb());
+    return remoteDb[prop];
   },
 });

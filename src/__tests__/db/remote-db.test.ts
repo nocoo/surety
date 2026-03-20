@@ -182,27 +182,13 @@ describe("getDbForRequest (non-test env)", () => {
     expect(db).toBeDefined();
   });
 
-  it("falls back to local SQLite when Worker is not configured", async () => {
+  it("throws when SURETY_WORKER_URL is not configured", async () => {
     process.env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     delete process.env.SURETY_WORKER_URL;
     delete process.env.SURETY_WORKER_SECRET;
-    process.env.SURETY_DB = "database/surety.test.db";
 
     const { getDbForRequest } = await import("@/db");
-    const db = getDbForRequest();
-    expect(db).toBeDefined();
-    expect(db.select).toBeDefined();
-  });
-
-  it("throws when neither Worker nor SURETY_DB is configured", async () => {
-    process.env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
-    delete process.env.SURETY_WORKER_URL;
-    delete process.env.SURETY_WORKER_SECRET;
-    delete process.env.SURETY_DB;
-
-    const { getDbForRequest } = await import("@/db");
-    expect(() => getDbForRequest()).toThrow("Neither SURETY_WORKER_URL nor SURETY_DB is set");
+    expect(() => getDbForRequest()).toThrow("SURETY_WORKER_URL is not set");
   });
 });

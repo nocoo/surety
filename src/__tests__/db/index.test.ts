@@ -237,11 +237,11 @@ describe("db/index", () => {
     });
   });
 
-  describe("seed script production guard", () => {
-    test("scripts/seed.ts exits with error when SURETY_DB is not set", async () => {
-      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
+  describe("seed-remote script production guard", () => {
+    test("scripts/seed-remote.ts exits with error when SURETY_TARGET_DB is not set", async () => {
+      const proc = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
-        env: { ...process.env, SURETY_DB: undefined },
+        env: { ...process.env, SURETY_TARGET_DB: undefined },
         stdout: "pipe",
         stderr: "pipe",
       });
@@ -251,23 +251,10 @@ describe("db/index", () => {
       expect(stderr).toContain("BLOCKED");
     });
 
-    test("scripts/seed.ts exits with error when SURETY_DB=database/surety.db", async () => {
-      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
+    test("scripts/seed-remote.ts exits with error when SURETY_TARGET_DB=production", async () => {
+      const proc = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
-        env: { ...process.env, SURETY_DB: "database/surety.db" },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const exitCode = await proc.exited;
-      const stderr = await new Response(proc.stderr).text();
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain("BLOCKED");
-    });
-
-    test("scripts/seed.ts exits with error when SURETY_DB=database/surety.example.db", async () => {
-      const proc = Bun.spawn(["bun", "scripts/seed.ts"], {
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, SURETY_DB: "database/surety.example.db" },
+        env: { ...process.env, SURETY_TARGET_DB: "production" },
         stdout: "pipe",
         stderr: "pipe",
       });

@@ -1,4 +1,6 @@
 /**
+ * @deprecated This script uses local bun:sqlite. Use D1 management tools instead.
+ *
  * Import policies from Notion CSV export.
  *
  * SAFETY: This script REFUSES to run without explicit confirmation.
