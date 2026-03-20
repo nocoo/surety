@@ -3,7 +3,7 @@
  * Used by sqlite-proxy to forward SQL queries to D1 via the Worker.
  */
 
-export type TargetDb = "production" | "api-e2e" | "ui-e2e" | "mcp-e2e";
+export type TargetDb = "production" | "dev";
 
 export interface QueryResult {
   rows: Record<string, unknown>[];

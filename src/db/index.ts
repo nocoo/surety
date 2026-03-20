@@ -67,7 +67,7 @@ export function resolveTargetDb(cookieValue?: string): TargetDb {
 }
 
 function isValidTargetDb(value: string): value is TargetDb {
-  return ["production", "api-e2e", "ui-e2e", "mcp-e2e"].includes(value);
+  return ["production", "dev"].includes(value);
 }
 
 // ---------- Remote database (sqlite-proxy → Worker proxy) ----------

@@ -4,17 +4,13 @@
 
 export interface Env {
   DB_PROD: D1Database;
-  DB_API_E2E: D1Database;
-  DB_UI_E2E: D1Database;
-  DB_MCP_E2E: D1Database;
+  DB_DEV: D1Database;
   WORKER_SHARED_SECRET: string;
 }
 
-const DB_MAP: Record<string, keyof Pick<Env, "DB_PROD" | "DB_API_E2E" | "DB_UI_E2E" | "DB_MCP_E2E">> = {
+const DB_MAP: Record<string, keyof Pick<Env, "DB_PROD" | "DB_DEV">> = {
   production: "DB_PROD",
-  "api-e2e": "DB_API_E2E",
-  "ui-e2e": "DB_UI_E2E",
-  "mcp-e2e": "DB_MCP_E2E",
+  dev: "DB_DEV",
 };
 
 export function resolveDb(

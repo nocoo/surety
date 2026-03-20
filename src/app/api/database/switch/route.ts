@@ -4,7 +4,7 @@ import type { TargetDb } from "@/db/index";
 
 export const dynamic = "force-dynamic";
 
-const VALID_TARGETS: TargetDb[] = ["production", "api-e2e", "ui-e2e", "mcp-e2e"];
+const VALID_TARGETS: TargetDb[] = ["production", "dev"];
 
 export async function POST(request: Request) {
   try {
