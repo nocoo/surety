@@ -98,7 +98,12 @@ surety/
 │   ├── 03-google-oauth-setup.md  # Google OAuth 配置
 │   ├── 04-mcp-setup.md           # MCP Server 配置
 │   ├── 05-basalt-ui-migration.md # Basalt UI 迁移方案
-│   └── 06-testing-improvement-plan.md # 四层测试改进计划
+│   ├── 06-testing-improvement-plan.md # 四层测试改进计划
+│   ├── 07-impeccable-audit-report.md # 安全审计报告
+│   ├── 08-two-factor-auth.md    # 2FA 设计
+│   ├── 09-totp-module.md        # TOTP 模块重构
+│   ├── 10-totp-implementation-details.md # TOTP 实现细节
+│   └── 11-sqlite-to-d1-migration.md # SQLite → Cloudflare D1 迁移
 ├── 📂 drizzle/                   # 数据库迁移文件
 ├── 📂 e2e/                       # Playwright 浏览器 E2E 测试
 │   ├── 📂 fixtures/              # 测试 fixture 与自定义 helpers
