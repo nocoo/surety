@@ -494,7 +494,7 @@ function createRemoteDb(client: WorkerDbClient) {
 | `src/app/api/renewal-calendar/route.ts` | `policiesRepo.findAll`, `membersRepo.findAll` |
 | `src/app/api/live/route.ts` | Health check async |
 | `src/app/api/auth/verify-2fa/route.ts` | `getDbForRequest()`, `getTotpService()` → `settingsRepo` |
-| `src/app/api/auth/[...nextauth]/route.ts` | NextAuth config (may need DB for callbacks) |
+| `src/app/api/auth/[...nextauth]/route.ts` | 审查 JWT/session callback 是否间接依赖 `settingsRepo`/TOTP store；如有则纳入迁移 |
 
 ### Server components and lib
 
