@@ -10,7 +10,7 @@ import {
   getRawSqlite,
   db,
 } from "@/db";
-import { membersRepo, insurersRepo } from "@/db/repositories";
+import { membersRepo, insurersRepo, createAllRepos } from "@/db/repositories";
 
 /**
  * Tests for src/db/index.ts (D1 migration version)
@@ -117,6 +117,34 @@ describe("db/index", () => {
       // Should work without error
       const members = membersRepo.findAll();
       expect(members).toEqual([]);
+    });
+  });
+
+  describe("createAllRepos", () => {
+    test("creates all repos from a db instance", () => {
+      const db = createTestDb();
+      const repos = createAllRepos(db);
+
+      expect(repos.members).toBeDefined();
+      expect(repos.insurers).toBeDefined();
+      expect(repos.assets).toBeDefined();
+      expect(repos.policies).toBeDefined();
+      expect(repos.beneficiaries).toBeDefined();
+      expect(repos.payments).toBeDefined();
+      expect(repos.cashValues).toBeDefined();
+      expect(repos.coverageItems).toBeDefined();
+      expect(repos.settings).toBeDefined();
+    });
+
+    test("repos created from createAllRepos work correctly", () => {
+      const db = createTestDb();
+      const repos = createAllRepos(db);
+
+      const member = repos.members.create({ name: "张三", relation: "Self" });
+      expect(member.name).toBe("张三");
+
+      const all = repos.members.findAll();
+      expect(all).toHaveLength(1);
     });
   });
 
