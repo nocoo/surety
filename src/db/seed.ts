@@ -1,4 +1,5 @@
 import type { NewMember, NewAsset, NewPolicy, NewBeneficiary } from "./schema";
+import type { AllRepos } from "./repositories";
 import {
   membersRepo,
   assetsRepo,
@@ -274,12 +275,27 @@ export interface SeedResult {
 /**
  * Seeds the database with test data.
  * Assumes the database is already initialized and empty.
+ *
+ * @param repos - Optional repos instance. When omitted, uses global singletons
+ *                (backward compat). Scripts should pass createAllRepos(db) to
+ *                avoid the global db Proxy.
  */
-export function seedDatabase(): SeedResult {
+export function seedDatabase(repos?: AllRepos): SeedResult {
+  const r = repos ?? {
+    members: membersRepo,
+    assets: assetsRepo,
+    policies: policiesRepo,
+    beneficiaries: beneficiariesRepo,
+    payments: paymentsRepo,
+    cashValues: cashValuesRepo,
+    settings: settingsRepo,
+    insurers: insurersRepo,
+  };
+
   // Seed members
   const memberMap = new Map<string, number>();
   for (const member of familyMembers) {
-    const created = membersRepo.create(member);
+    const created = r.members.create(member);
     memberMap.set(member.name, created.id);
   }
 
@@ -287,7 +303,7 @@ export function seedDatabase(): SeedResult {
   const assetMap = new Map<string, number>();
   for (const asset of familyAssets) {
     const ownerId = memberMap.get(asset.ownerName);
-    const created = assetsRepo.create({
+    const created = r.assets.create({
       type: asset.type,
       name: asset.name,
       identifier: asset.identifier,
@@ -300,7 +316,7 @@ export function seedDatabase(): SeedResult {
   // Seed insurers (extract unique insurer names from policies)
   const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
   for (const name of uniqueInsurers) {
-    insurersRepo.findOrCreate(name);
+    r.insurers.findOrCreate(name);
   }
 
   // Seed policies with related data
@@ -309,7 +325,7 @@ export function seedDatabase(): SeedResult {
     const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
     const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
 
-    const policy = policiesRepo.create({
+    const policy = r.policies.create({
       ...seed.policy,
       applicantId,
       insuredMemberId,
@@ -326,14 +342,14 @@ export function seedDatabase(): SeedResult {
           sharePercent: b.sharePercent,
           rankOrder: b.rankOrder,
         };
-        beneficiariesRepo.create(bene);
+        r.beneficiaries.create(bene);
       }
     }
 
     // Payments
     const paymentRecords = generatePayments(policy.id, seed.policy);
     if (paymentRecords.length > 0) {
-      paymentsRepo.createMany(paymentRecords);
+      r.payments.createMany(paymentRecords);
     }
 
     // Cash values
@@ -343,14 +359,14 @@ export function seedDatabase(): SeedResult {
         policyYear: year,
         value: Math.round(seed.policy.premium * (idx + 1) * 0.3),
       }));
-      cashValuesRepo.createMany(cvRecords);
+      r.cashValues.createMany(cvRecords);
     }
   }
 
   // Seed settings
-  settingsRepo.set("annualIncome", "600000");
-  settingsRepo.setNumber("emergencyFundMonths", 6);
-  settingsRepo.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
+  r.settings.set("annualIncome", "600000");
+  r.settings.setNumber("emergencyFundMonths", 6);
+  r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
 
   return {
     members: familyMembers.length,

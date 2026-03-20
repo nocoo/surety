@@ -10,6 +10,7 @@
  */
 
 import type { NewMember, NewAsset, NewPolicy, NewBeneficiary, NewInsurer, NewCoverageItem } from "./schema";
+import type { AllRepos } from "./repositories";
 import {
   membersRepo,
   assetsRepo,
@@ -786,19 +787,35 @@ export interface SeedResult {
 /**
  * Seeds the database with example demo data.
  * Assumes the database is already initialized and empty.
+ *
+ * @param repos - Optional repos instance. When omitted, uses global singletons
+ *                (backward compat). Scripts should pass createAllRepos(db) to
+ *                avoid the global db Proxy.
  */
-export function seedExampleDatabase(): SeedResult {
+export function seedExampleDatabase(repos?: AllRepos): SeedResult {
+  const r = repos ?? {
+    members: membersRepo,
+    assets: assetsRepo,
+    policies: policiesRepo,
+    beneficiaries: beneficiariesRepo,
+    payments: paymentsRepo,
+    cashValues: cashValuesRepo,
+    coverageItems: coverageItemsRepo,
+    settings: settingsRepo,
+    insurers: insurersRepo,
+  };
+
   // Seed insurers first
   const insurerMap = new Map<string, number>();
   for (const insurer of exampleInsurers) {
-    const created = insurersRepo.create(insurer);
+    const created = r.insurers.create(insurer);
     insurerMap.set(insurer.name, created.id);
   }
 
   // Seed members
   const memberMap = new Map<string, number>();
   for (const member of exampleMembers) {
-    const created = membersRepo.create(member);
+    const created = r.members.create(member);
     memberMap.set(member.name, created.id);
   }
 
@@ -806,7 +823,7 @@ export function seedExampleDatabase(): SeedResult {
   const assetMap = new Map<string, number>();
   for (const asset of exampleAssets) {
     const ownerId = memberMap.get(asset.ownerName);
-    const created = assetsRepo.create({
+    const created = r.assets.create({
       type: asset.type,
       name: asset.name,
       identifier: asset.identifier,
@@ -819,13 +836,13 @@ export function seedExampleDatabase(): SeedResult {
   // Seed policies with related data
   // Use a fixed reference date for consistent demo data (Feb 9, 2026)
   const referenceDate = new Date("2026-02-09");
-  
+
   for (const seed of examplePolicies) {
     const applicantId = memberMap.get(seed.applicantName)!;
     const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
     const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
     const insurerId = insurerMap.get(seed.policy.insurerName);
-    
+
     // Calculate next due date based on effective date and frequency
     const nextDueDate = calculateNextDueDate(
       seed.policy.effectiveDate,
@@ -833,7 +850,7 @@ export function seedExampleDatabase(): SeedResult {
       referenceDate
     );
 
-    const policy = policiesRepo.create({
+    const policy = r.policies.create({
       ...seed.policy,
       applicantId,
       insuredMemberId,
@@ -852,14 +869,14 @@ export function seedExampleDatabase(): SeedResult {
           sharePercent: b.sharePercent,
           rankOrder: b.rankOrder,
         };
-        beneficiariesRepo.create(bene);
+        r.beneficiaries.create(bene);
       }
     }
 
     // Payments
     const paymentRecords = generatePayments(policy.id, seed.policy);
     if (paymentRecords.length > 0) {
-      paymentsRepo.createMany(paymentRecords);
+      r.payments.createMany(paymentRecords);
     }
 
     // Cash values (for life insurance and annuity)
@@ -869,7 +886,7 @@ export function seedExampleDatabase(): SeedResult {
         policyYear: year,
         value: Math.round(seed.policy.premium * (idx + 1) * 0.4),
       }));
-      cashValuesRepo.createMany(cvRecords);
+      r.cashValues.createMany(cvRecords);
     }
 
     // Coverage items
@@ -878,15 +895,15 @@ export function seedExampleDatabase(): SeedResult {
         ...item,
         policyId: policy.id,
       }));
-      coverageItemsRepo.createMany(items);
+      r.coverageItems.createMany(items);
     }
   }
 
   // Seed settings
-  settingsRepo.set("annualIncome", "480000");
-  settingsRepo.setNumber("emergencyFundMonths", 6);
-  settingsRepo.setJson("riskTolerance", { level: "moderate", description: "稳健型投资偏好" });
-  settingsRepo.set("familyLocation", "上海市浦东新区");
+  r.settings.set("annualIncome", "480000");
+  r.settings.setNumber("emergencyFundMonths", 6);
+  r.settings.setJson("riskTolerance", { level: "moderate", description: "稳健型投资偏好" });
+  r.settings.set("familyLocation", "上海市浦东新区");
 
   return {
     members: exampleMembers.length,

@@ -1,15 +1,35 @@
 /**
  * Seed script: Populate insurer contact information
- * 
+ *
  * This script updates insurers with their official customer service hotlines and websites.
  * Data sourced from official insurer websites.
- * 
- * Run with: bun run scripts/seed-insurer-contacts.ts
+ *
+ * Uses bun:sqlite directly (not the D1 Worker proxy) since this is a local script.
+ *
+ * Run with: SURETY_DB=database/surety.db bun run scripts/seed-insurer-contacts.ts
  */
 
-import { db } from "../src/db";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import * as schema from "../src/db/schema";
 import { insurers } from "../src/db/schema";
 import { eq } from "drizzle-orm";
+
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const dbFile = process.env.SURETY_DB;
+
+if (!dbFile) {
+  console.error(
+    "❌ BLOCKED: SURETY_DB is not set.\n\n" +
+    "   Usage:\n" +
+    "     SURETY_DB=database/surety.db bun run scripts/seed-insurer-contacts.ts\n"
+  );
+  process.exit(1);
+}
+
+const dbPath = resolve(PROJECT_ROOT, dbFile);
 
 // Official customer service hotlines and websites for Chinese insurers
 // All phone numbers are official 24-hour customer service lines
@@ -90,6 +110,10 @@ const insurerContacts: Record<string, { phone: string; website: string }> = {
 };
 
 async function seedInsurerContacts() {
+  console.log(`Opening database: ${dbPath}`);
+  const sqlite = new Database(dbPath);
+  const db = drizzle(sqlite, { schema });
+
   console.log("🔄 Seeding insurer contact information...\n");
 
   const existingInsurers = db.select().from(insurers).all();
@@ -100,7 +124,7 @@ async function seedInsurerContacts() {
 
   for (const insurer of existingInsurers) {
     const contact = insurerContacts[insurer.name];
-    
+
     if (contact) {
       db.update(insurers)
         .set({
@@ -110,7 +134,7 @@ async function seedInsurerContacts() {
         })
         .where(eq(insurers.id, insurer.id))
         .run();
-      
+
       console.log(`  ✅ ${insurer.name}: ${contact.phone} | ${contact.website}`);
       updated++;
     } else {
@@ -118,6 +142,8 @@ async function seedInsurerContacts() {
       notFound++;
     }
   }
+
+  sqlite.close();
 
   console.log(`\n✅ Seed completed!`);
   console.log(`  Updated: ${updated} insurers`);
