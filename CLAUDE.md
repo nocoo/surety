@@ -57,6 +57,71 @@ bun run db:studio    # 数据库可视化
 bun run mcp          # 启动 MCP Server (stdio)
 ```
 
+## Worker Deployment (D1 Proxy)
+
+Worker 源码在 `worker/` 目录，部署到 Cloudflare Workers，作为 Next.js → D1 的中间代理。
+
+### 基础信息
+
+| 项目 | 值 |
+|------|------|
+| Worker 名称 | `surety` |
+| Worker URL | `https://surety.nocoo.workers.dev` |
+| Custom Domain | `https://surety.worker.hexly.ai` |
+| D1 Database | `surety-db` (`9e57f832-0c6f-4456-8706-612f2965a66c`) |
+| Liveness | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
+
+### 部署命令
+
+```bash
+cd worker && bun install          # 安装依赖
+cd worker && bunx wrangler deploy # 部署 Worker
+```
+
+### Schema 推送 (D1)
+
+通过 `drizzle-kit push` + D1 HTTP driver 直接推（不经过 Worker）：
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=<account_id> \
+CLOUDFLARE_DATABASE_ID=<database_id> \
+CLOUDFLARE_D1_TOKEN=<token> \
+bunx drizzle-kit push
+```
+
+验证表结构：
+```bash
+cd worker && bunx wrangler d1 execute surety-db --remote \
+  --command "SELECT name FROM sqlite_master WHERE type='table'"
+```
+
+### 数据导入
+
+⚠️ `.dump` 的 INSERT 无列名，本地 SQLite 和 D1 (Drizzle push) 列顺序不同，必须生成带显式列名的 INSERT 语句。
+
+```bash
+# 生成带列名的 INSERT（用 python3 脚本，不能直接用 sqlite3 .dump）
+# 执行到 D1
+cd worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
+```
+
+### Secret 管理
+
+```bash
+# 设置 Worker 共享密钥
+echo "<secret>" | cd worker && bunx wrangler secret put WORKER_SHARED_SECRET
+```
+
+### 环境变量 (Next.js 侧)
+
+`.env` 中需要配置：
+```
+SURETY_WORKER_URL=https://surety.worker.hexly.ai
+SURETY_WORKER_SECRET=<worker_shared_secret>
+```
+
+`src/db/index.ts` 的 `hasWorkerConfig()` 检测这两个变量，自动切换到 sqlite-proxy → Worker → D1 路径。未设置时 fallback 到本地 bun:sqlite。
+
 ## Version Release Checklist
 
 1. Read current version from `package.json`, apply the requested bump (default: patch)
@@ -98,3 +163,4 @@ Verification: `rg '旧版本号' --glob '*.ts' --glob '*.tsx'` to catch straggle
 - **安全授权必须 session-scoped，不能用全局持久标记**：`forceDisable()` 原实现检查 DB 中 `recoveryCodeUsed` 全局标记。一旦任何 session 使用了 recovery code，该标记永久为 true，导致所有后续 session（包括正常 TOTP 登录的 session）都能跳过验证直接禁用 2FA。修复方案：将 `recoverySession` 作为 JWT claim，只在 recovery code 验证成功时写入当前 session 的 token。API 层检查 `session.user.recoverySession`，服务层 `forceDisable()` 变为无条件执行（caller 负责授权）。教训：安全关键的授权判断应基于 session-scoped 凭证（JWT claim），而非全局持久状态（DB flag）。全局标记会跨 session 泄漏权限。
 - **Setup 阶段不应自动签发 trusted-device cookie**：`verify-setup` 路由在 2FA 首次启用时无条件签发 30 天 trusted-device cookie，用户从未被询问是否信任此设备。nonce-based JWT promotion 已经解决了"启用后立即需要验证"的问题。cookie 应仅在登录验证时由用户主动勾选"信任此设备"后签发。教训：信任授予（trust grant）必须有明确的用户意图（explicit consent），不能作为附带效果（side effect）自动发生。
 - **一次性权限 JWT claim 必须有显式撤销点**：`recoverySession` JWT claim 原实现只在 recovery code 登录时设为 `true`，但没有任何代码路径将其清回 `false`。导致同一会话中 forceDisable → re-setup 2FA 后，旧 `recoverySession=true` 仍然有效，可以无验证码再次 forceDisable 新启用的 2FA。修复方案：(1) nonce-based session promotion 路径中，`recoverySession` 始终从 `sessionUpdate` 同步（不传即清）；(2) forceDisable 成功后返回 `clearRecoverySession` 信号，客户端调用 `updateSession({ clearRecoverySession: true })` 显式撤销。教训：JWT claim 作为一次性权限凭证时，必须在权限行使后和状态变更后有**显式撤销点**。"只设不清"的 sticky claim 会在同一会话内积累越权风险。
+- **SQLite .dump 导入 D1 必须带显式列名**：`sqlite3 .dump` 生成的 `INSERT INTO table VALUES(...)` 不含列名，按源库的列顺序排列。但 `drizzle-kit push` 创建的 D1 表列顺序由 schema.ts 定义顺序决定，与历史 SQLite 的列顺序不同。直接导入会导致值错位，触发 NOT NULL constraint 或数据写入错误列。解决方案：用脚本生成 `INSERT INTO table (col1, col2, ...) VALUES(...)` 格式。教训：跨数据库迁移数据时，永远不要依赖隐式列顺序。
