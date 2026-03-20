@@ -16,7 +16,8 @@
 import { createRemoteDb, type TargetDb } from "../src/db/index";
 import { createAllRepos } from "../src/db/repositories";
 import { seedDatabase } from "../src/db/seed";
-import { sql } from "drizzle-orm";
+import { WorkerDbClient } from "../src/db/worker-db-client";
+import { withSeedLock } from "./e2e-utils";
 
 const BLOCKED_TARGETS = ["production"];
 
@@ -44,7 +45,10 @@ function getTargetDb(): TargetDb {
 async function main() {
   const targetDb = getTargetDb();
 
-  if (!process.env.SURETY_WORKER_URL || !process.env.SURETY_WORKER_SECRET) {
+  const workerUrl = process.env.SURETY_WORKER_URL;
+  const workerSecret = process.env.SURETY_WORKER_SECRET;
+
+  if (!workerUrl || !workerSecret) {
     console.error(
       "❌ SURETY_WORKER_URL and SURETY_WORKER_SECRET must be set.\n" +
       "   These are required to connect to the Worker proxy.\n",
@@ -53,36 +57,32 @@ async function main() {
   }
 
   console.log(`🌱 Remote seed: target = ${targetDb}`);
-  console.log(`   Worker URL: ${process.env.SURETY_WORKER_URL}\n`);
+  console.log(`   Worker URL: ${workerUrl}\n`);
 
-  // Create remote DB connection
-  const db = createRemoteDb(targetDb);
-  const repos = createAllRepos(db);
+  await withSeedLock(async () => {
+    // Atomic batch DELETE (all-or-nothing via D1 batch)
+    console.log("🗑️  Clearing existing data (atomic batch)...");
+    const tables = [
+      "coverage_items", "cash_values", "payments", "beneficiaries",
+      "policies", "assets", "insurers", "members", "settings",
+    ];
+    const client = new WorkerDbClient(workerUrl, workerSecret, targetDb);
+    await client.batch([
+      ...tables.map((t) => ({ sql: `DELETE FROM ${t}`, params: [] })),
+      { sql: "DELETE FROM sqlite_sequence", params: [] },
+    ]);
 
-  // Clear existing data (order matters for FK constraints)
-  console.log("🗑️  Clearing existing data...");
-  const tables = [
-    "coverage_items", "cash_values", "payments", "beneficiaries",
-    "policies", "assets", "insurers", "members", "settings",
-  ];
-  for (const table of tables) {
-    await db.run(sql.raw(`DELETE FROM ${table}`));
-  }
-  // Reset autoincrement
-  try {
-    await db.run(sql.raw("DELETE FROM sqlite_sequence"));
-  } catch {
-    // sqlite_sequence may not exist if no AUTOINCREMENT was used
-  }
+    // Seed data (sequential INSERT via repos)
+    console.log("📦 Seeding data...");
+    const db = createRemoteDb(targetDb);
+    const repos = createAllRepos(db);
+    const result = await seedDatabase(repos);
 
-  // Seed data
-  console.log("📦 Seeding data...");
-  const result = await seedDatabase(repos);
-
-  console.log("\n✅ Remote seed completed!");
-  console.log(`   Members: ${result.members}`);
-  console.log(`   Assets: ${result.assets}`);
-  console.log(`   Policies: ${result.policies}`);
+    console.log("\n✅ Remote seed completed!");
+    console.log(`   Members: ${result.members}`);
+    console.log(`   Assets: ${result.assets}`);
+    console.log(`   Policies: ${result.policies}`);
+  });
 }
 
 main().catch((err) => {
