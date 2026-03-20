@@ -19,11 +19,12 @@
 
 ### 数据库架构
 
-- **运行时**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
+- **运行时（生产/E2E）**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
 - **单元测试**：bun:sqlite `:memory:` (无网络)
-- **E2E 测试**：本地 bun:sqlite 文件 (Worker 未部署时) 或 D1 隔离数据库
+- **E2E 测试**：远程 D1 dev 数据库 (`surety-db-dev`，Worker binding `DB_DEV`，`SURETY_TARGET_DB=dev`)
 - **管理面**：drizzle-kit + d1-http driver (开发时 schema push)
 - **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
+- **无本地 SQLite 运行时**：所有非测试路径都走远程 D1
 
 ## 四层测试框架
 
@@ -120,7 +121,15 @@ SURETY_WORKER_URL=https://surety.worker.hexly.ai
 SURETY_WORKER_SECRET=<worker_shared_secret>
 ```
 
-`src/db/index.ts` 的 `hasWorkerConfig()` 检测这两个变量，自动切换到 sqlite-proxy → Worker → D1 路径。未设置时 fallback 到本地 bun:sqlite。
+`src/db/index.ts` 在非测试环境下必须配置这两个变量，否则 `getDbForRequest()` 会抛出错误。所有非测试路径都走远程 D1，无本地 SQLite 运行时 fallback。
+
+E2E 测试额外需要：
+```
+SURETY_TARGET_DB=dev        # 指向 D1 dev 数据库 (surety-db-dev)
+E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
+```
+
+安全机制：当 `E2E_SKIP_AUTH=true` 时，`resolveTargetDb()` 强制要求设置 `SURETY_TARGET_DB`，防止 E2E 意外连接 production D1。
 
 ## Version Release Checklist
 
@@ -164,3 +173,5 @@ Verification: `rg '旧版本号' --glob '*.ts' --glob '*.tsx'` to catch straggle
 - **Setup 阶段不应自动签发 trusted-device cookie**：`verify-setup` 路由在 2FA 首次启用时无条件签发 30 天 trusted-device cookie，用户从未被询问是否信任此设备。nonce-based JWT promotion 已经解决了"启用后立即需要验证"的问题。cookie 应仅在登录验证时由用户主动勾选"信任此设备"后签发。教训：信任授予（trust grant）必须有明确的用户意图（explicit consent），不能作为附带效果（side effect）自动发生。
 - **一次性权限 JWT claim 必须有显式撤销点**：`recoverySession` JWT claim 原实现只在 recovery code 登录时设为 `true`，但没有任何代码路径将其清回 `false`。导致同一会话中 forceDisable → re-setup 2FA 后，旧 `recoverySession=true` 仍然有效，可以无验证码再次 forceDisable 新启用的 2FA。修复方案：(1) nonce-based session promotion 路径中，`recoverySession` 始终从 `sessionUpdate` 同步（不传即清）；(2) forceDisable 成功后返回 `clearRecoverySession` 信号，客户端调用 `updateSession({ clearRecoverySession: true })` 显式撤销。教训：JWT claim 作为一次性权限凭证时，必须在权限行使后和状态变更后有**显式撤销点**。"只设不清"的 sticky claim 会在同一会话内积累越权风险。
 - **SQLite .dump 导入 D1 必须带显式列名**：`sqlite3 .dump` 生成的 `INSERT INTO table VALUES(...)` 不含列名，按源库的列顺序排列。但 `drizzle-kit push` 创建的 D1 表列顺序由 schema.ts 定义顺序决定，与历史 SQLite 的列顺序不同。直接导入会导致值错位，触发 NOT NULL constraint 或数据写入错误列。解决方案：用脚本生成 `INSERT INTO table (col1, col2, ...) VALUES(...)` 格式。教训：跨数据库迁移数据时，永远不要依赖隐式列顺序。
+- **sqlite-proxy "get" 方法的行映射陷阱**：Drizzle sqlite-proxy 的 callback 返回 `{ rows }` 时，`method === "get"` 期望 `rows` 是单个扁平行 `[1, "张伟", ...]`，而 `method === "all"` 期望行数组 `[[1, ...], [2, ...]]`。原实现用 `rows.slice(0,1)` 处理 "get"，但这返回 `[[1, "张伟", ...]]`（仍是数组包数组），导致 `.returning().get()` 返回 `id` 时得到整行数组而非标量值。修复：`method === "get" ? rows[0] : rows`。教训：sqlite-proxy 的 callback 返回格式文档不充分，必须读 `drizzle-orm/sqlite-proxy/session.cjs` 中的 `mapGetResult` 源码确认期望格式。
+- **移除本地 SQLite 运行时的分阶段策略**：8 个原子 commit 从安全 guard → D1 dev 创建 → seed 脚本 → E2E 迁移 → UI 删除 → health check 异步化 → 本地代码删除 → 清理。关键决策：(1) 先加 E2E safety guard（Phase 1）防止迁移过程中 E2E 意外连 production；(2) E2E 全部走远程 D1 dev 而非本地文件，统一数据路径；(3) UT 保持 `bun:sqlite :memory:` 零改动（481+ test）。教训：大规模基础设施迁移必须先部署防护网再拆旧路径，每个 commit 独立可验证。
