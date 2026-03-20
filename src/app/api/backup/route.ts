@@ -9,10 +9,7 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const { db } = await getReposFromRequest();
-
-  // buildBackup still uses the db instance directly (will be migrated in Commit H)
-  void db;
-  const backup = buildBackup();
+  const backup = await buildBackup(db);
   const filename = buildBackupFilename();
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
@@ -29,9 +26,6 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   const { db } = await getReposFromRequest();
-
-  // restoreBackup still uses the db instance directly (will be migrated in Commit H)
-  void db;
   const body: unknown = await request.json();
 
   const error = validateBackup(body);
@@ -41,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const counts = restoreBackup(body as any);
+    const counts = await restoreBackup(db, body as any);
     return NextResponse.json({ success: true, restored: counts });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

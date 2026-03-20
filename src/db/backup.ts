@@ -1,16 +1,21 @@
 /**
- * Backup & Restore — pure functions, no HTTP dependency.
+ * Backup & Restore — pure functions using Drizzle ORM, no raw SQLite dependency.
  *
- * buildBackup()   — collect all tables into a serializable object (raw SQL, snake_case)
+ * buildBackup()   — collect all tables into a serializable object (snake_case)
  * restoreBackup() — full destructive replace: clear all → insert (transactional)
  *
  * The backup format uses raw snake_case column names and raw SQLite values
  * (e.g. timestamps as integers, not Date objects).  This ensures the JSON
  * is a faithful snapshot of the database and can be restored without any
  * key/value transformations.
+ *
+ * Internally, Drizzle ORM returns camelCase + Date objects, so we convert
+ * at the boundary to maintain backward-compatible backup format.
  */
 
-import { getRawSqlite } from "@/db";
+import { sql } from "drizzle-orm";
+import * as schema from "./schema";
+import type { DbInstance } from "./index";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -76,30 +81,129 @@ const TABLE_NAME_MAP: Record<TableKey, string> = {
   settings: "settings",
 };
 
+// ── Column mapping (camelCase ↔ snake_case) ─────────────────────────
+
+/**
+ * Map of Drizzle schema table objects, keyed by backup table key.
+ * Used to extract column mapping from the schema definition.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SCHEMA_TABLE_MAP: Record<TableKey, any> = {
+  members: schema.members,
+  insurers: schema.insurers,
+  assets: schema.assets,
+  policies: schema.policies,
+  beneficiaries: schema.beneficiaries,
+  payments: schema.payments,
+  cashValues: schema.cashValues,
+  coverageItems: schema.coverageItems,
+  settings: schema.settings,
+};
+
+/**
+ * Build camelCase → snake_case column mapping for a Drizzle table.
+ * Reads the column definitions from the schema to get the SQL column name.
+ */
+function getColumnMapping(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  table: any,
+): { camelToSnake: Record<string, string>; snakeToCamel: Record<string, string> } {
+  const camelToSnake: Record<string, string> = {};
+  const snakeToCamel: Record<string, string> = {};
+  const columns = table[Symbol.for("drizzle:Columns")];
+  if (columns) {
+    for (const [camelKey, col] of Object.entries(columns)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const snakeKey = (col as any).name as string;
+      camelToSnake[camelKey] = snakeKey;
+      snakeToCamel[snakeKey] = camelKey;
+    }
+  }
+  return { camelToSnake, snakeToCamel };
+}
+
+/**
+ * Set of camelCase column names that use `{ mode: "timestamp" }` in the schema.
+ * Drizzle returns Date objects for these; backup format expects integer (seconds since epoch).
+ */
+const TIMESTAMP_COLUMNS = new Set(["createdAt", "updatedAt"]);
+
+/**
+ * Set of camelCase column names that use `{ mode: "boolean" }` in the schema.
+ * Drizzle returns boolean; backup format expects 0/1 integer.
+ */
+const BOOLEAN_COLUMNS = new Set(["hasSocialInsurance", "isOptional"]);
+
+/**
+ * Convert a Drizzle ORM row (camelCase, Date objects) to backup format
+ * (snake_case, integer timestamps, 0/1 booleans).
+ */
+function toBackupRow(row: Record<string, unknown>, camelToSnake: Record<string, string>): BackupRow {
+  const result: BackupRow = {};
+  for (const [camelKey, value] of Object.entries(row)) {
+    const snakeKey = camelToSnake[camelKey] ?? camelKey;
+    if (value instanceof Date) {
+      // Timestamp columns: Date → seconds since epoch (integer)
+      result[snakeKey] = Math.floor(value.getTime() / 1000);
+    } else if (BOOLEAN_COLUMNS.has(camelKey) && typeof value === "boolean") {
+      // Boolean columns: boolean → 0/1
+      result[snakeKey] = value ? 1 : 0;
+    } else {
+      result[snakeKey] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Convert a backup row (snake_case, integer timestamps) to Drizzle ORM format
+ * (camelCase, Date objects for timestamp columns).
+ */
+function fromBackupRow(row: BackupRow, snakeToCamel: Record<string, string>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [snakeKey, value] of Object.entries(row)) {
+    const camelKey = snakeToCamel[snakeKey] ?? snakeKey;
+    if (TIMESTAMP_COLUMNS.has(camelKey) && typeof value === "number") {
+      // Integer timestamp → Date object
+      result[camelKey] = new Date(value * 1000);
+    } else if (BOOLEAN_COLUMNS.has(camelKey) && typeof value === "number") {
+      // 0/1 → boolean
+      result[camelKey] = value !== 0;
+    } else {
+      result[camelKey] = value;
+    }
+  }
+  return result;
+}
+
 // ── Export ────────────────────────────────────────────────────────────
 
 /**
- * Collect every table into a single BackupData object using raw SQL.
- * This returns snake_case column names and raw SQLite values (integers
- * for timestamps), making the backup format database-faithful.
+ * Collect every table into a single BackupData object using Drizzle ORM.
+ * Queries each table via the provided db instance, then converts
+ * camelCase → snake_case and Date → integer for backward-compatible format.
  */
-export function buildBackup(): BackupData {
-  const raw = getRawSqlite();
-  const query = (table: string): BackupRow[] => raw.prepare(`SELECT * FROM ${table}`).all();
+export async function buildBackup(db: DbInstance): Promise<BackupData> {
+  const queryTable = async (key: TableKey): Promise<BackupRow[]> => {
+    const table = SCHEMA_TABLE_MAP[key];
+    const { camelToSnake } = getColumnMapping(table);
+    const rows = await db.select().from(table).all();
+    return rows.map((row: Record<string, unknown>) => toBackupRow(row, camelToSnake));
+  };
 
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     data: {
-      members: query("members"),
-      insurers: query("insurers"),
-      assets: query("assets"),
-      policies: query("policies"),
-      beneficiaries: query("beneficiaries"),
-      payments: query("payments"),
-      cashValues: query("cash_values"),
-      coverageItems: query("coverage_items"),
-      settings: query("settings"),
+      members: await queryTable("members"),
+      insurers: await queryTable("insurers"),
+      assets: await queryTable("assets"),
+      policies: await queryTable("policies"),
+      beneficiaries: await queryTable("beneficiaries"),
+      payments: await queryTable("payments"),
+      cashValues: await queryTable("cashValues"),
+      coverageItems: await queryTable("coverageItems"),
+      settings: await queryTable("settings"),
     },
   };
 }
@@ -170,33 +274,35 @@ const INSERT_ORDER: readonly TableKey[] = [
 ];
 
 /**
- * Restore data from a BackupData object.
+ * Restore data from a BackupData object via Drizzle ORM.
  * This is a FULL DESTRUCTIVE REPLACE:
  *   1. Delete all existing data (children first)
  *   2. Reset autoincrement sequences
  *   3. Insert backup rows preserving original IDs (parents first)
  *
- * The entire operation runs inside a SQLite transaction for atomicity.
+ * Atomicity: uses raw SQL BEGIN/COMMIT/ROLLBACK via the db instance.
+ * For bun-sqlite this is a true local transaction.
+ * For sqlite-proxy/D1, the Worker can handle individual statements.
  *
  * @throws Error if validation fails or any SQL operation errors
  */
-export function restoreBackup(payload: BackupData): RestoreCounts {
+export async function restoreBackup(db: DbInstance, payload: BackupData): Promise<RestoreCounts> {
   const error = validateBackup(payload);
   if (error) {
     throw new Error(`Invalid backup: ${error}`);
   }
 
-  const raw = getRawSqlite();
   const { data } = payload;
 
   // Wrap in a transaction for atomicity
-  raw.exec("BEGIN TRANSACTION");
+  await db.run(sql.raw("BEGIN TRANSACTION"));
   try {
     // 1. Clear all tables (FK-safe order)
     for (const key of DELETE_ORDER) {
-      raw.exec(`DELETE FROM ${TABLE_NAME_MAP[key]}`);
+      const tableName = TABLE_NAME_MAP[key];
+      await db.run(sql.raw(`DELETE FROM ${tableName}`));
     }
-    raw.exec("DELETE FROM sqlite_sequence");
+    await db.run(sql.raw("DELETE FROM sqlite_sequence"));
 
     // 2. Insert rows (FK-safe order)
     const counts: RestoreCounts = {
@@ -214,22 +320,24 @@ export function restoreBackup(payload: BackupData): RestoreCounts {
     for (const key of INSERT_ORDER) {
       const rows = data[key];
       if (!rows || rows.length === 0) continue;
-      const tableName = TABLE_NAME_MAP[key];
-      const first = rows[0]!;
-      const cols = Object.keys(first);
-      const placeholders = cols.map(() => "?").join(", ");
-      const sql = `INSERT INTO ${tableName} (${cols.join(", ")}) VALUES (${placeholders})`;
-      const stmt = raw.prepare(sql);
-      for (const row of rows) {
-        stmt.run(...cols.map((c) => row[c] ?? null));
+
+      const table = SCHEMA_TABLE_MAP[key];
+      const { snakeToCamel } = getColumnMapping(table);
+
+      // Convert snake_case backup rows → camelCase Drizzle rows
+      const drizzleRows = rows.map((row) => fromBackupRow(row, snakeToCamel));
+
+      // Insert via Drizzle ORM (handles column mapping automatically)
+      for (const row of drizzleRows) {
+        await db.insert(table).values(row).run();
       }
       counts[key] = rows.length;
     }
 
-    raw.exec("COMMIT");
+    await db.run(sql.raw("COMMIT"));
     return counts;
   } catch (err) {
-    raw.exec("ROLLBACK");
+    await db.run(sql.raw("ROLLBACK"));
     throw err;
   }
 }

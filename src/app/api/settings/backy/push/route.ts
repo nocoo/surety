@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * it to the configured Backy webhook with Bearer auth.
  */
 export async function POST() {
-  await getReposFromRequest();
+  const { db } = await getReposFromRequest();
 
   const { webhookUrl, apiKey } = await readBackySettings();
 
@@ -22,7 +22,7 @@ export async function POST() {
     );
   }
 
-  const result = await pushBackupToBacky({ webhookUrl, apiKey });
+  const result = await pushBackupToBacky({ webhookUrl, apiKey }, db);
 
   if (!result.ok) {
     return NextResponse.json(

@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, mock } from "bun:test";
-import { resetTestDb } from "@/db";
+import { resetTestDb, createTestDb, type DbInstance } from "@/db";
 import { settingsRepo } from "@/db/repositories";
 import {
   maskApiKey,
@@ -223,8 +223,10 @@ describe("pushBackupToBacky", () => {
     apiKey: "test-key",
   };
 
+  let db: DbInstance;
+
   beforeEach(() => {
-    resetTestDb();
+    db = createTestDb();
   });
 
   test("returns success on 200 response", async () => {
@@ -234,7 +236,7 @@ describe("pushBackupToBacky", () => {
     );
 
     try {
-      const result = await pushBackupToBacky(creds);
+      const result = await pushBackupToBacky(creds, db);
       expect(result.ok).toBe(true);
       expect(result.status).toBe(200);
       expect(result.request.method).toBe("POST");
@@ -256,7 +258,7 @@ describe("pushBackupToBacky", () => {
     );
 
     try {
-      const result = await pushBackupToBacky(creds);
+      const result = await pushBackupToBacky(creds, db);
       expect(result.request.backupStats).toBeDefined();
       expect(typeof result.request.backupStats.members).toBe("number");
       expect(typeof result.request.backupStats.policies).toBe("number");
@@ -273,7 +275,7 @@ describe("pushBackupToBacky", () => {
     );
 
     try {
-      const result = await pushBackupToBacky(creds);
+      const result = await pushBackupToBacky(creds, db);
       expect(result.ok).toBe(false);
       expect(result.status).toBe(400);
     } finally {
@@ -286,7 +288,7 @@ describe("pushBackupToBacky", () => {
     globalThis.fetch = mock(() => Promise.reject(new Error("Connection refused")));
 
     try {
-      const result = await pushBackupToBacky(creds);
+      const result = await pushBackupToBacky(creds, db);
       expect(result.ok).toBe(false);
       expect(result.status).toBe(0);
       expect(result.body).toEqual({ fetchError: "Connection refused" });
@@ -302,7 +304,7 @@ describe("pushBackupToBacky", () => {
     );
 
     try {
-      const result = await pushBackupToBacky(creds);
+      const result = await pushBackupToBacky(creds, db);
       expect(result.ok).toBe(true);
       expect(result.body).toBe("not json");
     } finally {
@@ -319,7 +321,7 @@ describe("pushBackupToBacky", () => {
     });
 
     try {
-      await pushBackupToBacky(creds);
+      await pushBackupToBacky(creds, db);
       expect(capturedHeaders?.get("Authorization")).toBe("Bearer test-key");
     } finally {
       globalThis.fetch = origFetch;

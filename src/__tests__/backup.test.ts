@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb, getRawSqlite } from "@/db";
+import { resetTestDb, getRawSqlite, createTestDb } from "@/db";
 import {
   membersRepo,
   insurersRepo,
@@ -18,8 +18,15 @@ import {
   ALL_TABLE_KEYS,
   type BackupData,
 } from "@/db/backup";
+import type { DbInstance } from "@/db";
 
 // ── Helpers ──────────────────────────────────────────────────────────
+
+/** Get the test db instance for passing to backup/restore. */
+function getTestDb(): DbInstance {
+  // createTestDb() returns the Drizzle db instance backed by test :memory:
+  return createTestDb();
+}
 
 /** Seed a minimal family dataset via Drizzle repos. */
 async function seedFamily() {
@@ -57,36 +64,38 @@ function rawQuery(table: string) {
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe("backup service", () => {
+  let db: DbInstance;
+
   beforeEach(() => {
-    resetTestDb();
+    db = getTestDb();
   });
 
   // ── buildBackup ──
 
   describe("buildBackup", () => {
-    test("includes version 1 and valid exportedAt", () => {
-      const backup = buildBackup();
+    test("includes version 1 and valid exportedAt", async () => {
+      const backup = await buildBackup(db);
       expect(backup.version).toBe(1);
       expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
     });
 
-    test("includes all 9 table keys", () => {
-      const keys = Object.keys(buildBackup().data);
+    test("includes all 9 table keys", async () => {
+      const keys = Object.keys((await buildBackup(db)).data);
       for (const key of ALL_TABLE_KEYS) {
         expect(keys).toContain(key);
       }
       expect(keys.length).toBe(ALL_TABLE_KEYS.length);
     });
 
-    test("all tables return arrays", () => {
-      const backup = buildBackup();
+    test("all tables return arrays", async () => {
+      const backup = await buildBackup(db);
       for (const key of ALL_TABLE_KEYS) {
         expect(Array.isArray(backup.data[key])).toBe(true);
       }
     });
 
-    test("empty database returns empty arrays", () => {
-      const backup = buildBackup();
+    test("empty database returns empty arrays", async () => {
+      const backup = await buildBackup(db);
       for (const key of ALL_TABLE_KEYS) {
         expect(backup.data[key]).toEqual([]);
       }
@@ -94,9 +103,9 @@ describe("backup service", () => {
 
     test("uses snake_case column names (raw SQL format)", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       const member = backup.data.members[0]!;
-      // Should have snake_case keys from raw SQL
+      // Should have snake_case keys from conversion
       expect(member).toHaveProperty("birth_date");
       expect(member).toHaveProperty("created_at");
       expect(member).not.toHaveProperty("birthDate");
@@ -105,14 +114,14 @@ describe("backup service", () => {
 
     test("timestamps are raw integers (not Date objects)", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       const member = backup.data.members[0]!;
       expect(typeof member.created_at).toBe("number");
     });
 
     test("includes seeded members", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.members.length).toBe(2);
       expect(backup.data.members[0]!.name).toBe("张三");
       expect(backup.data.members[1]!.name).toBe("李四");
@@ -120,33 +129,33 @@ describe("backup service", () => {
 
     test("includes seeded policies", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.policies.length).toBe(1);
       expect(backup.data.policies[0]!.policy_number).toBe("POL-001");
     });
 
     test("includes seeded settings", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.settings.length).toBe(2);
     });
 
     test("includes seeded beneficiaries", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.beneficiaries.length).toBe(1);
     });
 
     test("includes seeded assets", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.assets.length).toBe(1);
       expect(backup.data.assets[0]!.name).toBe("沪A12345");
     });
 
     test("backup is JSON-serializable roundtrip", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       const json = JSON.stringify(backup, null, 2);
       const parsed = JSON.parse(json);
       expect(parsed.version).toBe(1);
@@ -202,14 +211,14 @@ describe("backup service", () => {
   describe("restoreBackup", () => {
     test("restoring into empty db inserts all data", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
 
       // clear everything
       resetTestDb();
       expect(rawQuery("members")).toEqual([]);
 
       // restore
-      const counts = restoreBackup(backup);
+      const counts = await restoreBackup(db, backup);
 
       expect(counts.members).toBe(2);
       expect(counts.insurers).toBe(1);
@@ -227,7 +236,7 @@ describe("backup service", () => {
     test("restore replaces existing data (full overwrite)", async () => {
       // seed backup source
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
 
       // reset and add different data
       resetTestDb();
@@ -236,7 +245,7 @@ describe("backup service", () => {
       expect(rawQuery("members").length).toBe(2);
 
       // restore should replace everything
-      restoreBackup(backup);
+      await restoreBackup(db, backup);
       const members = rawQuery("members");
       expect(members.length).toBe(2);
       expect((members[0] as { name: string }).name).toBe("张三");
@@ -245,11 +254,11 @@ describe("backup service", () => {
 
     test("restore preserves original IDs", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       const originalIds = backup.data.members.map((m) => m.id);
 
       resetTestDb();
-      restoreBackup(backup);
+      await restoreBackup(db, backup);
 
       const restoredIds = rawQuery("members").map((m: unknown) => (m as { id: number }).id);
       expect(restoredIds).toEqual(originalIds);
@@ -257,10 +266,10 @@ describe("backup service", () => {
 
     test("restore preserves FK relationships", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
 
       resetTestDb();
-      restoreBackup(backup);
+      await restoreBackup(db, backup);
 
       const policies = rawQuery("policies") as { applicant_id: number }[];
       const members = rawQuery("members") as { id: number }[];
@@ -289,23 +298,23 @@ describe("backup service", () => {
         },
       };
 
-      restoreBackup(emptyBackup);
+      await restoreBackup(db, emptyBackup);
       expect(rawQuery("members")).toEqual([]);
       expect(rawQuery("policies")).toEqual([]);
       expect(rawQuery("settings")).toEqual([]);
     });
 
-    test("restore throws on invalid payload", () => {
-      expect(() => restoreBackup({ version: 99 } as BackupData)).toThrow(/Invalid backup/);
+    test("restore throws on invalid payload", async () => {
+      expect(restoreBackup(db, { version: 99 } as BackupData)).rejects.toThrow(/Invalid backup/);
     });
 
     test("roundtrip: export → restore → export produces identical data", async () => {
       await seedFamily();
-      const backup1 = buildBackup();
+      const backup1 = await buildBackup(db);
 
       resetTestDb();
-      restoreBackup(backup1);
-      const backup2 = buildBackup();
+      await restoreBackup(db, backup1);
+      const backup2 = await buildBackup(db);
 
       // Compare data (ignore exportedAt timestamp)
       expect(backup2.data.members).toEqual(backup1.data.members);
@@ -342,12 +351,12 @@ describe("backup service", () => {
       });
       await cashValuesRepo.create({ policyId: p.id, policyYear: 1, value: 3000 });
 
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
       expect(backup.data.payments.length).toBe(1);
       expect(backup.data.cashValues.length).toBe(1);
 
       resetTestDb();
-      const counts = restoreBackup(backup);
+      const counts = await restoreBackup(db, backup);
       expect(counts.payments).toBe(1);
       expect(counts.cashValues).toBe(1);
 
@@ -357,7 +366,7 @@ describe("backup service", () => {
 
     test("restore is atomic: failed insert rolls back all changes", async () => {
       await seedFamily();
-      const backup = buildBackup();
+      const backup = await buildBackup(db);
 
       resetTestDb();
       await membersRepo.create({ name: "Should survive", relation: "Self" });
@@ -368,7 +377,7 @@ describe("backup service", () => {
         corruptBackup.data.policies.push({ ...corruptBackup.data.policies[0]! });
       }
 
-      expect(() => restoreBackup(corruptBackup)).toThrow();
+      await expect(restoreBackup(db, corruptBackup)).rejects.toThrow();
 
       // After rollback, the original data should still be intact
       const members = rawQuery("members") as { name: string }[];

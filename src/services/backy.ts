@@ -117,7 +117,7 @@ export async function writeBackySettings(credentials: BackyCredentials): Promise
  */
 export async function pushBackupToBacky(
   credentials: BackyCredentials,
-  db?: DbInstance,
+  db: DbInstance,
 ): Promise<BackyPushResult> {
   const start = Date.now();
   const backup = await buildBackup(db);
