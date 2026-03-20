@@ -6,6 +6,7 @@ import { Menu, Github } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
+import { DbSelector } from "./db-selector";
 import { Breadcrumbs } from "./breadcrumbs";
 import {
   Sheet,
@@ -76,6 +77,7 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
             <Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
           </div>
           <div className="flex items-center gap-1">
+            <DbSelector />
             <a
               href="https://github.com/nocoo/surety"
               target="_blank"
