@@ -2,9 +2,9 @@
  * Surety D1 Proxy Worker
  *
  * Routes:
- *   POST /query   — single prepared statement (auth required)
- *   POST /batch   — atomic multi-statement (auth required)
- *   GET  /health  — liveness check (no auth)
+ *   POST /query    — single prepared statement (auth required)
+ *   POST /batch    — atomic multi-statement (auth required)
+ *   GET  /api/live — liveness check (no auth)
  */
 
 import type { Env } from "./db";
@@ -12,7 +12,7 @@ import { verifyAuth } from "./auth";
 import { resolveDb } from "./db";
 import { handleQuery } from "./routes/query";
 import { handleBatch } from "./routes/batch";
-import { handleHealth } from "./routes/health";
+import { handleLive } from "./routes/live";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -27,11 +27,11 @@ export default {
       });
     }
 
-    // Health check — no auth required, always uses production DB
-    if (path === "/health" && request.method === "GET") {
+    // Liveness check — no auth required, always uses production DB
+    if (path === "/api/live" && request.method === "GET") {
       const resolved = resolveDb(request, env);
       if ("error" in resolved) return withCors(resolved.error);
-      return withCors(await handleHealth(resolved.db));
+      return withCors(await handleLive(resolved.db));
     }
 
     // All other routes require auth
