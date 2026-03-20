@@ -6,12 +6,8 @@ import { resolveProxyAction, checkTrustedDevice, type ProxyAction } from "@/lib/
 // Skip auth in E2E test environment
 const SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
 
-// Database file mapping
-const DATABASE_FILES: Record<string, string> = {
-  production: "database/surety.db",
-  example: "database/surety.example.db",
-  test: "database/surety.e2e.db",
-};
+// Database file mapping is no longer needed — request-scoped DB routing
+// via cookie handled by getDbForRequest() in api-helpers.ts
 
 // Build redirect URL respecting reverse proxy headers
 function buildRedirectUrl(req: NextRequest, pathname: string): URL {
@@ -67,11 +63,7 @@ function actionToResponse(action: ProxyAction, req: NextRequest): NextResponse {
 // Next.js 16 proxy convention (replaces middleware.ts)
 // NextAuth's auth() returns a middleware-compatible handler
 const authHandler = auth(async (req) => {
-  // Read database selection from cookie and set environment variable
-  const dbCookie = req.cookies.get("surety-database")?.value;
-  if (dbCookie && DATABASE_FILES[dbCookie]) {
-    process.env.SURETY_DB = DATABASE_FILES[dbCookie];
-  }
+  // Database selection is now request-scoped via cookie, no global state needed
 
   // Skip auth check in E2E test environment
   if (SKIP_AUTH) {
