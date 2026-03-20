@@ -1,309 +1,172 @@
-import { resolve, dirname, basename } from "path";
-import { fileURLToPath } from "url";
+/**
+ * Database module — request-scoped D1 access via Worker proxy.
+ *
+ * Production: sqlite-proxy → Cloudflare Worker → D1 binding
+ * Test: bun:sqlite :memory: (no network, instant)
+ *
+ * The key design principle is request-scoped database access:
+ * each API route calls getDbForRequest(request) to get a db instance
+ * bound to the correct target database (production, api-e2e, etc.).
+ */
+
 import * as schema from "./schema";
+import { WorkerDbClient, type TargetDb } from "./worker-db-client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DbInstance = any;
 
-// Database type for multi-database support
-export type DatabaseType = "production" | "example" | "test";
+// Re-export TargetDb for consumers
+export type { TargetDb };
 
-// Project root directory (where db files live), resolved from this source file
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-
-/**
- * Data directory for database files.
- * When SURETY_DATA_DIR is set (e.g., Railway Volume mount "/data"),
- * production db files are stored there instead of PROJECT_ROOT.
- * Example and test databases always stay in PROJECT_ROOT.
- */
-function getDataDir(): string {
-  return process.env.SURETY_DATA_DIR || PROJECT_ROOT;
-}
-
-/** Resolve a database filename to an absolute path under the project root. */
-function resolveDbPath(filename: string): string {
-  // In-memory and already-absolute paths are passed through
-  if (filename === ":memory:" || filename.startsWith("/")) return filename;
-  // Production db goes to SURETY_DATA_DIR (for cloud volume mounts)
-  // When SURETY_DATA_DIR is set, strip any directory prefix (e.g., "database/")
-  // so the file resolves correctly under the volume mount point.
-  if (filename === DATABASE_FILES.production) {
-    const dataDir = getDataDir();
-    if (dataDir !== PROJECT_ROOT) {
-      return resolve(dataDir, basename(filename));
-    }
-  }
-  return resolve(PROJECT_ROOT, filename);
-}
-
-// Database file mapping (relative to PROJECT_ROOT)
-const DATABASE_FILES: Record<DatabaseType, string> = {
-  production: "database/surety.db",
-  example: "database/surety.example.db",
-  test: "database/surety.e2e.db",
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sqlite: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let dbInstance: any;
-let currentDbFile: string | null = null;
-
-// Detect if running in Bun runtime
-const isBun = typeof globalThis.Bun !== "undefined";
-
-// Database file paths
-const E2E_DB_FILE = "database/surety.e2e.db";
-
-/**
- * Get the current database type from environment or cookie.
- * Priority: SURETY_DB env > cookie > default (production)
- */
-export function getCurrentDatabaseType(): DatabaseType {
-  // Environment variable takes precedence
-  const envDb = process.env.SURETY_DB;
-  if (envDb) {
-    if (envDb === E2E_DB_FILE || envDb.includes("e2e")) return "test";
-    if (envDb.includes("example")) return "example";
-    return "production";
-  }
-  
-  // For server-side, we need to check cookies
-  // This is done asynchronously via the API route
-  return "production";
-}
-
-/**
- * Get the database file path for a given database type.
- */
-export function getDatabaseFile(dbType: DatabaseType): string {
-  return DATABASE_FILES[dbType];
-}
-
-// Files that must NEVER be opened during test runs.
-// Tests have historically deleted these files, destroying user data.
-const PROTECTED_FILES = new Set([
-  resolveDbPath("database/surety.db"),
-  resolveDbPath("database/surety.example.db"),
-]);
+// ---------- Environment helpers ----------
 
 function isTestEnv(): boolean {
   return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
 }
 
-function createDatabase(filename: string): DbInstance {
-  const resolvedPath = resolveDbPath(filename);
+function getWorkerUrl(): string {
+  const url = process.env.SURETY_WORKER_URL;
+  if (!url) throw new Error("SURETY_WORKER_URL is not set");
+  return url;
+}
 
-  // Guard: block tests from touching production or example databases
-  if (isTestEnv() && PROTECTED_FILES.has(resolvedPath)) {
-    throw new Error(
-      `BLOCKED: Tests must not open protected database "${filename}". ` +
-      `Use createTestDb() (:memory:) or surety.e2e.db instead.`
-    );
+function getWorkerSecret(): string {
+  const secret = process.env.SURETY_WORKER_SECRET;
+  if (!secret) throw new Error("SURETY_WORKER_SECRET is not set");
+  return secret;
+}
+
+/**
+ * Resolve the target D1 database name.
+ * Priority: SURETY_TARGET_DB env > cookie > "production"
+ */
+export function resolveTargetDb(cookieValue?: string): TargetDb {
+  const envTarget = process.env.SURETY_TARGET_DB;
+  if (envTarget && isValidTargetDb(envTarget)) return envTarget;
+  if (cookieValue && isValidTargetDb(cookieValue)) return cookieValue;
+  return "production";
+}
+
+function isValidTargetDb(value: string): value is TargetDb {
+  return ["production", "api-e2e", "ui-e2e", "mcp-e2e"].includes(value);
+}
+
+// ---------- Remote database (sqlite-proxy → Worker proxy) ----------
+
+/**
+ * Create a Drizzle instance backed by the Worker proxy (D1).
+ * This is the production path — all queries go over HTTP.
+ */
+export function createRemoteDb(targetDb: TargetDb = "production"): DbInstance {
+  const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
+  return createRemoteDbFromClient(client);
+}
+
+export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { drizzle } = require("drizzle-orm/sqlite-proxy");
+
+  return drizzle(
+    // single query callback
+    async (sql: string, params: unknown[], method: string) => {
+      const result = await client.query(sql, params);
+      const rows = result.rows.map((row) => Object.values(row));
+      return { rows: method === "get" ? rows.slice(0, 1) : rows };
+    },
+    // batch callback
+    async (queries: Array<{ sql: string; params: unknown[]; method: string }>) => {
+      const results = await client.batch(
+        queries.map((q) => ({ sql: q.sql, params: q.params })),
+      );
+      return results.map((r) => ({
+        rows: r.rows.map((row) => Object.values(row)),
+      }));
+    },
+    { schema },
+  );
+}
+
+/**
+ * Get a request-scoped database instance.
+ *
+ * @param requestOrTargetDb - Either a Request (reads cookie) or a TargetDb string
+ */
+export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInstance {
+  if (isTestEnv()) {
+    // In test environment, always use in-memory SQLite
+    return getTestDb();
   }
 
-  // If switching to a different database, close the existing connection
-  if (sqlite && currentDbFile !== resolvedPath) {
-    sqlite.close();
-    sqlite = null;
-    dbInstance = null;
-  }
-  
-  if (dbInstance && currentDbFile === resolvedPath) {
-    return dbInstance;
-  }
-  
-  currentDbFile = resolvedPath;
-  
-  if (isBun) {
-    // Bun runtime: use bun:sqlite
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { Database } = require("bun:sqlite");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { drizzle } = require("drizzle-orm/bun-sqlite");
-    sqlite = new Database(resolvedPath);
-    dbInstance = drizzle(sqlite, { schema });
+  let targetDb: TargetDb;
+
+  if (typeof requestOrTargetDb === "string") {
+    targetDb = requestOrTargetDb;
+  } else if (requestOrTargetDb instanceof Request) {
+    // Extract target DB from cookie
+    const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
+    const match = cookieHeader.match(/surety-database=([^;]+)/);
+    targetDb = resolveTargetDb(match?.[1]);
   } else {
-    // Node.js runtime: use better-sqlite3
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Database = require("better-sqlite3");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { drizzle } = require("drizzle-orm/better-sqlite3");
-    sqlite = new Database(resolvedPath);
-    dbInstance = drizzle(sqlite, { schema });
+    targetDb = resolveTargetDb();
   }
 
-  // Auto-initialize schema (CREATE TABLE IF NOT EXISTS is idempotent)
-  initSchema();
+  return createRemoteDb(targetDb);
+}
 
-  return dbInstance;
+// ---------- Test database (local bun:sqlite :memory:) ----------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let testSqlite: any = null;
+let testDbInstance: DbInstance = null;
+
+/**
+ * Get or create the shared test :memory: database.
+ * Used in test environment only.
+ */
+function getTestDb(): DbInstance {
+  if (testDbInstance) return testDbInstance;
+  return createTestDb();
 }
 
 /**
- * Get database instance for the specified database type.
+ * Create a fresh in-memory test database.
+ * Closes any existing test connection first.
  */
-export function getDbForType(dbType: DatabaseType): DbInstance {
-  const filename = DATABASE_FILES[dbType];
-  return createDatabase(filename);
-}
-
-/**
- * Get database instance using environment variable or default.
- * Note: For server-side cookie-based switching, set SURETY_DB env var
- * before calling this function (e.g., in middleware/proxy).
- */
-export function getDb(): DbInstance {
-  const envDb = process.env.SURETY_DB;
-  const filename = envDb || DATABASE_FILES.production;
-  return createDatabase(filename);
-}
-
-/**
- * Switch to a specific database type.
- * This closes any existing connection and opens the new database.
- */
-export function switchDatabase(dbType: DatabaseType): DbInstance {
-  const filename = DATABASE_FILES[dbType];
-  const resolvedPath = resolveDbPath(filename);
-  // Only reconnect if the database file is different
-  if (currentDbFile === resolvedPath && dbInstance) {
-    return dbInstance;
-  }
-  // Force reconnection by closing existing
-  if (sqlite) {
-    sqlite.close();
-    sqlite = null;
-    dbInstance = null;
-    currentDbFile = null;
-  }
-  process.env.SURETY_DB = filename;
-  return createDatabase(filename);
-}
-
-/**
- * Ensure the database connection matches the specified type.
- * Only switches if necessary (avoids unnecessary reconnections).
- */
-export function ensureDatabase(dbType: DatabaseType): DbInstance {
-  const filename = DATABASE_FILES[dbType];
-  const resolvedPath = resolveDbPath(filename);
-  if (currentDbFile === resolvedPath && dbInstance) {
-    return dbInstance;
-  }
-  return switchDatabase(dbType);
-}
-
-/**
- * Ensure the database connection matches the cookie setting.
- * Call this at the start of API route handlers.
- * Must be called with the result of cookies().get("surety-database")?.value
- * 
- * Note: SURETY_DB environment variable takes precedence over cookie.
- * This ensures E2E tests (which set SURETY_DB) work correctly.
- */
-export function ensureDatabaseFromCookie(cookieValue: string | undefined): DbInstance {
-  // Environment variable takes precedence (for E2E tests).
-  // Use the raw SURETY_DB value directly — do NOT map through DatabaseType,
-  // because the value may point to a custom file (e.g., "database/surety.e2e-ui.db")
-  // that doesn't match any hardcoded DATABASE_FILES entry.
-  const envDb = process.env.SURETY_DB;
-  if (envDb) {
-    return createDatabase(envDb);
-  }
-  
-  // Fall back to cookie value
-  const dbType = (cookieValue || "production") as DatabaseType;
-  if (!DATABASE_FILES[dbType]) {
-    return ensureDatabase("production");
-  }
-  return ensureDatabase(dbType);
-}
-
 export function createTestDb(): DbInstance {
-  // Ensure we close any existing connection first
-  if (sqlite) {
-    sqlite.close();
-    sqlite = null;
-    dbInstance = null;
-    currentDbFile = null;
-  }
-  createDatabase(":memory:");
-  return dbInstance;
-}
-
-/**
- * Creates or resets the E2E test database.
- * Returns the database file path for the dev server to use.
- */
-export function createE2EDb(): string {
-  // Close existing connection if any
-  if (sqlite) {
-    sqlite.close();
-    sqlite = null;
-    dbInstance = null;
-  }
-  
-  createDatabase(E2E_DB_FILE);
-  return E2E_DB_FILE;
-}
-
-/**
- * Resets E2E database by clearing all data.
- */
-export function resetE2EDb(): void {
-  if (!sqlite) {
-    createDatabase(E2E_DB_FILE);
+  if (testSqlite) {
+    testSqlite.close();
+    testSqlite = null;
+    testDbInstance = null;
   }
 
-  // Guard: NEVER wipe production or example databases
-  if (currentDbFile && PROTECTED_FILES.has(currentDbFile)) {
-    throw new Error(
-      `BLOCKED: resetE2EDb() refused to wipe protected database "${currentDbFile}". ` +
-      `This function may only operate on E2E test databases.`
-    );
-  }
-  
-  sqlite!.exec(`
-    DELETE FROM coverage_items;
-    DELETE FROM cash_values;
-    DELETE FROM payments;
-    DELETE FROM beneficiaries;
-    DELETE FROM policies;
-    DELETE FROM assets;
-    DELETE FROM insurers;
-    DELETE FROM members;
-    DELETE FROM settings;
-    DELETE FROM sqlite_sequence;
-  `);
-}
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Database } = require("bun:sqlite");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { drizzle } = require("drizzle-orm/bun-sqlite");
 
-/**
- * Get the E2E database file path.
- */
-export function getE2EDbPath(): string {
-  return E2E_DB_FILE;
-}
+  testSqlite = new Database(":memory:");
+  testDbInstance = drizzle(testSqlite, { schema });
 
-export function resetTestDb(): void {
-  // Guard: NEVER wipe production or example databases
-  if (currentDbFile && PROTECTED_FILES.has(currentDbFile)) {
-    throw new Error(
-      `BLOCKED: resetTestDb() refused to wipe protected database "${currentDbFile}". ` +
-      `This function may only operate on :memory: or test databases.`
-    );
-  }
-
-  // Ensure test database is initialized
-  if (!sqlite) {
-    createTestDb();
-    return; // createTestDb already initializes an empty schema
-  }
-
-  // Ensure schema is up-to-date (handles stale db files missing new tables)
+  // Auto-initialize schema
   initSchema();
-  
-  sqlite!.exec(`
+
+  return testDbInstance;
+}
+
+/**
+ * Reset the test database by clearing all data.
+ * Creates a new :memory: db if none exists.
+ */
+export function resetTestDb(): void {
+  if (!testSqlite) {
+    createTestDb();
+    return;
+  }
+
+  // Ensure schema is up-to-date
+  initSchema();
+
+  testSqlite.exec(`
     DELETE FROM coverage_items;
     DELETE FROM cash_values;
     DELETE FROM payments;
@@ -318,14 +181,13 @@ export function resetTestDb(): void {
 }
 
 /**
- * Check if using E2E database.
+ * Initialize schema on the current test SQLite connection.
+ * All CREATE TABLE IF NOT EXISTS — idempotent.
  */
-export function isE2EMode(): boolean {
-  return currentDbFile === resolveDbPath(E2E_DB_FILE) || process.env.SURETY_E2E === "true";
-}
-
 export function initSchema(): void {
-  sqlite!.exec(`
+  if (!testSqlite) throw new Error("No test database connection");
+
+  testSqlite.exec(`
     CREATE TABLE IF NOT EXISTS members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -445,40 +307,45 @@ export function initSchema(): void {
 }
 
 /**
- * Get the raw SQLite driver instance.
- * Used by backup/restore to run raw SQL outside of Drizzle.
+ * Get the raw test SQLite driver instance.
+ * Used by backup/restore tests to run raw SQL.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getRawSqlite(): any {
-  if (!sqlite) {
-    throw new Error("No database connection. Call getDb() or createTestDb() first.");
+  if (!testSqlite) {
+    throw new Error("No test database connection. Call createTestDb() first.");
   }
-  return sqlite;
+  return testSqlite;
 }
 
+/**
+ * Close the test database connection.
+ */
 export function closeDb(): void {
-  if (sqlite) {
-    sqlite.close();
-    sqlite = null;
-    dbInstance = null;
-    currentDbFile = null;
+  if (testSqlite) {
+    testSqlite.close();
+    testSqlite = null;
+    testDbInstance = null;
   }
 }
 
-// Dynamic db getter - always uses current environment variable
-// This allows database switching at runtime
+// ---------- Proxy for backward compatibility ----------
+
+/**
+ * Dynamic db Proxy — routes to the correct database instance.
+ *
+ * In test environment: uses in-memory SQLite.
+ * In production: this proxy should NOT be used (use getDbForRequest instead).
+ * Kept for backward compatibility during migration.
+ */
 export const db = new Proxy({} as DbInstance, {
   get(_, prop) {
-    // For tests, use in-memory database
-    if (process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test") {
-      if (!dbInstance) {
-        createTestDb();
-      }
-      return dbInstance[prop];
+    if (isTestEnv()) {
+      if (!testDbInstance) createTestDb();
+      return testDbInstance[prop];
     }
-    
-    // Get/create database based on current SURETY_DB env
-    const currentDb = getDb();
-    return currentDb[prop];
+    // Production: fall back to remote db with default target
+    const remoteDb = createRemoteDb(resolveTargetDb());
+    return remoteDb[prop];
   },
 });

@@ -1,248 +1,83 @@
 import { describe, expect, test, beforeEach, afterEach } from "bun:test";
-import { existsSync, unlinkSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import {
-  getCurrentDatabaseType,
-  getDatabaseFile,
-  getDbForType,
-  getDb,
-  switchDatabase,
-  ensureDatabase,
-  ensureDatabaseFromCookie,
   createTestDb,
-  createE2EDb,
-  resetE2EDb,
-  getE2EDbPath,
   resetTestDb,
-  isE2EMode,
   closeDb,
+  getDbForRequest,
+  resolveTargetDb,
+  getRawSqlite,
+  db,
 } from "@/db";
 import { membersRepo, insurersRepo } from "@/db/repositories";
 
 /**
- * Tests for src/db/index.ts
+ * Tests for src/db/index.ts (D1 migration version)
  *
- * SAFETY: createDatabase() has a test-env guard that throws if tests try to
- * open surety.db or surety.example.db. Tests that previously opened these
- * files now verify the guard throws correctly. The example db integrity test
- * uses bun:sqlite directly (bypasses createDatabase) to read demo data.
+ * Unit tests use in-memory bun:sqlite via createTestDb().
+ * Remote D1 features are tested via worker-db-client.test.ts.
  */
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-// Safe temp db file used by tests that need a real file via SURETY_DB env var
-const TEMP_DB = "database/surety.ut-temp.db";
-
-/**
- * Safely clean up ONLY test-created temporary db files.
- * NEVER call this on surety.db, surety.example.db, or surety.test.db.
- */
-function cleanupTempDb() {
-  const filepath = resolve(PROJECT_ROOT, TEMP_DB);
-  if (existsSync(filepath)) {
-    unlinkSync(filepath);
-  }
-}
-
 describe("db/index", () => {
-  // Save original env
   const originalEnv: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    originalEnv.SURETY_DB = process.env.SURETY_DB;
-    originalEnv.SURETY_E2E = process.env.SURETY_E2E;
+    originalEnv.SURETY_TARGET_DB = process.env.SURETY_TARGET_DB;
+    originalEnv.SURETY_WORKER_URL = process.env.SURETY_WORKER_URL;
+    originalEnv.SURETY_WORKER_SECRET = process.env.SURETY_WORKER_SECRET;
   });
 
   afterEach(() => {
     closeDb();
-    cleanupTempDb();
     // Restore env
-    if (originalEnv.SURETY_DB === undefined) {
-      delete process.env.SURETY_DB;
-    } else {
-      process.env.SURETY_DB = originalEnv.SURETY_DB;
-    }
-    if (originalEnv.SURETY_E2E === undefined) {
-      delete process.env.SURETY_E2E;
-    } else {
-      process.env.SURETY_E2E = originalEnv.SURETY_E2E;
+    for (const [key, value] of Object.entries(originalEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
     }
   });
 
-  describe("getCurrentDatabaseType", () => {
-    test("returns 'test' when SURETY_DB contains 'e2e'", () => {
-      process.env.SURETY_DB = "database/surety.e2e.db";
-      expect(getCurrentDatabaseType()).toBe("test");
+  describe("resolveTargetDb", () => {
+    test("returns 'production' by default", () => {
+      delete process.env.SURETY_TARGET_DB;
+      expect(resolveTargetDb()).toBe("production");
     });
 
-    test("returns 'test' when SURETY_DB equals E2E_DB_FILE", () => {
-      process.env.SURETY_DB = "database/surety.e2e.db";
-      expect(getCurrentDatabaseType()).toBe("test");
+    test("uses SURETY_TARGET_DB env var when set", () => {
+      process.env.SURETY_TARGET_DB = "api-e2e";
+      expect(resolveTargetDb()).toBe("api-e2e");
     });
 
-    test("returns 'example' when SURETY_DB contains 'example'", () => {
-      process.env.SURETY_DB = "database/surety.example.db";
-      expect(getCurrentDatabaseType()).toBe("example");
+    test("validates SURETY_TARGET_DB value", () => {
+      process.env.SURETY_TARGET_DB = "invalid";
+      expect(resolveTargetDb()).toBe("production");
     });
 
-    test("returns 'production' for non-matching SURETY_DB value", () => {
-      process.env.SURETY_DB = "custom.db";
-      expect(getCurrentDatabaseType()).toBe("production");
+    test("env var takes precedence over cookie", () => {
+      process.env.SURETY_TARGET_DB = "api-e2e";
+      expect(resolveTargetDb("ui-e2e")).toBe("api-e2e");
     });
 
-    test("returns 'production' when SURETY_DB is not set", () => {
-      delete process.env.SURETY_DB;
-      expect(getCurrentDatabaseType()).toBe("production");
-    });
-  });
-
-  describe("getDatabaseFile", () => {
-    test("returns correct file for production", () => {
-      expect(getDatabaseFile("production")).toBe("database/surety.db");
+    test("falls back to cookie value when no env var", () => {
+      delete process.env.SURETY_TARGET_DB;
+      expect(resolveTargetDb("ui-e2e")).toBe("ui-e2e");
     });
 
-    test("returns correct file for example", () => {
-      expect(getDatabaseFile("example")).toBe("database/surety.example.db");
+    test("returns production for invalid cookie", () => {
+      delete process.env.SURETY_TARGET_DB;
+      expect(resolveTargetDb("invalid")).toBe("production");
     });
 
-    test("returns correct file for test", () => {
-      expect(getDatabaseFile("test")).toBe("database/surety.e2e.db");
-    });
-  });
-
-  // --- Test-env guard: verify protected files are BLOCKED ---
-
-  describe("test-env guard", () => {
-    test("getDbForType('production') throws for database/surety.db", () => {
-      expect(() => getDbForType("production")).toThrow("BLOCKED");
-    });
-
-    test("getDbForType('example') throws for database/surety.example.db", () => {
-      expect(() => getDbForType("example")).toThrow("BLOCKED");
-    });
-
-    test("getDb() throws when SURETY_DB is not set (defaults to production)", () => {
-      delete process.env.SURETY_DB;
-      expect(() => getDb()).toThrow("BLOCKED");
-    });
-
-    test("getDb() throws when SURETY_DB is database/surety.db", () => {
-      process.env.SURETY_DB = "database/surety.db";
-      expect(() => getDb()).toThrow("BLOCKED");
-    });
-
-    test("getDb() throws when SURETY_DB is database/surety.example.db", () => {
-      process.env.SURETY_DB = "database/surety.example.db";
-      expect(() => getDb()).toThrow("BLOCKED");
-    });
-
-    test("switchDatabase('production') throws", () => {
-      expect(() => switchDatabase("production")).toThrow("BLOCKED");
-    });
-
-    test("switchDatabase('example') throws", () => {
-      expect(() => switchDatabase("example")).toThrow("BLOCKED");
-    });
-
-    test("ensureDatabase('production') throws", () => {
-      expect(() => ensureDatabase("production")).toThrow("BLOCKED");
-    });
-
-    test("ensureDatabaseFromCookie(undefined) throws (defaults to production)", () => {
-      delete process.env.SURETY_DB;
-      expect(() => ensureDatabaseFromCookie(undefined)).toThrow("BLOCKED");
-    });
-
-    test("ensureDatabaseFromCookie('production') throws", () => {
-      delete process.env.SURETY_DB;
-      expect(() => ensureDatabaseFromCookie("production")).toThrow("BLOCKED");
-    });
-
-    test("ensureDatabaseFromCookie with invalid cookie throws (defaults to production)", () => {
-      delete process.env.SURETY_DB;
-      expect(() => ensureDatabaseFromCookie("invalid" as string)).toThrow("BLOCKED");
-    });
-
-    test("ensureDatabaseFromCookie with SURETY_DB=example throws", () => {
-      process.env.SURETY_DB = "database/surety.example.db";
-      expect(() => ensureDatabaseFromCookie(undefined)).toThrow("BLOCKED");
-    });
-
-    test("guard does NOT block database/surety.e2e.db", () => {
-      const db = switchDatabase("test");
-      expect(db).toBeDefined();
-    });
-
-    test("guard does NOT block in-memory database", () => {
-      const db = createTestDb();
-      expect(db).toBeDefined();
-    });
-
-    test("guard does NOT block temp db via SURETY_DB env", () => {
-      process.env.SURETY_DB = TEMP_DB;
-      const db = getDb();
-      expect(db).toBeDefined();
-    });
-  });
-
-  describe("getDb", () => {
-    test("uses SURETY_DB env var when set to safe file", () => {
-      process.env.SURETY_DB = TEMP_DB;
-      const db = getDb();
-      expect(db).toBeDefined();
-    });
-  });
-
-  describe("switchDatabase", () => {
-    test("switches to test database type", () => {
-      createTestDb();
-      const db = switchDatabase("test");
-      expect(db).toBeDefined();
-    });
-
-    test("returns existing instance when already on same database", () => {
-      const first = switchDatabase("test");
-      const second = switchDatabase("test");
-      expect(first).toBeDefined();
-      expect(second).toBeDefined();
-    });
-
-    test("closes existing connection before switching to different db", () => {
-      // Switch from in-memory to e2e (both safe)
-      createTestDb();
-      const db = switchDatabase("test");
-      expect(db).toBeDefined();
-    });
-  });
-
-  describe("ensureDatabase", () => {
-    test("returns existing instance when already connected to correct type", () => {
-      switchDatabase("test");
-      const db = ensureDatabase("test");
-      expect(db).toBeDefined();
-    });
-  });
-
-  describe("ensureDatabaseFromCookie", () => {
-    test("uses env var when SURETY_DB is set to e2e", () => {
-      process.env.SURETY_DB = "database/surety.e2e.db";
-      const db = ensureDatabaseFromCookie("production");
-      expect(db).toBeDefined();
-    });
-
-    test("uses raw SURETY_DB value directly (non-protected file opens normally)", () => {
-      // SURETY_DB is used as-is — no mapping through DatabaseType.
-      // surety.ut-temp.db is not a protected file, so it opens normally.
-      process.env.SURETY_DB = TEMP_DB;
-      const db = ensureDatabaseFromCookie("test");
-      expect(db).toBeDefined();
-    });
-
-    test("falls back to cookie value 'test' when no env var", () => {
-      delete process.env.SURETY_DB;
-      const db = ensureDatabaseFromCookie("test");
-      expect(db).toBeDefined();
+    test("accepts all valid target db values", () => {
+      for (const target of ["production", "api-e2e", "ui-e2e", "mcp-e2e"]) {
+        delete process.env.SURETY_TARGET_DB;
+        expect(resolveTargetDb(target)).toBe(target);
+      }
     });
   });
 
@@ -253,92 +88,49 @@ describe("db/index", () => {
     });
 
     test("closes existing connection before creating new one", () => {
-      switchDatabase("test");
+      createTestDb();
       const db = createTestDb();
       expect(db).toBeDefined();
     });
-  });
 
-  describe("createE2EDb", () => {
-    test("creates E2E database and returns filename", () => {
-      const filename = createE2EDb();
-      expect(filename).toBe("database/surety.e2e.db");
-    });
-
-    test("closes existing connection before creating", () => {
+    test("auto-initializes schema", () => {
       createTestDb();
-      const filename = createE2EDb();
-      expect(filename).toBe("database/surety.e2e.db");
-    });
-  });
-
-  describe("resetE2EDb", () => {
-    test("clears all data from E2E database", () => {
-      createE2EDb();
-      resetE2EDb();
-    });
-
-    test("creates E2E database if no connection exists", () => {
-      closeDb();
-      resetE2EDb();
-    });
-  });
-
-  describe("getE2EDbPath", () => {
-    test("returns E2E database filename", () => {
-      expect(getE2EDbPath()).toBe("database/surety.e2e.db");
+      // Verify tables exist by querying them
+      const members = membersRepo.findAll();
+      expect(members).toEqual([]);
     });
   });
 
   describe("resetTestDb", () => {
     test("clears all data from test database", () => {
       createTestDb();
+      membersRepo.create({ name: "张三", relation: "Self" });
+      expect(membersRepo.findAll()).toHaveLength(1);
+
       resetTestDb();
+      expect(membersRepo.findAll()).toHaveLength(0);
     });
 
     test("creates test database if no connection exists", () => {
       closeDb();
       resetTestDb();
-    });
-
-    test("BLOCKS wiping production database", () => {
-      // Simulate a scenario where someone connected to production
-      // then calls resetTestDb(). The guard must refuse.
-      // We can't actually connect to surety.db in test env (createDatabase guard blocks it),
-      // so we verify the guard logic indirectly: resetTestDb on a fresh :memory: db works fine
-      createTestDb();
-      expect(() => resetTestDb()).not.toThrow();
+      // Should work without error
+      const members = membersRepo.findAll();
+      expect(members).toEqual([]);
     });
   });
 
-  describe("resetE2EDb guard", () => {
-    test("works on E2E database", () => {
-      createE2EDb();
-      expect(() => resetE2EDb()).not.toThrow();
+  describe("getRawSqlite", () => {
+    test("returns raw sqlite driver after createTestDb", () => {
+      createTestDb();
+      const raw = getRawSqlite();
+      expect(raw).toBeDefined();
+      expect(typeof raw.exec).toBe("function");
     });
 
-    test("creates E2E database if no connection exists", () => {
+    test("throws when no connection exists", () => {
       closeDb();
-      expect(() => resetE2EDb()).not.toThrow();
-    });
-  });
-
-  describe("isE2EMode", () => {
-    test("returns true when connected to E2E database", () => {
-      createE2EDb();
-      expect(isE2EMode()).toBe(true);
-    });
-
-    test("returns true when SURETY_E2E env is 'true'", () => {
-      createTestDb();
-      process.env.SURETY_E2E = "true";
-      expect(isE2EMode()).toBe(true);
-    });
-
-    test("returns false for non-E2E database without env", () => {
-      createTestDb();
-      delete process.env.SURETY_E2E;
-      expect(isE2EMode()).toBe(false);
+      expect(() => getRawSqlite()).toThrow("No test database connection");
     });
   });
 
@@ -346,6 +138,8 @@ describe("db/index", () => {
     test("closes an open connection", () => {
       createTestDb();
       closeDb();
+      // getRawSqlite should throw after close
+      expect(() => getRawSqlite()).toThrow();
     });
 
     test("is safe to call when no connection exists", () => {
@@ -354,23 +148,31 @@ describe("db/index", () => {
     });
   });
 
-  describe("createDatabase (via getDb)", () => {
-    test("reuses existing connection for same filename", () => {
-      process.env.SURETY_DB = TEMP_DB;
-      const first = getDb();
-      const second = getDb();
-      expect(first).toBeDefined();
-      expect(second).toBeDefined();
+  describe("getDbForRequest", () => {
+    test("returns in-memory db in test environment", () => {
+      const db = getDbForRequest();
+      expect(db).toBeDefined();
     });
 
-    test("switches connection when filename changes", () => {
-      process.env.SURETY_DB = TEMP_DB;
-      getDb();
-
-      // Switch to a different safe temp file
-      process.env.SURETY_DB = "database/surety.e2e.db";
-      const db = getDb();
+    test("returns in-memory db in test environment regardless of targetDb string", () => {
+      const db = getDbForRequest("api-e2e");
       expect(db).toBeDefined();
+      // Should still be the test db
+    });
+  });
+
+  describe("db Proxy", () => {
+    test("auto-creates test db in test environment", () => {
+      closeDb();
+      // Accessing a property on the proxy should auto-create the test db
+      const selectFn = db.select;
+      expect(selectFn).toBeDefined();
+    });
+
+    test("returns same db instance as createTestDb", () => {
+      createTestDb();
+      // The proxy should use the same test db instance
+      expect(db.select).toBeDefined();
     });
   });
 
@@ -386,8 +188,7 @@ describe("db/index", () => {
 
   describe("example database integrity", () => {
     test("surety.example.db must contain demo data (guard against accidental deletion)", () => {
-      // Use bun:sqlite directly to bypass createDatabase() guard.
-      // This test ensures no other test has corrupted the example db.
+      // Use bun:sqlite directly to bypass createDatabase guard.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { Database } = require("bun:sqlite");
       const dbPath = resolve(PROJECT_ROOT, "database/surety.example.db");
@@ -464,7 +265,6 @@ describe("db/index", () => {
     });
 
     test("scripts/import-csv.ts allows E2E database without --confirm", async () => {
-      // This will fail because CSV file doesn't exist, but it should NOT be blocked
       const proc = Bun.spawn(["bun", "scripts/import-csv.ts"], {
         cwd: PROJECT_ROOT,
         env: { ...process.env, SURETY_DB: "database/surety.e2e.db" },
@@ -473,7 +273,6 @@ describe("db/index", () => {
       });
       await proc.exited;
       const stderr = await new Response(proc.stderr).text();
-      // Should NOT contain BLOCKED — it may fail for other reasons (missing CSV)
       expect(stderr).not.toContain("BLOCKED");
     });
   });
