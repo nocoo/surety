@@ -2,8 +2,6 @@
  * Shared E2E utilities for test runner scripts.
  */
 
-import { existsSync, unlinkSync } from "fs";
-
 /**
  * Ensure a TCP port is free before starting a server.
  * If occupied, kills the occupying process and waits briefly.
@@ -35,17 +33,4 @@ export async function ensurePortFree(port: string | number): Promise<void> {
   // Wait for port to be released
   await new Promise((resolve) => setTimeout(resolve, 500));
   console.log(`   Port ${port} is now free.`);
-}
-
-/**
- * Remove a database file and its WAL/SHM/journal companions.
- */
-export function cleanupDbFiles(dbPath: string): void {
-  for (const suffix of ["", "-wal", "-shm", "-journal"]) {
-    const file = `${dbPath}${suffix}`;
-    if (existsSync(file)) {
-      unlinkSync(file);
-      console.log(`   Removed ${file}`);
-    }
-  }
 }

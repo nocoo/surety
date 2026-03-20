@@ -1,9 +1,7 @@
-import { existsSync, unlinkSync, rmSync } from "fs";
 import { spawn, type Subprocess } from "bun";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${E2E_PORT}`;
-const E2E_DB_FILE = "database/surety.e2e.db";
 const E2E_DIST_DIR = ".next-e2e";
 
 // Skip setup/teardown when running via run-e2e.ts script
@@ -29,42 +27,37 @@ async function waitForServer(maxAttempts = 30): Promise<boolean> {
 
 /**
  * Setup E2E test environment:
- * 1. Clean up any existing E2E database
- * 2. Create and seed E2E database via script
- * 3. Start dev server with E2E database
- * 
+ * 1. Seed remote D1 dev database
+ * 2. Start dev server pointing to remote D1 dev
+ *
  * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts).
  */
 export async function setupE2E(): Promise<void> {
   if (SKIP_SETUP) {
     return;
   }
-  // Clean up any existing E2E database
-  if (existsSync(E2E_DB_FILE)) {
-    unlinkSync(E2E_DB_FILE);
-  }
 
-  // Create and seed E2E database using seed script
-  const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-e2e.ts"], {
+  // Seed remote D1 dev database
+  const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
     stdout: "inherit",
     stderr: "inherit",
     env: {
       ...process.env,
-      SURETY_DB: E2E_DB_FILE,
+      SURETY_TARGET_DB: "dev",
     },
   });
 
   if (seedResult.exitCode !== 0) {
-    throw new Error("Failed to seed E2E database");
+    throw new Error("Failed to seed remote D1 dev database");
   }
 
-  // Start dev server with E2E database on dedicated port with separate dist dir
+  // Start dev server pointing to remote D1 dev
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
     env: {
       ...process.env,
-      SURETY_DB: E2E_DB_FILE,
+      SURETY_TARGET_DB: "dev",
       NEXT_DIST_DIR: E2E_DIST_DIR,
-      E2E_SKIP_AUTH: "true", // Skip auth for E2E tests
+      E2E_SKIP_AUTH: "true",
     },
     stdout: "ignore",
     stderr: "ignore",
@@ -83,8 +76,7 @@ export async function setupE2E(): Promise<void> {
 /**
  * Teardown E2E test environment:
  * 1. Stop dev server
- * 2. Remove E2E database file
- * 
+ *
  * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts).
  */
 export async function teardownE2E(): Promise<void> {
@@ -97,14 +89,6 @@ export async function teardownE2E(): Promise<void> {
     serverProcess = null;
     // Wait a bit for process to die
     await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-
-  // Clean up E2E database and dist dir
-  if (existsSync(E2E_DB_FILE)) {
-    unlinkSync(E2E_DB_FILE);
-  }
-  if (existsSync(E2E_DIST_DIR)) {
-    rmSync(E2E_DIST_DIR, { recursive: true, force: true });
   }
 }
 

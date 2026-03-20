@@ -20,7 +20,6 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { resolve } from "path";
 
 const MCP_ENTRY = resolve(import.meta.dir, "../index.ts");
-const TEST_DB = resolve(import.meta.dir, "../../database/surety.mcp-test.db");
 
 // ---------------------------------------------------------------------------
 // Helper: create a fresh MCP client connected via stdio
@@ -29,7 +28,7 @@ async function createMcpClient(
   env?: Record<string, string>,
 ): Promise<{ client: Client; transport: StdioClientTransport }> {
   // Build a clean env: strip test-mode flags so the MCP subprocess
-  // uses the file-based SURETY_DB instead of in-memory test DB
+  // uses the Worker proxy instead of in-memory test DB
   const baseEnv: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env)) {
     if (v !== undefined && k !== "BUN_ENV" && k !== "NODE_ENV") {
@@ -42,7 +41,7 @@ async function createMcpClient(
     env: {
       ...baseEnv,
       NODE_ENV: "development",
-      SURETY_DB: TEST_DB,
+      SURETY_TARGET_DB: "dev",
       ...env,
     },
   });
@@ -73,31 +72,27 @@ function parseToolJson(text: string): unknown {
 // ===========================================================================
 
 beforeAll(async () => {
-  // Seed the test database via a helper script
+  // Seed the remote D1 dev database
   const seedResult = Bun.spawnSync(
-    ["bun", "run", "scripts/seed-mcp-test.ts"],
+    ["bun", "run", "scripts/seed-remote.ts"],
     {
       cwd: resolve(import.meta.dir, "../.."),
       stdout: "pipe",
       stderr: "pipe",
       env: {
         ...process.env,
-        SURETY_DB: TEST_DB,
+        SURETY_TARGET_DB: "dev",
       },
     },
   );
   if (seedResult.exitCode !== 0) {
     const stderr = seedResult.stderr.toString();
-    throw new Error(`Failed to seed MCP test database: ${stderr}`);
+    throw new Error(`Failed to seed remote D1 dev database: ${stderr}`);
   }
 });
 
 afterAll(async () => {
-  // Clean up test database
-  const { unlinkSync, existsSync } = await import("fs");
-  if (existsSync(TEST_DB)) {
-    unlinkSync(TEST_DB);
-  }
+  // No local cleanup needed — remote D1 dev database persists
 });
 
 // ===========================================================================

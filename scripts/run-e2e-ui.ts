@@ -4,7 +4,7 @@
  *
  * This script:
  * 1. Ensures the target port is free
- * 2. Creates and seeds E2E database
+ * 2. Seeds remote D1 dev database
  * 3. Starts dev server on dedicated port
  * 4. Runs Playwright tests
  * 5. Cleans up
@@ -12,10 +12,9 @@
 
 import { spawn, type Subprocess } from "bun";
 import { existsSync, rmSync } from "fs";
-import { ensurePortFree, cleanupDbFiles } from "./e2e-utils";
+import { ensurePortFree } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "7017";
-const E2E_DB_FILE = "database/surety.e2e-ui.db";
 const E2E_DIST_DIR = ".next-e2e-ui";
 
 let serverProcess: Subprocess | null = null;
@@ -42,8 +41,6 @@ async function cleanup() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  cleanupDbFiles(E2E_DB_FILE);
-
   if (existsSync(E2E_DIST_DIR)) {
     rmSync(E2E_DIST_DIR, { recursive: true, force: true });
     console.log(`   Removed ${E2E_DIST_DIR}`);
@@ -56,31 +53,28 @@ async function main() {
   // Step 0: Ensure port is free
   await ensurePortFree(E2E_UI_PORT);
 
-  // Cleanup any existing artifacts
-  cleanupDbFiles(E2E_DB_FILE);
-
-  // Step 1: Seed E2E database
-  console.log("📦 Seeding E2E UI database...");
-  const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-e2e.ts"], {
+  // Step 1: Seed remote D1 dev database
+  console.log("📦 Seeding remote D1 dev database...");
+  const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
     stdout: "inherit",
     stderr: "inherit",
     env: {
       ...process.env,
-      SURETY_DB: E2E_DB_FILE,
+      SURETY_TARGET_DB: "dev",
     },
   });
 
   if (seedResult.exitCode !== 0) {
-    console.error("❌ Failed to seed E2E database");
+    console.error("❌ Failed to seed remote D1 dev database");
     process.exit(1);
   }
 
-  // Step 2: Start dev server
+  // Step 2: Start dev server pointing to remote D1 dev
   console.log("\n🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
     env: {
       ...process.env,
-      SURETY_DB: E2E_DB_FILE,
+      SURETY_TARGET_DB: "dev",
       NEXT_DIST_DIR: E2E_DIST_DIR,
       E2E_SKIP_AUTH: "true",
     },
