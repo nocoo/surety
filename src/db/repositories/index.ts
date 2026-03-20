@@ -1,6 +1,7 @@
-export { membersRepo } from "./members";
-export { insurersRepo } from "./insurers";
-export { assetsRepo } from "./assets";
+// Backward-compatible global singletons
+export { membersRepo, createMembersRepo, type MembersRepo } from "./members";
+export { insurersRepo, createInsurersRepo, type InsurersRepo } from "./insurers";
+export { assetsRepo, createAssetsRepo, type AssetsRepo } from "./assets";
 export { policiesRepo } from "./policies";
 export { beneficiariesRepo } from "./beneficiaries";
 export { paymentsRepo } from "./payments";
