@@ -35,6 +35,10 @@
 | API E2E | bun run test:e2e | pre-push | 100% API 覆盖 (port 7016) |
 | UI E2E | bun run test:e2e:ui | 按需执行 | Playwright + Chromium (port 7017) |
 
+### E2E 隔离约束
+
+所有 E2E suite（API、UI、MCP）共用一个远程 D1 dev 数据库 (`surety-db-dev`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
+
 ### 核心原则
 
 1. **尽早发现** — 不积累技术债
