@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { assetsRepo, membersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
 
@@ -15,13 +14,13 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const asset = assetsRepo.findById(assetId);
+  const asset = await repos.assets.findById(assetId);
 
   if (!asset) {
     return NextResponse.json({ error: "Asset not found" }, { status: 404 });
   }
 
-  const members = membersRepo.findAll();
+  const members = await repos.members.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
   return NextResponse.json({
@@ -36,8 +35,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { assetsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
 
@@ -47,7 +45,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
-  const updated = assetsRepo.update(assetId, {
+  const updated = await repos.assets.update(assetId, {
     type: body.type,
     name: body.name,
     identifier: body.identifier,
@@ -70,8 +68,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { assetsRepo, policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const assetId = parseInt(id, 10);
 
@@ -80,7 +77,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   }
 
   // Check if asset has linked policies
-  const policies = policiesRepo.findAll();
+  const policies = await repos.policies.findAll();
   const linkedPolicies = policies.filter(
     (p) => p.insuredType === "Asset" && p.insuredAssetId === assetId
   );
@@ -92,7 +89,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
-  const deleted = assetsRepo.delete(assetId);
+  const deleted = await repos.assets.delete(assetId);
 
   if (!deleted) {
     return NextResponse.json({ error: "Asset not found" }, { status: 404 });

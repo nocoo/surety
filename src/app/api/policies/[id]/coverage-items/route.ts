@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { coverageItemsRepo, policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -15,18 +14,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid policy ID" }, { status: 400 });
   }
 
-  const policy = policiesRepo.findById(policyId);
+  const policy = await repos.policies.findById(policyId);
   if (!policy) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }
 
-  const items = coverageItemsRepo.findByPolicyId(policyId);
+  const items = await repos.coverageItems.findByPolicyId(policyId);
   return NextResponse.json(items);
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { coverageItemsRepo, policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -34,7 +32,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid policy ID" }, { status: 400 });
   }
 
-  const policy = policiesRepo.findById(policyId);
+  const policy = await repos.policies.findById(policyId);
   if (!policy) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  const item = coverageItemsRepo.create({
+  const item = await repos.coverageItems.create({
     policyId,
     name: body.name,
     periodLimit: body.periodLimit ?? null,

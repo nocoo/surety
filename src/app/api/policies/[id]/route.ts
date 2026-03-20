@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { policiesRepo, membersRepo, assetsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -16,16 +15,16 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const policy = policiesRepo.findById(policyId);
+  const policy = await repos.policies.findById(policyId);
 
   if (!policy) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }
 
-  const members = membersRepo.findAll();
+  const members = await repos.members.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
-  const assets = assetsRepo.findAll();
+  const assets = await repos.assets.findAll();
   const assetMap = new Map(assets.map((a) => [a.id, a.name]));
 
   return NextResponse.json({
@@ -67,8 +66,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -78,7 +76,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
-  const updated = policiesRepo.update(policyId, {
+  const updated = await repos.policies.update(policyId, {
     applicantId: body.applicantId,
     insuredType: body.insuredType,
     insuredMemberId: body.insuredMemberId,
@@ -123,8 +121,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -132,7 +129,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const deleted = policiesRepo.delete(policyId);
+  const deleted = await repos.policies.delete(policyId);
 
   if (!deleted) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });

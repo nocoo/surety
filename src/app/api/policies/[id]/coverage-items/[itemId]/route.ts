@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string; itemId: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { coverageItemsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id, itemId } = await context.params;
   const policyId = parseInt(id, 10);
   const coverageItemId = parseInt(itemId, 10);
@@ -16,7 +15,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
 
-  const item = coverageItemsRepo.findById(coverageItemId);
+  const item = await repos.coverageItems.findById(coverageItemId);
 
   if (!item || item.policyId !== policyId) {
     return NextResponse.json({ error: "Coverage item not found" }, { status: 404 });
@@ -26,8 +25,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { coverageItemsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id, itemId } = await context.params;
   const policyId = parseInt(id, 10);
   const coverageItemId = parseInt(itemId, 10);
@@ -37,14 +35,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   }
 
   // Verify item belongs to policy
-  const existing = coverageItemsRepo.findById(coverageItemId);
+  const existing = await repos.coverageItems.findById(coverageItemId);
   if (!existing || existing.policyId !== policyId) {
     return NextResponse.json({ error: "Coverage item not found" }, { status: 404 });
   }
 
   const body = await request.json();
 
-  const updated = coverageItemsRepo.update(coverageItemId, {
+  const updated = await repos.coverageItems.update(coverageItemId, {
     name: body.name,
     periodLimit: body.periodLimit,
     lifetimeLimit: body.lifetimeLimit,
@@ -63,8 +61,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { coverageItemsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id, itemId } = await context.params;
   const policyId = parseInt(id, 10);
   const coverageItemId = parseInt(itemId, 10);
@@ -74,12 +71,12 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   }
 
   // Verify item belongs to policy
-  const existing = coverageItemsRepo.findById(coverageItemId);
+  const existing = await repos.coverageItems.findById(coverageItemId);
   if (!existing || existing.policyId !== policyId) {
     return NextResponse.json({ error: "Coverage item not found" }, { status: 404 });
   }
 
-  const deleted = coverageItemsRepo.delete(coverageItemId);
+  const deleted = await repos.coverageItems.delete(coverageItemId);
 
   if (!deleted) {
     return NextResponse.json({ error: "Coverage item not found" }, { status: 404 });

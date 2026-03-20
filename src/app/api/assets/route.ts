@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensureDbFromRequest();
-  const { assetsRepo, membersRepo, policiesRepo } = await import("@/db/repositories");
-  const assets = assetsRepo.findAll();
-  const members = membersRepo.findAll();
-  const policies = policiesRepo.findAll();
-  
+  const { repos } = await getReposFromRequest();
+  const assets = await repos.assets.findAll();
+  const members = await repos.members.findAll();
+  const policies = await repos.policies.findAll();
+
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
-  
+
   // Count policies per asset (any policy with insuredAssetId)
   const policyCountMap = new Map<number, number>();
   for (const policy of policies) {
@@ -36,8 +35,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  await ensureDbFromRequest();
-  const { assetsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
 
   const body = await request.json();
 
@@ -55,7 +53,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const asset = assetsRepo.create({
+  const asset = await repos.assets.create({
     type: body.type,
     name: body.name,
     identifier: body.identifier,

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { beneficiariesRepo, membersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -15,8 +14,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid policy ID" }, { status: 400 });
   }
 
-  const records = beneficiariesRepo.findByPolicyId(policyId);
-  const members = membersRepo.findAll();
+  const records = await repos.beneficiaries.findByPolicyId(policyId);
+  const members = await repos.members.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
   const beneficiaries = records.map((b) => ({

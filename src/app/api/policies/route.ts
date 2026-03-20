@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensureDbFromRequest();
-  const { policiesRepo, membersRepo, assetsRepo } = await import("@/db/repositories");
-  
-  const policies = policiesRepo.findAll();
-  const members = membersRepo.findAll();
+  const { repos } = await getReposFromRequest();
+
+  const policies = await repos.policies.findAll();
+  const members = await repos.members.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
-  const assets = assetsRepo.findAll();
+  const assets = await repos.assets.findAll();
   const assetMap = new Map(assets.map((a) => [a.id, a.name]));
 
   const result = policies.map((p) => ({
@@ -41,8 +40,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  await ensureDbFromRequest();
-  const { policiesRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
 
   const body = await request.json();
 
@@ -63,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const policy = policiesRepo.create({
+  const policy = await repos.policies.create({
     applicantId: body.applicantId,
     insuredType: body.insuredType ?? "Member",
     insuredMemberId: body.insuredMemberId ?? null,

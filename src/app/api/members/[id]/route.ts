@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { membersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);
 
@@ -15,7 +14,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const member = membersRepo.findById(memberId);
+  const member = await repos.members.findById(memberId);
 
   if (!member) {
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
@@ -36,8 +35,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { membersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);
 
@@ -47,7 +45,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
-  const updated = membersRepo.update(memberId, {
+  const updated = await repos.members.update(memberId, {
     name: body.name,
     relation: body.relation,
     gender: body.gender,
@@ -78,8 +76,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { membersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);
 
@@ -87,7 +84,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const deleted = membersRepo.delete(memberId);
+  const deleted = await repos.members.delete(memberId);
 
   if (!deleted) {
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
