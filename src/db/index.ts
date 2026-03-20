@@ -90,7 +90,8 @@ export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
     async (sql: string, params: unknown[], method: string) => {
       const result = await client.query(sql, params);
       const rows = result.rows.map((row) => Object.values(row));
-      return { rows: method === "get" ? rows.slice(0, 1) : rows };
+      // sqlite-proxy: "get" expects a single flat row, "all" expects array-of-arrays
+      return { rows: method === "get" ? rows[0] : rows };
     },
     // batch callback
     async (queries: Array<{ sql: string; params: unknown[]; method: string }>) => {
