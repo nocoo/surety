@@ -16,8 +16,8 @@ export interface HealthResult {
 }
 
 export interface HealthDeps {
-  /** Return the raw SQLite driver (may throw if no connection) */
-  getRawSqlite: () => { prepare: (sql: string) => { get: () => unknown } };
+  /** Probe database connectivity. Returns { connected: true } or { connected: false, error }. */
+  probeDatabase: () => Promise<{ connected: boolean; error?: string }>;
   /** process.uptime() in seconds */
   uptime: number;
   /** Runtime identifier, e.g. "bun" or "node" */
@@ -34,7 +34,7 @@ export interface HealthDeps {
  * Error messages intentionally avoid the word "ok" so keyword-based
  * monitors do not produce false positives.
  */
-export function checkHealth(deps: HealthDeps): HealthResult {
+export async function checkHealth(deps: HealthDeps): Promise<HealthResult> {
   const base = {
     timestamp: new Date().toISOString(),
     uptime: Math.round(deps.uptime),
@@ -43,15 +43,17 @@ export function checkHealth(deps: HealthDeps): HealthResult {
     memoryMB: Math.round(deps.rssBytes / 1024 / 1024),
   };
 
-  // --- database probe (lightweight SELECT 1) ---
+  // --- database probe ---
   try {
-    const sqlite = deps.getRawSqlite();
-    const row = sqlite.prepare("SELECT 1 AS alive").get();
-    if (!row) {
+    const probe = await deps.probeDatabase();
+    if (!probe.connected) {
+      const safeError = probe.error
+        ? probe.error.replace(/\bok\b/gi, "***")
+        : "database probe returned not connected";
       return {
         status: "error",
         ...base,
-        database: { connected: false, error: "empty result from probe query" },
+        database: { connected: false, error: safeError },
       };
     }
     return {
