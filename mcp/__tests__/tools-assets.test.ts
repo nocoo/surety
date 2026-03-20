@@ -16,8 +16,8 @@ function setup() {
   return tools;
 }
 
-function enableMcp() {
-  settingsRepo.set("mcp.enabled", "true");
+async function enableMcp() {
+  await settingsRepo.set("mcp.enabled", "true");
 }
 
 describe("list-assets", () => {
@@ -32,7 +32,7 @@ describe("list-assets", () => {
 
   test("should return empty array when no assets exist", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("list-assets")!.handler({});
     const data = parseResult(result);
     expect(data).toEqual([]);
@@ -40,22 +40,22 @@ describe("list-assets", () => {
 
   test("should return assets with owner names", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
 
-    const owner = membersRepo.create({
+    const owner = await membersRepo.create({
       name: "Zhang San",
       relation: "Self",
       gender: "M",
     });
 
-    assetsRepo.create({
+    await assetsRepo.create({
       type: "Vehicle",
       name: "Tesla Model Y",
       identifier: "京A12345",
       ownerId: owner.id,
     });
 
-    assetsRepo.create({
+    await assetsRepo.create({
       type: "RealEstate",
       name: "Apartment in Pudong",
       identifier: "沪房证2024-00123",
@@ -80,9 +80,9 @@ describe("list-assets", () => {
 
   test("should handle assets without owner", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
 
-    assetsRepo.create({
+    await assetsRepo.create({
       type: "Vehicle",
       name: "Old Car",
       identifier: "京B99999",
@@ -97,9 +97,9 @@ describe("list-assets", () => {
 
   test("should handle assets without details", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
 
-    assetsRepo.create({
+    await assetsRepo.create({
       type: "Vehicle",
       name: "Car",
       identifier: "ABC",
@@ -113,9 +113,9 @@ describe("list-assets", () => {
 
   test("should not expose sensitive timestamps", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
 
-    assetsRepo.create({
+    await assetsRepo.create({
       type: "Vehicle",
       name: "Car",
       identifier: "ABC",

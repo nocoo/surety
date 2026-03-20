@@ -22,12 +22,12 @@ import {
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /** Seed a minimal family dataset via Drizzle repos. */
-function seedFamily() {
-  const m1 = membersRepo.create({ name: "张三", relation: "Self", birthDate: "1985-06-15" });
-  const m2 = membersRepo.create({ name: "李四", relation: "Spouse", birthDate: "1988-03-20" });
-  const insurer = insurersRepo.create({ name: "中国人寿" });
-  const asset = assetsRepo.create({ type: "Vehicle", name: "沪A12345", identifier: "VIN-001", ownerId: m1.id });
-  const policy = policiesRepo.create({
+async function seedFamily() {
+  const m1 = await membersRepo.create({ name: "张三", relation: "Self", birthDate: "1985-06-15" });
+  const m2 = await membersRepo.create({ name: "李四", relation: "Spouse", birthDate: "1988-03-20" });
+  const insurer = await insurersRepo.create({ name: "中国人寿" });
+  const asset = await assetsRepo.create({ type: "Vehicle", name: "沪A12345", identifier: "VIN-001", ownerId: m1.id });
+  const policy = await policiesRepo.create({
     applicantId: m1.id,
     insuredType: "Member",
     insuredMemberId: m1.id,
@@ -43,9 +43,9 @@ function seedFamily() {
     totalPayments: 20,
     effectiveDate: "2024-01-01",
   });
-  beneficiariesRepo.create({ policyId: policy.id, memberId: m2.id, sharePercent: 100, rankOrder: 1 });
-  settingsRepo.set("annualIncome", "600000");
-  settingsRepo.set("currency", "CNY");
+  await beneficiariesRepo.create({ policyId: policy.id, memberId: m2.id, sharePercent: 100, rankOrder: 1 });
+  await settingsRepo.set("annualIncome", "600000");
+  await settingsRepo.set("currency", "CNY");
   return { m1, m2, insurer, asset, policy };
 }
 
@@ -92,8 +92,8 @@ describe("backup service", () => {
       }
     });
 
-    test("uses snake_case column names (raw SQL format)", () => {
-      seedFamily();
+    test("uses snake_case column names (raw SQL format)", async () => {
+      await seedFamily();
       const backup = buildBackup();
       const member = backup.data.members[0]!;
       // Should have snake_case keys from raw SQL
@@ -103,49 +103,49 @@ describe("backup service", () => {
       expect(member).not.toHaveProperty("createdAt");
     });
 
-    test("timestamps are raw integers (not Date objects)", () => {
-      seedFamily();
+    test("timestamps are raw integers (not Date objects)", async () => {
+      await seedFamily();
       const backup = buildBackup();
       const member = backup.data.members[0]!;
       expect(typeof member.created_at).toBe("number");
     });
 
-    test("includes seeded members", () => {
-      seedFamily();
+    test("includes seeded members", async () => {
+      await seedFamily();
       const backup = buildBackup();
       expect(backup.data.members.length).toBe(2);
       expect(backup.data.members[0]!.name).toBe("张三");
       expect(backup.data.members[1]!.name).toBe("李四");
     });
 
-    test("includes seeded policies", () => {
-      seedFamily();
+    test("includes seeded policies", async () => {
+      await seedFamily();
       const backup = buildBackup();
       expect(backup.data.policies.length).toBe(1);
       expect(backup.data.policies[0]!.policy_number).toBe("POL-001");
     });
 
-    test("includes seeded settings", () => {
-      seedFamily();
+    test("includes seeded settings", async () => {
+      await seedFamily();
       const backup = buildBackup();
       expect(backup.data.settings.length).toBe(2);
     });
 
-    test("includes seeded beneficiaries", () => {
-      seedFamily();
+    test("includes seeded beneficiaries", async () => {
+      await seedFamily();
       const backup = buildBackup();
       expect(backup.data.beneficiaries.length).toBe(1);
     });
 
-    test("includes seeded assets", () => {
-      seedFamily();
+    test("includes seeded assets", async () => {
+      await seedFamily();
       const backup = buildBackup();
       expect(backup.data.assets.length).toBe(1);
       expect(backup.data.assets[0]!.name).toBe("沪A12345");
     });
 
-    test("backup is JSON-serializable roundtrip", () => {
-      seedFamily();
+    test("backup is JSON-serializable roundtrip", async () => {
+      await seedFamily();
       const backup = buildBackup();
       const json = JSON.stringify(backup, null, 2);
       const parsed = JSON.parse(json);
@@ -200,8 +200,8 @@ describe("backup service", () => {
   // ── restoreBackup ──
 
   describe("restoreBackup", () => {
-    test("restoring into empty db inserts all data", () => {
-      seedFamily();
+    test("restoring into empty db inserts all data", async () => {
+      await seedFamily();
       const backup = buildBackup();
 
       // clear everything
@@ -224,15 +224,15 @@ describe("backup service", () => {
       expect((members[0] as { name: string }).name).toBe("张三");
     });
 
-    test("restore replaces existing data (full overwrite)", () => {
+    test("restore replaces existing data (full overwrite)", async () => {
       // seed backup source
-      seedFamily();
+      await seedFamily();
       const backup = buildBackup();
 
       // reset and add different data
       resetTestDb();
-      membersRepo.create({ name: "旧数据", relation: "Self" });
-      membersRepo.create({ name: "旧数据2", relation: "Spouse" });
+      await membersRepo.create({ name: "旧数据", relation: "Self" });
+      await membersRepo.create({ name: "旧数据2", relation: "Spouse" });
       expect(rawQuery("members").length).toBe(2);
 
       // restore should replace everything
@@ -243,8 +243,8 @@ describe("backup service", () => {
       expect((members[1] as { name: string }).name).toBe("李四");
     });
 
-    test("restore preserves original IDs", () => {
-      seedFamily();
+    test("restore preserves original IDs", async () => {
+      await seedFamily();
       const backup = buildBackup();
       const originalIds = backup.data.members.map((m) => m.id);
 
@@ -255,8 +255,8 @@ describe("backup service", () => {
       expect(restoredIds).toEqual(originalIds);
     });
 
-    test("restore preserves FK relationships", () => {
-      seedFamily();
+    test("restore preserves FK relationships", async () => {
+      await seedFamily();
       const backup = buildBackup();
 
       resetTestDb();
@@ -269,8 +269,8 @@ describe("backup service", () => {
       expect(memberIds).toContain(policies[0]!.applicant_id);
     });
 
-    test("restore with empty data clears everything", () => {
-      seedFamily();
+    test("restore with empty data clears everything", async () => {
+      await seedFamily();
       expect(rawQuery("members").length).toBe(2);
 
       const emptyBackup: BackupData = {
@@ -299,8 +299,8 @@ describe("backup service", () => {
       expect(() => restoreBackup({ version: 99 } as BackupData)).toThrow(/Invalid backup/);
     });
 
-    test("roundtrip: export → restore → export produces identical data", () => {
-      seedFamily();
+    test("roundtrip: export → restore → export produces identical data", async () => {
+      await seedFamily();
       const backup1 = buildBackup();
 
       resetTestDb();
@@ -318,9 +318,9 @@ describe("backup service", () => {
       expect(backup2.data.settings).toEqual(backup1.data.settings);
     });
 
-    test("restore handles payments and cashValues", () => {
-      const m = membersRepo.create({ name: "Test", relation: "Self" });
-      const p = policiesRepo.create({
+    test("restore handles payments and cashValues", async () => {
+      const m = await membersRepo.create({ name: "Test", relation: "Self" });
+      const p = await policiesRepo.create({
         applicantId: m.id,
         insuredType: "Member",
         insuredMemberId: m.id,
@@ -333,14 +333,14 @@ describe("backup service", () => {
         paymentFrequency: "Yearly",
         effectiveDate: "2025-01-01",
       });
-      paymentsRepo.create({
+      await paymentsRepo.create({
         policyId: p.id,
         periodNumber: 1,
         dueDate: "2025-01-01",
         amount: 5000,
         status: "Paid",
       });
-      cashValuesRepo.create({ policyId: p.id, policyYear: 1, value: 3000 });
+      await cashValuesRepo.create({ policyId: p.id, policyYear: 1, value: 3000 });
 
       const backup = buildBackup();
       expect(backup.data.payments.length).toBe(1);
@@ -355,12 +355,12 @@ describe("backup service", () => {
       expect(rawQuery("cash_values").length).toBe(1);
     });
 
-    test("restore is atomic: failed insert rolls back all changes", () => {
-      seedFamily();
+    test("restore is atomic: failed insert rolls back all changes", async () => {
+      await seedFamily();
       const backup = buildBackup();
 
       resetTestDb();
-      membersRepo.create({ name: "Should survive", relation: "Self" });
+      await membersRepo.create({ name: "Should survive", relation: "Self" });
 
       // Corrupt the backup: duplicate policy_number will violate UNIQUE constraint
       const corruptBackup = JSON.parse(JSON.stringify(backup)) as BackupData;

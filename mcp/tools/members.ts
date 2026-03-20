@@ -15,10 +15,10 @@ export function registerMemberTools(server: McpServer): void {
     "List all family members with their basic information",
     {},
     async () => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const members = membersRepo.findAll();
+      const members = await membersRepo.findAll();
       const result = members.map((m) => ({
         id: m.id,
         name: m.name,
@@ -39,10 +39,10 @@ export function registerMemberTools(server: McpServer): void {
     "Get detailed information about a specific family member, including their policies",
     { memberId: z.number().describe("The member ID to look up") },
     async ({ memberId }) => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const member = membersRepo.findById(memberId);
+      const member = await membersRepo.findById(memberId);
       if (!member) {
         return {
           isError: true,
@@ -56,9 +56,9 @@ export function registerMemberTools(server: McpServer): void {
       }
 
       // Find policies where this member is insured
-      const insuredPolicies = policiesRepo.findByInsuredMemberId(memberId);
+      const insuredPolicies = await policiesRepo.findByInsuredMemberId(memberId);
       // Find policies where this member is applicant
-      const applicantPolicies = policiesRepo.findByApplicantId(memberId);
+      const applicantPolicies = await policiesRepo.findByApplicantId(memberId);
 
       // Merge and deduplicate
       const allPolicyIds = new Set<number>();

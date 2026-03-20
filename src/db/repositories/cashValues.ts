@@ -4,32 +4,32 @@ import { cashValues, type CashValue, type NewCashValue } from "../schema";
 
 export function createCashValuesRepo(dbInstance: DbInstance) {
   return {
-    findAll(): CashValue[] {
-      return dbInstance.select().from(cashValues).all();
+    async findAll(): Promise<CashValue[]> {
+      return await dbInstance.select().from(cashValues).all();
     },
 
-    findById(id: number): CashValue | undefined {
-      return dbInstance.select().from(cashValues).where(eq(cashValues.id, id)).get();
+    async findById(id: number): Promise<CashValue | undefined> {
+      return await dbInstance.select().from(cashValues).where(eq(cashValues.id, id)).get();
     },
 
-    findByPolicyId(policyId: number): CashValue[] {
-      return dbInstance
+    async findByPolicyId(policyId: number): Promise<CashValue[]> {
+      return await dbInstance
         .select()
         .from(cashValues)
         .where(eq(cashValues.policyId, policyId))
         .all();
     },
 
-    create(data: NewCashValue): CashValue {
-      return dbInstance.insert(cashValues).values(data).returning().get();
+    async create(data: NewCashValue): Promise<CashValue> {
+      return await dbInstance.insert(cashValues).values(data).returning().get();
     },
 
-    createMany(data: NewCashValue[]): CashValue[] {
-      return dbInstance.insert(cashValues).values(data).returning().all();
+    async createMany(data: NewCashValue[]): Promise<CashValue[]> {
+      return await dbInstance.insert(cashValues).values(data).returning().all();
     },
 
-    update(id: number, data: Partial<NewCashValue>): CashValue | undefined {
-      return dbInstance
+    async update(id: number, data: Partial<NewCashValue>): Promise<CashValue | undefined> {
+      return await dbInstance
         .update(cashValues)
         .set(data)
         .where(eq(cashValues.id, id))
@@ -37,17 +37,18 @@ export function createCashValuesRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance.delete(cashValues).where(eq(cashValues.id, id)).run() as unknown as { changes: number };
-      return result.changes > 0;
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance.delete(cashValues).where(eq(cashValues.id, id)).returning().all();
+      return rows.length > 0;
     },
 
-    deleteByPolicyId(policyId: number): number {
-      const result = dbInstance
+    async deleteByPolicyId(policyId: number): Promise<number> {
+      const rows = await dbInstance
         .delete(cashValues)
         .where(eq(cashValues.policyId, policyId))
-        .run() as unknown as { changes: number };
-      return result.changes;
+        .returning()
+        .all();
+      return rows.length;
     },
   };
 }

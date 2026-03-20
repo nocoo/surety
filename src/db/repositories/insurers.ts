@@ -4,30 +4,30 @@ import { insurers, type Insurer, type NewInsurer } from "../schema";
 
 export function createInsurersRepo(dbInstance: DbInstance) {
   return {
-    findAll(): Insurer[] {
-      return dbInstance.select().from(insurers).all();
+    async findAll(): Promise<Insurer[]> {
+      return await dbInstance.select().from(insurers).all();
     },
 
-    findById(id: number): Insurer | undefined {
-      return dbInstance.select().from(insurers).where(eq(insurers.id, id)).get();
+    async findById(id: number): Promise<Insurer | undefined> {
+      return await dbInstance.select().from(insurers).where(eq(insurers.id, id)).get();
     },
 
-    findByName(name: string): Insurer | undefined {
-      return dbInstance.select().from(insurers).where(eq(insurers.name, name)).get();
+    async findByName(name: string): Promise<Insurer | undefined> {
+      return await dbInstance.select().from(insurers).where(eq(insurers.name, name)).get();
     },
 
-    create(data: NewInsurer): Insurer {
-      return dbInstance.insert(insurers).values(data).returning().get();
+    async create(data: NewInsurer): Promise<Insurer> {
+      return await dbInstance.insert(insurers).values(data).returning().get();
     },
 
-    findOrCreate(name: string): Insurer {
-      const existing = this.findByName(name);
+    async findOrCreate(name: string): Promise<Insurer> {
+      const existing = await this.findByName(name);
       if (existing) return existing;
-      return this.create({ name });
+      return await this.create({ name });
     },
 
-    update(id: number, data: Partial<NewInsurer>): Insurer | undefined {
-      return dbInstance
+    async update(id: number, data: Partial<NewInsurer>): Promise<Insurer | undefined> {
+      return await dbInstance
         .update(insurers)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(insurers.id, id))
@@ -35,9 +35,9 @@ export function createInsurersRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance.delete(insurers).where(eq(insurers.id, id)).run() as unknown as { changes: number };
-      return result.changes > 0;
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance.delete(insurers).where(eq(insurers.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

@@ -28,11 +28,11 @@ export function registerCoverageTools(server: McpServer): void {
       id: z.number().describe("The member or asset ID"),
     },
     async ({ type, id }) => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
       if (type === "member") {
-        const member = membersRepo.findById(id);
+        const member = await membersRepo.findById(id);
         if (!member) {
           return {
             isError: true,
@@ -45,9 +45,10 @@ export function registerCoverageTools(server: McpServer): void {
           };
         }
 
-        const policies = policiesRepo
-          .findByInsuredMemberId(id)
-          .filter((p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate));
+        const allMemberPolicies = await policiesRepo.findByInsuredMemberId(id);
+        const policies = allMemberPolicies.filter((p) =>
+          isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
+        );
 
         const totalPremium = policies.reduce((sum, p) => sum + p.premium, 0);
         const totalSumAssured = policies.reduce(
@@ -94,7 +95,7 @@ export function registerCoverageTools(server: McpServer): void {
         };
       } else {
         // asset
-        const asset = assetsRepo.findById(id);
+        const asset = await assetsRepo.findById(id);
         if (!asset) {
           return {
             isError: true,
@@ -107,13 +108,13 @@ export function registerCoverageTools(server: McpServer): void {
           };
         }
 
-        const allPolicies = policiesRepo.findAll();
+        const allPolicies = await policiesRepo.findAll();
         const policies = allPolicies.filter(
           (p) => p.insuredAssetId === id && isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
         );
 
         const owner = asset.ownerId
-          ? membersRepo.findById(asset.ownerId)
+          ? await membersRepo.findById(asset.ownerId)
           : undefined;
 
         return {
@@ -153,7 +154,7 @@ export function registerCoverageTools(server: McpServer): void {
         .describe("Number of months to look ahead (default: 12)"),
     },
     async ({ months }) => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
       const lookAheadMonths = months ?? 12;
@@ -161,36 +162,39 @@ export function registerCoverageTools(server: McpServer): void {
       const cutoff = new Date(now);
       cutoff.setMonth(cutoff.getMonth() + lookAheadMonths);
 
-      const allPolicies = policiesRepo.findAll();
+      const allPolicies = await policiesRepo.findAll();
       const activePolicies = allPolicies.filter(
         (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
       );
 
-      const upcoming = activePolicies
-        .filter((p) => {
-          const dateStr = p.nextDueDate ?? p.expiryDate;
-          if (!dateStr) return false;
-          const date = new Date(dateStr);
-          return date >= now && date <= cutoff;
-        })
-        .map((p) => {
-          const applicant = membersRepo.findById(p.applicantId);
-          return {
-            id: p.id,
-            productName: p.productName,
-            policyNumber: p.policyNumber,
-            insurerName: p.insurerName,
-            premium: p.premium,
-            nextDueDate: p.nextDueDate,
-            expiryDate: p.expiryDate,
-            applicantName: applicant?.name,
-          };
-        })
-        .sort((a, b) => {
-          const dateA = a.nextDueDate ?? a.expiryDate ?? "";
-          const dateB = b.nextDueDate ?? b.expiryDate ?? "";
-          return dateA.localeCompare(dateB);
-        });
+      const upcoming = await Promise.all(
+        activePolicies
+          .filter((p) => {
+            const dateStr = p.nextDueDate ?? p.expiryDate;
+            if (!dateStr) return false;
+            const date = new Date(dateStr);
+            return date >= now && date <= cutoff;
+          })
+          .map(async (p) => {
+            const applicant = await membersRepo.findById(p.applicantId);
+            return {
+              id: p.id,
+              productName: p.productName,
+              policyNumber: p.policyNumber,
+              insurerName: p.insurerName,
+              premium: p.premium,
+              nextDueDate: p.nextDueDate,
+              expiryDate: p.expiryDate,
+              applicantName: applicant?.name,
+            };
+          }),
+      );
+
+      upcoming.sort((a, b) => {
+        const dateA = a.nextDueDate ?? a.expiryDate ?? "";
+        const dateB = b.nextDueDate ?? b.expiryDate ?? "";
+        return dateA.localeCompare(dateB);
+      });
 
       return {
         content: [
@@ -215,11 +219,11 @@ export function registerCoverageTools(server: McpServer): void {
     "Get a summary of the family insurance dashboard including key statistics",
     {},
     async () => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const members = membersRepo.findAll();
-      const policies = policiesRepo.findAll();
+      const members = await membersRepo.findAll();
+      const policies = await policiesRepo.findAll();
       const activePolicies = policies.filter(
         (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate),
       );

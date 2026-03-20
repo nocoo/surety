@@ -11,6 +11,7 @@
 import { settingsRepo } from "@/db/repositories";
 import { buildBackup, buildBackupFilename, type BackupData } from "@/db/backup";
 import { APP_VERSION } from "@/lib/version";
+import type { DbInstance } from "@/db/index";
 
 // ── Types ──
 
@@ -93,17 +94,17 @@ export function getEnvironment(): "prod" | "dev" {
 // ── Settings read/write ──
 
 /** Read Backy settings from the key-value settings table. */
-export function readBackySettings(): BackyCredentials {
+export async function readBackySettings(): Promise<BackyCredentials> {
   return {
-    webhookUrl: settingsRepo.get("backy.webhookUrl") ?? "",
-    apiKey: settingsRepo.get("backy.apiKey") ?? "",
+    webhookUrl: (await settingsRepo.get("backy.webhookUrl")) ?? "",
+    apiKey: (await settingsRepo.get("backy.apiKey")) ?? "",
   };
 }
 
 /** Write Backy settings to the key-value settings table. */
-export function writeBackySettings(credentials: BackyCredentials): void {
-  settingsRepo.set("backy.webhookUrl", credentials.webhookUrl);
-  settingsRepo.set("backy.apiKey", credentials.apiKey);
+export async function writeBackySettings(credentials: BackyCredentials): Promise<void> {
+  await settingsRepo.set("backy.webhookUrl", credentials.webhookUrl);
+  await settingsRepo.set("backy.apiKey", credentials.apiKey);
 }
 
 // ── Push ──
@@ -116,9 +117,10 @@ export function writeBackySettings(credentials: BackyCredentials): void {
  */
 export async function pushBackupToBacky(
   credentials: BackyCredentials,
+  db?: DbInstance,
 ): Promise<BackyPushResult> {
   const start = Date.now();
-  const backup = buildBackup();
+  const backup = await buildBackup(db);
   const json = JSON.stringify(backup, null, 2);
 
   const environment = getEnvironment();

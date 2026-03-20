@@ -22,29 +22,29 @@ function setup() {
   return tools;
 }
 
-function enableMcp() {
-  settingsRepo.set("mcp.enabled", "true");
+async function enableMcp() {
+  await settingsRepo.set("mcp.enabled", "true");
 }
 
-function seedData() {
-  const dad = membersRepo.create({
+async function seedData() {
+  const dad = await membersRepo.create({
     name: "Zhang San",
     relation: "Self",
     gender: "M",
   });
-  const mom = membersRepo.create({
+  const mom = await membersRepo.create({
     name: "Li Si",
     relation: "Spouse",
     gender: "F",
   });
-  const car = assetsRepo.create({
+  const car = await assetsRepo.create({
     type: "Vehicle",
     name: "Tesla Model Y",
     identifier: "京A12345",
     ownerId: dad.id,
   });
 
-  const lifePolicy = policiesRepo.create({
+  const lifePolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: dad.id,
@@ -59,7 +59,7 @@ function seedData() {
     status: "Active",
   });
 
-  const medicalPolicy = policiesRepo.create({
+  const medicalPolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: mom.id,
@@ -74,7 +74,7 @@ function seedData() {
     status: "Active",
   });
 
-  const lapsedPolicy = policiesRepo.create({
+  const lapsedPolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: dad.id,
@@ -89,7 +89,7 @@ function seedData() {
     status: "Lapsed",
   });
 
-  const propertyPolicy = policiesRepo.create({
+  const propertyPolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Asset",
     insuredAssetId: car.id,
@@ -119,7 +119,7 @@ describe("list-policies", () => {
 
   test("should return empty array when no policies exist", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("list-policies")!.handler({});
     const data = parseResult(result);
     expect(data).toEqual([]);
@@ -127,8 +127,8 @@ describe("list-policies", () => {
 
   test("should return all policies with enriched names", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedData();
+    await enableMcp();
+    const { dad } = await seedData();
 
     const result = await tools.get("list-policies")!.handler({});
     const data = parseResult(result);
@@ -146,8 +146,8 @@ describe("list-policies", () => {
 
   test("should filter by status", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools
       .get("list-policies")!
@@ -161,8 +161,8 @@ describe("list-policies", () => {
 
   test("should filter by category", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools
       .get("list-policies")!
@@ -175,8 +175,8 @@ describe("list-policies", () => {
 
   test("should filter by memberId (insured or applicant)", async () => {
     const tools = setup();
-    enableMcp();
-    const { mom } = seedData();
+    await enableMcp();
+    const { mom } = await seedData();
 
     const result = await tools
       .get("list-policies")!
@@ -190,8 +190,8 @@ describe("list-policies", () => {
 
   test("should combine multiple filters", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedData();
+    await enableMcp();
+    const { dad } = await seedData();
 
     const result = await tools
       .get("list-policies")!
@@ -219,7 +219,7 @@ describe("get-policy", () => {
 
   test("should return error for non-existent policy", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools
       .get("get-policy")!
       .handler({ policyId: 999 });
@@ -229,8 +229,8 @@ describe("get-policy", () => {
 
   test("should return full policy details", async () => {
     const tools = setup();
-    enableMcp();
-    const { lifePolicy } = seedData();
+    await enableMcp();
+    const { lifePolicy } = await seedData();
 
     const result = await tools
       .get("get-policy")!
@@ -250,8 +250,8 @@ describe("get-policy", () => {
 
   test("should return policy with asset details", async () => {
     const tools = setup();
-    enableMcp();
-    const { propertyPolicy } = seedData();
+    await enableMcp();
+    const { propertyPolicy } = await seedData();
 
     const result = await tools
       .get("get-policy")!
@@ -264,10 +264,10 @@ describe("get-policy", () => {
 
   test("should include beneficiaries with member names", async () => {
     const tools = setup();
-    enableMcp();
-    const { lifePolicy, mom } = seedData();
+    await enableMcp();
+    const { lifePolicy, mom } = await seedData();
 
-    beneficiariesRepo.create({
+    await beneficiariesRepo.create({
       policyId: lifePolicy.id,
       memberId: mom.id,
       sharePercent: 100,
@@ -287,10 +287,10 @@ describe("get-policy", () => {
 
   test("should include beneficiaries with external names", async () => {
     const tools = setup();
-    enableMcp();
-    const { lifePolicy } = seedData();
+    await enableMcp();
+    const { lifePolicy } = await seedData();
 
-    beneficiariesRepo.create({
+    await beneficiariesRepo.create({
       policyId: lifePolicy.id,
       externalName: "Wang Wu",
       sharePercent: 50,

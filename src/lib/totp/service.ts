@@ -101,14 +101,14 @@ export class TotpService {
   // -------------------------------------------------------------------------
 
   /** Check if 2FA is enabled. Fails closed (returns true) on error in non-build contexts. */
-  isEnabled(): boolean {
-    return this.store.get(TOTP_SETTINGS_KEYS.enabled) === "true";
+  async isEnabled(): Promise<boolean> {
+    return (await this.store.get(TOTP_SETTINGS_KEYS.enabled)) === "true";
   }
 
   /** Get 2FA status and recovery code usage */
-  getStatus(): StatusResult {
-    const enabled = this.isEnabled();
-    const recoveryCodeUsed = this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed) === "true";
+  async getStatus(): Promise<StatusResult> {
+    const enabled = await this.isEnabled();
+    const recoveryCodeUsed = (await this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)) === "true";
     return {
       enabled,
       recoveryCodeUsed: enabled ? recoveryCodeUsed : false,
@@ -119,29 +119,29 @@ export class TotpService {
   // Brute force helpers (internal)
   // -------------------------------------------------------------------------
 
-  private loadBruteForceState(): BruteForceState {
+  private async loadBruteForceState(): Promise<BruteForceState> {
     return {
-      failedAttempts: Number(this.store.get(TOTP_SETTINGS_KEYS.failedAttempts) ?? "0"),
-      lockUntil: this.store.get(TOTP_SETTINGS_KEYS.lockUntil) ?? null,
+      failedAttempts: Number((await this.store.get(TOTP_SETTINGS_KEYS.failedAttempts)) ?? "0"),
+      lockUntil: (await this.store.get(TOTP_SETTINGS_KEYS.lockUntil)) ?? null,
     };
   }
 
-  private saveBruteForceState(state: BruteForceState): void {
-    this.store.set(TOTP_SETTINGS_KEYS.failedAttempts, String(state.failedAttempts));
+  private async saveBruteForceState(state: BruteForceState): Promise<void> {
+    await this.store.set(TOTP_SETTINGS_KEYS.failedAttempts, String(state.failedAttempts));
     if (state.lockUntil) {
-      this.store.set(TOTP_SETTINGS_KEYS.lockUntil, state.lockUntil);
+      await this.store.set(TOTP_SETTINGS_KEYS.lockUntil, state.lockUntil);
     } else {
-      this.store.delete(TOTP_SETTINGS_KEYS.lockUntil);
+      await this.store.delete(TOTP_SETTINGS_KEYS.lockUntil);
     }
   }
 
-  private resetBruteForceState(): void {
-    this.saveBruteForceState(resetBruteForce());
+  private async resetBruteForceState(): Promise<void> {
+    await this.saveBruteForceState(resetBruteForce());
   }
 
   /** Check lockout and return error if locked. Returns null if not locked. */
-  checkLockout(): BruteForceError | null {
-    const state = this.loadBruteForceState();
+  async checkLockout(): Promise<BruteForceError | null> {
+    const state = await this.loadBruteForceState();
     if (isLockedOut(state)) {
       const remaining = lockoutRemainingSeconds(state);
       return {
@@ -154,10 +154,10 @@ export class TotpService {
   }
 
   /** Record a failed attempt and return error info */
-  private handleFailedAttempt(): { error: string; locked: boolean } {
-    const state = this.loadBruteForceState();
+  private async handleFailedAttempt(): Promise<{ error: string; locked: boolean }> {
+    const state = await this.loadBruteForceState();
     const newState = recordFailedAttempt(state, this.config.maxFailedAttempts, this.config.lockoutMinutes);
-    this.saveBruteForceState(newState);
+    await this.saveBruteForceState(newState);
 
     const attemptsLeft = this.config.maxFailedAttempts - newState.failedAttempts;
     if (newState.lockUntil) {
@@ -180,8 +180,8 @@ export class TotpService {
   async setup(email: string): Promise<SetupResult> {
     const secretBase32 = generateSecret();
     const encrypted = encryptSecret(secretBase32, this.config.masterKey);
-    this.store.set(TOTP_SETTINGS_KEYS.encryptedSecret, encrypted);
-    this.store.set(TOTP_SETTINGS_KEYS.enabled, "false");
+    await this.store.set(TOTP_SETTINGS_KEYS.encryptedSecret, encrypted);
+    await this.store.set(TOTP_SETTINGS_KEYS.enabled, "false");
 
     const qrDataURL = await generateQR(secretBase32, email, this.config.issuer);
     return { qrDataURL, secret: secretBase32 };
@@ -190,17 +190,17 @@ export class TotpService {
   /** Verify TOTP token to confirm setup. On success: enables 2FA, returns recovery code. */
   async verifySetup(token: string, email: string): Promise<VerifySetupResult | BruteForceError | { error: string }> {
     // Brute force check
-    const lockout = this.checkLockout();
+    const lockout = await this.checkLockout();
     if (lockout) return lockout;
 
     // Must have a pending secret
-    const encrypted = this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
+    const encrypted = await this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
     if (!encrypted) {
       return { error: "No 2FA setup in progress. Start setup first." };
     }
 
     // Already enabled?
-    if (this.isEnabled()) {
+    if (await this.isEnabled()) {
       return { error: "2FA is already enabled" };
     }
 
@@ -209,7 +209,7 @@ export class TotpService {
     const valid = verifyToken(secretBase32, token, email, this.config.issuer, this.config.window);
 
     if (!valid) {
-      return this.handleFailedAttempt();
+      return await this.handleFailedAttempt();
     }
 
     // --- Compute all derived values BEFORE writing any state ---
@@ -220,19 +220,19 @@ export class TotpService {
     const recoveryHash = await hashRecoveryCode(recoveryCode);
 
     // --- All values ready — commit to store ---
-    this.store.set(TOTP_SETTINGS_KEYS.enabled, "true");
-    this.store.set(TOTP_SETTINGS_KEYS.enrollVersion, enrollVersion);
-    this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeHash, recoveryHash);
-    this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "false");
+    await this.store.set(TOTP_SETTINGS_KEYS.enabled, "true");
+    await this.store.set(TOTP_SETTINGS_KEYS.enrollVersion, enrollVersion);
+    await this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeHash, recoveryHash);
+    await this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "false");
 
     // Reset brute force counters
-    this.resetBruteForceState();
+    await this.resetBruteForceState();
 
     // Generate nonce for JWT promotion — setup proves authenticator ownership,
     // so the current session should be exempted from 2FA verification.
     const nonce = generateVerificationNonce();
     const nonceSig = signNonce(nonce, this.config.hmacSecret);
-    this.store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+    await this.store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
     return { success: true, recoveryCode, nonce, nonceSig };
   }
@@ -248,26 +248,26 @@ export class TotpService {
     type: "totp" | "recovery" = "totp",
   ): Promise<VerifyLoginResult | BruteForceError | { error: string }> {
     // Brute force check
-    const lockout = this.checkLockout();
+    const lockout = await this.checkLockout();
     if (lockout) return lockout;
 
     let verified = false;
 
     if (type === "recovery") {
-      const recoveryUsed = this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed) === "true";
+      const recoveryUsed = (await this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)) === "true";
       if (recoveryUsed) {
         return { error: "Recovery code has already been used" };
       }
 
-      const recoveryHash = this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeHash);
+      const recoveryHash = await this.store.get(TOTP_SETTINGS_KEYS.recoveryCodeHash);
       if (recoveryHash) {
         verified = await verifyRecoveryCode(token, recoveryHash);
         if (verified) {
-          this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
+          await this.store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
         }
       }
     } else {
-      const encrypted = this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
+      const encrypted = await this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
       if (!encrypted) {
         return { error: "2FA configuration is corrupted" };
       }
@@ -277,15 +277,15 @@ export class TotpService {
     }
 
     if (!verified) {
-      return this.handleFailedAttempt();
+      return await this.handleFailedAttempt();
     }
 
     // Success: reset brute force and generate nonce
-    this.resetBruteForceState();
+    await this.resetBruteForceState();
 
     const nonce = generateVerificationNonce();
     const nonceSig = signNonce(nonce, this.config.hmacSecret);
-    this.store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+    await this.store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
     return { success: true, nonce, nonceSig };
   }
@@ -295,18 +295,18 @@ export class TotpService {
   // -------------------------------------------------------------------------
 
   /** Disable 2FA. Requires a valid TOTP token for confirmation. */
-  disable(token: string, email: string): BruteForceError | { error: string } | { success: true } {
+  async disable(token: string, email: string): Promise<BruteForceError | { error: string } | { success: true }> {
     // Brute force check
-    const lockout = this.checkLockout();
+    const lockout = await this.checkLockout();
     if (lockout) return lockout;
 
     // Must be currently enabled
-    if (!this.isEnabled()) {
+    if (!(await this.isEnabled())) {
       return { error: "2FA is not enabled" };
     }
 
     // Decrypt and verify
-    const encrypted = this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
+    const encrypted = await this.store.get(TOTP_SETTINGS_KEYS.encryptedSecret);
     if (!encrypted) {
       return { error: "2FA configuration is corrupted" };
     }
@@ -315,13 +315,13 @@ export class TotpService {
     const valid = verifyToken(secretBase32, token, email, this.config.issuer, this.config.window);
 
     if (!valid) {
-      return this.handleFailedAttempt();
+      return await this.handleFailedAttempt();
     }
 
     // Success: reset brute force then delete all TOTP settings
-    this.resetBruteForceState();
+    await this.resetBruteForceState();
     for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
-      this.store.delete(key);
+      await this.store.delete(key);
     }
 
     return { success: true };
@@ -332,15 +332,15 @@ export class TotpService {
    * Caller is responsible for authorization (e.g. checking session-scoped
    * recovery code claim). This method unconditionally deletes all TOTP settings.
    */
-  forceDisable(): { error: string } | { success: true } {
-    if (!this.isEnabled()) {
+  async forceDisable(): Promise<{ error: string } | { success: true }> {
+    if (!(await this.isEnabled())) {
       return { error: "2FA is not enabled" };
     }
 
     // Delete all TOTP settings
-    this.resetBruteForceState();
+    await this.resetBruteForceState();
     for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
-      this.store.delete(key);
+      await this.store.delete(key);
     }
 
     return { success: true };
@@ -351,16 +351,16 @@ export class TotpService {
   // -------------------------------------------------------------------------
 
   /** Consume a verification nonce. Returns true only if valid + matches stored value. */
-  consumeNonce(nonce: string, signature: string): boolean {
+  async consumeNonce(nonce: string, signature: string): Promise<boolean> {
     // Verify HMAC signature
     if (!verifyNonceSignature(nonce, signature, this.config.hmacSecret)) return false;
 
     // Verify nonce matches stored value
-    const storedNonce = this.store.get(TOTP_SETTINGS_KEYS.twoFactorNonce);
+    const storedNonce = await this.store.get(TOTP_SETTINGS_KEYS.twoFactorNonce);
     if (!storedNonce || storedNonce !== nonce) return false;
 
     // Consume: delete the nonce so it can't be reused
-    this.store.delete(TOTP_SETTINGS_KEYS.twoFactorNonce);
+    await this.store.delete(TOTP_SETTINGS_KEYS.twoFactorNonce);
     return true;
   }
 
@@ -369,14 +369,14 @@ export class TotpService {
   // -------------------------------------------------------------------------
 
   /** Create a trusted device cookie value */
-  createTrustedCookieValue(email: string): string {
-    const enrollVersion = this.store.get(TOTP_SETTINGS_KEYS.enrollVersion) ?? "1";
+  async createTrustedCookieValue(email: string): Promise<string> {
+    const enrollVersion = (await this.store.get(TOTP_SETTINGS_KEYS.enrollVersion)) ?? "1";
     return createTrustedDeviceCookieValue(email, enrollVersion, this.config.hmacSecret, this.config.trustedDeviceDays);
   }
 
   /** Verify a trusted device cookie */
-  verifyTrustedCookie(cookieValue: string, email: string): boolean {
-    const enrollVersion = this.store.get(TOTP_SETTINGS_KEYS.enrollVersion) ?? "1";
+  async verifyTrustedCookie(cookieValue: string, email: string): Promise<boolean> {
+    const enrollVersion = (await this.store.get(TOTP_SETTINGS_KEYS.enrollVersion)) ?? "1";
     return verifyTrustedDeviceCookie(cookieValue, email, this.config.hmacSecret, enrollVersion);
   }
 }

@@ -11,9 +11,9 @@
  * Implementations can back this with SQLite, Redis, filesystem, etc.
  */
 export interface TotpStore {
-  get(key: string): string | undefined;
-  set(key: string, value: string): void;
-  delete(key: string): boolean;
+  get(key: string): Promise<string | undefined>;
+  set(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<boolean>;
 }
 
 // ---------------------------------------------------------------------------

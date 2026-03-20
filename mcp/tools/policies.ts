@@ -41,10 +41,10 @@ export function registerPolicyTools(server: McpServer): void {
         .describe("Filter by insured member ID"),
     },
     async ({ status, category, memberId }) => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policies = policiesRepo.findAll();
+      const policies = await policiesRepo.findAll();
 
       // Derive display status for each policy
       const withDisplayStatus = policies.map((p) => ({
@@ -68,32 +68,34 @@ export function registerPolicyTools(server: McpServer): void {
       }
 
       // Enrich with member/asset names
-      const result = filtered.map((p) => {
-        const applicant = membersRepo.findById(p.applicantId);
-        const insuredMember = p.insuredMemberId
-          ? membersRepo.findById(p.insuredMemberId)
-          : undefined;
-        const insuredAsset = p.insuredAssetId
-          ? assetsRepo.findById(p.insuredAssetId)
-          : undefined;
+      const result = await Promise.all(
+        filtered.map(async (p) => {
+          const applicant = await membersRepo.findById(p.applicantId);
+          const insuredMember = p.insuredMemberId
+            ? await membersRepo.findById(p.insuredMemberId)
+            : undefined;
+          const insuredAsset = p.insuredAssetId
+            ? await assetsRepo.findById(p.insuredAssetId)
+            : undefined;
 
-        return {
-          id: p.id,
-          productName: p.productName,
-          policyNumber: p.policyNumber,
-          category: p.category,
-          subCategory: p.subCategory,
-          insurerName: p.insurerName,
-          status: p.displayStatus,
-          premium: p.premium,
-          sumAssured: p.sumAssured,
-          effectiveDate: p.effectiveDate,
-          expiryDate: p.expiryDate,
-          applicantName: applicant?.name,
-          insuredName: insuredMember?.name,
-          insuredAssetName: insuredAsset?.name,
-        };
-      });
+          return {
+            id: p.id,
+            productName: p.productName,
+            policyNumber: p.policyNumber,
+            category: p.category,
+            subCategory: p.subCategory,
+            insurerName: p.insurerName,
+            status: p.displayStatus,
+            premium: p.premium,
+            sumAssured: p.sumAssured,
+            effectiveDate: p.effectiveDate,
+            expiryDate: p.expiryDate,
+            applicantName: applicant?.name,
+            insuredName: insuredMember?.name,
+            insuredAssetName: insuredAsset?.name,
+          };
+        }),
+      );
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
@@ -106,10 +108,10 @@ export function registerPolicyTools(server: McpServer): void {
     "Get full details of a specific insurance policy including beneficiaries",
     { policyId: z.number().describe("The policy ID to look up") },
     async ({ policyId }) => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = policiesRepo.findById(policyId);
+      const policy = await policiesRepo.findById(policyId);
       if (!policy) {
         return {
           isError: true,
@@ -122,26 +124,28 @@ export function registerPolicyTools(server: McpServer): void {
         };
       }
 
-      const applicant = membersRepo.findById(policy.applicantId);
+      const applicant = await membersRepo.findById(policy.applicantId);
       const insuredMember = policy.insuredMemberId
-        ? membersRepo.findById(policy.insuredMemberId)
+        ? await membersRepo.findById(policy.insuredMemberId)
         : undefined;
       const insuredAsset = policy.insuredAssetId
-        ? assetsRepo.findById(policy.insuredAssetId)
+        ? await assetsRepo.findById(policy.insuredAssetId)
         : undefined;
 
       // Get beneficiaries with member names
-      const beneficiaryRecords = beneficiariesRepo.findByPolicyId(policyId);
-      const beneficiaries = beneficiaryRecords.map((b) => {
-        const member = b.memberId
-          ? membersRepo.findById(b.memberId)
-          : undefined;
-        return {
-          name: member?.name ?? b.externalName,
-          sharePercent: b.sharePercent,
-          rankOrder: b.rankOrder,
-        };
-      });
+      const beneficiaryRecords = await beneficiariesRepo.findByPolicyId(policyId);
+      const beneficiaries = await Promise.all(
+        beneficiaryRecords.map(async (b) => {
+          const member = b.memberId
+            ? await membersRepo.findById(b.memberId)
+            : undefined;
+          return {
+            name: member?.name ?? b.externalName,
+            sharePercent: b.sharePercent,
+            rankOrder: b.rankOrder,
+          };
+        }),
+      );
 
       const result = {
         id: policy.id,

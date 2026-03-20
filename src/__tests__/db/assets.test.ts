@@ -8,8 +8,8 @@ describe("assetsRepo", () => {
   });
 
   describe("create", () => {
-    test("creates an asset with required fields", () => {
-      const asset = assetsRepo.create({
+    test("creates an asset with required fields", async () => {
+      const asset = await assetsRepo.create({
         type: "RealEstate",
         name: "自住房",
         identifier: "京房权证字第123456号",
@@ -21,14 +21,14 @@ describe("assetsRepo", () => {
       expect(asset.identifier).toBe("京房权证字第123456号");
     });
 
-    test("creates an asset with owner", () => {
-      const member = membersRepo.create({
+    test("creates an asset with owner", async () => {
+      const member = await membersRepo.create({
         name: "张三",
         relation: "Self",
         birthDate: "1985-01-01",
       });
 
-      const asset = assetsRepo.create({
+      const asset = await assetsRepo.create({
         type: "Vehicle",
         name: "家用车",
         identifier: "京A12345",
@@ -42,93 +42,93 @@ describe("assetsRepo", () => {
   });
 
   describe("findAll", () => {
-    test("returns empty array when no assets", () => {
-      expect(assetsRepo.findAll()).toEqual([]);
+    test("returns empty array when no assets", async () => {
+      expect(await assetsRepo.findAll()).toEqual([]);
     });
 
-    test("returns all assets", () => {
-      assetsRepo.create({ type: "RealEstate", name: "房1", identifier: "id1" });
-      assetsRepo.create({ type: "Vehicle", name: "车1", identifier: "id2" });
+    test("returns all assets", async () => {
+      await assetsRepo.create({ type: "RealEstate", name: "房1", identifier: "id1" });
+      await assetsRepo.create({ type: "Vehicle", name: "车1", identifier: "id2" });
 
-      expect(assetsRepo.findAll()).toHaveLength(2);
+      expect(await assetsRepo.findAll()).toHaveLength(2);
     });
   });
 
   describe("findById", () => {
-    test("returns asset when found", () => {
-      const created = assetsRepo.create({
+    test("returns asset when found", async () => {
+      const created = await assetsRepo.create({
         type: "RealEstate",
         name: "自住房",
         identifier: "id1",
       });
 
-      const found = assetsRepo.findById(created.id);
+      const found = await assetsRepo.findById(created.id);
       expect(found?.name).toBe("自住房");
     });
 
-    test("returns undefined when not found", () => {
-      expect(assetsRepo.findById(999)).toBeUndefined();
+    test("returns undefined when not found", async () => {
+      expect(await assetsRepo.findById(999)).toBeUndefined();
     });
   });
 
   describe("findByOwnerId", () => {
-    test("returns assets for owner", () => {
-      const member = membersRepo.create({
+    test("returns assets for owner", async () => {
+      const member = await membersRepo.create({
         name: "张三",
         relation: "Self",
         birthDate: "1985-01-01",
       });
 
-      assetsRepo.create({
+      await assetsRepo.create({
         type: "RealEstate",
         name: "房1",
         identifier: "id1",
         ownerId: member.id,
       });
-      assetsRepo.create({
+      await assetsRepo.create({
         type: "Vehicle",
         name: "车1",
         identifier: "id2",
         ownerId: member.id,
       });
-      assetsRepo.create({ type: "Vehicle", name: "车2", identifier: "id3" });
+      await assetsRepo.create({ type: "Vehicle", name: "车2", identifier: "id3" });
 
-      const assets = assetsRepo.findByOwnerId(member.id);
+      const assets = await assetsRepo.findByOwnerId(member.id);
       expect(assets).toHaveLength(2);
     });
   });
 
   describe("update", () => {
-    test("updates asset fields", () => {
-      const asset = assetsRepo.create({
+    test("updates asset fields", async () => {
+      const asset = await assetsRepo.create({
         type: "RealEstate",
         name: "旧名",
         identifier: "id1",
       });
 
-      const updated = assetsRepo.update(asset.id, { name: "新名" });
+      const updated = await assetsRepo.update(asset.id, { name: "新名" });
       expect(updated?.name).toBe("新名");
     });
 
-    test("returns undefined when not found", () => {
-      expect(assetsRepo.update(999, { name: "test" })).toBeUndefined();
+    test("returns undefined when not found", async () => {
+      expect(await assetsRepo.update(999, { name: "test" })).toBeUndefined();
     });
   });
 
   describe("delete", () => {
-    test("deletes asset", () => {
-      const asset = assetsRepo.create({
+    test("deletes asset", async () => {
+      const asset = await assetsRepo.create({
         type: "RealEstate",
         name: "房",
         identifier: "id1",
       });
 
-      expect(assetsRepo.delete(asset.id)).toBe(true);
-      expect(assetsRepo.findById(asset.id)).toBeUndefined();
+      expect(await assetsRepo.delete(asset.id)).toBe(true);
+      expect(await assetsRepo.findById(asset.id)).toBeUndefined();
     });
 
-    test("returns false when not found", () => {
-      expect(assetsRepo.delete(999)).toBe(false);
+    test("returns false when not found", async () => {
+      expect(await assetsRepo.delete(999)).toBe(false);
     });
   });
 });

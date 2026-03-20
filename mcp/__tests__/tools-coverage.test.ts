@@ -21,22 +21,22 @@ function setup() {
   return tools;
 }
 
-function enableMcp() {
-  settingsRepo.set("mcp.enabled", "true");
+async function enableMcp() {
+  await settingsRepo.set("mcp.enabled", "true");
 }
 
-function seedData() {
-  const dad = membersRepo.create({
+async function seedData() {
+  const dad = await membersRepo.create({
     name: "Zhang San",
     relation: "Self",
     gender: "M",
   });
-  const mom = membersRepo.create({
+  const mom = await membersRepo.create({
     name: "Li Si",
     relation: "Spouse",
     gender: "F",
   });
-  const car = assetsRepo.create({
+  const car = await assetsRepo.create({
     type: "Vehicle",
     name: "Tesla Model Y",
     identifier: "京A12345",
@@ -44,7 +44,7 @@ function seedData() {
   });
 
   // Dad: 2 active policies, 1 lapsed
-  const lifePolicy = policiesRepo.create({
+  const lifePolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: dad.id,
@@ -60,7 +60,7 @@ function seedData() {
     status: "Active",
   });
 
-  const accidentPolicy = policiesRepo.create({
+  const accidentPolicy = await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: dad.id,
@@ -76,7 +76,7 @@ function seedData() {
     status: "Active",
   });
 
-  policiesRepo.create({
+  await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: dad.id,
@@ -92,7 +92,7 @@ function seedData() {
   });
 
   // Mom: 1 active policy
-  policiesRepo.create({
+  await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Member",
     insuredMemberId: mom.id,
@@ -109,7 +109,7 @@ function seedData() {
   });
 
   // Car: 1 active property policy
-  policiesRepo.create({
+  await policiesRepo.create({
     applicantId: dad.id,
     insuredType: "Asset",
     insuredAssetId: car.id,
@@ -145,7 +145,7 @@ describe("coverage-analysis", () => {
 
   test("should return error for non-existent member", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools
       .get("coverage-analysis")!
       .handler({ type: "member", id: 999 });
@@ -155,7 +155,7 @@ describe("coverage-analysis", () => {
 
   test("should return error for non-existent asset", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools
       .get("coverage-analysis")!
       .handler({ type: "asset", id: 999 });
@@ -165,8 +165,8 @@ describe("coverage-analysis", () => {
 
   test("should analyze member coverage (active only)", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedData();
+    await enableMcp();
+    const { dad } = await seedData();
 
     const result = await tools
       .get("coverage-analysis")!
@@ -184,8 +184,8 @@ describe("coverage-analysis", () => {
 
   test("should group coverage by category", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedData();
+    await enableMcp();
+    const { dad } = await seedData();
 
     const result = await tools
       .get("coverage-analysis")!
@@ -208,8 +208,8 @@ describe("coverage-analysis", () => {
 
   test("should analyze asset coverage", async () => {
     const tools = setup();
-    enableMcp();
-    const { car, dad } = seedData();
+    await enableMcp();
+    const { car, dad } = await seedData();
 
     const result = await tools
       .get("coverage-analysis")!
@@ -226,8 +226,8 @@ describe("coverage-analysis", () => {
 
   test("should return member with no active coverage", async () => {
     const tools = setup();
-    enableMcp();
-    const member = membersRepo.create({
+    await enableMcp();
+    const member = await membersRepo.create({
       name: "Grandpa",
       relation: "Parent",
     });
@@ -259,7 +259,7 @@ describe("renewal-overview", () => {
 
   test("should return empty list when no policies exist", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("renewal-overview")!.handler({});
     const data = parseResult(result);
     expect(data.total).toBe(0);
@@ -268,8 +268,8 @@ describe("renewal-overview", () => {
 
   test("should return upcoming renewals within default 12 months", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("renewal-overview")!.handler({});
     const data = parseResult(result);
@@ -283,8 +283,8 @@ describe("renewal-overview", () => {
 
   test("should respect custom months parameter", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools
       .get("renewal-overview")!
@@ -298,8 +298,8 @@ describe("renewal-overview", () => {
 
   test("should sort renewals by date", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("renewal-overview")!.handler({ months: 24 });
     const data = parseResult(result);
@@ -317,8 +317,8 @@ describe("renewal-overview", () => {
 
   test("should include applicant name in renewals", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("renewal-overview")!.handler({ months: 24 });
     const data = parseResult(result);
@@ -330,8 +330,8 @@ describe("renewal-overview", () => {
 
   test("should exclude lapsed policies from renewals", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("renewal-overview")!.handler({ months: 120 });
     const data = parseResult(result);
@@ -359,7 +359,7 @@ describe("dashboard-summary", () => {
 
   test("should return zero stats when no data exists", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("dashboard-summary")!.handler({});
     const data = parseResult(result);
 
@@ -373,8 +373,8 @@ describe("dashboard-summary", () => {
 
   test("should return correct dashboard statistics", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("dashboard-summary")!.handler({});
     const data = parseResult(result);
@@ -390,8 +390,8 @@ describe("dashboard-summary", () => {
 
   test("should group active policies by category", async () => {
     const tools = setup();
-    enableMcp();
-    seedData();
+    await enableMcp();
+    await seedData();
 
     const result = await tools.get("dashboard-summary")!.handler({});
     const data = parseResult(result);

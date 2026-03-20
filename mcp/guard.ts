@@ -22,13 +22,13 @@ const DISABLED_MESSAGE = [
  * Check if MCP access is enabled.
  * Returns undefined if enabled, or an error message string if disabled.
  */
-export function checkMcpEnabled(): string | undefined {
+export async function checkMcpEnabled(): Promise<string | undefined> {
   // Environment override (for testing)
   if (process.env.SURETY_MCP_ENABLED === "true") {
     return undefined;
   }
 
-  const enabled = settingsRepo.get("mcp.enabled");
+  const enabled = await settingsRepo.get("mcp.enabled");
   if (enabled === "true") {
     return undefined;
   }

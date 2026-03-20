@@ -20,36 +20,36 @@ describe("checkMcpEnabled", () => {
     delete process.env.SURETY_MCP_ENABLED;
   });
 
-  test("should return error message when mcp.enabled is not set", () => {
-    const result = checkMcpEnabled();
+  test("should return error message when mcp.enabled is not set", async () => {
+    const result = await checkMcpEnabled();
     expect(result).toBeDefined();
     expect(result).toContain("MCP access is disabled");
     expect(result).toContain("http://localhost:7015/settings");
   });
 
-  test("should return error message when mcp.enabled is false", () => {
-    settingsRepo.set("mcp.enabled", "false");
-    const result = checkMcpEnabled();
+  test("should return error message when mcp.enabled is false", async () => {
+    await settingsRepo.set("mcp.enabled", "false");
+    const result = await checkMcpEnabled();
     expect(result).toBeDefined();
     expect(result).toContain("MCP access is disabled");
   });
 
-  test("should return undefined when mcp.enabled is true", () => {
-    settingsRepo.set("mcp.enabled", "true");
-    const result = checkMcpEnabled();
+  test("should return undefined when mcp.enabled is true", async () => {
+    await settingsRepo.set("mcp.enabled", "true");
+    const result = await checkMcpEnabled();
     expect(result).toBeUndefined();
   });
 
-  test("should return undefined when SURETY_MCP_ENABLED env is true", () => {
+  test("should return undefined when SURETY_MCP_ENABLED env is true", async () => {
     process.env.SURETY_MCP_ENABLED = "true";
-    const result = checkMcpEnabled();
+    const result = await checkMcpEnabled();
     expect(result).toBeUndefined();
   });
 
-  test("env override should take precedence over db setting", () => {
-    settingsRepo.set("mcp.enabled", "false");
+  test("env override should take precedence over db setting", async () => {
+    await settingsRepo.set("mcp.enabled", "false");
     process.env.SURETY_MCP_ENABLED = "true";
-    const result = checkMcpEnabled();
+    const result = await checkMcpEnabled();
     expect(result).toBeUndefined();
   });
 });

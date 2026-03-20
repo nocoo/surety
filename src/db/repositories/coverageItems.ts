@@ -8,40 +8,40 @@ import {
 
 export function createCoverageItemsRepo(dbInstance: DbInstance) {
   return {
-    findAll(): CoverageItem[] {
-      return dbInstance.select().from(coverageItems).all();
+    async findAll(): Promise<CoverageItem[]> {
+      return await dbInstance.select().from(coverageItems).all();
     },
 
-    findById(id: number): CoverageItem | undefined {
-      return dbInstance
+    async findById(id: number): Promise<CoverageItem | undefined> {
+      return await dbInstance
         .select()
         .from(coverageItems)
         .where(eq(coverageItems.id, id))
         .get();
     },
 
-    findByPolicyId(policyId: number): CoverageItem[] {
-      return dbInstance
+    async findByPolicyId(policyId: number): Promise<CoverageItem[]> {
+      return await dbInstance
         .select()
         .from(coverageItems)
         .where(eq(coverageItems.policyId, policyId))
         .all();
     },
 
-    create(data: NewCoverageItem): CoverageItem {
-      return dbInstance.insert(coverageItems).values(data).returning().get();
+    async create(data: NewCoverageItem): Promise<CoverageItem> {
+      return await dbInstance.insert(coverageItems).values(data).returning().get();
     },
 
-    createMany(data: NewCoverageItem[]): CoverageItem[] {
+    async createMany(data: NewCoverageItem[]): Promise<CoverageItem[]> {
       if (data.length === 0) return [];
-      return dbInstance.insert(coverageItems).values(data).returning().all();
+      return await dbInstance.insert(coverageItems).values(data).returning().all();
     },
 
-    update(
+    async update(
       id: number,
       data: Partial<NewCoverageItem>,
-    ): CoverageItem | undefined {
-      return dbInstance
+    ): Promise<CoverageItem | undefined> {
+      return await dbInstance
         .update(coverageItems)
         .set(data)
         .where(eq(coverageItems.id, id))
@@ -49,20 +49,22 @@ export function createCoverageItemsRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance
         .delete(coverageItems)
         .where(eq(coverageItems.id, id))
-        .run() as unknown as { changes: number };
-      return result.changes > 0;
+        .returning()
+        .all();
+      return rows.length > 0;
     },
 
-    deleteByPolicyId(policyId: number): number {
-      const result = dbInstance
+    async deleteByPolicyId(policyId: number): Promise<number> {
+      const rows = await dbInstance
         .delete(coverageItems)
         .where(eq(coverageItems.policyId, policyId))
-        .run() as unknown as { changes: number };
-      return result.changes;
+        .returning()
+        .all();
+      return rows.length;
     },
   };
 }

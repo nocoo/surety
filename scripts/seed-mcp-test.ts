@@ -156,7 +156,7 @@ const { familyMembers, familyAssets, policySeedData } = await import("../src/db/
 // Seed members
 const memberMap = new Map<string, number>();
 for (const member of familyMembers) {
-  const created = repos.members.create(member);
+  const created = await repos.members.create(member);
   memberMap.set(member.name, created.id);
 }
 
@@ -164,7 +164,7 @@ for (const member of familyMembers) {
 const assetMap = new Map<string, number>();
 for (const asset of familyAssets) {
   const ownerId = memberMap.get(asset.ownerName);
-  const created = repos.assets.create({
+  const created = await repos.assets.create({
     type: asset.type,
     name: asset.name,
     identifier: asset.identifier,
@@ -177,7 +177,7 @@ for (const asset of familyAssets) {
 // Seed insurers
 const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
 for (const name of uniqueInsurers) {
-  repos.insurers.findOrCreate(name);
+  await repos.insurers.findOrCreate(name);
 }
 
 // Seed policies
@@ -186,7 +186,7 @@ for (const seed of policySeedData) {
   const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
   const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
 
-  const policy = repos.policies.create({
+  const policy = await repos.policies.create({
     ...seed.policy,
     applicantId,
     insuredMemberId,
@@ -195,7 +195,7 @@ for (const seed of policySeedData) {
 
   if (seed.beneficiaries) {
     for (const b of seed.beneficiaries) {
-      repos.beneficiaries.create({
+      await repos.beneficiaries.create({
         policyId: policy.id,
         memberId: b.memberName ? memberMap.get(b.memberName) : undefined,
         externalName: b.externalName,
@@ -207,7 +207,7 @@ for (const seed of policySeedData) {
 }
 
 // Seed settings
-repos.settings.set("annualIncome", "600000");
+await repos.settings.set("annualIncome", "600000");
 
 sqlite.close();
 

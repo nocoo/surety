@@ -20,25 +20,25 @@ function setup() {
   return tools;
 }
 
-function enableMcp() {
-  settingsRepo.set("mcp.enabled", "true");
+async function enableMcp() {
+  await settingsRepo.set("mcp.enabled", "true");
 }
 
-function seedMembers() {
-  const dad = membersRepo.create({
+async function seedMembers() {
+  const dad = await membersRepo.create({
     name: "Zhang San",
     relation: "Self",
     gender: "M",
     birthDate: "1986-03-15",
     phone: "13800001111",
   });
-  const mom = membersRepo.create({
+  const mom = await membersRepo.create({
     name: "Li Si",
     relation: "Spouse",
     gender: "F",
     birthDate: "1988-07-20",
   });
-  const kid = membersRepo.create({
+  const kid = await membersRepo.create({
     name: "Zhang Xiao",
     relation: "Child",
     gender: "M",
@@ -60,7 +60,7 @@ describe("list-members", () => {
 
   test("should return empty array when no members exist", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("list-members")!.handler({});
     const data = parseResult(result);
     expect(data).toEqual([]);
@@ -68,8 +68,8 @@ describe("list-members", () => {
 
   test("should return all members with correct fields", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad, mom } = seedMembers();
+    await enableMcp();
+    const { dad, mom } = await seedMembers();
 
     const result = await tools.get("list-members")!.handler({});
     const data = parseResult(result);
@@ -95,8 +95,8 @@ describe("list-members", () => {
 
   test("should not expose sensitive fields like idCard", async () => {
     const tools = setup();
-    enableMcp();
-    membersRepo.create({
+    await enableMcp();
+    await membersRepo.create({
       name: "Test User",
       relation: "Self",
       idCard: "310101199001011234",
@@ -122,7 +122,7 @@ describe("get-member", () => {
 
   test("should return error for non-existent member", async () => {
     const tools = setup();
-    enableMcp();
+    await enableMcp();
     const result = await tools.get("get-member")!.handler({ memberId: 999 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
@@ -130,8 +130,8 @@ describe("get-member", () => {
 
   test("should return member with empty policies when none exist", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedMembers();
+    await enableMcp();
+    const { dad } = await seedMembers();
 
     const result = await tools.get("get-member")!.handler({
       memberId: dad.id,
@@ -145,10 +145,10 @@ describe("get-member", () => {
 
   test("should return member with related policies as insured", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedMembers();
+    await enableMcp();
+    const { dad } = await seedMembers();
 
-    const policy = policiesRepo.create({
+    const policy = await policiesRepo.create({
       applicantId: dad.id,
       insuredType: "Member",
       insuredMemberId: dad.id,
@@ -176,10 +176,10 @@ describe("get-member", () => {
 
   test("should return member with related policies as applicant", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad, kid } = seedMembers();
+    await enableMcp();
+    const { dad, kid } = await seedMembers();
 
-    policiesRepo.create({
+    await policiesRepo.create({
       applicantId: dad.id,
       insuredType: "Member",
       insuredMemberId: kid.id,
@@ -205,10 +205,10 @@ describe("get-member", () => {
 
   test("should deduplicate policies where member is both applicant and insured", async () => {
     const tools = setup();
-    enableMcp();
-    const { dad } = seedMembers();
+    await enableMcp();
+    const { dad } = await seedMembers();
 
-    policiesRepo.create({
+    await policiesRepo.create({
       applicantId: dad.id,
       insuredType: "Member",
       insuredMemberId: dad.id,

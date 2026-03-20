@@ -4,20 +4,20 @@ import { members, type Member, type NewMember } from "../schema";
 
 export function createMembersRepo(dbInstance: DbInstance) {
   return {
-    findAll(): Member[] {
-      return dbInstance.select().from(members).all();
+    async findAll(): Promise<Member[]> {
+      return await dbInstance.select().from(members).all();
     },
 
-    findById(id: number): Member | undefined {
-      return dbInstance.select().from(members).where(eq(members.id, id)).get();
+    async findById(id: number): Promise<Member | undefined> {
+      return await dbInstance.select().from(members).where(eq(members.id, id)).get();
     },
 
-    create(data: NewMember): Member {
-      return dbInstance.insert(members).values(data).returning().get();
+    async create(data: NewMember): Promise<Member> {
+      return await dbInstance.insert(members).values(data).returning().get();
     },
 
-    update(id: number, data: Partial<NewMember>): Member | undefined {
-      return dbInstance
+    async update(id: number, data: Partial<NewMember>): Promise<Member | undefined> {
+      return await dbInstance
         .update(members)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(members.id, id))
@@ -25,9 +25,9 @@ export function createMembersRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance.delete(members).where(eq(members.id, id)).run() as unknown as { changes: number };
-      return result.changes > 0;
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance.delete(members).where(eq(members.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

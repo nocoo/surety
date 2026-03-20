@@ -82,10 +82,10 @@ export async function getTotpService(): Promise<TotpService> {
 
   const { settingsRepo } = await import("@/db/repositories/settings");
 
-  // settingsRepo already satisfies TotpStore interface (get/set/delete)
+  // settingsRepo methods are async — TotpStore interface is now async too
   const store: TotpStore = {
     get: (key: string) => settingsRepo.get(key),
-    set: (key: string, value: string) => { settingsRepo.set(key, value); },
+    set: async (key: string, value: string) => { await settingsRepo.set(key, value); },
     delete: (key: string) => settingsRepo.delete(key),
   };
 

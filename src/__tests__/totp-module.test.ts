@@ -61,9 +61,9 @@ function createMemoryStore(): TotpStore & { data: Map<string, string> } {
   const data = new Map<string, string>();
   return {
     data,
-    get(key: string) { return data.get(key); },
-    set(key: string, value: string) { data.set(key, value); },
-    delete(key: string) { return data.delete(key); },
+    async get(key: string) { return data.get(key); },
+    async set(key: string, value: string) { data.set(key, value); },
+    async delete(key: string) { return data.delete(key); },
   };
 }
 
@@ -411,30 +411,30 @@ describe("TotpService", () => {
   }
 
   describe("isEnabled / getStatus", () => {
-    test("returns false when nothing is set", () => {
+    test("returns false when nothing is set", async () => {
       const { service } = createService();
-      expect(service.isEnabled()).toBe(false);
+      expect(await service.isEnabled()).toBe(false);
     });
 
-    test("returns true when enabled=true in store", () => {
+    test("returns true when enabled=true in store", async () => {
       const { service, store } = createService();
-      store.set(TOTP_SETTINGS_KEYS.enabled, "true");
-      expect(service.isEnabled()).toBe(true);
+      await store.set(TOTP_SETTINGS_KEYS.enabled, "true");
+      expect(await service.isEnabled()).toBe(true);
     });
 
-    test("getStatus returns enabled and recovery code status", () => {
+    test("getStatus returns enabled and recovery code status", async () => {
       const { service, store } = createService();
-      expect(service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
+      expect(await service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
 
-      store.set(TOTP_SETTINGS_KEYS.enabled, "true");
-      store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
-      expect(service.getStatus()).toEqual({ enabled: true, recoveryCodeUsed: true });
+      await store.set(TOTP_SETTINGS_KEYS.enabled, "true");
+      await store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
+      expect(await service.getStatus()).toEqual({ enabled: true, recoveryCodeUsed: true });
     });
 
-    test("getStatus hides recovery code status when disabled", () => {
+    test("getStatus hides recovery code status when disabled", async () => {
       const { service, store } = createService();
-      store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
-      expect(service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
+      await store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
+      expect(await service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
     });
   });
 
@@ -445,8 +445,8 @@ describe("TotpService", () => {
 
       expect(result.qrDataURL).toMatch(/^data:image\/png;base64,/);
       expect(result.secret).toMatch(/^[A-Z2-7]+=*$/);
-      expect(store.get(TOTP_SETTINGS_KEYS.encryptedSecret)).toBeDefined();
-      expect(store.get(TOTP_SETTINGS_KEYS.enabled)).toBe("false");
+      expect(await store.get(TOTP_SETTINGS_KEYS.encryptedSecret)).toBeDefined();
+      expect(await store.get(TOTP_SETTINGS_KEYS.enabled)).toBe("false");
     });
   });
 
@@ -469,9 +469,9 @@ describe("TotpService", () => {
       const result = await service.verifySetup(token, "user@example.com");
       expect("success" in result && result.success).toBe(true);
       expect("recoveryCode" in result).toBe(true);
-      expect(store.get(TOTP_SETTINGS_KEYS.enabled)).toBe("true");
-      expect(store.get(TOTP_SETTINGS_KEYS.enrollVersion)).toBeDefined();
-      expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeHash)).toBeDefined();
+      expect(await store.get(TOTP_SETTINGS_KEYS.enabled)).toBe("true");
+      expect(await store.get(TOTP_SETTINGS_KEYS.enrollVersion)).toBeDefined();
+      expect(await store.get(TOTP_SETTINGS_KEYS.recoveryCodeHash)).toBeDefined();
     });
 
     test("returns nonce + sig for JWT promotion on success", async () => {
@@ -495,11 +495,11 @@ describe("TotpService", () => {
         expect(typeof result.nonce).toBe("string");
         expect(typeof result.nonceSig).toBe("string");
         // Nonce should be stored for consumption by auth layer
-        expect(store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBe(result.nonce);
+        expect(await store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBe(result.nonce);
         // Nonce should be consumable
-        expect(service.consumeNonce(result.nonce, result.nonceSig)).toBe(true);
+        expect(await service.consumeNonce(result.nonce, result.nonceSig)).toBe(true);
         // Can't reuse
-        expect(service.consumeNonce(result.nonce, result.nonceSig)).toBe(false);
+        expect(await service.consumeNonce(result.nonce, result.nonceSig)).toBe(false);
       }
     });
 
@@ -594,7 +594,7 @@ describe("TotpService", () => {
       // Use recovery code
       const loginResult = await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
       expect("success" in loginResult && loginResult.success).toBe(true);
-      expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
+      expect(await store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
 
       // Can't reuse recovery code
       const reuse = await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
@@ -620,23 +620,23 @@ describe("TotpService", () => {
       });
       let token = totpInstance.generate();
       await service.verifySetup(token, "user@example.com");
-      expect(service.isEnabled()).toBe(true);
+      expect(await service.isEnabled()).toBe(true);
 
       // Disable with fresh token
       token = totpInstance.generate();
-      const result = service.disable(token, "user@example.com");
+      const result = await service.disable(token, "user@example.com");
       expect("success" in result && result.success).toBe(true);
-      expect(service.isEnabled()).toBe(false);
+      expect(await service.isEnabled()).toBe(false);
 
       // All TOTP keys should be deleted
       for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
-        expect(store.get(key)).toBeUndefined();
+        expect(await store.get(key)).toBeUndefined();
       }
     });
 
-    test("returns error when not enabled", () => {
+    test("returns error when not enabled", async () => {
       const { service } = createService();
-      const result = service.disable("123456", "user@example.com");
+      const result = await service.disable("123456", "user@example.com");
       expect("error" in result).toBe(true);
       if ("error" in result) {
         expect(result.error).toContain("not enabled");
@@ -665,26 +665,26 @@ describe("TotpService", () => {
 
     test("unconditionally disables 2FA when enabled", async () => {
       const { service, store } = await setupEnabled();
-      expect(service.isEnabled()).toBe(true);
+      expect(await service.isEnabled()).toBe(true);
 
-      const result = service.forceDisable();
+      const result = await service.forceDisable();
       expect("success" in result && result.success).toBe(true);
-      expect(service.isEnabled()).toBe(false);
+      expect(await service.isEnabled()).toBe(false);
 
       // All TOTP keys should be deleted
       for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
-        expect(store.get(key)).toBeUndefined();
+        expect(await store.get(key)).toBeUndefined();
       }
     });
 
     test("works regardless of recovery code usage status", async () => {
       // forceDisable no longer checks recoveryCodeUsed — caller handles authorization
       const { service } = await setupEnabled();
-      expect(service.isEnabled()).toBe(true);
+      expect(await service.isEnabled()).toBe(true);
 
-      const result = service.forceDisable();
+      const result = await service.forceDisable();
       expect("success" in result && result.success).toBe(true);
-      expect(service.isEnabled()).toBe(false);
+      expect(await service.isEnabled()).toBe(false);
     });
 
     test("also works when recovery code has been used", async () => {
@@ -705,16 +705,16 @@ describe("TotpService", () => {
 
       // Use recovery code
       await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
-      expect(store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
+      expect(await store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
 
-      const result = service.forceDisable();
+      const result = await service.forceDisable();
       expect("success" in result && result.success).toBe(true);
-      expect(service.isEnabled()).toBe(false);
+      expect(await service.isEnabled()).toBe(false);
     });
 
-    test("returns error when 2FA is not enabled", () => {
+    test("returns error when 2FA is not enabled", async () => {
       const { service } = createService();
-      const result = service.forceDisable();
+      const result = await service.forceDisable();
       expect("error" in result).toBe(true);
       if ("error" in result) {
         expect(result.error).toContain("not enabled");
@@ -723,69 +723,69 @@ describe("TotpService", () => {
   });
 
   describe("consumeNonce", () => {
-    test("consumes a valid nonce", () => {
+    test("consumes a valid nonce", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
       const sig = signNonce(nonce, TEST_HMAC_SECRET);
-      store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+      await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
-      expect(service.consumeNonce(nonce, sig)).toBe(true);
+      expect(await service.consumeNonce(nonce, sig)).toBe(true);
       // Nonce should be deleted after consumption
-      expect(store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBeUndefined();
+      expect(await store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBeUndefined();
     });
 
-    test("rejects invalid signature", () => {
+    test("rejects invalid signature", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
-      store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+      await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
-      expect(service.consumeNonce(nonce, "f".repeat(64))).toBe(false);
+      expect(await service.consumeNonce(nonce, "f".repeat(64))).toBe(false);
     });
 
-    test("rejects nonce not in store", () => {
+    test("rejects nonce not in store", async () => {
       const { service } = createService();
       const nonce = generateVerificationNonce();
       const sig = signNonce(nonce, TEST_HMAC_SECRET);
 
-      expect(service.consumeNonce(nonce, sig)).toBe(false);
+      expect(await service.consumeNonce(nonce, sig)).toBe(false);
     });
 
-    test("prevents nonce reuse", () => {
+    test("prevents nonce reuse", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
       const sig = signNonce(nonce, TEST_HMAC_SECRET);
-      store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
+      await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
-      expect(service.consumeNonce(nonce, sig)).toBe(true);
-      expect(service.consumeNonce(nonce, sig)).toBe(false); // already consumed
+      expect(await service.consumeNonce(nonce, sig)).toBe(true);
+      expect(await service.consumeNonce(nonce, sig)).toBe(false); // already consumed
     });
   });
 
   describe("trusted device cookie via service", () => {
     test("createTrustedCookieValue and verifyTrustedCookie round-trip", async () => {
       const { service, store } = createService();
-      store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
+      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
 
-      const cookieValue = service.createTrustedCookieValue("user@example.com");
-      expect(service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(true);
+      const cookieValue = await service.createTrustedCookieValue("user@example.com");
+      expect(await service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(true);
     });
 
     test("rejects cookie for wrong email", async () => {
       const { service, store } = createService();
-      store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
+      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
 
-      const cookieValue = service.createTrustedCookieValue("user@example.com");
-      expect(service.verifyTrustedCookie(cookieValue, "other@example.com")).toBe(false);
+      const cookieValue = await service.createTrustedCookieValue("user@example.com");
+      expect(await service.verifyTrustedCookie(cookieValue, "other@example.com")).toBe(false);
     });
 
     test("rejects cookie after enrollment version change", async () => {
       const { service, store } = createService();
-      store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
-      const cookieValue = service.createTrustedCookieValue("user@example.com");
+      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
+      const cookieValue = await service.createTrustedCookieValue("user@example.com");
 
       // Change enrollment version (simulating 2FA re-enrollment)
-      store.set(TOTP_SETTINGS_KEYS.enrollVersion, "99");
-      expect(service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(false);
+      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "99");
+      expect(await service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(false);
     });
 
     test("trustedDeviceCookieName returns configured name", () => {

@@ -4,24 +4,24 @@ import { assets, type Asset, type NewAsset } from "../schema";
 
 export function createAssetsRepo(dbInstance: DbInstance) {
   return {
-    findAll(): Asset[] {
-      return dbInstance.select().from(assets).all();
+    async findAll(): Promise<Asset[]> {
+      return await dbInstance.select().from(assets).all();
     },
 
-    findById(id: number): Asset | undefined {
-      return dbInstance.select().from(assets).where(eq(assets.id, id)).get();
+    async findById(id: number): Promise<Asset | undefined> {
+      return await dbInstance.select().from(assets).where(eq(assets.id, id)).get();
     },
 
-    findByOwnerId(ownerId: number): Asset[] {
-      return dbInstance.select().from(assets).where(eq(assets.ownerId, ownerId)).all();
+    async findByOwnerId(ownerId: number): Promise<Asset[]> {
+      return await dbInstance.select().from(assets).where(eq(assets.ownerId, ownerId)).all();
     },
 
-    create(data: NewAsset): Asset {
-      return dbInstance.insert(assets).values(data).returning().get();
+    async create(data: NewAsset): Promise<Asset> {
+      return await dbInstance.insert(assets).values(data).returning().get();
     },
 
-    update(id: number, data: Partial<NewAsset>): Asset | undefined {
-      return dbInstance
+    async update(id: number, data: Partial<NewAsset>): Promise<Asset | undefined> {
+      return await dbInstance
         .update(assets)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(assets.id, id))
@@ -29,9 +29,9 @@ export function createAssetsRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance.delete(assets).where(eq(assets.id, id)).run() as unknown as { changes: number };
-      return result.changes > 0;
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance.delete(assets).where(eq(assets.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

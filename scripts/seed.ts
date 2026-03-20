@@ -123,14 +123,14 @@ async function seed() {
   // Seed members
   const memberMap = new Map<string, number>();
   for (const member of familyMembers) {
-    const created = repos.members.create(member);
+    const created = await repos.members.create(member);
     memberMap.set(member.name, created.id);
   }
 
   // Seed assets
   for (const asset of familyAssets) {
     const ownerId = memberMap.get(asset.ownerName);
-    repos.assets.create({
+    await repos.assets.create({
       type: asset.type, name: asset.name, identifier: asset.identifier,
       ownerId, details: asset.details,
     });
@@ -139,7 +139,7 @@ async function seed() {
   // Seed insurers
   const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
   for (const name of uniqueInsurers) {
-    repos.insurers.findOrCreate(name);
+    await repos.insurers.findOrCreate(name);
   }
 
   // Seed policies
@@ -147,13 +147,13 @@ async function seed() {
     const applicantId = memberMap.get(seedItem.applicantName)!;
     const insuredMemberId = seedItem.insuredName ? memberMap.get(seedItem.insuredName) : undefined;
 
-    const policy = repos.policies.create({
+    const policy = await repos.policies.create({
       ...seedItem.policy, applicantId, insuredMemberId,
     });
 
     if (seedItem.beneficiaries) {
       for (const b of seedItem.beneficiaries) {
-        repos.beneficiaries.create({
+        await repos.beneficiaries.create({
           policyId: policy.id,
           memberId: b.memberName ? memberMap.get(b.memberName) : undefined,
           externalName: b.externalName,
@@ -163,7 +163,7 @@ async function seed() {
     }
   }
 
-  repos.settings.set("annualIncome", "600000");
+  await repos.settings.set("annualIncome", "600000");
 
   sqlite.close();
 

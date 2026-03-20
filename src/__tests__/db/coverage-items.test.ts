@@ -10,16 +10,16 @@ import type { NewPolicy } from "@/db/schema";
 describe("coverageItemsRepo", () => {
   let testPolicyId: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetTestDb();
 
-    const member = membersRepo.create({
+    const member = await membersRepo.create({
       name: "张三",
       relation: "Self",
       birthDate: "1985-01-01",
     });
 
-    const policy = policiesRepo.create({
+    const policy = await policiesRepo.create({
       applicantId: member.id,
       insuredType: "Member",
       insuredMemberId: member.id,
@@ -39,8 +39,8 @@ describe("coverageItemsRepo", () => {
   });
 
   describe("create", () => {
-    test("creates a coverage item with all fields", () => {
-      const item = coverageItemsRepo.create({
+    test("creates a coverage item with all fields", async () => {
+      const item = await coverageItemsRepo.create({
         policyId: testPolicyId,
         name: "一般医疗保险金",
         periodLimit: 4000000,
@@ -63,8 +63,8 @@ describe("coverageItemsRepo", () => {
       expect(item.sortOrder).toBe(0);
     });
 
-    test("creates a coverage item with minimal fields", () => {
-      const item = coverageItemsRepo.create({
+    test("creates a coverage item with minimal fields", async () => {
+      const item = await coverageItemsRepo.create({
         policyId: testPolicyId,
         name: "重大疾病关爱保险金",
       });
@@ -80,8 +80,8 @@ describe("coverageItemsRepo", () => {
   });
 
   describe("createMany", () => {
-    test("creates multiple coverage items (real medical policy)", () => {
-      const items = coverageItemsRepo.createMany([
+    test("creates multiple coverage items (real medical policy)", async () => {
+      const items = await coverageItemsRepo.createMany([
         { policyId: testPolicyId, name: "一般医疗保险金", periodLimit: 4000000, lifetimeLimit: 8000000, sortOrder: 0 },
         { policyId: testPolicyId, name: "特定疾病医疗保险金", periodLimit: 2000000, sortOrder: 1 },
         { policyId: testPolicyId, name: "重大疾病医疗保险金", periodLimit: 4000000, sortOrder: 2 },
@@ -102,65 +102,65 @@ describe("coverageItemsRepo", () => {
       expect(items[7]!.notes).toBe("赠险");
     });
 
-    test("returns empty array for empty input", () => {
-      expect(coverageItemsRepo.createMany([])).toEqual([]);
+    test("returns empty array for empty input", async () => {
+      expect(await coverageItemsRepo.createMany([])).toEqual([]);
     });
   });
 
   describe("findByPolicyId", () => {
-    test("returns all coverage items for a policy", () => {
-      coverageItemsRepo.createMany([
+    test("returns all coverage items for a policy", async () => {
+      await coverageItemsRepo.createMany([
         { policyId: testPolicyId, name: "一般医疗保险金", sortOrder: 0 },
         { policyId: testPolicyId, name: "重大疾病医疗保险金", sortOrder: 1 },
       ]);
 
-      const items = coverageItemsRepo.findByPolicyId(testPolicyId);
+      const items = await coverageItemsRepo.findByPolicyId(testPolicyId);
       expect(items).toHaveLength(2);
     });
 
-    test("returns empty array when no items", () => {
-      expect(coverageItemsRepo.findByPolicyId(999)).toEqual([]);
+    test("returns empty array when no items", async () => {
+      expect(await coverageItemsRepo.findByPolicyId(999)).toEqual([]);
     });
   });
 
   describe("findAll", () => {
-    test("returns all coverage items", () => {
-      coverageItemsRepo.create({ policyId: testPolicyId, name: "A", sortOrder: 0 });
-      coverageItemsRepo.create({ policyId: testPolicyId, name: "B", sortOrder: 1 });
+    test("returns all coverage items", async () => {
+      await coverageItemsRepo.create({ policyId: testPolicyId, name: "A", sortOrder: 0 });
+      await coverageItemsRepo.create({ policyId: testPolicyId, name: "B", sortOrder: 1 });
 
-      expect(coverageItemsRepo.findAll()).toHaveLength(2);
+      expect(await coverageItemsRepo.findAll()).toHaveLength(2);
     });
   });
 
   describe("findById", () => {
-    test("returns coverage item when found", () => {
-      const created = coverageItemsRepo.create({
+    test("returns coverage item when found", async () => {
+      const created = await coverageItemsRepo.create({
         policyId: testPolicyId,
         name: "一般医疗保险金",
         periodLimit: 4000000,
         sortOrder: 0,
       });
 
-      const found = coverageItemsRepo.findById(created.id);
+      const found = await coverageItemsRepo.findById(created.id);
       expect(found?.name).toBe("一般医疗保险金");
       expect(found?.periodLimit).toBe(4000000);
     });
 
-    test("returns undefined when not found", () => {
-      expect(coverageItemsRepo.findById(999)).toBeUndefined();
+    test("returns undefined when not found", async () => {
+      expect(await coverageItemsRepo.findById(999)).toBeUndefined();
     });
   });
 
   describe("update", () => {
-    test("updates coverage item fields", () => {
-      const item = coverageItemsRepo.create({
+    test("updates coverage item fields", async () => {
+      const item = await coverageItemsRepo.create({
         policyId: testPolicyId,
         name: "一般医疗保险金",
         periodLimit: 2000000,
         sortOrder: 0,
       });
 
-      const updated = coverageItemsRepo.update(item.id, {
+      const updated = await coverageItemsRepo.update(item.id, {
         periodLimit: 4000000,
         notes: "限额提升",
       });
@@ -169,43 +169,43 @@ describe("coverageItemsRepo", () => {
       expect(updated?.notes).toBe("限额提升");
     });
 
-    test("returns undefined when not found", () => {
-      expect(coverageItemsRepo.update(999, { name: "不存在" })).toBeUndefined();
+    test("returns undefined when not found", async () => {
+      expect(await coverageItemsRepo.update(999, { name: "不存在" })).toBeUndefined();
     });
   });
 
   describe("delete", () => {
-    test("deletes coverage item", () => {
-      const item = coverageItemsRepo.create({
+    test("deletes coverage item", async () => {
+      const item = await coverageItemsRepo.create({
         policyId: testPolicyId,
         name: "一般医疗保险金",
         sortOrder: 0,
       });
 
-      expect(coverageItemsRepo.delete(item.id)).toBe(true);
-      expect(coverageItemsRepo.findById(item.id)).toBeUndefined();
+      expect(await coverageItemsRepo.delete(item.id)).toBe(true);
+      expect(await coverageItemsRepo.findById(item.id)).toBeUndefined();
     });
 
-    test("returns false when not found", () => {
-      expect(coverageItemsRepo.delete(999)).toBe(false);
+    test("returns false when not found", async () => {
+      expect(await coverageItemsRepo.delete(999)).toBe(false);
     });
   });
 
   describe("deleteByPolicyId", () => {
-    test("deletes all items for a policy", () => {
-      coverageItemsRepo.createMany([
+    test("deletes all items for a policy", async () => {
+      await coverageItemsRepo.createMany([
         { policyId: testPolicyId, name: "A", sortOrder: 0 },
         { policyId: testPolicyId, name: "B", sortOrder: 1 },
         { policyId: testPolicyId, name: "C", sortOrder: 2 },
       ]);
 
-      const count = coverageItemsRepo.deleteByPolicyId(testPolicyId);
+      const count = await coverageItemsRepo.deleteByPolicyId(testPolicyId);
       expect(count).toBe(3);
-      expect(coverageItemsRepo.findByPolicyId(testPolicyId)).toHaveLength(0);
+      expect(await coverageItemsRepo.findByPolicyId(testPolicyId)).toHaveLength(0);
     });
 
-    test("returns 0 when no items", () => {
-      expect(coverageItemsRepo.deleteByPolicyId(999)).toBe(0);
+    test("returns 0 when no items", async () => {
+      expect(await coverageItemsRepo.deleteByPolicyId(999)).toBe(0);
     });
   });
 });

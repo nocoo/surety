@@ -13,16 +13,16 @@ import type { NewPolicy } from "@/db/schema";
 describe("Other Repositories", () => {
   let testPolicyId: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetTestDb();
 
-    const member = membersRepo.create({
+    const member = await membersRepo.create({
       name: "张三",
       relation: "Self",
       birthDate: "1985-01-01",
     });
 
-    const policy = policiesRepo.create({
+    const policy = await policiesRepo.create({
       applicantId: member.id,
       insuredType: "Member",
       insuredMemberId: member.id,
@@ -42,8 +42,8 @@ describe("Other Repositories", () => {
   });
 
   describe("beneficiariesRepo", () => {
-    test("CRUD operations", () => {
-      const b = beneficiariesRepo.create({
+    test("CRUD operations", async () => {
+      const b = await beneficiariesRepo.create({
         policyId: testPolicyId,
         externalName: "张小明",
         sharePercent: 100,
@@ -51,43 +51,43 @@ describe("Other Repositories", () => {
       });
       expect(b.id).toBe(1);
 
-      expect(beneficiariesRepo.findAll()).toHaveLength(1);
+      expect(await beneficiariesRepo.findAll()).toHaveLength(1);
 
-      expect(beneficiariesRepo.findById(b.id)?.externalName).toBe("张小明");
-      expect(beneficiariesRepo.findById(999)).toBeUndefined();
+      expect((await beneficiariesRepo.findById(b.id))?.externalName).toBe("张小明");
+      expect(await beneficiariesRepo.findById(999)).toBeUndefined();
 
-      expect(beneficiariesRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
+      expect(await beneficiariesRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
 
-      const updated = beneficiariesRepo.update(b.id, { sharePercent: 50 });
+      const updated = await beneficiariesRepo.update(b.id, { sharePercent: 50 });
       expect(updated?.sharePercent).toBe(50);
-      expect(beneficiariesRepo.update(999, { sharePercent: 50 })).toBeUndefined();
+      expect(await beneficiariesRepo.update(999, { sharePercent: 50 })).toBeUndefined();
 
-      expect(beneficiariesRepo.delete(b.id)).toBe(true);
-      expect(beneficiariesRepo.delete(999)).toBe(false);
+      expect(await beneficiariesRepo.delete(b.id)).toBe(true);
+      expect(await beneficiariesRepo.delete(999)).toBe(false);
     });
 
-    test("deleteByPolicyId", () => {
-      beneficiariesRepo.create({
+    test("deleteByPolicyId", async () => {
+      await beneficiariesRepo.create({
         policyId: testPolicyId,
         externalName: "B1",
         sharePercent: 50,
         rankOrder: 1,
       });
-      beneficiariesRepo.create({
+      await beneficiariesRepo.create({
         policyId: testPolicyId,
         externalName: "B2",
         sharePercent: 50,
         rankOrder: 2,
       });
 
-      expect(beneficiariesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
-      expect(beneficiariesRepo.findByPolicyId(testPolicyId)).toHaveLength(0);
+      expect(await beneficiariesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
+      expect(await beneficiariesRepo.findByPolicyId(testPolicyId)).toHaveLength(0);
     });
   });
 
   describe("paymentsRepo", () => {
-    test("CRUD operations", () => {
-      const p = paymentsRepo.create({
+    test("CRUD operations", async () => {
+      const p = await paymentsRepo.create({
         policyId: testPolicyId,
         periodNumber: 1,
         dueDate: "2024-01-01",
@@ -96,136 +96,136 @@ describe("Other Repositories", () => {
       expect(p.id).toBe(1);
       expect(p.status).toBe("Pending");
 
-      expect(paymentsRepo.findAll()).toHaveLength(1);
+      expect(await paymentsRepo.findAll()).toHaveLength(1);
 
-      expect(paymentsRepo.findById(p.id)?.amount).toBe(10000);
-      expect(paymentsRepo.findById(999)).toBeUndefined();
+      expect((await paymentsRepo.findById(p.id))?.amount).toBe(10000);
+      expect(await paymentsRepo.findById(999)).toBeUndefined();
 
-      expect(paymentsRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
+      expect(await paymentsRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
 
-      expect(paymentsRepo.findByStatus("Pending")).toHaveLength(1);
+      expect(await paymentsRepo.findByStatus("Pending")).toHaveLength(1);
 
-      const updated = paymentsRepo.update(p.id, {
+      const updated = await paymentsRepo.update(p.id, {
         status: "Paid",
         paidDate: "2024-01-05",
         paidAmount: 10000,
       });
       expect(updated?.status).toBe("Paid");
-      expect(paymentsRepo.update(999, { status: "Paid" })).toBeUndefined();
+      expect(await paymentsRepo.update(999, { status: "Paid" })).toBeUndefined();
 
-      expect(paymentsRepo.delete(p.id)).toBe(true);
-      expect(paymentsRepo.delete(999)).toBe(false);
+      expect(await paymentsRepo.delete(p.id)).toBe(true);
+      expect(await paymentsRepo.delete(999)).toBe(false);
     });
 
-    test("createMany", () => {
-      const payments = paymentsRepo.createMany([
+    test("createMany", async () => {
+      const payments = await paymentsRepo.createMany([
         { policyId: testPolicyId, periodNumber: 1, dueDate: "2024-01-01", amount: 10000 },
         { policyId: testPolicyId, periodNumber: 2, dueDate: "2025-01-01", amount: 10000 },
       ]);
       expect(payments).toHaveLength(2);
     });
 
-    test("deleteByPolicyId", () => {
-      paymentsRepo.createMany([
+    test("deleteByPolicyId", async () => {
+      await paymentsRepo.createMany([
         { policyId: testPolicyId, periodNumber: 1, dueDate: "2024-01-01", amount: 10000 },
         { policyId: testPolicyId, periodNumber: 2, dueDate: "2025-01-01", amount: 10000 },
       ]);
 
-      expect(paymentsRepo.deleteByPolicyId(testPolicyId)).toBe(2);
+      expect(await paymentsRepo.deleteByPolicyId(testPolicyId)).toBe(2);
     });
   });
 
   describe("cashValuesRepo", () => {
-    test("CRUD operations", () => {
-      const cv = cashValuesRepo.create({
+    test("CRUD operations", async () => {
+      const cv = await cashValuesRepo.create({
         policyId: testPolicyId,
         policyYear: 1,
         value: 5000,
       });
       expect(cv.id).toBe(1);
 
-      expect(cashValuesRepo.findAll()).toHaveLength(1);
+      expect(await cashValuesRepo.findAll()).toHaveLength(1);
 
-      expect(cashValuesRepo.findById(cv.id)?.value).toBe(5000);
-      expect(cashValuesRepo.findById(999)).toBeUndefined();
+      expect((await cashValuesRepo.findById(cv.id))?.value).toBe(5000);
+      expect(await cashValuesRepo.findById(999)).toBeUndefined();
 
-      expect(cashValuesRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
+      expect(await cashValuesRepo.findByPolicyId(testPolicyId)).toHaveLength(1);
 
-      const updated = cashValuesRepo.update(cv.id, { value: 6000 });
+      const updated = await cashValuesRepo.update(cv.id, { value: 6000 });
       expect(updated?.value).toBe(6000);
-      expect(cashValuesRepo.update(999, { value: 100 })).toBeUndefined();
+      expect(await cashValuesRepo.update(999, { value: 100 })).toBeUndefined();
 
-      expect(cashValuesRepo.delete(cv.id)).toBe(true);
-      expect(cashValuesRepo.delete(999)).toBe(false);
+      expect(await cashValuesRepo.delete(cv.id)).toBe(true);
+      expect(await cashValuesRepo.delete(999)).toBe(false);
     });
 
-    test("createMany", () => {
-      const cvs = cashValuesRepo.createMany([
+    test("createMany", async () => {
+      const cvs = await cashValuesRepo.createMany([
         { policyId: testPolicyId, policyYear: 1, value: 5000 },
         { policyId: testPolicyId, policyYear: 2, value: 10000 },
       ]);
       expect(cvs).toHaveLength(2);
     });
 
-    test("deleteByPolicyId", () => {
-      cashValuesRepo.createMany([
+    test("deleteByPolicyId", async () => {
+      await cashValuesRepo.createMany([
         { policyId: testPolicyId, policyYear: 1, value: 5000 },
         { policyId: testPolicyId, policyYear: 2, value: 10000 },
       ]);
 
-      expect(cashValuesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
+      expect(await cashValuesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
     });
   });
 
   describe("settingsRepo", () => {
-    test("get/set string", () => {
-      const s = settingsRepo.set("annual_income", "500000");
+    test("get/set string", async () => {
+      const s = await settingsRepo.set("annual_income", "500000");
       expect(s.value).toBe("500000");
 
-      expect(settingsRepo.get("annual_income")).toBe("500000");
-      expect(settingsRepo.get("nonexistent")).toBeUndefined();
+      expect(await settingsRepo.get("annual_income")).toBe("500000");
+      expect(await settingsRepo.get("nonexistent")).toBeUndefined();
 
-      settingsRepo.set("annual_income", "600000");
-      expect(settingsRepo.get("annual_income")).toBe("600000");
+      await settingsRepo.set("annual_income", "600000");
+      expect(await settingsRepo.get("annual_income")).toBe("600000");
     });
 
-    test("findAll", () => {
-      settingsRepo.set("key1", "value1");
-      settingsRepo.set("key2", "value2");
+    test("findAll", async () => {
+      await settingsRepo.set("key1", "value1");
+      await settingsRepo.set("key2", "value2");
 
-      expect(settingsRepo.findAll()).toHaveLength(2);
+      expect(await settingsRepo.findAll()).toHaveLength(2);
     });
 
-    test("delete", () => {
-      settingsRepo.set("key1", "value1");
+    test("delete", async () => {
+      await settingsRepo.set("key1", "value1");
 
-      expect(settingsRepo.delete("key1")).toBe(true);
-      expect(settingsRepo.delete("key1")).toBe(false);
-      expect(settingsRepo.get("key1")).toBeUndefined();
+      expect(await settingsRepo.delete("key1")).toBe(true);
+      expect(await settingsRepo.delete("key1")).toBe(false);
+      expect(await settingsRepo.get("key1")).toBeUndefined();
     });
 
-    test("getNumber/setNumber", () => {
-      settingsRepo.setNumber("income", 500000);
-      expect(settingsRepo.getNumber("income")).toBe(500000);
+    test("getNumber/setNumber", async () => {
+      await settingsRepo.setNumber("income", 500000);
+      expect(await settingsRepo.getNumber("income")).toBe(500000);
 
-      expect(settingsRepo.getNumber("nonexistent")).toBeUndefined();
+      expect(await settingsRepo.getNumber("nonexistent")).toBeUndefined();
 
-      settingsRepo.set("invalid", "not-a-number");
-      expect(settingsRepo.getNumber("invalid")).toBeUndefined();
+      await settingsRepo.set("invalid", "not-a-number");
+      expect(await settingsRepo.getNumber("invalid")).toBeUndefined();
     });
 
-    test("getJson/setJson", () => {
+    test("getJson/setJson", async () => {
       const data = { premium_ratio: 0.1, categories: ["Life", "Medical"] };
-      settingsRepo.setJson("config", data);
+      await settingsRepo.setJson("config", data);
 
-      const retrieved = settingsRepo.getJson<typeof data>("config");
+      const retrieved = await settingsRepo.getJson<typeof data>("config");
       expect(retrieved?.premium_ratio).toBe(0.1);
       expect(retrieved?.categories).toEqual(["Life", "Medical"]);
 
-      expect(settingsRepo.getJson("nonexistent")).toBeUndefined();
+      expect(await settingsRepo.getJson("nonexistent")).toBeUndefined();
 
-      settingsRepo.set("invalid_json", "not-valid-json");
-      expect(settingsRepo.getJson("invalid_json")).toBeUndefined();
+      await settingsRepo.set("invalid_json", "not-valid-json");
+      expect(await settingsRepo.getJson("invalid_json")).toBeUndefined();
     });
   });
 });

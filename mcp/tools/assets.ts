@@ -14,21 +14,23 @@ export function registerAssetTools(server: McpServer): void {
     "List all insured assets (real estate, vehicles) with owner information",
     {},
     async () => {
-      const error = checkMcpEnabled();
+      const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const assets = assetsRepo.findAll();
-      const result = assets.map((a) => {
-        const owner = a.ownerId ? membersRepo.findById(a.ownerId) : undefined;
-        return {
-          id: a.id,
-          name: a.name,
-          type: a.type,
-          identifier: a.identifier,
-          ownerName: owner?.name,
-          details: a.details ? JSON.parse(a.details) : undefined,
-        };
-      });
+      const assets = await assetsRepo.findAll();
+      const result = await Promise.all(
+        assets.map(async (a) => {
+          const owner = a.ownerId ? await membersRepo.findById(a.ownerId) : undefined;
+          return {
+            id: a.id,
+            name: a.name,
+            type: a.type,
+            identifier: a.identifier,
+            ownerName: owner?.name,
+            details: a.details ? JSON.parse(a.details) : undefined,
+          };
+        }),
+      );
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result) }],

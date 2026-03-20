@@ -55,17 +55,17 @@ describe("readBackySettings", () => {
     resetTestDb();
   });
 
-  test("returns empty strings when no settings exist", () => {
-    const creds = readBackySettings();
+  test("returns empty strings when no settings exist", async () => {
+    const creds = await readBackySettings();
     expect(creds.webhookUrl).toBe("");
     expect(creds.apiKey).toBe("");
   });
 
-  test("returns stored values", () => {
-    settingsRepo.set("backy.webhookUrl", "https://backy.example.com/webhook/123");
-    settingsRepo.set("backy.apiKey", "test-key-abc");
+  test("returns stored values", async () => {
+    await settingsRepo.set("backy.webhookUrl", "https://backy.example.com/webhook/123");
+    await settingsRepo.set("backy.apiKey", "test-key-abc");
 
-    const creds = readBackySettings();
+    const creds = await readBackySettings();
     expect(creds.webhookUrl).toBe("https://backy.example.com/webhook/123");
     expect(creds.apiKey).toBe("test-key-abc");
   });
@@ -76,22 +76,22 @@ describe("writeBackySettings", () => {
     resetTestDb();
   });
 
-  test("persists webhook URL and API key", () => {
-    writeBackySettings({
+  test("persists webhook URL and API key", async () => {
+    await writeBackySettings({
       webhookUrl: "https://backy.example.com/webhook/456",
       apiKey: "my-secret-key",
     });
 
-    expect(settingsRepo.get("backy.webhookUrl")).toBe("https://backy.example.com/webhook/456");
-    expect(settingsRepo.get("backy.apiKey")).toBe("my-secret-key");
+    expect(await settingsRepo.get("backy.webhookUrl")).toBe("https://backy.example.com/webhook/456");
+    expect(await settingsRepo.get("backy.apiKey")).toBe("my-secret-key");
   });
 
-  test("overwrites existing settings", () => {
-    writeBackySettings({ webhookUrl: "https://old.com", apiKey: "old-key" });
-    writeBackySettings({ webhookUrl: "https://new.com", apiKey: "new-key" });
+  test("overwrites existing settings", async () => {
+    await writeBackySettings({ webhookUrl: "https://old.com", apiKey: "old-key" });
+    await writeBackySettings({ webhookUrl: "https://new.com", apiKey: "new-key" });
 
-    expect(settingsRepo.get("backy.webhookUrl")).toBe("https://new.com");
-    expect(settingsRepo.get("backy.apiKey")).toBe("new-key");
+    expect(await settingsRepo.get("backy.webhookUrl")).toBe("https://new.com");
+    expect(await settingsRepo.get("backy.apiKey")).toBe("new-key");
   });
 });
 

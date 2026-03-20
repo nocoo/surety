@@ -93,29 +93,29 @@ describe("db/index", () => {
       expect(db).toBeDefined();
     });
 
-    test("auto-initializes schema", () => {
+    test("auto-initializes schema", async () => {
       createTestDb();
       // Verify tables exist by querying them
-      const members = membersRepo.findAll();
+      const members = await membersRepo.findAll();
       expect(members).toEqual([]);
     });
   });
 
   describe("resetTestDb", () => {
-    test("clears all data from test database", () => {
+    test("clears all data from test database", async () => {
       createTestDb();
-      membersRepo.create({ name: "张三", relation: "Self" });
-      expect(membersRepo.findAll()).toHaveLength(1);
+      await membersRepo.create({ name: "张三", relation: "Self" });
+      expect(await membersRepo.findAll()).toHaveLength(1);
 
       resetTestDb();
-      expect(membersRepo.findAll()).toHaveLength(0);
+      expect(await membersRepo.findAll()).toHaveLength(0);
     });
 
-    test("creates test database if no connection exists", () => {
+    test("creates test database if no connection exists", async () => {
       closeDb();
       resetTestDb();
       // Should work without error
-      const members = membersRepo.findAll();
+      const members = await membersRepo.findAll();
       expect(members).toEqual([]);
     });
   });
@@ -136,14 +136,14 @@ describe("db/index", () => {
       expect(repos.settings).toBeDefined();
     });
 
-    test("repos created from createAllRepos work correctly", () => {
+    test("repos created from createAllRepos work correctly", async () => {
       const db = createTestDb();
       const repos = createAllRepos(db);
 
-      const member = repos.members.create({ name: "张三", relation: "Self" });
+      const member = await repos.members.create({ name: "张三", relation: "Self" });
       expect(member.name).toBe("张三");
 
-      const all = repos.members.findAll();
+      const all = await repos.members.findAll();
       expect(all).toHaveLength(1);
     });
   });
@@ -205,11 +205,11 @@ describe("db/index", () => {
   });
 
   describe("initSchema", () => {
-    test("creates all expected tables", () => {
+    test("creates all expected tables", async () => {
       createTestDb();
-      const members = membersRepo.findAll();
+      const members = await membersRepo.findAll();
       expect(members).toEqual([]);
-      const insurers = insurersRepo.findAll();
+      const insurers = await insurersRepo.findAll();
       expect(insurers).toEqual([]);
     });
   });

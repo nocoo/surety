@@ -280,7 +280,7 @@ export interface SeedResult {
  *                (backward compat). Scripts should pass createAllRepos(db) to
  *                avoid the global db Proxy.
  */
-export function seedDatabase(repos?: AllRepos): SeedResult {
+export async function seedDatabase(repos?: AllRepos): Promise<SeedResult> {
   const r = repos ?? {
     members: membersRepo,
     assets: assetsRepo,
@@ -295,7 +295,7 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
   // Seed members
   const memberMap = new Map<string, number>();
   for (const member of familyMembers) {
-    const created = r.members.create(member);
+    const created = await r.members.create(member);
     memberMap.set(member.name, created.id);
   }
 
@@ -303,7 +303,7 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
   const assetMap = new Map<string, number>();
   for (const asset of familyAssets) {
     const ownerId = memberMap.get(asset.ownerName);
-    const created = r.assets.create({
+    const created = await r.assets.create({
       type: asset.type,
       name: asset.name,
       identifier: asset.identifier,
@@ -316,7 +316,7 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
   // Seed insurers (extract unique insurer names from policies)
   const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
   for (const name of uniqueInsurers) {
-    r.insurers.findOrCreate(name);
+    await r.insurers.findOrCreate(name);
   }
 
   // Seed policies with related data
@@ -325,7 +325,7 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
     const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
     const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
 
-    const policy = r.policies.create({
+    const policy = await r.policies.create({
       ...seed.policy,
       applicantId,
       insuredMemberId,
@@ -342,14 +342,14 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
           sharePercent: b.sharePercent,
           rankOrder: b.rankOrder,
         };
-        r.beneficiaries.create(bene);
+        await r.beneficiaries.create(bene);
       }
     }
 
     // Payments
     const paymentRecords = generatePayments(policy.id, seed.policy);
     if (paymentRecords.length > 0) {
-      r.payments.createMany(paymentRecords);
+      await r.payments.createMany(paymentRecords);
     }
 
     // Cash values
@@ -359,14 +359,14 @@ export function seedDatabase(repos?: AllRepos): SeedResult {
         policyYear: year,
         value: Math.round(seed.policy.premium * (idx + 1) * 0.3),
       }));
-      r.cashValues.createMany(cvRecords);
+      await r.cashValues.createMany(cvRecords);
     }
   }
 
   // Seed settings
-  r.settings.set("annualIncome", "600000");
-  r.settings.setNumber("emergencyFundMonths", 6);
-  r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
+  await r.settings.set("annualIncome", "600000");
+  await r.settings.setNumber("emergencyFundMonths", 6);
+  await r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
 
   return {
     members: familyMembers.length,

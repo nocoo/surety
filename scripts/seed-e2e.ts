@@ -86,7 +86,7 @@ sqlite.exec(`
 
 console.log("Seeding E2E data...");
 const repos = createAllRepos(db);
-const result = seedDatabase(repos);
+const result = await seedDatabase(repos);
 
 sqlite.close();
 

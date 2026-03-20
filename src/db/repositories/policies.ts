@@ -4,40 +4,40 @@ import { policies, type Policy, type NewPolicy } from "../schema";
 
 export function createPoliciesRepo(dbInstance: DbInstance) {
   return {
-    findAll(): Policy[] {
-      return dbInstance.select().from(policies).all();
+    async findAll(): Promise<Policy[]> {
+      return await dbInstance.select().from(policies).all();
     },
 
-    findById(id: number): Policy | undefined {
-      return dbInstance.select().from(policies).where(eq(policies.id, id)).get();
+    async findById(id: number): Promise<Policy | undefined> {
+      return await dbInstance.select().from(policies).where(eq(policies.id, id)).get();
     },
 
-    findByApplicantId(applicantId: number): Policy[] {
-      return dbInstance
+    async findByApplicantId(applicantId: number): Promise<Policy[]> {
+      return await dbInstance
         .select()
         .from(policies)
         .where(eq(policies.applicantId, applicantId))
         .all();
     },
 
-    findByInsuredMemberId(memberId: number): Policy[] {
-      return dbInstance
+    async findByInsuredMemberId(memberId: number): Promise<Policy[]> {
+      return await dbInstance
         .select()
         .from(policies)
         .where(eq(policies.insuredMemberId, memberId))
         .all();
     },
 
-    findByStatus(status: Policy["status"]): Policy[] {
-      return dbInstance.select().from(policies).where(eq(policies.status, status)).all();
+    async findByStatus(status: Policy["status"]): Promise<Policy[]> {
+      return await dbInstance.select().from(policies).where(eq(policies.status, status)).all();
     },
 
-    create(data: NewPolicy): Policy {
-      return dbInstance.insert(policies).values(data).returning().get();
+    async create(data: NewPolicy): Promise<Policy> {
+      return await dbInstance.insert(policies).values(data).returning().get();
     },
 
-    update(id: number, data: Partial<NewPolicy>): Policy | undefined {
-      return dbInstance
+    async update(id: number, data: Partial<NewPolicy>): Promise<Policy | undefined> {
+      return await dbInstance
         .update(policies)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(policies.id, id))
@@ -45,9 +45,9 @@ export function createPoliciesRepo(dbInstance: DbInstance) {
         .get();
     },
 
-    delete(id: number): boolean {
-      const result = dbInstance.delete(policies).where(eq(policies.id, id)).run() as unknown as { changes: number };
-      return result.changes > 0;
+    async delete(id: number): Promise<boolean> {
+      const rows = await dbInstance.delete(policies).where(eq(policies.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }
