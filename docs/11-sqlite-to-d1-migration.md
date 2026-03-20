@@ -82,6 +82,139 @@
 | Unit test DB | `:memory:` SQLite (本地 `bun:sqlite`) | 单元测试不走网络，保持极速 |
 | Transaction support | Worker 内部 D1 `batch()` | D1 binding 的 `batch()` 是原子操作；Worker proxy 暴露 `/batch` 端点 |
 | MCP Server | 通过 Worker proxy 访问 | 与主应用共享同一 Worker，无需独立 D1 Token |
+| **Repo DB injection** | **Factory pattern**: `createMembersRepo(db)` | Repo 不再模块级导入全局 `db`；调用方传入 request-scoped db instance |
+
+---
+
+## Repository DB Injection Design
+
+### Problem
+
+当前所有 repository 在模块顶层导入全局 `db`：
+
+```typescript
+// src/db/repositories/members.ts (BEFORE)
+import { db } from "../index";           // ← module-level global import
+
+export const membersRepo = {
+  findAll(): Member[] {
+    return db.select().from(members).all(); // ← uses global db
+  },
+  // ...
+};
+```
+
+如果只把方法改成 async 但保留模块级 `import { db }`，request-scoped 设计无法穿透到 repo 层——要么退回全局可变状态，要么用 `AsyncLocalStorage` 隐式传递（增加复杂度）。
+
+### Decision: Factory Pattern
+
+每个 repo 改为 **factory function**，由调用方传入 db instance：
+
+```typescript
+// src/db/repositories/members.ts (AFTER)
+import { eq } from "drizzle-orm";
+import { members, type Member, type NewMember } from "../schema";
+import type { DbInstance } from "../index";
+
+export function createMembersRepo(db: DbInstance) {
+  return {
+    async findAll(): Promise<Member[]> {
+      return db.select().from(members).all();
+    },
+
+    async findById(id: number): Promise<Member | undefined> {
+      return db.select().from(members).where(eq(members.id, id)).get();
+    },
+
+    async create(data: NewMember): Promise<Member> {
+      return db.insert(members).values(data).returning().get();
+    },
+
+    async update(id: number, data: Partial<NewMember>): Promise<Member | undefined> {
+      return db.update(members).set({ ...data, updatedAt: new Date() })
+        .where(eq(members.id, id)).returning().get();
+    },
+
+    async delete(id: number): Promise<boolean> {
+      const result = await db.delete(members).where(eq(members.id, id)).run();
+      return (result as unknown as { changes: number }).changes > 0;
+    },
+  };
+}
+
+export type MembersRepo = ReturnType<typeof createMembersRepo>;
+```
+
+### Request Flow (API route → repo)
+
+```typescript
+// src/app/api/members/route.ts (AFTER)
+import { getDbForRequest } from "@/db";
+import { createMembersRepo } from "@/db/repositories/members";
+
+export async function GET(request: Request) {
+  const db = getDbForRequest(request);          // request-scoped
+  const membersRepo = createMembersRepo(db);    // scoped repo
+  const members = await membersRepo.findAll();  // async
+  return Response.json(members);
+}
+```
+
+### Convenience: `createAllRepos(db)`
+
+`src/db/repositories/index.ts` 导出一个 helper 一次性创建全部 repo：
+
+```typescript
+// src/db/repositories/index.ts (AFTER)
+export function createAllRepos(db: DbInstance) {
+  return {
+    members: createMembersRepo(db),
+    insurers: createInsurersRepo(db),
+    assets: createAssetsRepo(db),
+    policies: createPoliciesRepo(db),
+    beneficiaries: createBeneficiariesRepo(db),
+    payments: createPaymentsRepo(db),
+    cashValues: createCashValuesRepo(db),
+    coverageItems: createCoverageItemsRepo(db),
+    settings: createSettingsRepo(db),
+  };
+}
+
+export type AllRepos = ReturnType<typeof createAllRepos>;
+```
+
+API route 可简化为：
+
+```typescript
+const db = getDbForRequest(request);
+const { members, policies } = createAllRepos(db);
+const allMembers = await members.findAll();
+```
+
+### Unit Test Compatibility
+
+单元测试中 `createTestDb()` 返回 `:memory:` db instance，直接传入 factory：
+
+```typescript
+// test
+const db = createTestDb();
+const membersRepo = createMembersRepo(db);
+await membersRepo.create({ name: "张三", ... });
+const all = await membersRepo.findAll();
+expect(all).toHaveLength(1);
+```
+
+无需 mock，无需 AsyncLocalStorage，无需全局状态。
+
+### Why Not AsyncLocalStorage
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Factory (chosen)** | 显式依赖、可测试、零 magic | 每个 route handler 多一行 `createAllRepos(db)` |
+| AsyncLocalStorage | 调用方不感知 db 来源 | 隐式依赖、调试困难、Bun 兼容性待验证、MCP Server 不在 Next.js 请求链中 |
+| Global Proxy (current) | 零改动 | 并发不安全、全局可变状态、测试隔离差 |
+
+Factory 是最显式、最安全的选择。额外的一行代码是值得的。
 
 ---
 
@@ -313,21 +446,22 @@ function createRemoteDb(client: WorkerDbClient) {
 | `drizzle.config.ts` | **Update** | `driver: "d1-http"` + Cloudflare management credentials |
 | `.env.example` | **Update** | 新增 `SURETY_WORKER_URL`, `SURETY_WORKER_SECRET`；管理面变量 |
 
-### Repository layer (9 files — all sync → async)
+### Repository layer (9 files — global singleton → factory + async)
 
-| File | Methods to async |
-|------|-----------------|
-| `src/db/repositories/members.ts` | `findAll`, `findById`, `create`, `update`, `delete` |
-| `src/db/repositories/insurers.ts` | `findAll`, `findById`, `create`, `update`, `delete` |
-| `src/db/repositories/assets.ts` | `findAll`, `findById`, `create`, `update`, `delete` |
-| `src/db/repositories/policies.ts` | `findAll`, `findById`, `findByInsuredMemberId`, `findByApplicantId`, `create`, `update`, `delete` |
-| `src/db/repositories/beneficiaries.ts` | `findByPolicyId`, `create`, `deleteByPolicyId`, `replaceForPolicy` |
-| `src/db/repositories/payments.ts` | `findByPolicyId`, `create`, `update`, `deleteByPolicyId` |
-| `src/db/repositories/cashValues.ts` | `findByPolicyId`, `replaceForPolicy` |
-| `src/db/repositories/coverageItems.ts` | `findByPolicyId`, `replaceForPolicy` |
-| `src/db/repositories/settings.ts` | `findAll`, `get`, `set`, `delete`, `getNumber`, `setNumber`, `getJson`, `setJson` |
+| File | Change |
+|------|--------|
+| `src/db/repositories/members.ts` | `membersRepo` → `createMembersRepo(db)`; all methods async |
+| `src/db/repositories/insurers.ts` | `insurersRepo` → `createInsurersRepo(db)`; all methods async |
+| `src/db/repositories/assets.ts` | `assetsRepo` → `createAssetsRepo(db)`; all methods async |
+| `src/db/repositories/policies.ts` | `policiesRepo` → `createPoliciesRepo(db)`; all methods async |
+| `src/db/repositories/beneficiaries.ts` | `beneficiariesRepo` → `createBeneficiariesRepo(db)`; all methods async |
+| `src/db/repositories/payments.ts` | `paymentsRepo` → `createPaymentsRepo(db)`; all methods async |
+| `src/db/repositories/cashValues.ts` | `cashValuesRepo` → `createCashValuesRepo(db)`; all methods async |
+| `src/db/repositories/coverageItems.ts` | `coverageItemsRepo` → `createCoverageItemsRepo(db)`; all methods async |
+| `src/db/repositories/settings.ts` | `settingsRepo` → `createSettingsRepo(db)`; all methods async |
+| `src/db/repositories/index.ts` | Add `createAllRepos(db)` helper; remove global re-exports |
 
-### API routes (add `await` + request-scoped db)
+### API routes (add `await` + request-scoped db via factory)
 
 | File | Repo calls |
 |------|-----------|
@@ -335,28 +469,32 @@ function createRemoteDb(client: WorkerDbClient) {
 | `src/app/api/members/[id]/route.ts` | `membersRepo.findById/update/delete` |
 | `src/app/api/policies/route.ts` | `policiesRepo.findAll/create`, `membersRepo.findAll`, `assetsRepo.findAll` |
 | `src/app/api/policies/[id]/route.ts` | `policiesRepo.findById/update/delete`, `membersRepo.findAll`, `assetsRepo.findAll` |
+| `src/app/api/policies/[id]/beneficiaries/route.ts` | `beneficiariesRepo.findByPolicyId/create/replaceForPolicy` |
+| `src/app/api/policies/[id]/payments/route.ts` | `paymentsRepo.findByPolicyId/create/update/deleteByPolicyId` |
+| `src/app/api/policies/[id]/coverage-items/route.ts` | `coverageItemsRepo.findByPolicyId/replaceForPolicy` |
+| `src/app/api/policies/[id]/coverage-items/[itemId]/route.ts` | `coverageItemsRepo.*` |
 | `src/app/api/assets/route.ts` | `assetsRepo.findAll/create` |
 | `src/app/api/assets/[id]/route.ts` | `assetsRepo.findById/update/delete` |
 | `src/app/api/insurers/route.ts` | `insurersRepo.findAll/create` |
 | `src/app/api/insurers/[id]/route.ts` | `insurersRepo.findById/update/delete` |
-| `src/app/api/beneficiaries/route.ts` | `beneficiariesRepo.*` |
-| `src/app/api/beneficiaries/[id]/route.ts` | `beneficiariesRepo.*` |
-| `src/app/api/payments/route.ts` | `paymentsRepo.*` |
-| `src/app/api/payments/[id]/route.ts` | `paymentsRepo.*` |
-| `src/app/api/cash-values/route.ts` | `cashValuesRepo.*` |
-| `src/app/api/cash-values/[id]/route.ts` | `cashValuesRepo.*` |
-| `src/app/api/coverage-items/route.ts` | `coverageItemsRepo.*` |
-| `src/app/api/coverage-items/[id]/route.ts` | `coverageItemsRepo.*` |
 | `src/app/api/settings/route.ts` | `settingsRepo.findAll/set` |
 | `src/app/api/settings/[key]/route.ts` | `settingsRepo.get/set/delete` |
+| `src/app/api/settings/2fa/status/route.ts` | TOTP via `settingsRepo` |
+| `src/app/api/settings/2fa/setup/route.ts` | TOTP via `settingsRepo` |
+| `src/app/api/settings/2fa/verify-setup/route.ts` | TOTP via `settingsRepo` |
+| `src/app/api/settings/2fa/disable/route.ts` | TOTP via `settingsRepo` |
+| `src/app/api/settings/backy/route.ts` | `settingsRepo.get/set` |
+| `src/app/api/settings/backy/push/route.ts` | `buildBackup()`, `settingsRepo` |
+| `src/app/api/settings/backy/test/route.ts` | `settingsRepo` |
+| `src/app/api/settings/backy/history/route.ts` | `settingsRepo` |
 | `src/app/api/backup/route.ts` | `buildBackup()`, `restoreBackup()` |
-| `src/app/api/database/switch/route.ts` | DB switching logic rewrite |
-| `src/app/api/dashboard/route.ts` | (if exists) or handled by `page.tsx` |
+| `src/app/api/database/switch/route.ts` | DB switching logic rewrite (cookie → `targetDb`) |
+| `src/app/api/dashboard/route.ts` | `policiesRepo`, `membersRepo` |
 | `src/app/api/coverage-lookup/route.ts` | `membersRepo`, `policiesRepo`, `insurersRepo`, `assetsRepo` |
 | `src/app/api/renewal-calendar/route.ts` | `policiesRepo.findAll`, `membersRepo.findAll` |
-| `src/app/api/live/route.ts` | health check async |
-| `src/app/api/auth/verify-2fa/route.ts` | `ensureDbFromRequest()`, `getTotpService()` (→ `settingsRepo`) |
-| `src/app/api/settings/2fa/*/route.ts` | TOTP operations via `settingsRepo` |
+| `src/app/api/live/route.ts` | Health check async |
+| `src/app/api/auth/verify-2fa/route.ts` | `getDbForRequest()`, `getTotpService()` → `settingsRepo` |
+| `src/app/api/auth/[...nextauth]/route.ts` | NextAuth config (may need DB for callbacks) |
 
 ### Server components and lib
 
@@ -629,53 +767,60 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 **Test**: Spike test 验证 `await db.select()` 在 bun-sqlite 下的行为
 
-### Commit 4: `refactor: async repositories (members, insurers, assets)`
+### Commit 4: `refactor: repo factory pattern (members, insurers, assets)`
 
 **Files**:
-- Update: `src/db/repositories/members.ts`
-- Update: `src/db/repositories/insurers.ts`
-- Update: `src/db/repositories/assets.ts`
-- Update: corresponding `src/__tests__/db/*.test.ts`
+- Update: `src/db/repositories/members.ts` — `membersRepo` → `createMembersRepo(db)`, all methods async
+- Update: `src/db/repositories/insurers.ts` — same pattern
+- Update: `src/db/repositories/assets.ts` — same pattern
+- Update: corresponding `src/__tests__/db/*.test.ts` — pass `createTestDb()` to factory, add `await`
 
-**Test**: 现有单元测试加 `await`，验证通过
+**Test**: 现有单元测试改用 factory + await，验证通过
 
-### Commit 5: `refactor: async repositories (policies, beneficiaries, payments)`
+### Commit 5: `refactor: repo factory pattern (policies, beneficiaries, payments)`
 
 **Files**:
-- Update: `src/db/repositories/policies.ts`
-- Update: `src/db/repositories/beneficiaries.ts`
-- Update: `src/db/repositories/payments.ts`
+- Update: `src/db/repositories/policies.ts` — same factory pattern
+- Update: `src/db/repositories/beneficiaries.ts` — same factory pattern
+- Update: `src/db/repositories/payments.ts` — same factory pattern
 - Update: corresponding test files
 
-**Test**: 现有单元测试加 `await`，验证通过
+**Test**: 现有单元测试改用 factory + await，验证通过
 
-### Commit 6: `refactor: async repositories (cashValues, coverageItems, settings)`
+### Commit 6: `refactor: repo factory pattern (cashValues, coverageItems, settings)`
 
 **Files**:
-- Update: `src/db/repositories/cashValues.ts`
-- Update: `src/db/repositories/coverageItems.ts`
-- Update: `src/db/repositories/settings.ts`
+- Update: `src/db/repositories/cashValues.ts` — same factory pattern
+- Update: `src/db/repositories/coverageItems.ts` — same factory pattern
+- Update: `src/db/repositories/settings.ts` — same factory pattern
+- Update: `src/db/repositories/index.ts` — add `createAllRepos(db)` helper
 - Update: corresponding test files + `src/__tests__/totp-module.test.ts`
 
-**Test**: 现有单元测试加 `await`，验证通过
+**Test**: 现有单元测试改用 factory + await，验证通过
 
 ### Commit 7: `refactor: async api routes (members, policies, assets, insurers)`
 
 **Files**:
 - Update: `src/app/api/members/route.ts`, `src/app/api/members/[id]/route.ts`
 - Update: `src/app/api/policies/route.ts`, `src/app/api/policies/[id]/route.ts`
+- Update: `src/app/api/policies/[id]/beneficiaries/route.ts`
+- Update: `src/app/api/policies/[id]/payments/route.ts`
+- Update: `src/app/api/policies/[id]/coverage-items/route.ts`
+- Update: `src/app/api/policies/[id]/coverage-items/[itemId]/route.ts`
 - Update: `src/app/api/assets/route.ts`, `src/app/api/assets/[id]/route.ts`
 - Update: `src/app/api/insurers/route.ts`, `src/app/api/insurers/[id]/route.ts`
+- All routes: `import { db }` → `getDbForRequest(request)` + `createAllRepos(db)`
 
 **Test**: `bun run lint` pass (no floating promises)
 
-### Commit 8: `refactor: async api routes (remaining entities)`
+### Commit 8: `refactor: async api routes (settings, lookup, calendar, live)`
 
 **Files**:
-- Update: beneficiaries, payments, cash-values, coverage-items API routes
 - Update: `src/app/api/settings/route.ts`, `src/app/api/settings/[key]/route.ts`
+- Update: `src/app/api/settings/backy/route.ts`, `.../push/route.ts`, `.../test/route.ts`, `.../history/route.ts`
 - Update: `src/app/api/coverage-lookup/route.ts`
 - Update: `src/app/api/renewal-calendar/route.ts`
+- Update: `src/app/api/dashboard/route.ts`
 - Update: `src/app/api/live/route.ts`
 
 **Test**: `bun run lint` pass
@@ -776,6 +921,6 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ## Open Questions
 
 1. **Worker proxy 延迟**：每次查询经过一次额外 HTTP 往返（应用 → Worker → D1）。Worker 到 D1 的延迟约 1ms（同 Colo），主要延迟在应用到 Worker 的网络往返（取决于 Railway 和 Worker 的地理位置，预估 50-200ms）。Surety 页面通常触发 1-3 次查询——是否可接受？
-2. **D1 Free Plan 配额**：每天 100,000 行读取 / 1,000 行写入。家庭工具够用，但 4 个 D1 数据库 + 频繁 E2E 可能消耗配额。
-3. **D1 batch 语句数上限**：单次 `batch()` 最多 100 条 statement（Paid plan），`restoreBackup()` 大数据量需要分批。
+2. **D1 Free Plan 配额**：每天 5 million 行读取 / 100,000 行写入（[官方 Pricing](https://developers.cloudflare.com/d1/platform/pricing/)）。家庭工具流量极低，绰绰有余。4 个 D1 数据库 + 频繁 E2E 测试需关注写入消耗。
+3. **D1 batch 规模限制**：官方文档未给出固定的 batch statement 数量上限。已知限制为：单条 SQL 最大 100KB、最多 100 个 bound parameter、每次 Worker invocation 最多 1000 次查询（Paid）/ 50 次（Free）、单次查询最长 30 秒（[官方 Limits](https://developers.cloudflare.com/d1/platform/limits/)）。`restoreBackup()` 的实际 batch 规模需按这些限制验证，不应假设固定上限。
 4. **`sqlite_sequence` 在 D1 中的行为**：`DELETE FROM sqlite_sequence` 用于重置自增 ID——需验证 D1 是否支持。
