@@ -46,9 +46,21 @@ function getWorkerSecret(): string {
 /**
  * Resolve the target D1 database name.
  * Priority: SURETY_TARGET_DB env > cookie > "production"
+ *
+ * Safety: when E2E_SKIP_AUTH is set (E2E runner), SURETY_TARGET_DB is mandatory.
+ * This prevents E2E tests from accidentally hitting production D1.
  */
 export function resolveTargetDb(cookieValue?: string): TargetDb {
   const envTarget = process.env.SURETY_TARGET_DB;
+
+  // Guard: E2E runner must explicitly choose a target DB
+  if (process.env.E2E_SKIP_AUTH === "true" && !envTarget) {
+    throw new Error(
+      "E2E safety guard: SURETY_TARGET_DB must be set when E2E_SKIP_AUTH=true. " +
+      "This prevents E2E tests from accidentally connecting to production D1.",
+    );
+  }
+
   if (envTarget && isValidTargetDb(envTarget)) return envTarget;
   if (cookieValue && isValidTargetDb(cookieValue)) return cookieValue;
   return "production";
