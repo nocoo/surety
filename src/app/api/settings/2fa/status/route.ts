@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,9 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await ensureDbFromRequest();
+  await getReposFromRequest();
   const totp = await getTotpService();
-  const status = totp.getStatus();
+  const status = await totp.getStatus();
 
   return NextResponse.json(status);
 }

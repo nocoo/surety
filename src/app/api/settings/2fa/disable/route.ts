@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   const token = body.token as string | undefined;
   const force = body.force === true;
 
-  await ensureDbFromRequest();
+  await getReposFromRequest();
   const totp = await getTotpService();
 
   // Force-disable path: session-scoped authorization via recovery code JWT claim
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         { status: 403 },
       );
     }
-    const result = totp.forceDisable();
+    const result = await totp.forceDisable();
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const result = totp.disable(token, session.user.email);
+  const result = await totp.disable(token, session.user.email);
 
   if ("error" in result) {
     const status = "locked" in result && result.locked ? 429 : 400;

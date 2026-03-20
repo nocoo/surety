@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { getTotpService, TRUSTED_DEVICE_COOKIE_NAME, TRUSTED_DEVICE_MAX_AGE } from "@/lib/totp";
 import { shouldIssueTrustedCookie } from "@/lib/proxy-logic";
 
@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
   const type = (body.type as string) || "totp"; // "totp" or "recovery"
   const rememberDevice = body.rememberDevice !== false; // default true
 
-  await ensureDbFromRequest();
+  await getReposFromRequest();
   const totp = await getTotpService();
 
   // Check 2FA is enabled
-  if (!totp.isEnabled()) {
+  if (!(await totp.isEnabled())) {
     return NextResponse.json({ error: "2FA is not enabled" }, { status: 400 });
   }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   // Recovery code is a break-glass credential — never grant persistent device trust.
   // Only TOTP verification can issue a trusted-device cookie.
   if (shouldIssueTrustedCookie(type as "totp" | "recovery", rememberDevice)) {
-    const cookieValue = totp.createTrustedCookieValue(session.user.email);
+    const cookieValue = await totp.createTrustedCookieValue(session.user.email);
     response.cookies.set(TRUSTED_DEVICE_COOKIE_NAME, cookieValue, {
       httpOnly: true,
       sameSite: "lax",

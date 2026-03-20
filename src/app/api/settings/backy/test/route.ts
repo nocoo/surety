@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { readBackySettings } from "@/services/backy";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
  * Returns the HTTP status and whether the connection succeeded.
  */
 export async function POST() {
-  await ensureDbFromRequest();
+  await getReposFromRequest();
 
-  const { webhookUrl, apiKey } = readBackySettings();
+  const { webhookUrl, apiKey } = await readBackySettings();
 
   if (!webhookUrl || !apiKey) {
     return NextResponse.json(

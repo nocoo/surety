@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { readBackySettings, writeBackySettings, maskApiKey, getEnvironment } from "@/services/backy";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
  * GET /api/settings/backy — read Backy webhook configuration.
  */
 export async function GET() {
-  await ensureDbFromRequest();
+  await getReposFromRequest();
 
-  const { webhookUrl, apiKey } = readBackySettings();
+  const { webhookUrl, apiKey } = await readBackySettings();
 
   return NextResponse.json({
     webhookUrl,
@@ -24,7 +24,7 @@ export async function GET() {
  * PUT /api/settings/backy — update Backy webhook configuration.
  */
 export async function PUT(request: NextRequest) {
-  await ensureDbFromRequest();
+  await getReposFromRequest();
 
   const body = await request.json();
   const webhookUrl = typeof body.webhookUrl === "string" ? body.webhookUrl.trim() : "";
@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "apiKey is required" }, { status: 400 });
   }
 
-  writeBackySettings({ webhookUrl, apiKey });
+  await writeBackySettings({ webhookUrl, apiKey });
 
   return NextResponse.json({
     webhookUrl,

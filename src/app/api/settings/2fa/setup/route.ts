@@ -5,7 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -16,11 +16,11 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await ensureDbFromRequest();
+  await getReposFromRequest();
   const totp = await getTotpService();
 
   // Check if already enabled
-  if (totp.isEnabled()) {
+  if (await totp.isEnabled()) {
     return NextResponse.json(
       { error: "2FA is already enabled. Disable it first to re-setup." },
       { status: 409 },

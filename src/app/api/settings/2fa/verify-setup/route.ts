@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await ensureDbFromRequest();
+  await getReposFromRequest();
   const totp = await getTotpService();
 
   // Already enabled?
-  if (totp.isEnabled()) {
+  if (await totp.isEnabled()) {
     return NextResponse.json(
       { error: "2FA is already enabled" },
       { status: 409 },
