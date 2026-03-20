@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensureDbFromRequest();
-  const { insurersRepo, policiesRepo } = await import("@/db/repositories");
-  const insurers = insurersRepo.findAll();
-  const policies = policiesRepo.findAll();
+  const { repos } = await getReposFromRequest();
+  const insurers = await repos.insurers.findAll();
+  const policies = await repos.policies.findAll();
 
   // Count policies per insurer by name
   const policyCountMap = new Map<string, number>();
@@ -26,8 +25,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  await ensureDbFromRequest();
-  const { insurersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
 
   const body = await request.json();
 
@@ -39,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Check for duplicate name
-  const existing = insurersRepo.findByName(body.name);
+  const existing = await repos.insurers.findByName(body.name);
   if (existing) {
     return NextResponse.json(
       { error: "Insurer with this name already exists" },
@@ -47,7 +45,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const insurer = insurersRepo.create({
+  const insurer = await repos.insurers.create({
     name: body.name,
     phone: body.phone || null,
     website: body.website || null,

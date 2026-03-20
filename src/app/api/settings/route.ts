@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { SENSITIVE_KEY_PREFIX } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
-  const settings = settingsRepo.findAll();
+  const { repos } = await getReposFromRequest();
+  const settings = await repos.settings.findAll();
 
   // Filter out sensitive TOTP keys — managed exclusively via /api/settings/2fa/*
   const result = settings
@@ -21,8 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
 
   const body = await request.json();
 
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const setting = settingsRepo.set(body.key, String(body.value));
+  const setting = await repos.settings.set(body.key, String(body.value));
 
   return NextResponse.json(
     {

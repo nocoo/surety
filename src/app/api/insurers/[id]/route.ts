@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { insurersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const insurerId = parseInt(id, 10);
 
@@ -15,7 +14,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const insurer = insurersRepo.findById(insurerId);
+  const insurer = await repos.insurers.findById(insurerId);
 
   if (!insurer) {
     return NextResponse.json({ error: "Insurer not found" }, { status: 404 });
@@ -30,8 +29,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { insurersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const insurerId = parseInt(id, 10);
 
@@ -43,7 +41,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   // Check for duplicate name if name is being updated
   if (body.name) {
-    const existing = insurersRepo.findByName(body.name);
+    const existing = await repos.insurers.findByName(body.name);
     if (existing && existing.id !== insurerId) {
       return NextResponse.json(
         { error: "Insurer with this name already exists" },
@@ -52,7 +50,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
   }
 
-  const updated = insurersRepo.update(insurerId, {
+  const updated = await repos.insurers.update(insurerId, {
     name: body.name,
     phone: body.phone,
     website: body.website,
@@ -71,8 +69,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { insurersRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const insurerId = parseInt(id, 10);
 
@@ -80,7 +77,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const deleted = insurersRepo.delete(insurerId);
+  const deleted = await repos.insurers.delete(insurerId);
 
   if (!deleted) {
     return NextResponse.json({ error: "Insurer not found" }, { status: 404 });

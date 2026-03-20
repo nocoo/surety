@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { SENSITIVE_KEY_PREFIX } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,7 @@ const SENSITIVE_DENIED = NextResponse.json(
 );
 
 export async function GET(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
   if (!key) {
@@ -27,7 +26,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   if (isSensitiveKey(key)) return SENSITIVE_DENIED;
 
-  const value = settingsRepo.get(key);
+  const value = await repos.settings.get(key);
 
   return NextResponse.json({
     key,
@@ -36,8 +35,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
   if (!key) {
@@ -52,7 +50,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "value is required" }, { status: 400 });
   }
 
-  const setting = settingsRepo.set(key, String(body.value));
+  const setting = await repos.settings.set(key, String(body.value));
 
   return NextResponse.json({
     key: setting.key,
@@ -61,8 +59,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  await ensureDbFromRequest();
-  const { settingsRepo } = await import("@/db/repositories");
+  const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
   if (!key) {
@@ -71,7 +68,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   if (isSensitiveKey(key)) return SENSITIVE_DENIED;
 
-  const deleted = settingsRepo.delete(key);
+  const deleted = await repos.settings.delete(key);
 
   if (!deleted) {
     return NextResponse.json({ error: "Setting not found" }, { status: 404 });

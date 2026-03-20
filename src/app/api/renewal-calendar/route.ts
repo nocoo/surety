@@ -3,19 +3,16 @@ import {
   buildRenewalCalendarData,
   type PolicyForRenewal,
 } from "@/lib/renewal-calendar-vm";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // Ensure database connection matches cookie setting
-  await ensureDbFromRequest();
+  const { repos } = await getReposFromRequest();
 
-  const { policiesRepo, membersRepo } = await import("@/db/repositories");
-
-  const policies = policiesRepo.findAll();
-  const members = membersRepo.findAll();
+  const policies = await repos.policies.findAll();
+  const members = await repos.members.findAll();
 
   const activePolicies = policies.filter(
     (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate)

@@ -8,15 +8,12 @@ import {
   type SelectionType,
 } from "@/lib/coverage-lookup-vm";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
-import { ensureDbFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  await ensureDbFromRequest();
-  const { membersRepo, policiesRepo, insurersRepo, assetsRepo } = await import(
-    "@/db/repositories"
-  );
+  const { repos } = await getReposFromRequest();
 
   // Get query params
   const searchParams = request.nextUrl.searchParams;
@@ -25,7 +22,7 @@ export async function GET(request: NextRequest) {
   const selectedId = idParam ? parseInt(idParam, 10) : undefined;
 
   // Get all members
-  const allMembers = membersRepo.findAll();
+  const allMembers = await repos.members.findAll();
   const members: MemberForCoverage[] = allMembers.map((m) => ({
     id: m.id,
     name: m.name,
@@ -34,7 +31,7 @@ export async function GET(request: NextRequest) {
   }));
 
   // Get all assets
-  const allAssets = assetsRepo.findAll();
+  const allAssets = await repos.assets.findAll();
   const assets: AssetForCoverage[] = allAssets.map((a) => ({
     id: a.id,
     name: a.name,
@@ -43,14 +40,14 @@ export async function GET(request: NextRequest) {
   }));
 
   // Get all insurers for phone lookup
-  const allInsurers = insurersRepo.findAll();
+  const allInsurers = await repos.insurers.findAll();
   const insurerPhoneMap = new Map<string, string | null>();
   for (const insurer of allInsurers) {
     insurerPhoneMap.set(insurer.name, insurer.phone);
   }
 
   // Get all policies and group by insured member/asset
-  const allPolicies = policiesRepo.findAll();
+  const allPolicies = await repos.policies.findAll();
   const policiesByMember = new Map<number, PolicyForCoverage[]>();
   const policiesByAsset = new Map<number, PolicyForCoverage[]>();
 

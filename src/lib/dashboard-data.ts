@@ -1,4 +1,5 @@
 import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
+import type { AllRepos } from "@/db/repositories";
 
 const categoryLabels: Record<string, string> = {
   Life: "寿险",
@@ -9,10 +10,9 @@ const categoryLabels: Record<string, string> = {
   Property: "财产险",
 };
 
-export async function getDashboardData() {
-  const { policiesRepo, membersRepo } = await import("@/db/repositories");
-  const policies = policiesRepo.findAll();
-  const members = membersRepo.findAll();
+export async function getDashboardData(repos: AllRepos) {
+  const policies = await repos.policies.findAll();
+  const members = await repos.members.findAll();
 
   const activePolicies = policies.filter(
     (p) => isEffectivelyActive(p.status as PolicyDbStatus, p.expiryDate)
