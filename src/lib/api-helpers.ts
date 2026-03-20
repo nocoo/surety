@@ -1,14 +1,38 @@
 /**
- * API helper functions for ensuring correct database connection.
+ * API helper functions for request-scoped database access.
  */
-import { cookies } from "next/headers";
-import { ensureDatabaseFromCookie } from "@/db/index";
+import { getDbForRequest, type DbInstance } from "@/db/index";
+import { createAllRepos, type AllRepos } from "@/db/repositories";
 
 /**
- * Ensure the database connection matches the user's cookie setting.
- * Call this at the start of every API route handler.
+ * Get request-scoped database and repos from cookie.
+ * Reads surety-database cookie from next/headers.
+ *
+ * Note: This uses dynamic import of next/headers to avoid
+ * breaking unit tests that don't run in Next.js context.
+ */
+export async function getReposFromRequest(): Promise<{ db: DbInstance; repos: AllRepos }> {
+  let targetDb: string | undefined;
+
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    targetDb = cookieStore.get("surety-database")?.value;
+  } catch {
+    // Outside Next.js context (e.g., tests) — use defaults
+  }
+
+  const db = getDbForRequest(targetDb as Parameters<typeof getDbForRequest>[0]);
+  const repos = createAllRepos(db);
+  return { db, repos };
+}
+
+/**
+ * @deprecated Use getReposFromRequest() instead.
+ * Kept for backward compatibility during migration.
  */
 export async function ensureDbFromRequest(): Promise<void> {
-  const cookieStore = await cookies();
-  ensureDatabaseFromCookie(cookieStore.get("surety-database")?.value);
+  // No-op: the db Proxy handles routing automatically.
+  // API routes using dynamic import("@/db/repositories") will
+  // get the global singleton repos backed by the db Proxy.
 }
