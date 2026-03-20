@@ -101,11 +101,11 @@ export function resolveProxyAction(ctx: ProxyContext): ProxyAction {
  * - email: the user's email
  * - verifier: function that validates the cookie (injected from TotpService)
  */
-export function checkTrustedDevice(
+export async function checkTrustedDevice(
   cookieValue: string | undefined,
   email: string,
-  verifier: (cookieValue: string, email: string) => boolean,
-): boolean {
+  verifier: (cookieValue: string, email: string) => boolean | Promise<boolean>,
+): Promise<boolean> {
   if (!cookieValue) return false;
   return verifier(cookieValue, email);
 }

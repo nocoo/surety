@@ -92,7 +92,7 @@ const authHandler = auth(async (req) => {
     try {
       const { getTotpService } = await import("@/lib/totp");
       const totp = await getTotpService();
-      twoFactorEnabled = totp.isEnabled();
+      twoFactorEnabled = await totp.isEnabled();
     } catch {
       // DB unavailable — fail closed (assume 2FA still enabled)
     }

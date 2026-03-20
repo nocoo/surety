@@ -792,7 +792,7 @@ export interface SeedResult {
  *                (backward compat). Scripts should pass createAllRepos(db) to
  *                avoid the global db Proxy.
  */
-export function seedExampleDatabase(repos?: AllRepos): SeedResult {
+export async function seedExampleDatabase(repos?: AllRepos): Promise<SeedResult> {
   const r = repos ?? {
     members: membersRepo,
     assets: assetsRepo,
@@ -808,14 +808,14 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
   // Seed insurers first
   const insurerMap = new Map<string, number>();
   for (const insurer of exampleInsurers) {
-    const created = r.insurers.create(insurer);
+    const created = await r.insurers.create(insurer);
     insurerMap.set(insurer.name, created.id);
   }
 
   // Seed members
   const memberMap = new Map<string, number>();
   for (const member of exampleMembers) {
-    const created = r.members.create(member);
+    const created = await r.members.create(member);
     memberMap.set(member.name, created.id);
   }
 
@@ -823,7 +823,7 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
   const assetMap = new Map<string, number>();
   for (const asset of exampleAssets) {
     const ownerId = memberMap.get(asset.ownerName);
-    const created = r.assets.create({
+    const created = await r.assets.create({
       type: asset.type,
       name: asset.name,
       identifier: asset.identifier,
@@ -850,7 +850,7 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
       referenceDate
     );
 
-    const policy = r.policies.create({
+    const policy = await r.policies.create({
       ...seed.policy,
       applicantId,
       insuredMemberId,
@@ -869,14 +869,14 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
           sharePercent: b.sharePercent,
           rankOrder: b.rankOrder,
         };
-        r.beneficiaries.create(bene);
+        await r.beneficiaries.create(bene);
       }
     }
 
     // Payments
     const paymentRecords = generatePayments(policy.id, seed.policy);
     if (paymentRecords.length > 0) {
-      r.payments.createMany(paymentRecords);
+      await r.payments.createMany(paymentRecords);
     }
 
     // Cash values (for life insurance and annuity)
@@ -886,7 +886,7 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
         policyYear: year,
         value: Math.round(seed.policy.premium * (idx + 1) * 0.4),
       }));
-      r.cashValues.createMany(cvRecords);
+      await r.cashValues.createMany(cvRecords);
     }
 
     // Coverage items
@@ -895,15 +895,15 @@ export function seedExampleDatabase(repos?: AllRepos): SeedResult {
         ...item,
         policyId: policy.id,
       }));
-      r.coverageItems.createMany(items);
+      await r.coverageItems.createMany(items);
     }
   }
 
   // Seed settings
-  r.settings.set("annualIncome", "480000");
-  r.settings.setNumber("emergencyFundMonths", 6);
-  r.settings.setJson("riskTolerance", { level: "moderate", description: "稳健型投资偏好" });
-  r.settings.set("familyLocation", "上海市浦东新区");
+  await r.settings.set("annualIncome", "480000");
+  await r.settings.setNumber("emergencyFundMonths", 6);
+  await r.settings.setJson("riskTolerance", { level: "moderate", description: "稳健型投资偏好" });
+  await r.settings.set("familyLocation", "上海市浦东新区");
 
   return {
     members: exampleMembers.length,

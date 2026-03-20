@@ -45,7 +45,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 
   let diff = 0;
   for (let i = 0; i < bufA.length; i++) {
-    diff |= bufA[i] ^ bufB[i];
+    diff |= bufA[i]! ^ bufB[i]!;
   }
 
   return diff === 0;

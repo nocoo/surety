@@ -100,7 +100,7 @@ sqlite.exec(`
 // Seed data
 console.log("🌱 Seeding example data...\n");
 const repos = createAllRepos(db);
-const result = seedExampleDatabase(repos);
+const result = await seedExampleDatabase(repos);
 
 console.log("✅ Example database created successfully!\n");
 console.log(`   Members: ${result.members}`);

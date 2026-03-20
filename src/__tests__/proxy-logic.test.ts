@@ -237,36 +237,36 @@ describe("checkTrustedDevice", () => {
   const alwaysTrue = () => true;
   const alwaysFalse = () => false;
 
-  test("returns false when cookie is undefined", () => {
-    expect(checkTrustedDevice(undefined, "user@example.com", alwaysTrue)).toBe(false);
+  test("returns false when cookie is undefined", async () => {
+    expect(await checkTrustedDevice(undefined, "user@example.com", alwaysTrue)).toBe(false);
   });
 
-  test("returns false when cookie is empty string", () => {
+  test("returns false when cookie is empty string", async () => {
     // empty string is falsy — checkTrustedDevice should treat it as "no cookie"
-    expect(checkTrustedDevice("", "user@example.com", alwaysTrue)).toBe(false);
+    expect(await checkTrustedDevice("", "user@example.com", alwaysTrue)).toBe(false);
   });
 
-  test("delegates to verifier when cookie is present", () => {
-    expect(checkTrustedDevice("some-value", "user@example.com", alwaysTrue)).toBe(true);
-    expect(checkTrustedDevice("some-value", "user@example.com", alwaysFalse)).toBe(false);
+  test("delegates to verifier when cookie is present", async () => {
+    expect(await checkTrustedDevice("some-value", "user@example.com", alwaysTrue)).toBe(true);
+    expect(await checkTrustedDevice("some-value", "user@example.com", alwaysFalse)).toBe(false);
   });
 
-  test("passes correct arguments to verifier", () => {
+  test("passes correct arguments to verifier", async () => {
     const capturedArgs: string[][] = [];
     const capturingVerifier = (cv: string, em: string) => {
       capturedArgs.push([cv, em]);
       return true;
     };
 
-    checkTrustedDevice("cookie-value-123", "alice@example.com", capturingVerifier);
+    await checkTrustedDevice("cookie-value-123", "alice@example.com", capturingVerifier);
     expect(capturedArgs).toEqual([["cookie-value-123", "alice@example.com"]]);
   });
 
-  test("different email → different verifier result possible", () => {
+  test("different email → different verifier result possible", async () => {
     const emailSpecificVerifier = (_cv: string, email: string) => email === "trusted@example.com";
 
-    expect(checkTrustedDevice("cookie", "trusted@example.com", emailSpecificVerifier)).toBe(true);
-    expect(checkTrustedDevice("cookie", "untrusted@example.com", emailSpecificVerifier)).toBe(false);
+    expect(await checkTrustedDevice("cookie", "trusted@example.com", emailSpecificVerifier)).toBe(true);
+    expect(await checkTrustedDevice("cookie", "untrusted@example.com", emailSpecificVerifier)).toBe(false);
   });
 });
 
