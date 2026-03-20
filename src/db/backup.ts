@@ -274,19 +274,80 @@ const INSERT_ORDER: readonly TableKey[] = [
 ];
 
 /**
- * Restore data from a BackupData object via Drizzle ORM.
+ * A single SQL statement with optional bind params.
+ * Used by the batch executor to send all restore operations at once.
+ */
+export interface SqlStatement {
+  sql: string;
+  params: unknown[];
+}
+
+/**
+ * Batch executor function type.
+ * When provided, restoreBackup collects all SQL statements and calls this
+ * function once with the full array. The executor is responsible for atomicity.
+ *
+ * For D1: maps to WorkerDbClient.batch() which uses D1's atomic batch API.
+ * For bun-sqlite: not needed (uses BEGIN/COMMIT/ROLLBACK).
+ */
+export type BatchExecuteFn = (statements: SqlStatement[]) => Promise<void>;
+
+/**
+ * Build a parameterized INSERT statement from a table name and camelCase row data.
+ * Converts camelCase keys to snake_case column names using the column mapping.
+ */
+function buildInsertStatement(
+  tableName: string,
+  row: Record<string, unknown>,
+  camelToSnake: Record<string, string>,
+): SqlStatement {
+  const columns: string[] = [];
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+
+  for (const [camelKey, value] of Object.entries(row)) {
+    const snakeKey = camelToSnake[camelKey] ?? camelKey;
+    columns.push(snakeKey);
+    // Convert Date objects to epoch seconds for SQLite storage
+    if (value instanceof Date) {
+      values.push(Math.floor(value.getTime() / 1000));
+    } else if (typeof value === "boolean") {
+      values.push(value ? 1 : 0);
+    } else {
+      values.push(value);
+    }
+    placeholders.push("?");
+  }
+
+  return {
+    sql: `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES (${placeholders.join(", ")})`,
+    params: values,
+  };
+}
+
+/**
+ * Restore data from a BackupData object.
  * This is a FULL DESTRUCTIVE REPLACE:
  *   1. Delete all existing data (children first)
  *   2. Reset autoincrement sequences
  *   3. Insert backup rows preserving original IDs (parents first)
  *
- * Atomicity: uses raw SQL BEGIN/COMMIT/ROLLBACK via the db instance.
- * For bun-sqlite this is a true local transaction.
- * For sqlite-proxy/D1, the Worker can handle individual statements.
+ * Atomicity strategy:
+ * - When `batchExecute` is provided (D1/Worker path): all statements are collected
+ *   and sent as a single batch call. D1 batch() is atomic (all-or-nothing).
+ * - When `batchExecute` is omitted (bun-sqlite/test path): uses Drizzle ORM insert
+ *   wrapped in BEGIN/COMMIT/ROLLBACK for local transaction atomicity.
  *
+ * @param db - Drizzle database instance
+ * @param payload - Backup data to restore
+ * @param batchExecute - Optional batch executor for D1 atomic execution
  * @throws Error if validation fails or any SQL operation errors
  */
-export async function restoreBackup(db: DbInstance, payload: BackupData): Promise<RestoreCounts> {
+export async function restoreBackup(
+  db: DbInstance,
+  payload: BackupData,
+  batchExecute?: BatchExecuteFn,
+): Promise<RestoreCounts> {
   const error = validateBackup(payload);
   if (error) {
     throw new Error(`Invalid backup: ${error}`);
@@ -294,50 +355,77 @@ export async function restoreBackup(db: DbInstance, payload: BackupData): Promis
 
   const { data } = payload;
 
-  // Wrap in a transaction for atomicity
-  await db.run(sql.raw("BEGIN TRANSACTION"));
-  try {
+  const counts: RestoreCounts = {
+    members: 0,
+    insurers: 0,
+    assets: 0,
+    policies: 0,
+    beneficiaries: 0,
+    payments: 0,
+    cashValues: 0,
+    coverageItems: 0,
+    settings: 0,
+  };
+
+  if (batchExecute) {
+    // D1 path: collect all statements and execute atomically via batch API
+    const statements: SqlStatement[] = [];
+
     // 1. Clear all tables (FK-safe order)
     for (const key of DELETE_ORDER) {
-      const tableName = TABLE_NAME_MAP[key];
-      await db.run(sql.raw(`DELETE FROM ${tableName}`));
+      statements.push({ sql: `DELETE FROM ${TABLE_NAME_MAP[key]}`, params: [] });
     }
-    await db.run(sql.raw("DELETE FROM sqlite_sequence"));
+    statements.push({ sql: "DELETE FROM sqlite_sequence", params: [] });
 
-    // 2. Insert rows (FK-safe order)
-    const counts: RestoreCounts = {
-      members: 0,
-      insurers: 0,
-      assets: 0,
-      policies: 0,
-      beneficiaries: 0,
-      payments: 0,
-      cashValues: 0,
-      coverageItems: 0,
-      settings: 0,
-    };
-
+    // 2. Build INSERT statements (FK-safe order)
     for (const key of INSERT_ORDER) {
       const rows = data[key];
       if (!rows || rows.length === 0) continue;
 
       const table = SCHEMA_TABLE_MAP[key];
-      const { snakeToCamel } = getColumnMapping(table);
+      const { snakeToCamel, camelToSnake } = getColumnMapping(table);
+      const tableName = TABLE_NAME_MAP[key];
 
-      // Convert snake_case backup rows → camelCase Drizzle rows
-      const drizzleRows = rows.map((row) => fromBackupRow(row, snakeToCamel));
-
-      // Insert via Drizzle ORM (handles column mapping automatically)
-      for (const row of drizzleRows) {
-        await db.insert(table).values(row).run();
+      for (const row of rows) {
+        const drizzleRow = fromBackupRow(row, snakeToCamel);
+        statements.push(buildInsertStatement(tableName, drizzleRow, camelToSnake));
       }
       counts[key] = rows.length;
     }
 
-    await db.run(sql.raw("COMMIT"));
-    return counts;
-  } catch (err) {
-    await db.run(sql.raw("ROLLBACK"));
-    throw err;
+    await batchExecute(statements);
+  } else {
+    // bun-sqlite path: local transaction with Drizzle ORM insert
+    await db.run(sql.raw("BEGIN TRANSACTION"));
+    try {
+      // 1. Clear all tables (FK-safe order)
+      for (const key of DELETE_ORDER) {
+        const tableName = TABLE_NAME_MAP[key];
+        await db.run(sql.raw(`DELETE FROM ${tableName}`));
+      }
+      await db.run(sql.raw("DELETE FROM sqlite_sequence"));
+
+      // 2. Insert rows via Drizzle ORM (FK-safe order)
+      for (const key of INSERT_ORDER) {
+        const rows = data[key];
+        if (!rows || rows.length === 0) continue;
+
+        const table = SCHEMA_TABLE_MAP[key];
+        const { snakeToCamel } = getColumnMapping(table);
+        const drizzleRows = rows.map((row) => fromBackupRow(row, snakeToCamel));
+
+        for (const row of drizzleRows) {
+          await db.insert(table).values(row).run();
+        }
+        counts[key] = rows.length;
+      }
+
+      await db.run(sql.raw("COMMIT"));
+    } catch (err) {
+      await db.run(sql.raw("ROLLBACK"));
+      throw err;
+    }
   }
+
+  return counts;
 }

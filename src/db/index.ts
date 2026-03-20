@@ -131,6 +131,23 @@ export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInsta
   return createRemoteDb(targetDb);
 }
 
+/**
+ * Create a batch executor for the given target database.
+ * Uses WorkerDbClient.batch() which maps to D1's atomic batch API.
+ *
+ * Returns undefined in test environment (bun-sqlite uses local transactions).
+ */
+export function createBatchExecutor(
+  targetDb: TargetDb = "production",
+): ((statements: Array<{ sql: string; params: unknown[] }>) => Promise<void>) | undefined {
+  if (isTestEnv()) return undefined;
+
+  const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
+  return async (statements) => {
+    await client.batch(statements.map((s) => ({ sql: s.sql, params: s.params })));
+  };
+}
+
 // ---------- Test database (bun:sqlite :memory:) ----------
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

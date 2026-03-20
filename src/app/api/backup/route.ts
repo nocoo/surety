@@ -25,7 +25,7 @@ export async function GET() {
  * Full destructive replace: clears all existing data, then imports.
  */
 export async function POST(request: NextRequest) {
-  const { db } = await getReposFromRequest();
+  const { db, batchExecute } = await getReposFromRequest();
   const body: unknown = await request.json();
 
   const error = validateBackup(body);
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const counts = await restoreBackup(db, body as any);
+    const counts = await restoreBackup(db, body as any, batchExecute);
     return NextResponse.json({ success: true, restored: counts });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

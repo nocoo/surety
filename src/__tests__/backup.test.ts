@@ -17,6 +17,8 @@ import {
   validateBackup,
   ALL_TABLE_KEYS,
   type BackupData,
+  type SqlStatement,
+  type BatchExecuteFn,
 } from "@/db/backup";
 import type { DbInstance } from "@/db";
 
@@ -383,6 +385,134 @@ describe("backup service", () => {
       const members = rawQuery("members") as { name: string }[];
       expect(members.length).toBe(1);
       expect(members[0]!.name).toBe("Should survive");
+    });
+  });
+
+  // ── restoreBackup with batchExecute (D1 path) ──
+
+  describe("restoreBackup with batchExecute", () => {
+    /**
+     * A mock batch executor that captures statements and executes them
+     * against the in-memory SQLite database via raw SQL.
+     */
+    function createMockBatchExecutor(): {
+      executor: BatchExecuteFn;
+      captured: SqlStatement[];
+    } {
+      const captured: SqlStatement[] = [];
+      const raw = getRawSqlite();
+      const executor: BatchExecuteFn = async (statements) => {
+        captured.push(...statements);
+        // Execute all statements against the test database for verification
+        raw.exec("BEGIN TRANSACTION");
+        try {
+          for (const stmt of statements) {
+            raw.prepare(stmt.sql).run(...stmt.params);
+          }
+          raw.exec("COMMIT");
+        } catch (err) {
+          raw.exec("ROLLBACK");
+          throw err;
+        }
+      };
+      return { executor, captured };
+    }
+
+    test("collects and executes all statements via batchExecute", async () => {
+      await seedFamily();
+      const backup = await buildBackup(db);
+
+      resetTestDb();
+      const { executor, captured } = createMockBatchExecutor();
+      const counts = await restoreBackup(db, backup, executor);
+
+      // Should have collected DELETE + INSERT statements
+      expect(captured.length).toBeGreaterThan(0);
+
+      // Should have DELETEs for all tables + sqlite_sequence
+      const deleteStmts = captured.filter((s) => s.sql.startsWith("DELETE FROM"));
+      expect(deleteStmts.length).toBe(10); // 9 tables + sqlite_sequence
+
+      // Should have INSERTs
+      const insertStmts = captured.filter((s) => s.sql.startsWith("INSERT INTO"));
+      expect(insertStmts.length).toBeGreaterThan(0);
+
+      // Counts should be correct
+      expect(counts.members).toBe(2);
+      expect(counts.insurers).toBe(1);
+      expect(counts.policies).toBe(1);
+      expect(counts.settings).toBe(2);
+    });
+
+    test("INSERT statements have correct column names and params", async () => {
+      await seedFamily();
+      const backup = await buildBackup(db);
+
+      resetTestDb();
+      const { executor, captured } = createMockBatchExecutor();
+      await restoreBackup(db, backup, executor);
+
+      // Find a member INSERT statement
+      const memberInsert = captured.find((s) => s.sql.startsWith("INSERT INTO members"));
+      expect(memberInsert).toBeDefined();
+      expect(memberInsert!.sql).toContain("name");
+      expect(memberInsert!.sql).toContain("relation");
+      expect(memberInsert!.params.length).toBeGreaterThan(0);
+    });
+
+    test("batch path restores data correctly", async () => {
+      await seedFamily();
+      const backup = await buildBackup(db);
+
+      resetTestDb();
+      const { executor } = createMockBatchExecutor();
+      await restoreBackup(db, backup, executor);
+
+      // Verify data was actually inserted via the executor
+      const members = rawQuery("members") as { name: string }[];
+      expect(members.length).toBe(2);
+      expect(members[0]!.name).toBe("张三");
+    });
+
+    test("batch path handles Date and boolean conversions", async () => {
+      await seedFamily();
+      const backup = await buildBackup(db);
+
+      resetTestDb();
+      const { executor, captured } = createMockBatchExecutor();
+      await restoreBackup(db, backup, executor);
+
+      // Member INSERT should have integer timestamps (not Date objects)
+      const memberInsert = captured.find((s) => s.sql.startsWith("INSERT INTO members"))!;
+      // created_at and updated_at should be numbers, not Date objects
+      const dateParams = memberInsert.params.filter((p) => typeof p === "number" && p > 1600000000);
+      expect(dateParams.length).toBeGreaterThanOrEqual(2); // at least created_at and updated_at
+    });
+
+    test("batch path preserves round-trip integrity", async () => {
+      await seedFamily();
+      const backup1 = await buildBackup(db);
+
+      resetTestDb();
+      const { executor } = createMockBatchExecutor();
+      await restoreBackup(db, backup1, executor);
+
+      const backup2 = await buildBackup(db);
+      expect(backup2.data.members).toEqual(backup1.data.members);
+      expect(backup2.data.policies).toEqual(backup1.data.policies);
+      expect(backup2.data.settings).toEqual(backup1.data.settings);
+    });
+
+    test("batch path propagates executor errors", async () => {
+      await seedFamily();
+      const backup = await buildBackup(db);
+
+      resetTestDb();
+      const failingExecutor: BatchExecuteFn = async () => {
+        throw new Error("Batch execution failed");
+      };
+
+      await expect(restoreBackup(db, backup, failingExecutor)).rejects.toThrow("Batch execution failed");
     });
   });
 });
