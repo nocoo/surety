@@ -6,19 +6,23 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB_PROD"
 database_name = "surety-db"
-database_id = "placeholder-prod-id"
+database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 
-[[d1_databases]]
-binding = "DB_API_E2E"
-database_name = "surety-db-api-e2e"
-database_id = "placeholder-api-e2e-id"
-
-[[d1_databases]]
-binding = "DB_UI_E2E"
-database_name = "surety-db-ui-e2e"
-database_id = "placeholder-ui-e2e-id"
-
-[[d1_databases]]
-binding = "DB_MCP_E2E"
-database_name = "surety-db-mcp-e2e"
-database_id = "placeholder-mcp-e2e-id"
+# E2E databases — create when needed:
+# wrangler d1 create surety-db-api-e2e / ui-e2e / mcp-e2e
+# then uncomment and fill database_id
+#
+# [[d1_databases]]
+# binding = "DB_API_E2E"
+# database_name = "surety-db-api-e2e"
+# database_id = ""
+#
+# [[d1_databases]]
+# binding = "DB_UI_E2E"
+# database_name = "surety-db-ui-e2e"
+# database_id = ""
+#
+# [[d1_databases]]
+# binding = "DB_MCP_E2E"
+# database_name = "surety-db-mcp-e2e"
+# database_id = ""
