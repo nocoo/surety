@@ -1,7 +1,7 @@
 /**
  * API helper functions for request-scoped database access.
  */
-import { getDbForRequest, createBatchExecutor, type DbInstance } from "@/db/index";
+import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance } from "@/db/index";
 import { createAllRepos, type AllRepos } from "@/db/repositories";
 import type { BatchExecuteFn } from "@/db/backup";
 
@@ -17,19 +17,22 @@ export async function getReposFromRequest(): Promise<{
   repos: AllRepos;
   batchExecute?: BatchExecuteFn;
 }> {
-  let targetDb: string | undefined;
+  let cookieValue: string | undefined;
 
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    targetDb = cookieStore.get("surety-database")?.value;
+    cookieValue = cookieStore.get("surety-database")?.value;
   } catch {
     // Outside Next.js context (e.g., tests) — use defaults
   }
 
-  const db = getDbForRequest(targetDb as Parameters<typeof getDbForRequest>[0]);
+  // Validate cookie through resolveTargetDb (sanitizes invalid values to "production")
+  const targetDb = resolveTargetDb(cookieValue);
+
+  const db = getDbForRequest(targetDb);
   const repos = createAllRepos(db);
-  const batchExecute = createBatchExecutor(targetDb as Parameters<typeof createBatchExecutor>[0]);
+  const batchExecute = createBatchExecutor(targetDb);
   return batchExecute ? { db, repos, batchExecute } : { db, repos };
 }
 

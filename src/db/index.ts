@@ -119,7 +119,7 @@ export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInsta
   let targetDb: TargetDb;
 
   if (typeof requestOrTargetDb === "string") {
-    targetDb = requestOrTargetDb;
+    targetDb = resolveTargetDb(requestOrTargetDb);
   } else if (requestOrTargetDb instanceof Request) {
     const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
     const match = cookieHeader.match(/surety-database=([^;]+)/);

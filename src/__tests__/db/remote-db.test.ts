@@ -151,7 +151,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_SECRET = "secret";
 
     const { getDbForRequest } = await import("@/db");
-    const db = getDbForRequest("api-e2e");
+    const db = getDbForRequest("dev");
     expect(db).toBeDefined();
   });
 
@@ -164,7 +164,7 @@ describe("getDbForRequest (non-test env)", () => {
 
     const { getDbForRequest } = await import("@/db");
     const request = new Request("http://localhost", {
-      headers: { cookie: "surety-database=ui-e2e; other=value" },
+      headers: { cookie: "surety-database=dev; other=value" },
     });
     const db = getDbForRequest(request);
     expect(db).toBeDefined();
