@@ -27,12 +27,3 @@ export async function getReposFromRequest(): Promise<{ db: DbInstance; repos: Al
   return { db, repos };
 }
 
-/**
- * @deprecated Use getReposFromRequest() instead.
- * Kept for backward compatibility during migration.
- */
-export async function ensureDbFromRequest(): Promise<void> {
-  // No-op: the db Proxy handles routing automatically.
-  // API routes using dynamic import("@/db/repositories") will
-  // get the global singleton repos backed by the db Proxy.
-}
