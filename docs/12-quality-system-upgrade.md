@@ -31,7 +31,7 @@ The project currently implements the old "四层测试架构" model. The new "�
 | **L1** Unit | bun test + coverage ≥90% | pre-commit | ✅ No gap |
 | **L2** Integration/API | run-e2e.ts (true HTTP) | pre-push | ✅ No gap |
 | **L3** System/E2E | Playwright | on-demand | ✅ No gap |
-| **G1** Static Analysis | tsc + eslint (strict) + lint-staged | pre-commit | ⚠️ Missing lint-staged, missing .skip/.only ban |
+| **G1** Static Analysis | tsc (full) + eslint via lint-staged (incremental) | pre-commit | ⚠️ Missing lint-staged, missing .skip/.only ban |
 | **G2** Security/Perf | osv-scanner + gitleaks | pre-push | ❌ Not installed, not hooked |
 
 ### Detailed Gaps
@@ -82,6 +82,8 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
    ```
    - Replace `bun run lint` with `bunx lint-staged` for incremental checking
    - Keep `bun run typecheck` as-is (tsc needs full project context, cannot be incremental)
+
+**Design note — incremental vs full lint**: After this change, pre-commit only lints staged files. There is no automatic full-codebase lint execution point (no CI exists). This is an intentional trade-off for pre-commit speed. Full lint is available on-demand via `bun run lint`. If a full-codebase lint gate is needed in the future, it should be added to a CI pipeline.
 
 **Files modified**:
 - `package.json` — add lint-staged dep + config
@@ -161,19 +163,29 @@ brew install osv-scanner gitleaks
    if command -v osv-scanner &> /dev/null; then
      echo "🔍 Scanning dependencies for vulnerabilities..."
      osv-scanner scan source .
+   else
+     echo "⚠️  osv-scanner not installed, skipping vulnerability scan (brew install osv-scanner)"
    fi
 
    # G2: Secret leak detection — scan commits being pushed (not staged area)
    # `gitleaks git --log-opts` scans commit history, not `git diff --staged`.
    # `--staged` only works in pre-commit; in pre-push we need the commit range.
+   # Fallback: new branches without @{push} upstream use origin/main..HEAD.
    if command -v gitleaks &> /dev/null; then
      echo "🔑 Checking for leaked secrets..."
-     gitleaks git --no-banner --log-opts="@{push}..HEAD"
+     if git rev-parse --verify @{push} &> /dev/null; then
+       gitleaks git --no-banner --log-opts="@{push}..HEAD"
+     else
+       echo "  (no upstream yet, scanning against origin/main)"
+       gitleaks git --no-banner --log-opts="origin/main..HEAD"
+     fi
+   else
+     echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
-   - Use `command -v` guard so missing tools warn but don't block (graceful degradation for new dev machines)
+   - Use `command -v` guard with explicit warning when tools are missing
    - **osv-scanner**: Uses V2 `scan source` subcommand which auto-discovers `bun.lock` (supported since v2.3.2, requires text-format lockfile from Bun ≥ 1.2)
-   - **gitleaks**: Uses `git --log-opts` to scan the commit range about to be pushed, not `protect --staged` which only scans the staging area and would miss already-committed content
+   - **gitleaks**: Uses `git --log-opts` to scan the commit range about to be pushed. Falls back to `origin/main..HEAD` when pushing a new branch without upstream (where `@{push}` doesn't exist yet)
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
@@ -242,12 +254,16 @@ brew install osv-scanner gitleaks
 5. Update all references to the moved file:
    - `README.md` line 97: `06-testing-improvement-plan.md # 四层测试改进计划` → `archive/06-testing-improvement-plan.md # (archived) 四层测试改进计划`
    - `CHANGELOG.md` line 133: append `(archived to docs/archive/)` note
+6. Update `docs/10-totp-implementation-details.md` section 9.3 "Pre-commit 集成":
+   - Replace stale `eslint` reference with `bunx lint-staged` + `bun run typecheck`
+   - The current text only lists `check-coverage.ts` + `eslint`, missing lint-staged and typecheck
 
 **Files modified**:
 - `docs/archive/06-testing-improvement-plan.md` (moved)
 - `CLAUDE.md` — update test framework table + section title
 - `README.md` — update docs tree reference
 - `CHANGELOG.md` — annotate archived doc path
+- `docs/10-totp-implementation-details.md` — update pre-commit hook description
 
 **Commit**: `docs: upgrade test framework docs to quality system model`
 
@@ -308,7 +324,7 @@ bun run typecheck              # G1 — should pass with zero errors
 # G2 + L2: pre-push gate
 bun run test:e2e               # L2 — should pass all API E2E tests
 osv-scanner scan source .      # G2 — should report zero vulnerabilities
-gitleaks git --no-banner --log-opts="@{push}..HEAD"  # G2 — should find no secrets
+gitleaks git --no-banner --log-opts="@{push}..HEAD"  # G2 — scan commits for secrets (falls back to origin/main..HEAD on new branches)
 
 # L3: on-demand
 bun run test:e2e:ui            # L3 — should pass all Playwright specs
@@ -325,7 +341,7 @@ pre-commit (<30s):
 pre-push (<3min):
   ├── L2: bun run test:e2e (API E2E, remote D1 dev, port 7016)
   ├── G2: osv-scanner scan source . (dependency vulnerability scan)
-  └── G2: gitleaks git --log-opts="@{push}..HEAD" (secret leak scan)
+  └── G2: gitleaks git --log-opts="@{push}..HEAD" (secret leak scan, fallback: origin/main..HEAD)
 
 on-demand:
   └── L3: bun run test:e2e:ui (Playwright, port 7017)
