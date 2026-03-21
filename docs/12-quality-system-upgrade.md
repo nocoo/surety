@@ -8,7 +8,7 @@ The project currently implements the old "四层测试架构" model. The new "�
 
 - **Lint is demoted** from a test layer to a quality gate (G1)
 - **L3/L4 merged** into a single System/E2E layer (L3)
-- **G2 Security/Perf gate** is added (osv-scanner + gitleaks)
+- **G2 Security gate** is added (osv-scanner + gitleaks)
 - **lint-staged** for incremental pre-commit linting (currently lints all files)
 - **Test hygiene rules** (.skip/.only banned via ESLint)
 
@@ -32,7 +32,7 @@ The project currently implements the old "四层测试架构" model. The new "�
 | **L2** Integration/API | run-e2e.ts (true HTTP) | pre-push | ✅ No gap |
 | **L3** System/E2E | Playwright | on-demand | ✅ No gap |
 | **G1** Static Analysis | tsc (full) + eslint via lint-staged (incremental) | pre-commit | ⚠️ Missing lint-staged, missing .skip/.only ban |
-| **G2** Security/Perf | osv-scanner + gitleaks | pre-push | ❌ Not installed, not hooked |
+| **G2** Security | osv-scanner + gitleaks | pre-push | ❌ Not installed, not hooked |
 
 ### Detailed Gaps
 
@@ -251,17 +251,33 @@ brew install osv-scanner gitleaks
 
 4. Rename section header from "四层测试框架" to "质量体系（三层测试 + 两道门控）"
 
-5. Update all references to the moved file:
-   - `README.md` line 97: `06-testing-improvement-plan.md # 四层测试改进计划` → `archive/06-testing-improvement-plan.md # (archived) 四层测试改进计划`
+5. Update `README.md` docs tree (lines 91-102) — replace entire block to:
+   - Add `archive/` as a subdirectory node containing `06-testing-improvement-plan.md`
+   - Add `12-quality-system-upgrade.md`
+   - Add `README.md` (docs index)
+   - Example target structure:
+     ```
+     ├── 📂 docs/                      # 项目文档
+     │   ├── README.md                 # 文档索引
+     │   ├── 01-design-overview.md     # 整体设计研究报告
+     │   ├── ...
+     │   ├── 11-sqlite-to-d1-migration.md # SQLite → Cloudflare D1 迁移
+     │   ├── 12-quality-system-upgrade.md # 质量体系升级计划
+     │   └── 📂 archive/               # 已归档文档
+     │       └── 06-testing-improvement-plan.md
+     ```
    - `CHANGELOG.md` line 133: append `(archived to docs/archive/)` note
-6. Update `docs/10-totp-implementation-details.md` section 9.3 "Pre-commit 集成":
+6. Update `CLAUDE.md` commands section (line 59):
+   - Replace `bun test --coverage  # 测试覆盖率` with `bun run test:coverage  # 测试覆盖率 (≥90% 门禁)`
+   - This is the actual gate command with the 90% threshold; `bun test --coverage` only prints coverage without enforcing it
+7. Update `docs/10-totp-implementation-details.md` section 9.3 "Pre-commit 集成":
    - Replace stale `eslint` reference with `bunx lint-staged` + `bun run typecheck`
    - The current text only lists `check-coverage.ts` + `eslint`, missing lint-staged and typecheck
 
 **Files modified**:
 - `docs/archive/06-testing-improvement-plan.md` (moved)
-- `CLAUDE.md` — update test framework table + section title
-- `README.md` — update docs tree reference
+- `CLAUDE.md` — update test framework table + section title + commands section
+- `README.md` — rewrite docs tree (add archive/, 12, README.md)
 - `CHANGELOG.md` — annotate archived doc path
 - `docs/10-totp-implementation-details.md` — update pre-commit hook description
 
