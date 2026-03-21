@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/layout";
+import { PageLoading } from "@/components/page-loading";
 import {
   SummaryCards,
   MonthlyChart,
@@ -34,9 +35,7 @@ export default function RenewalCalendarPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
+        <PageLoading />
       </AppShell>
     );
   }

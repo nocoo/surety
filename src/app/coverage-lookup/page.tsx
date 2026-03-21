@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Users, Building2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { MemberSelector, AssetSelector, CategorySection } from "@/components/coverage-lookup";
@@ -88,9 +89,7 @@ export default function CoverageLookupPage() {
   if (loading && !data) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
+        <PageLoading />
       </AppShell>
     );
   }

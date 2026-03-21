@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Home, Car, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -115,9 +116,7 @@ export default function AssetsPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "资产管理" }]}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
+        <PageLoading />
       </AppShell>
     );
   }

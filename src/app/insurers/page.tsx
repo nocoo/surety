@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Phone, Globe, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -88,9 +89,7 @@ export default function InsurersPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保险公司" }]}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
+        <PageLoading />
       </AppShell>
     );
   }

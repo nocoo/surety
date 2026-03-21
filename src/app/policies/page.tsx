@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -482,9 +483,7 @@ export default function PoliciesPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">加载中...</div>
-        </div>
+        <PageLoading />
       </AppShell>
     );
   }
