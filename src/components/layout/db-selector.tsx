@@ -96,12 +96,12 @@ export function DbSelector() {
         }
 
         startTransition(() => {
+          setPendingDb(null);
           router.refresh();
         });
       } catch {
-        localStorage.setItem(STORAGE_KEY, currentDb);
-      } finally {
         setPendingDb(null);
+        localStorage.setItem(STORAGE_KEY, currentDb);
       }
     },
     [currentDb, router],
@@ -124,10 +124,10 @@ export function DbSelector() {
           <DropdownMenuItem
             key={option.value}
             onClick={() => setDatabase(option.value)}
-            className={activeDb === option.value ? "bg-accent" : ""}
+            className={`py-2 ${activeDb === option.value ? "bg-accent" : ""}`}
             disabled={isPending}
           >
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-0.5">
               <span className="font-medium">{option.label}</span>
               <span className="text-xs text-muted-foreground">{option.description}</span>
             </div>
