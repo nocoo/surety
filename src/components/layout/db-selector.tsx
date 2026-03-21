@@ -119,12 +119,12 @@ export function DbSelector() {
           <ChevronDown className="h-3 w-3" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-48 space-y-1">
         {DATABASE_OPTIONS.map((option) => (
           <DropdownMenuItem
             key={option.value}
             onClick={() => setDatabase(option.value)}
-            className={`py-2 ${activeDb === option.value ? "bg-accent" : ""}`}
+            className={`py-2.5 ${activeDb === option.value ? "bg-accent" : ""}`}
             disabled={isPending}
           >
             <div className="flex flex-col gap-0.5">
