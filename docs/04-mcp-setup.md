@@ -111,7 +111,7 @@ The MCP toggle in Settings is off. Open [http://localhost:7015/settings](http://
 
 ### Tools return empty data
 
-Make sure your Surety database has data. The MCP server reads from the same SQLite database as the web UI.
+Make sure your Surety database has data. The MCP server reads from the same Cloudflare D1 database as the web UI.
 
 ### Environment Override (Advanced)
 

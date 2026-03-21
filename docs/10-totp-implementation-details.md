@@ -162,7 +162,7 @@ Cookie 值: {email}|{expiry_iso}|{enroll_version}|{signature_hex}
 
 | 状态源 | 存储 | 生命周期 | 语义 |
 |--------|------|----------|------|
-| **KV Store (DB)** | SQLite settings 表 | 持久 | 2FA 是否启用、加密密钥、recovery code 状态 |
+| **KV Store (DB)** | D1 settings 表 | 持久 | 2FA 是否启用、加密密钥、recovery code 状态 |
 | **JWT (Session)** | Cookie 中的 signed token | 会话级 | `twoFactorVerified`（显式 nonce 提权）、`recoverySession`（recovery code 登录标记） |
 | **Trusted Device Cookie** | HttpOnly Cookie | 30 天 | 请求级免验证豁免 |
 

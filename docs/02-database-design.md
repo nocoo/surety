@@ -9,7 +9,7 @@
 ```
 Production:  Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
 Unit Test:   bun:sqlite :memory: (无网络)
-E2E Test:    bun:sqlite file (本地) 或 D1 隔离数据库
+E2E Test:    远程 D1 dev 数据库 (surety-db-dev)
 Management:  drizzle-kit + d1-http driver (开发时 schema push)
 ```
 

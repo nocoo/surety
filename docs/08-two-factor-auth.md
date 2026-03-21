@@ -33,7 +33,7 @@
 
 - 单用户模型，只有一组 2FA 数据
 - settings KV 表已有 `get/set/getJson/setJson` helper
-- SQLite 单写者模型天然避免竞态（Bun 单线程 + better-sqlite3 同步 API）
+- D1 单写者模型天然避免竞态（Cloudflare Worker 单线程 + 同步 API）
 - 不值得为 6 个 KV 对创建 migration
 
 ## 环境变量
@@ -159,7 +159,7 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 
 **知悉但不采纳的建议**：
 - Recovery Code 增至 8-10 个 → 保持 1 个（本地部署，可直接操作 DB 恢复）
-- 新建专用表 → 保持 KV 表（单用户 + SQLite 同步写入无竞态）
+- 新建专用表 → 保持 KV 表（单用户 + D1 同步写入无竞态）
 - Remember Device 加服务端存储 → 保持纯 HMAC cookie（单用户无需撤销）
 
 ## 实施进度
