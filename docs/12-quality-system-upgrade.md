@@ -36,15 +36,15 @@ The project currently implements the old "四层测试架构" model. The new "�
 
 ### Detailed Gaps
 
-| # | Gap | Severity | Effort |
-|---|-----|----------|--------|
-| 1 | No `lint-staged` — pre-commit lints entire codebase instead of staged files only | Low | 15 min |
-| 2 | No `.skip`/`.only` ban in ESLint — test hygiene not enforced | Low | 10 min |
-| 3 | No `osv-scanner` in pre-push — dependency vulnerabilities not scanned | Medium | 15 min |
-| 4 | No `gitleaks` in pre-push — secret leakage not detected | Medium | 10 min |
-| 5 | ESLint config comment references "four-layer" — terminology outdated | Trivial | 2 min |
-| 6 | `docs/06-testing-improvement-plan.md` references old model — should be archived | Trivial | 5 min |
-| 7 | `CLAUDE.md` test framework table uses old L1/L2/L3/L4 naming | Trivial | 5 min |
+| # | Gap | Severity |
+|---|-----|----------|
+| 1 | No `lint-staged` — pre-commit lints entire codebase instead of staged files only | Low |
+| 2 | No `.skip`/`.only` ban in ESLint — test hygiene not enforced | Low |
+| 3 | No `osv-scanner` in pre-push — dependency vulnerabilities not scanned | Medium |
+| 4 | No `gitleaks` in pre-push — secret leakage not detected | Medium |
+| 5 | ESLint config comment references "four-layer" — terminology outdated | Trivial |
+| 6 | `docs/06-testing-improvement-plan.md` references old model — should be archived | Trivial |
+| 7 | `CLAUDE.md` test framework table uses old L1/L2/L3/L4 naming | Trivial |
 
 ### What's Already Aligned (No Change Needed)
 
@@ -63,7 +63,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 
 ### Step 1 — Install lint-staged for incremental G1
 
-**Risk**: Low. **ETA**: 15 min.
+**Risk**: Low.
 
 **Why**: Currently `bun run lint` in pre-commit scans the entire codebase (~hundreds of files). With lint-staged, only staged files are checked, cutting pre-commit lint time significantly.
 
@@ -93,7 +93,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 
 ### Step 2 — Ban .skip() and .only() in test files
 
-**Risk**: Zero. **ETA**: 10 min.
+**Risk**: Zero.
 
 **Why**: Prevent accidentally committed `.skip()` / `.only()` from silently disabling tests. This is a quality system requirement under G1.
 
@@ -132,7 +132,7 @@ Add a new ESLint config block targeting test files:
 
 ### Step 3 — Add G2 security gate to pre-push
 
-**Risk**: Low. **ETA**: 15 min.
+**Risk**: Low.
 
 **Why**: The quality system requires dependency vulnerability scanning (osv-scanner) and secret leak detection (gitleaks) in pre-push.
 
@@ -169,7 +169,7 @@ brew install osv-scanner gitleaks
 
 ### Step 4 — Update ESLint config comments + add --max-warnings=0
 
-**Risk**: Zero. **ETA**: 5 min.
+**Risk**: Zero.
 
 **Why**: Align terminology from "four-layer" to "quality system". Ensure lint script uses `--max-warnings=0` explicitly.
 
@@ -190,7 +190,7 @@ brew install osv-scanner gitleaks
 
 ### Step 5 — Archive old testing plan, update CLAUDE.md
 
-**Risk**: Zero. **ETA**: 10 min.
+**Risk**: Zero.
 
 **Why**: `docs/06-testing-improvement-plan.md` documents the old four-layer model and is fully completed. Archive it. Update CLAUDE.md test framework table to use the new L1/L2/L3/G1/G2 taxonomy.
 
@@ -234,7 +234,7 @@ brew install osv-scanner gitleaks
 
 ### Step 6 — Create docs/README.md index
 
-**Risk**: Zero. **ETA**: 5 min.
+**Risk**: Zero.
 
 **Why**: Per "编号文档" memory spec, docs/ should have a README.md as an index of all documents. Currently missing.
 
