@@ -127,7 +127,6 @@ surety/
 ├── 📂 public/                    # 静态资源
 ├── 📂 scripts/                   # 工具脚本
 │   ├── seed-remote.ts            # 远程 D1 数据库种子
-│   ├── restore-prod.ts           # 生产数据库还原
 │   ├── run-e2e.ts                # API E2E 运行器 (port 7016)
 │   ├── run-e2e-ui.ts             # Playwright E2E 运行器 (port 7017)
 │   ├── e2e-utils.ts              # E2E 共享工具 (端口检查等)
