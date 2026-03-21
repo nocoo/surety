@@ -74,7 +74,7 @@ describe("db/index", () => {
     });
 
     test("accepts all valid target db values", () => {
-      for (const target of ["production", "dev"]) {
+      for (const target of ["production", "dev"] as const) {
         delete process.env.SURETY_TARGET_DB;
         expect(resolveTargetDb(target)).toBe(target);
       }

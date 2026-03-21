@@ -7,6 +7,9 @@ import { WorkerDbClient } from "@/db/worker-db-client";
  * Uses mock WorkerDbClient to avoid actual network calls.
  */
 
+// Helper: process.env.NODE_ENV is readonly in strict TS; cast to bypass for test env manipulation
+const env = process.env as Record<string, string | undefined>;
+
 const originalFetch = globalThis.fetch;
 let mockFetch: ReturnType<typeof mock>;
 
@@ -90,7 +93,7 @@ describe("createRemoteDb", () => {
 
   it("throws when SURETY_WORKER_URL is not set", async () => {
     // Temporarily exit test env so createRemoteDb is called
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     delete process.env.SURETY_WORKER_URL;
     process.env.SURETY_WORKER_SECRET = "secret";
@@ -101,7 +104,7 @@ describe("createRemoteDb", () => {
   });
 
   it("throws when SURETY_WORKER_SECRET is not set", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     delete process.env.SURETY_WORKER_SECRET;
@@ -111,7 +114,7 @@ describe("createRemoteDb", () => {
   });
 
   it("creates remote db when env vars are set", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
@@ -144,7 +147,7 @@ describe("getDbForRequest (non-test env)", () => {
   });
 
   it("uses target db from string parameter", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
@@ -155,7 +158,7 @@ describe("getDbForRequest (non-test env)", () => {
   });
 
   it("extracts target db from Request cookie", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     delete process.env.SURETY_TARGET_DB;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
@@ -170,7 +173,7 @@ describe("getDbForRequest (non-test env)", () => {
   });
 
   it("defaults to production when no cookie or parameter", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     delete process.env.SURETY_TARGET_DB;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
@@ -182,7 +185,7 @@ describe("getDbForRequest (non-test env)", () => {
   });
 
   it("throws when SURETY_WORKER_URL is not configured", async () => {
-    process.env.NODE_ENV = "production";
+    env.NODE_ENV = "production";
     delete process.env.BUN_ENV;
     delete process.env.SURETY_WORKER_URL;
     delete process.env.SURETY_WORKER_SECRET;

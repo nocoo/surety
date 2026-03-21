@@ -177,8 +177,8 @@ describe("WorkerDbClient", () => {
       expect(body.statements).toHaveLength(2);
 
       expect(results).toHaveLength(2);
-      expect(results[0].meta.changes).toBe(1);
-      expect(results[1].rows).toEqual([{ id: 2 }]);
+      expect(results[0]!.meta.changes).toBe(1);
+      expect(results[1]!.rows).toEqual([{ id: 2 }]);
     });
 
     it("throws WorkerDbError on HTTP error", async () => {

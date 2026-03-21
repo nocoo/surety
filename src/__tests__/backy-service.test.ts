@@ -116,7 +116,7 @@ describe("fetchBackyHistory", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -134,7 +134,7 @@ describe("fetchBackyHistory", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("Unauthorized", { status: 401 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -149,7 +149,9 @@ describe("fetchBackyHistory", () => {
 
   test("returns error on network failure", async () => {
     const origFetch = globalThis.fetch;
-    globalThis.fetch = mock(() => Promise.reject(new Error("DNS resolution failed")));
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("DNS resolution failed")),
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -164,7 +166,9 @@ describe("fetchBackyHistory", () => {
 
   test("handles non-Error throw", async () => {
     const origFetch = globalThis.fetch;
-    globalThis.fetch = mock(() => Promise.reject("string error"));
+    globalThis.fetch = mock(() =>
+      Promise.reject("string error"),
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -179,7 +183,7 @@ describe("fetchBackyHistory", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("", { status: 500 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -202,7 +206,7 @@ describe("fetchBackyHistory", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await fetchBackyHistory(creds);
@@ -233,7 +237,7 @@ describe("pushBackupToBacky", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response(JSON.stringify({ id: "backup-1" }), { status: 200 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await pushBackupToBacky(creds, db);
@@ -255,7 +259,7 @@ describe("pushBackupToBacky", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("{}", { status: 200 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await pushBackupToBacky(creds, db);
@@ -272,7 +276,7 @@ describe("pushBackupToBacky", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("Bad Request", { status: 400 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await pushBackupToBacky(creds, db);
@@ -285,7 +289,9 @@ describe("pushBackupToBacky", () => {
 
   test("returns failure on network error", async () => {
     const origFetch = globalThis.fetch;
-    globalThis.fetch = mock(() => Promise.reject(new Error("Connection refused")));
+    globalThis.fetch = mock(() =>
+      Promise.reject(new Error("Connection refused")),
+    ) as unknown as typeof fetch;
 
     try {
       const result = await pushBackupToBacky(creds, db);
@@ -301,7 +307,7 @@ describe("pushBackupToBacky", () => {
     const origFetch = globalThis.fetch;
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("not json", { status: 200 })),
-    );
+    ) as unknown as typeof fetch;
 
     try {
       const result = await pushBackupToBacky(creds, db);
@@ -315,10 +321,10 @@ describe("pushBackupToBacky", () => {
   test("sends correct Authorization header", async () => {
     const origFetch = globalThis.fetch;
     let capturedHeaders: Headers | undefined;
-    globalThis.fetch = mock((input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = mock((_input: RequestInfo | URL, init?: RequestInit) => {
       capturedHeaders = new Headers(init?.headers);
       return Promise.resolve(new Response("{}", { status: 200 }));
-    });
+    }) as unknown as typeof fetch;
 
     try {
       await pushBackupToBacky(creds, db);
