@@ -41,14 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database
-database/*.db
-database/*.db-journal
-database/*.db-wal
-database/*.db-shm
-database/*.db.bak
-!database/surety.example.db
-!database/surety.test.db
 .next-e2e
 .next-e2e-ui
 
