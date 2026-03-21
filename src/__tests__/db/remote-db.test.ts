@@ -131,7 +131,6 @@ describe("getDbForRequest (non-test env)", () => {
     origEnv.SURETY_WORKER_URL = process.env.SURETY_WORKER_URL;
     origEnv.SURETY_WORKER_SECRET = process.env.SURETY_WORKER_SECRET;
     origEnv.SURETY_TARGET_DB = process.env.SURETY_TARGET_DB;
-    origEnv.SURETY_DB = process.env.SURETY_DB;
   });
 
   afterEach(() => {

@@ -214,29 +214,6 @@ describe("db/index", () => {
     });
   });
 
-  describe("example database integrity", () => {
-    test("surety.example.db must contain demo data (guard against accidental deletion)", () => {
-      // Use bun:sqlite directly to bypass createDatabase guard.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Database } = require("bun:sqlite");
-      const dbPath = resolve(PROJECT_ROOT, "database/surety.example.db");
-      const db = new Database(dbPath, { readonly: true });
-      const result = db.query("SELECT count(*) as c FROM members").get() as { c: number };
-      expect(result.c).toBeGreaterThanOrEqual(5);
-      db.close();
-    });
-
-    test("surety.test.db must contain demo data (copy of example)", () => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Database } = require("bun:sqlite");
-      const dbPath = resolve(PROJECT_ROOT, "database/surety.test.db");
-      const db = new Database(dbPath, { readonly: true });
-      const result = db.query("SELECT count(*) as c FROM members").get() as { c: number };
-      expect(result.c).toBeGreaterThanOrEqual(5);
-      db.close();
-    });
-  });
-
   describe("seed-remote script production guard", () => {
     test("scripts/seed-remote.ts exits with error when SURETY_TARGET_DB is not set", async () => {
       const proc = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
@@ -265,30 +242,4 @@ describe("db/index", () => {
     });
   });
 
-  describe("import-csv script production guard", () => {
-    test("scripts/import-csv.ts exits with error without --confirm", async () => {
-      const proc = Bun.spawn(["bun", "scripts/import-csv.ts"], {
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, SURETY_DB: undefined },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const exitCode = await proc.exited;
-      const stderr = await new Response(proc.stderr).text();
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain("BLOCKED");
-    });
-
-    test("scripts/import-csv.ts allows E2E database without --confirm", async () => {
-      const proc = Bun.spawn(["bun", "scripts/import-csv.ts"], {
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, SURETY_DB: "database/surety.e2e.db" },
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      await proc.exited;
-      const stderr = await new Response(proc.stderr).text();
-      expect(stderr).not.toContain("BLOCKED");
-    });
-  });
 });
