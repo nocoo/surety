@@ -30,7 +30,7 @@ The project currently implements the old "四层测试架构" model. The new "�
 |------------|------|------|-------------|
 | **L1** Unit | bun test + coverage ≥90% | pre-commit | ✅ No gap |
 | **L2** Integration/API | run-e2e.ts (true HTTP) | pre-push | ✅ No gap |
-| **L3** System/E2E | Playwright | CI/on-demand | ✅ No gap |
+| **L3** System/E2E | Playwright | on-demand | ✅ No gap |
 | **G1** Static Analysis | tsc + eslint (strict) + lint-staged | pre-commit | ⚠️ Missing lint-staged, missing .skip/.only ban |
 | **G2** Security/Perf | osv-scanner + gitleaks | pre-push | ❌ Not installed, not hooked |
 
@@ -73,7 +73,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 2. Add `lint-staged` config to `package.json`:
    ```json
    "lint-staged": {
-     "*.{ts,tsx}": ["eslint --max-warnings=0"]
+     "*.{ts,tsx,mjs}": ["eslint --max-warnings=0"]
    }
    ```
 3. Update `.husky/pre-commit`:
@@ -99,12 +99,21 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 
 **Changes**:
 
-Add a new ESLint config block targeting test files:
+1. Remove `e2e/**` from `globalIgnores` in `eslint.config.mjs` (currently ignored because Playwright tests are not React code, but we need ESLint to enforce test hygiene rules there)
+2. Add a new ESLint config block to disable React/Next.js rules for `e2e/` (since it's not React code)
+3. Add test hygiene rules targeting all test directories:
 
 ```javascript
-// Test hygiene: ban .skip and .only
+// Disable React/Next.js rules for Playwright E2E (not React code)
 {
-  files: ["src/__tests__/**/*.ts", "mcp/__tests__/**/*.ts"],
+  files: ["e2e/**/*.ts"],
+  rules: {
+    "@next/next/no-html-link-for-pages": "off",
+  },
+},
+// Test hygiene: ban .skip and .only (covers UT, MCP, and Playwright E2E)
+{
+  files: ["src/__tests__/**/*.ts", "mcp/__tests__/**/*.ts", "e2e/**/*.ts"],
   rules: {
     "no-restricted-syntax": [
       "error",
@@ -122,7 +131,7 @@ Add a new ESLint config block targeting test files:
 ```
 
 **Files modified**:
-- `eslint.config.mjs` — add test hygiene rules
+- `eslint.config.mjs` — remove `e2e/**` from globalIgnores, add React rule override for e2e/, add test hygiene rules
 
 **Verification**: `bun run lint` should pass (no existing .skip/.only found).
 
@@ -147,18 +156,24 @@ brew install osv-scanner gitleaks
    ```bash
    bun run test:e2e
 
-   # G2: Security gate
+   # G2: Security gate — dependency vulnerability scan
+   # osv-scanner V2 CLI: `scan source` auto-discovers bun.lock (supported since v2.3.2)
    if command -v osv-scanner &> /dev/null; then
      echo "🔍 Scanning dependencies for vulnerabilities..."
-     osv-scanner --lockfile=bun.lock
+     osv-scanner scan source .
    fi
 
+   # G2: Secret leak detection — scan commits being pushed (not staged area)
+   # `gitleaks git --log-opts` scans commit history, not `git diff --staged`.
+   # `--staged` only works in pre-commit; in pre-push we need the commit range.
    if command -v gitleaks &> /dev/null; then
      echo "🔑 Checking for leaked secrets..."
-     gitleaks protect --staged --no-banner
+     gitleaks git --no-banner --log-opts="@{push}..HEAD"
    fi
    ```
-   - Use `command -v` guard so missing tools warn but don't block (graceful degradation for CI/new dev machines)
+   - Use `command -v` guard so missing tools warn but don't block (graceful degradation for new dev machines)
+   - **osv-scanner**: Uses V2 `scan source` subcommand which auto-discovers `bun.lock` (supported since v2.3.2, requires text-format lockfile from Bun ≥ 1.2)
+   - **gitleaks**: Uses `git --log-opts` to scan the commit range about to be pushed, not `protect --staged` which only scans the staging area and would miss already-committed content
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
@@ -224,9 +239,15 @@ brew install osv-scanner gitleaks
 
 4. Rename section header from "四层测试框架" to "质量体系（三层测试 + 两道门控）"
 
+5. Update all references to the moved file:
+   - `README.md` line 97: `06-testing-improvement-plan.md # 四层测试改进计划` → `archive/06-testing-improvement-plan.md # (archived) 四层测试改进计划`
+   - `CHANGELOG.md` line 133: append `(archived to docs/archive/)` note
+
 **Files modified**:
 - `docs/archive/06-testing-improvement-plan.md` (moved)
 - `CLAUDE.md` — update test framework table + section title
+- `README.md` — update docs tree reference
+- `CHANGELOG.md` — annotate archived doc path
 
 **Commit**: `docs: upgrade test framework docs to quality system model`
 
@@ -286,8 +307,8 @@ bun run typecheck              # G1 — should pass with zero errors
 
 # G2 + L2: pre-push gate
 bun run test:e2e               # L2 — should pass all API E2E tests
-osv-scanner --lockfile=bun.lock # G2 — should report zero vulnerabilities
-gitleaks protect --staged --no-banner  # G2 — should find no secrets
+osv-scanner scan source .      # G2 — should report zero vulnerabilities
+gitleaks git --no-banner --log-opts="@{push}..HEAD"  # G2 — should find no secrets
 
 # L3: on-demand
 bun run test:e2e:ui            # L3 — should pass all Playwright specs
@@ -303,8 +324,8 @@ pre-commit (<30s):
 
 pre-push (<3min):
   ├── L2: bun run test:e2e (API E2E, remote D1 dev, port 7016)
-  ├── G2: osv-scanner --lockfile=bun.lock
-  └── G2: gitleaks protect --staged --no-banner
+  ├── G2: osv-scanner scan source . (dependency vulnerability scan)
+  └── G2: gitleaks git --log-opts="@{push}..HEAD" (secret leak scan)
 
 on-demand:
   └── L3: bun run test:e2e:ui (Playwright, port 7017)
