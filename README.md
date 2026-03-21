@@ -64,17 +64,17 @@ ALLOWED_EMAILS=your-email@gmail.com
 
 ### 3️⃣ 初始化数据库
 
+数据存储在 Cloudflare D1，通过 Worker proxy 访问：
+
 ```bash
-# 创建数据库并应用 schema
+# 推送 schema 到 D1
 bun run db:push
 
-# (可选) 填充示例数据
-bun run db:seed
+# (可选) 填充测试数据到 D1 dev 数据库
+SURETY_TARGET_DB=dev bun run db:seed
 ```
 
-数据库文件会自动创建在 `database/` 目录下：
-- `database/surety.db` — 生产数据
-- `database/surety.example.db` — 示例数据（用于演示）
+> 💡 **提示**: 需要先部署 Worker proxy，详见 [CLAUDE.md](CLAUDE.md) 中的 Worker Deployment 章节。
 
 ### 4️⃣ 启动开发服务器
 
@@ -88,10 +88,6 @@ bun dev
 
 ```
 surety/
-├── 📂 database/                  # 本地 SQLite 数据库文件 (测试/迁移用)
-│   ├── surety.db                 # 生产数据 (gitignored)
-│   ├── surety.example.db         # 示例数据 (git-tracked)
-│   └── surety.test.db            # 测试 fixture (git-tracked)
 ├── 📂 docs/                      # 项目文档
 │   ├── 01-design-overview.md     # 整体设计研究报告
 │   ├── 02-database-design.md     # 数据库设计
@@ -132,13 +128,12 @@ surety/
 ├── 📂 scripts/                   # 工具脚本
 │   ├── seed.ts                   # 测试数据生成
 │   ├── seed-e2e.ts               # API E2E 数据库种子
-│   ├── seed-example.ts           # 示例数据库种子
+│   ├── seed-remote.ts            # 远程 D1 数据库种子
 │   ├── seed-mcp-test.ts          # MCP 测试数据种子
-│   ├── seed-insurer-contacts.ts  # 保险公司联系人数据
+│   ├── restore-prod.ts           # 生产数据库还原
 │   ├── run-e2e.ts                # API E2E 运行器 (port 7016)
 │   ├── run-e2e-ui.ts             # Playwright E2E 运行器 (port 7017)
 │   ├── e2e-utils.ts              # E2E 共享工具 (端口检查等)
-│   ├── import-csv.ts             # CSV 导入脚本
 │   ├── check-coverage.ts         # 测试覆盖率检查
 │   └── resize-logos.py           # Logo 处理脚本
 ├── 📂 src/
@@ -179,10 +174,9 @@ surety/
 │   ├── 📂 db/                    # 数据库层
 │   │   ├── 📂 repositories/      # CRUD 操作
 │   │   ├── backup.ts             # 数据库备份/还原
-│   │   ├── index.ts              # 连接管理, createDatabase()
+│   │   ├── index.ts              # 连接管理 (D1 remote + bun:sqlite test)
 │   │   ├── schema.ts             # Drizzle schema
 │   │   ├── seed.ts               # 种子数据函数
-│   │   ├── seed-example.ts       # 示例种子数据
 │   │   └── types.ts              # 类型定义, deriveDisplayStatus()
 │   ├── 📂 hooks/                 # React Hooks
 │   │   ├── use-mobile.tsx        # 移动端检测
@@ -255,12 +249,13 @@ surety/
 
 ## 🔧 数据库管理
 
-### 切换数据库
+### Cloudflare D1 架构
 
-应用支持多数据库切换，在设置页面可以选择：
+所有运行时数据存储在 Cloudflare D1，通过 Worker proxy 访问：
 
-- **生产数据** (`database/surety.db`) — 真实数据
-- **示例数据** (`database/surety.example.db`) — 演示用
+- **生产环境** — `surety-db`，Worker binding `DB`
+- **开发/E2E** — `surety-db-dev`，Worker binding `DB_DEV`（`SURETY_TARGET_DB=dev`）
+- **单元测试** — `bun:sqlite :memory:`（无网络依赖）
 
 ### 使用 Drizzle Studio
 
