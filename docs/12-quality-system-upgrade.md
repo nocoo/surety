@@ -159,33 +159,41 @@ brew install osv-scanner gitleaks
    bun run test:e2e
 
    # G2: Security gate — dependency vulnerability scan
-   # osv-scanner V2 CLI: `scan source` auto-discovers bun.lock (supported since v2.3.2)
+   # Only scan root bun.lock to avoid noise from worker/bun.lock and .next/ manifests
    if command -v osv-scanner &> /dev/null; then
      echo "🔍 Scanning dependencies for vulnerabilities..."
-     osv-scanner scan source .
+     osv-scanner scan source --lockfile=bun.lock
    else
      echo "⚠️  osv-scanner not installed, skipping vulnerability scan (brew install osv-scanner)"
    fi
 
-   # G2: Secret leak detection — scan commits being pushed (not staged area)
-   # `gitleaks git --log-opts` scans commit history, not `git diff --staged`.
-   # `--staged` only works in pre-commit; in pre-push we need the commit range.
-   # Fallback: new branches without @{push} upstream use origin/main..HEAD.
+   # G2: Secret leak detection — scan commits being pushed
+   # Pre-push hook receives "local_ref local_sha remote_ref remote_sha" on stdin.
+   # We use remote_sha..local_sha for precise commit range (no hardcoded branch names).
+   ZERO="0000000000000000000000000000000000000000"
    if command -v gitleaks &> /dev/null; then
      echo "🔑 Checking for leaked secrets..."
-     if git rev-parse --verify @{push} &> /dev/null; then
-       gitleaks git --no-banner --log-opts="@{push}..HEAD"
-     else
-       echo "  (no upstream yet, scanning against origin/main)"
-       gitleaks git --no-banner --log-opts="origin/main..HEAD"
-     fi
+     while read -r local_ref local_sha remote_ref remote_sha; do
+       if [ "$local_sha" = "$ZERO" ]; then
+         continue  # branch deletion, skip
+       fi
+       if [ "$remote_sha" = "$ZERO" ]; then
+         # new branch: scan all commits not yet on remote default branch
+         range="$(git rev-parse --abbrev-ref refs/remotes/origin/HEAD | sed 's|origin/||')..${local_sha}"
+         # fallback if origin/HEAD is not set
+         range="${range:-main..${local_sha}}"
+       else
+         range="${remote_sha}..${local_sha}"
+       fi
+       gitleaks git --no-banner --log-opts="$range" || exit 1
+     done
    else
      echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
    - Use `command -v` guard with explicit warning when tools are missing
-   - **osv-scanner**: Uses V2 `scan source` subcommand which auto-discovers `bun.lock` (supported since v2.3.2, requires text-format lockfile from Bun ≥ 1.2)
-   - **gitleaks**: Uses `git --log-opts` to scan the commit range about to be pushed. Falls back to `origin/main..HEAD` when pushing a new branch without upstream (where `@{push}` doesn't exist yet)
+   - **osv-scanner**: Uses `--lockfile=bun.lock` to scan only the root lockfile, avoiding noise from `worker/bun.lock` and `.next/` build artifacts
+   - **gitleaks**: Reads pre-push stdin (`local_ref local_sha remote_ref remote_sha`) to compute the exact commit range being pushed. Handles branch deletion (skip), new branch (compare against remote HEAD), and incremental push (remote_sha..local_sha). No hardcoded branch names.
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
@@ -339,8 +347,8 @@ bun run typecheck              # G1 — should pass with zero errors
 
 # G2 + L2: pre-push gate
 bun run test:e2e               # L2 — should pass all API E2E tests
-osv-scanner scan source .      # G2 — should report zero vulnerabilities
-gitleaks git --no-banner --log-opts="@{push}..HEAD"  # G2 — scan commits for secrets (falls back to origin/main..HEAD on new branches)
+osv-scanner scan source --lockfile=bun.lock  # G2 — should report zero vulnerabilities
+gitleaks git --no-banner --log-opts="@{push}..HEAD"  # G2 — scan commits for secrets (pre-push hook uses stdin for precise range)
 
 # L3: on-demand
 bun run test:e2e:ui            # L3 — should pass all Playwright specs
@@ -356,8 +364,8 @@ pre-commit (<30s):
 
 pre-push (<3min):
   ├── L2: bun run test:e2e (API E2E, remote D1 dev, port 7016)
-  ├── G2: osv-scanner scan source . (dependency vulnerability scan)
-  └── G2: gitleaks git --log-opts="@{push}..HEAD" (secret leak scan, fallback: origin/main..HEAD)
+  ├── G2: osv-scanner scan source --lockfile=bun.lock (root deps only)
+  └── G2: gitleaks git --log-opts (commit range from pre-push stdin)
 
 on-demand:
   └── L3: bun run test:e2e:ui (Playwright, port 7017)
