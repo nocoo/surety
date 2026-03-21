@@ -132,7 +132,7 @@ const TIMESTAMP_COLUMNS = new Set(["createdAt", "updatedAt"]);
  * Set of camelCase column names that use `{ mode: "boolean" }` in the schema.
  * Drizzle returns boolean; backup format expects 0/1 integer.
  */
-const BOOLEAN_COLUMNS = new Set(["hasSocialInsurance", "isOptional"]);
+const BOOLEAN_COLUMNS = new Set(["hasSocialInsurance", "isOptional", "archived"]);
 
 /**
  * Convert a Drizzle ORM row (camelCase, Date objects) to backup format

@@ -62,7 +62,7 @@ sqlite.exec(`
     payment_years INTEGER, total_payments INTEGER, renewal_type TEXT, payment_account TEXT,
     next_due_date TEXT, effective_date TEXT NOT NULL, expiry_date TEXT, hesitation_end_date TEXT,
     waiting_days INTEGER, guaranteed_renewal_years INTEGER,
-    status TEXT NOT NULL DEFAULT 'Active', death_benefit TEXT, policy_file_path TEXT, notes TEXT,
+    status TEXT NOT NULL DEFAULT 'Active', death_benefit TEXT, archived INTEGER DEFAULT 0, policy_file_path TEXT, notes TEXT,
     created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
   );
   CREATE TABLE IF NOT EXISTS beneficiaries (

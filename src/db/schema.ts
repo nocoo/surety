@@ -127,6 +127,7 @@ export const policies = sqliteTable("policies", {
     .notNull()
     .default("Active"),
   deathBenefit: text("death_benefit"),
+  archived: integer("archived", { mode: "boolean" }).default(false),
 
   // 附加
   policyFilePath: text("policy_file_path"),
