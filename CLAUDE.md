@@ -32,12 +32,17 @@
 |------|------|----------|------|
 | UT | bun test | pre-commit | 覆盖率 90%+ |
 | Lint | eslint | pre-commit | 零错误零警告 |
+| Typecheck | tsc --noEmit | pre-commit | 零类型错误 |
 | API E2E | bun run test:e2e | pre-push | 100% API 覆盖 (port 7016) |
 | UI E2E | bun run test:e2e:ui | 按需执行 | Playwright + Chromium (port 7017) |
 
 ### E2E 隔离约束
 
 所有 E2E suite（API、UI、MCP）共用一个远程 D1 dev 数据库 (`surety-db-dev`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
+
+### 测试文件自动发现
+
+`bunfig.toml` 配置 `pathIgnorePatterns` 排除 E2E 文件（`**/e2e/**` 和 `**/*.e2e.test.ts`），单元测试通过 glob 自动发现。新增测试文件无需手动维护列表。E2E runner 通过 `--path-ignore-patterns __none__` 覆盖 bunfig 配置。
 
 ### 核心原则
 
