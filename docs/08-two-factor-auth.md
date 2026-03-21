@@ -196,7 +196,7 @@ Cookie: `surety-2fa-trusted`，30 天有效。
 |---|--------|------|--------|
 | 4 | High | `isTwoFactorEnabled()` catch 静默返回 `false`，DB 异常导致 2FA 绕过 | Claude + Gemini |
 | 5 | High | Trusted device cookie 无法撤销，不绑定 enrollment 版本 | Codex + Claude |
-| 6 | Medium | `process.env.SURETY_DB` 并发竞态（已知限制，单用户场景可接受） | Codex + Gemini |
+| 6 | Medium | ~~`process.env.SURETY_DB` 并发竞态~~ — 已不适用，D1 迁移后改为 request-scoped 远程数据库，无共享文件竞态 | Codex + Gemini |
 | 7 | Medium | Master key 只检查长度不验证 hex 格式 | Claude + Codex |
 
 ### 单方发现

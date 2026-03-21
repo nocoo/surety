@@ -524,18 +524,18 @@ function createRemoteDb(client: WorkerDbClient) {
 | File | Change |
 |------|--------|
 | `src/db/seed.ts` | seed functions → async |
-| `src/db/seed-example.ts` | seed functions → async |
-| `scripts/seed-e2e.ts` | 改为通过 Worker proxy 清空 + 种子 |
+| `src/db/seed-example.ts` | seed functions → async (**后续清理中已删除**) |
+| `scripts/seed-e2e.ts` | 改为通过 Worker proxy 清空 + 种子 (**后续清理中已删除，合并入 seed-remote.ts**) |
 | `scripts/run-e2e.ts` | 设置 `SURETY_TARGET_DB` 而非 `SURETY_DB` |
 | `scripts/run-e2e-ui.ts` | 同上 |
 | `scripts/e2e-utils.ts` | 移除 WAL/SHM 文件清理逻辑 |
-| `scripts/import-csv.ts` | **不改**（保持本地 SQLite，离线迁移工具） |
+| `scripts/import-csv.ts` | **后续清理中已删除**（本地 SQLite 离线迁移工具，迁移完成后不再需要） |
 
 ### Cleanup / Low impact
 
 | File | Change |
 |------|--------|
-| `database/` directory | 保留 `.db` 文件作为迁移源；迁移完成后归档 |
+| `database/` directory | **后续清理中已删除**（迁移完成后不再需要本地 .db 文件） |
 | `Dockerfile` | 移除 `python3 make g++`（不再编译 native module）；移除 `/data` volume |
 | `package.json` | 移除 `better-sqlite3`、`@types/better-sqlite3` from dependencies |
 | `src/components/layout/db-selector.tsx` | UI 文案更新：production/api-e2e/ui-e2e/mcp-e2e |
@@ -911,10 +911,9 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 
 如果迁移过程中发现 Worker proxy 延迟不可接受或有未预见的兼容性问题：
 
-1. 所有本地 `.db` 文件保留在 `database/` 目录中不删除
-2. Git history 中保留迁移前的完整代码
-3. 可通过 `git revert` 回退到 SQLite 版本
-4. D1 数据可通过 `wrangler d1 export` 导出为 SQL，再导入本地 SQLite
+1. Git history 中保留迁移前的完整代码（本地 `.db` 文件和脚本已在后续清理中删除）
+2. 可通过 `git revert` 回退到 SQLite 版本
+3. D1 数据可通过 `wrangler d1 export` 导出为 SQL，再导入本地 SQLite
 
 ---
 

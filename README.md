@@ -126,10 +126,7 @@ surety/
 │   └── playwright.config.ts      # Playwright 配置 (Chromium, 单线程, zh-CN)
 ├── 📂 public/                    # 静态资源
 ├── 📂 scripts/                   # 工具脚本
-│   ├── seed.ts                   # 测试数据生成
-│   ├── seed-e2e.ts               # API E2E 数据库种子
 │   ├── seed-remote.ts            # 远程 D1 数据库种子
-│   ├── seed-mcp-test.ts          # MCP 测试数据种子
 │   ├── restore-prod.ts           # 生产数据库还原
 │   ├── run-e2e.ts                # API E2E 运行器 (port 7016)
 │   ├── run-e2e-ui.ts             # Playwright E2E 运行器 (port 7017)
@@ -253,9 +250,9 @@ surety/
 
 所有运行时数据存储在 Cloudflare D1，通过 Worker proxy 访问：
 
-- **生产环境** — `surety-db`，Worker binding `DB`
+- **生产环境** — `surety-db`，Worker binding `DB_PROD`
 - **开发/E2E** — `surety-db-dev`，Worker binding `DB_DEV`（`SURETY_TARGET_DB=dev`）
-- **单元测试** — `bun:sqlite :memory:`（无网络依赖）
+- **单元测试** — `bun:sqlite mem`（无网络依赖）
 
 ### 使用 Drizzle Studio
 
