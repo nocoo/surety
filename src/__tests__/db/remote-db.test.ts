@@ -61,7 +61,7 @@ describe("createRemoteDbFromClient", () => {
     const client = new WorkerDbClient(
       "https://example.workers.dev",
       "test-secret",
-      "api-e2e",
+      "dev",
     );
     const db = createRemoteDbFromClient(client);
     expect(db).toBeDefined();

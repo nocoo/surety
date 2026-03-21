@@ -137,12 +137,12 @@ describe("WorkerDbClient", () => {
         ),
       );
 
-      const client = new WorkerDbClient(WORKER_URL, SECRET, "api-e2e");
+      const client = new WorkerDbClient(WORKER_URL, SECRET, "dev");
       await client.query("SELECT 1");
 
       const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
       const headers = init.headers as Record<string, string>;
-      expect(headers["X-Target-DB"]).toBe("api-e2e");
+      expect(headers["X-Target-DB"]).toBe("dev");
     });
   });
 
