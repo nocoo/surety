@@ -1,0 +1,3 @@
+[test]
+# Auto-discover unit tests, exclude E2E test files and directories
+pathIgnorePatterns = ["**/e2e/**", "**/*.e2e.test.ts"]

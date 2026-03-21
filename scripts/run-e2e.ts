@@ -103,7 +103,7 @@ async function main() {
     // Step 3: Run E2E tests (without setup/teardown)
     console.log("🧪 Running E2E tests...\n");
     const testResult = Bun.spawnSync(
-      ["bun", "test", "src/__tests__/e2e", "--timeout", "30000"],
+      ["bun", "test", "src/__tests__/e2e", "--path-ignore-patterns", "__none__", "--timeout", "30000"],
       {
         stdout: "inherit",
         stderr: "inherit",

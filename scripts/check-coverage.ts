@@ -10,27 +10,11 @@ const THRESHOLD = 90; // Minimum line coverage percentage
 async function main() {
   console.log("🧪 Running unit tests with coverage...\n");
 
-  // Run tests with coverage
+  // Run tests with coverage (auto-discover, E2E excluded via bunfig.toml)
   const proc = Bun.spawn(
     [
       "bun", "test",
-      "src/__tests__/db", "src/__tests__/utils.test.ts",
-      "src/__tests__/dashboard-vm.test.ts",
-      "src/__tests__/coverage-lookup-vm.test.ts",
-      "src/__tests__/renewal-calendar-vm.test.ts",
-      "src/__tests__/category-config.test.ts",
-      "src/__tests__/chart-config.test.ts",
-      "src/__tests__/backy-service.test.ts",
-      "src/__tests__/totp-module.test.ts",
-      "src/__tests__/proxy-logic.test.ts",
-      "src/__tests__/backup.test.ts",
-      "src/__tests__/policy-status.test.ts",
-      "src/__tests__/sidebar-nav.test.ts",
-      "mcp/__tests__/guard.test.ts",
-      "mcp/__tests__/tools-members.test.ts",
-      "mcp/__tests__/tools-policies.test.ts",
-      "mcp/__tests__/tools-assets.test.ts",
-      "mcp/__tests__/tools-coverage.test.ts",
+      "src/__tests__", "mcp/__tests__",
       "--coverage",
     ],
     {
