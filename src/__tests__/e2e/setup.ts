@@ -1,4 +1,5 @@
 import { spawn, type Subprocess } from "bun";
+import { acquireE2eLock, releaseE2eLock } from "../../../scripts/e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${E2E_PORT}`;
@@ -8,6 +9,7 @@ const E2E_DIST_DIR = ".next-e2e";
 const SKIP_SETUP = process.env.E2E_SKIP_SETUP === "true";
 
 let serverProcess: Subprocess | null = null;
+let lockFd: number | null = null;
 
 export function getBaseUrl(): string {
   return BASE_URL;
@@ -27,15 +29,20 @@ async function waitForServer(maxAttempts = 30): Promise<boolean> {
 
 /**
  * Setup E2E test environment:
- * 1. Seed remote D1 dev database
- * 2. Start dev server pointing to remote D1 dev
+ * 1. Acquire E2E lock (exclusive access to shared D1 dev database)
+ * 2. Seed remote D1 dev database
+ * 3. Start dev server pointing to remote D1 dev
  *
- * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts).
+ * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts
+ * which handles locking at the runner level).
  */
 export async function setupE2E(): Promise<void> {
   if (SKIP_SETUP) {
     return;
   }
+
+  // Acquire exclusive lock covering the entire E2E run
+  lockFd = acquireE2eLock();
 
   // Seed remote D1 dev database
   const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
@@ -76,8 +83,10 @@ export async function setupE2E(): Promise<void> {
 /**
  * Teardown E2E test environment:
  * 1. Stop dev server
+ * 2. Release E2E lock
  *
- * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts).
+ * If E2E_SKIP_SETUP=true, this function is a no-op (used by run-e2e.ts
+ * which handles locking at the runner level).
  */
 export async function teardownE2E(): Promise<void> {
   if (SKIP_SETUP) {
@@ -89,6 +98,11 @@ export async function teardownE2E(): Promise<void> {
     serverProcess = null;
     // Wait a bit for process to die
     await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  // Release E2E lock
+  if (lockFd !== null) {
+    releaseE2eLock(lockFd);
+    lockFd = null;
   }
 }
 

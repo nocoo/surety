@@ -12,7 +12,7 @@
 
 import { spawn, type Subprocess } from "bun";
 import { existsSync, rmSync } from "fs";
-import { ensurePortFree } from "./e2e-utils";
+import { ensurePortFree, withE2eLock } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "7017";
 const E2E_DIST_DIR = ".next-e2e-ui";
@@ -50,86 +50,88 @@ async function cleanup() {
 async function main() {
   console.log("🎭 Playwright E2E UI Test Runner\n");
 
-  // Step 0: Ensure port is free
-  await ensurePortFree(E2E_UI_PORT);
+  await withE2eLock(async () => {
+    // Step 0: Ensure port is free
+    await ensurePortFree(E2E_UI_PORT);
 
-  // Step 1: Seed remote D1 dev database
-  console.log("📦 Seeding remote D1 dev database...");
-  const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
-    stdout: "inherit",
-    stderr: "inherit",
-    env: {
-      ...process.env,
-      SURETY_TARGET_DB: "dev",
-    },
-  });
-
-  if (seedResult.exitCode !== 0) {
-    console.error("❌ Failed to seed remote D1 dev database");
-    process.exit(1);
-  }
-
-  // Step 2: Start dev server pointing to remote D1 dev
-  console.log("\n🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
-  serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
-    env: {
-      ...process.env,
-      SURETY_TARGET_DB: "dev",
-      NEXT_DIST_DIR: E2E_DIST_DIR,
-      E2E_SKIP_AUTH: "true",
-    },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  const ready = await waitForServer();
-  if (!ready) {
-    // Dump server output on failure for debugging
-    if (serverProcess) {
-      const stdout = serverProcess.stdout && typeof serverProcess.stdout !== "number"
-        ? await new Response(serverProcess.stdout).text() : "";
-      const stderr = serverProcess.stderr && typeof serverProcess.stderr !== "number"
-        ? await new Response(serverProcess.stderr).text() : "";
-      if (stdout) console.error("Server stdout:\n", stdout);
-      if (stderr) console.error("Server stderr:\n", stderr);
-    }
-    console.error("❌ Failed to start E2E UI server");
-    await cleanup();
-    process.exit(1);
-  }
-  console.log("✅ E2E UI server ready!\n");
-
-  // Step 3: Run Playwright tests
-  console.log("🎭 Running Playwright tests...\n");
-  const testResult = Bun.spawnSync(
-    [
-      "bunx",
-      "playwright",
-      "test",
-      "--config",
-      "e2e/playwright.config.ts",
-      ...process.argv.slice(2), // pass through CLI args (e.g. --headed, --grep)
-    ],
-    {
+    // Step 1: Seed remote D1 dev database
+    console.log("📦 Seeding remote D1 dev database...");
+    const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
       stdout: "inherit",
       stderr: "inherit",
       env: {
         ...process.env,
-        E2E_UI_PORT,
+        SURETY_TARGET_DB: "dev",
       },
+    });
+
+    if (seedResult.exitCode !== 0) {
+      console.error("❌ Failed to seed remote D1 dev database");
+      process.exit(1);
     }
-  );
 
-  // Step 4: Cleanup
-  await cleanup();
+    // Step 2: Start dev server pointing to remote D1 dev
+    console.log("\n🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
+    serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
+      env: {
+        ...process.env,
+        SURETY_TARGET_DB: "dev",
+        NEXT_DIST_DIR: E2E_DIST_DIR,
+        E2E_SKIP_AUTH: "true",
+      },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
 
-  console.log(
-    "\n" +
-      (testResult.exitCode === 0
-        ? "✅ Playwright E2E tests passed!"
-        : "❌ Playwright E2E tests failed!")
-  );
-  process.exit(testResult.exitCode ?? 1);
+    const ready = await waitForServer();
+    if (!ready) {
+      // Dump server output on failure for debugging
+      if (serverProcess) {
+        const stdout = serverProcess.stdout && typeof serverProcess.stdout !== "number"
+          ? await new Response(serverProcess.stdout).text() : "";
+        const stderr = serverProcess.stderr && typeof serverProcess.stderr !== "number"
+          ? await new Response(serverProcess.stderr).text() : "";
+        if (stdout) console.error("Server stdout:\n", stdout);
+        if (stderr) console.error("Server stderr:\n", stderr);
+      }
+      console.error("❌ Failed to start E2E UI server");
+      await cleanup();
+      process.exit(1);
+    }
+    console.log("✅ E2E UI server ready!\n");
+
+    // Step 3: Run Playwright tests
+    console.log("🎭 Running Playwright tests...\n");
+    const testResult = Bun.spawnSync(
+      [
+        "bunx",
+        "playwright",
+        "test",
+        "--config",
+        "e2e/playwright.config.ts",
+        ...process.argv.slice(2), // pass through CLI args (e.g. --headed, --grep)
+      ],
+      {
+        stdout: "inherit",
+        stderr: "inherit",
+        env: {
+          ...process.env,
+          E2E_UI_PORT,
+        },
+      }
+    );
+
+    // Step 4: Cleanup
+    await cleanup();
+
+    console.log(
+      "\n" +
+        (testResult.exitCode === 0
+          ? "✅ Playwright E2E tests passed!"
+          : "❌ Playwright E2E tests failed!")
+    );
+    process.exit(testResult.exitCode ?? 1);
+  });
 }
 
 // Handle process signals

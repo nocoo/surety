@@ -4,36 +4,50 @@
 
 import { openSync, closeSync, unlinkSync, statSync } from "fs";
 
-const LOCK_FILE = "/tmp/surety-e2e-seed.lock";
-const LOCK_TIMEOUT_MS = 60_000;
-const POLL_INTERVAL_MS = 500;
-const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+const LOCK_FILE = "/tmp/surety-e2e.lock";
+const LOCK_TIMEOUT_MS = 120_000; // 2 min wait for another runner to finish
+const POLL_INTERVAL_MS = 1_000;
+const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 min — a full E2E run can take several minutes
+
+// ---------------------------------------------------------------------------
+// E2E Lock — protects the entire E2E lifecycle (seed + server + test execution)
+//
+// All E2E suites share a single remote D1 dev database. The lock ensures
+// only one runner operates on the database at a time, preventing:
+//   - Runner B's seed from clearing Runner A's data mid-test
+//   - Concurrent INSERTs causing unique constraint violations
+// ---------------------------------------------------------------------------
 
 /**
- * Execute `fn` while holding an exclusive file lock.
- * Prevents concurrent E2E seed operations on the shared D1 dev database.
+ * Execute `fn` while holding an exclusive file lock that covers
+ * the entire E2E lifecycle (seed + test execution).
  *
  * - Uses `openSync(path, 'wx')` (exclusive create) as the lock primitive
- * - Polls with backoff if lock is held, up to LOCK_TIMEOUT_MS
- * - Stale lock detection: if lockfile age > 2 min, force-removes it
+ * - Polls if lock is held, up to LOCK_TIMEOUT_MS
+ * - Stale lock detection: if lockfile age > 10 min, force-removes it
  */
-export async function withSeedLock<T>(fn: () => Promise<T>): Promise<T> {
-  const fd = acquireLock();
+export async function withE2eLock<T>(fn: () => Promise<T>): Promise<T> {
+  const fd = acquireE2eLock();
   try {
     return await fn();
   } finally {
-    releaseLock(fd);
+    releaseE2eLock(fd);
   }
 }
 
-function acquireLock(): number {
+/**
+ * Acquire the E2E lock manually. Returns a file descriptor that must be
+ * passed to `releaseE2eLock()`. Use this in test files where beforeAll/afterAll
+ * need separate acquire/release calls.
+ */
+export function acquireE2eLock(): number {
   const deadline = Date.now() + LOCK_TIMEOUT_MS;
 
   while (true) {
     try {
       // 'wx' = O_WRONLY | O_CREAT | O_EXCL — fails if file exists
       const fd = openSync(LOCK_FILE, "wx");
-      console.log("🔒 Seed lock acquired.");
+      console.log("🔒 E2E lock acquired.");
       return fd;
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") {
@@ -45,15 +59,32 @@ function acquireLock(): number {
 
       if (Date.now() >= deadline) {
         throw new Error(
-          `Timed out waiting for seed lock (${LOCK_TIMEOUT_MS / 1000}s). ` +
-          `Lock file: ${LOCK_FILE}. Another seed process may be stuck.`,
+          `Timed out waiting for E2E lock (${LOCK_TIMEOUT_MS / 1000}s). ` +
+          `Lock file: ${LOCK_FILE}. Another E2E runner may be stuck.`,
         );
       }
 
-      console.log("⏳ Seed lock is held by another process, waiting...");
+      console.log("⏳ E2E lock is held by another runner, waiting...");
       // Synchronous sleep to keep the loop simple (this is a CLI script)
       Bun.sleepSync(POLL_INTERVAL_MS);
     }
+  }
+}
+
+/**
+ * Release the E2E lock. Must be called with the fd returned by `acquireE2eLock()`.
+ */
+export function releaseE2eLock(fd: number): void {
+  try {
+    closeSync(fd);
+  } catch {
+    // fd may already be closed
+  }
+  try {
+    unlinkSync(LOCK_FILE);
+    console.log("🔓 E2E lock released.");
+  } catch {
+    // Lock file may already be removed
   }
 }
 
@@ -70,20 +101,6 @@ function tryRemoveStaleLock(): void {
     }
   } catch {
     // Lock file was removed between our check and stat — that's fine
-  }
-}
-
-function releaseLock(fd: number): void {
-  try {
-    closeSync(fd);
-  } catch {
-    // fd may already be closed
-  }
-  try {
-    unlinkSync(LOCK_FILE);
-    console.log("🔓 Seed lock released.");
-  } catch {
-    // Lock file may already be removed
   }
 }
 

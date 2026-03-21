@@ -18,6 +18,7 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { resolve } from "path";
+import { acquireE2eLock, releaseE2eLock } from "../../scripts/e2e-utils";
 
 const MCP_ENTRY = resolve(import.meta.dir, "../index.ts");
 
@@ -68,10 +69,15 @@ function parseToolJson(text: string): unknown {
 }
 
 // ===========================================================================
-// Test setup: seed the database before all tests
+// Test setup: acquire E2E lock + seed the database before all tests
 // ===========================================================================
 
+let lockFd: number;
+
 beforeAll(async () => {
+  // Acquire exclusive lock covering the entire MCP E2E run
+  lockFd = acquireE2eLock();
+
   // Seed the remote D1 dev database
   const seedResult = Bun.spawnSync(
     ["bun", "run", "scripts/seed-remote.ts"],
@@ -92,7 +98,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // No local cleanup needed — remote D1 dev database persists
+  // Release E2E lock so other runners can proceed
+  releaseE2eLock(lockFd);
 });
 
 // ===========================================================================

@@ -17,7 +17,6 @@ import { createRemoteDb, type TargetDb } from "../src/db/index";
 import { createAllRepos } from "../src/db/repositories";
 import { seedDatabase } from "../src/db/seed";
 import { WorkerDbClient } from "../src/db/worker-db-client";
-import { withSeedLock } from "./e2e-utils";
 
 const BLOCKED_TARGETS = ["production"];
 
@@ -59,30 +58,28 @@ async function main() {
   console.log(`🌱 Remote seed: target = ${targetDb}`);
   console.log(`   Worker URL: ${workerUrl}\n`);
 
-  await withSeedLock(async () => {
-    // Atomic batch DELETE (all-or-nothing via D1 batch)
-    console.log("🗑️  Clearing existing data (atomic batch)...");
-    const tables = [
-      "coverage_items", "cash_values", "payments", "beneficiaries",
-      "policies", "assets", "insurers", "members", "settings",
-    ];
-    const client = new WorkerDbClient(workerUrl, workerSecret, targetDb);
-    await client.batch([
-      ...tables.map((t) => ({ sql: `DELETE FROM ${t}`, params: [] })),
-      { sql: "DELETE FROM sqlite_sequence", params: [] },
-    ]);
+  // Atomic batch DELETE (all-or-nothing via D1 batch)
+  console.log("🗑️  Clearing existing data (atomic batch)...");
+  const tables = [
+    "coverage_items", "cash_values", "payments", "beneficiaries",
+    "policies", "assets", "insurers", "members", "settings",
+  ];
+  const client = new WorkerDbClient(workerUrl, workerSecret, targetDb);
+  await client.batch([
+    ...tables.map((t) => ({ sql: `DELETE FROM ${t}`, params: [] })),
+    { sql: "DELETE FROM sqlite_sequence", params: [] },
+  ]);
 
-    // Seed data (sequential INSERT via repos)
-    console.log("📦 Seeding data...");
-    const db = createRemoteDb(targetDb);
-    const repos = createAllRepos(db);
-    const result = await seedDatabase(repos);
+  // Seed data (sequential INSERT via repos)
+  console.log("📦 Seeding data...");
+  const db = createRemoteDb(targetDb);
+  const repos = createAllRepos(db);
+  const result = await seedDatabase(repos);
 
-    console.log("\n✅ Remote seed completed!");
-    console.log(`   Members: ${result.members}`);
-    console.log(`   Assets: ${result.assets}`);
-    console.log(`   Policies: ${result.policies}`);
-  });
+  console.log("\n✅ Remote seed completed!");
+  console.log(`   Members: ${result.members}`);
+  console.log(`   Assets: ${result.assets}`);
+  console.log(`   Policies: ${result.policies}`);
 }
 
 main().catch((err) => {
