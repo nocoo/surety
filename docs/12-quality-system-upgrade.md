@@ -156,6 +156,8 @@ brew install osv-scanner gitleaks
 
 1. Update `.husky/pre-push`:
    ```bash
+   set -e  # Ensure any failure aborts the push
+
    # Capture pre-push stdin immediately — Git provides ref info via stdin,
    # and child processes (bun run test:e2e) inherit stdin and may consume it.
    PUSH_INFO=$(cat)
@@ -173,16 +175,21 @@ brew install osv-scanner gitleaks
 
    # G2: Secret leak detection — scan commits being pushed
    # Uses captured PUSH_INFO (format: "local_ref local_sha remote_ref remote_sha" per line).
+   # IMPORTANT: `while read` runs via <<< (here-string), NOT pipe, so `exit 1` aborts
+   # the hook process directly instead of only exiting a subshell.
    ZERO="0000000000000000000000000000000000000000"
    if command -v gitleaks &> /dev/null; then
      echo "🔑 Checking for leaked secrets..."
-     echo "$PUSH_INFO" | while read -r local_ref local_sha remote_ref remote_sha; do
+     while read -r local_ref local_sha remote_ref remote_sha; do
        [ -z "$local_sha" ] && continue
        if [ "$local_sha" = "$ZERO" ]; then
          continue  # branch deletion, skip
        fi
        if [ "$remote_sha" = "$ZERO" ]; then
-         # new branch: find fork point from remote default branch
+         # New branch: remote has no prior SHA for this ref.
+         # Best-effort approximation: find merge-base with remote default branch.
+         # This may over-scan if the branch was forked from a non-default remote
+         # branch, but guarantees no commits are missed.
          base=$(git merge-base origin/HEAD "$local_sha" 2>/dev/null) || {
            echo "⚠️  Cannot determine base commit (origin/HEAD missing?), skipping gitleaks for this ref"
            continue
@@ -192,14 +199,16 @@ brew install osv-scanner gitleaks
          range="${remote_sha}..${local_sha}"
        fi
        gitleaks git --no-banner --log-opts="$range" || exit 1
-     done
+     done <<< "$PUSH_INFO"
    else
      echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
+   - **`set -e`**: Ensures any command failure (including gitleaks) aborts the hook and blocks the push
    - **stdin capture**: `PUSH_INFO=$(cat)` at script start preserves ref info before any child process can consume it
-   - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain. `.next/` manifests are not lockfiles and won't be picked up by `--lockfile`
-   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Parses captured stdin to compute the exact commit range being pushed. For new branches, uses `git merge-base origin/HEAD` to find the fork point; if `origin/HEAD` is missing, skips with a warning instead of generating an invalid range. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
+   - **`<<< "$PUSH_INFO"` (not pipe)**: `while read` runs in the main shell, so `exit 1` terminates the hook. A pipe (`echo | while`) spawns a subshell where `exit 1` only exits the subshell, allowing the hook to succeed
+   - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain
+   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). For incremental pushes, uses the exact `remote_sha..local_sha` range. For new branches (remote_sha is zero), uses `git merge-base origin/HEAD` as a best-effort approximation — this may over-scan commits already present on other remote refs, but guarantees no new commits are missed
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
