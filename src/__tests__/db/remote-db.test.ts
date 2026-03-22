@@ -64,7 +64,7 @@ describe("createRemoteDbFromClient", () => {
     const client = new WorkerDbClient(
       "https://example.workers.dev",
       "test-secret",
-      "dev",
+      "test",
     );
     const db = createRemoteDbFromClient(client);
     expect(db).toBeDefined();
@@ -153,7 +153,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_SECRET = "secret";
 
     const { getDbForRequest } = await import("@/db");
-    const db = getDbForRequest("dev");
+    const db = getDbForRequest("test");
     expect(db).toBeDefined();
   });
 
@@ -166,7 +166,7 @@ describe("getDbForRequest (non-test env)", () => {
 
     const { getDbForRequest } = await import("@/db");
     const request = new Request("http://localhost", {
-      headers: { cookie: "surety-database=dev; other=value" },
+      headers: { cookie: "surety-database=test; other=value" },
     });
     const db = getDbForRequest(request);
     expect(db).toBeDefined();

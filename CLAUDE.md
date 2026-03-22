@@ -21,7 +21,7 @@
 
 - **运行时（生产/E2E）**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
 - **单元测试**：bun:sqlite `:memory:` (无网络)
-- **E2E 测试**：远程 D1 dev 数据库 (`surety-db-dev`，Worker binding `DB_DEV`，`SURETY_TARGET_DB=dev`)
+- **E2E 测试**：远程 D1 test 数据库 (`surety-db-test`，Worker binding `DB_TEST`，`SURETY_TARGET_DB=test`)
 - **管理面**：drizzle-kit + d1-http driver (开发时 schema push)
 - **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
 - **无本地 SQLite 运行时**：所有非测试路径都走远程 D1
@@ -38,7 +38,7 @@
 
 ### E2E 隔离约束
 
-所有 E2E suite（API、UI、MCP）共用一个远程 D1 dev 数据库 (`surety-db-dev`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
+所有 E2E suite（API、UI、MCP）共用一个远程 D1 test 数据库 (`surety-db-test`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
 
 ### 测试文件自动发现
 
@@ -134,7 +134,7 @@ SURETY_WORKER_SECRET=<worker_shared_secret>
 
 E2E 测试额外需要：
 ```
-SURETY_TARGET_DB=dev        # 指向 D1 dev 数据库 (surety-db-dev)
+SURETY_TARGET_DB=test       # 指向 D1 test 数据库 (surety-db-test)
 E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
 ```
 

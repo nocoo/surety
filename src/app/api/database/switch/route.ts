@@ -4,13 +4,13 @@ import type { TargetDb } from "@/db/index";
 
 export const dynamic = "force-dynamic";
 
-const VALID_TARGETS: TargetDb[] = ["production", "dev"];
+const VALID_TARGETS: TargetDb[] = ["production", "test"];
 
 /**
  * POST /api/database/switch — switch the active database.
  *
  * Safety: when E2E_SKIP_AUTH is set, switching is locked to the current
- * SURETY_TARGET_DB (typically "dev"). This prevents E2E tests from
+ * SURETY_TARGET_DB (typically "test"). This prevents E2E tests from
  * accidentally operating on production data.
  */
 export async function POST(request: Request) {

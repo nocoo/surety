@@ -54,28 +54,28 @@ async function main() {
     // Step 0: Ensure port is free
     await ensurePortFree(E2E_PORT);
 
-    // Step 1: Seed remote D1 dev database
-    console.log("📦 Seeding remote D1 dev database...");
+    // Step 1: Seed remote D1 test database
+    console.log("📦 Seeding remote D1 test database...");
     const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
       stdout: "inherit",
       stderr: "inherit",
       env: {
         ...process.env,
-        SURETY_TARGET_DB: "dev",
+        SURETY_TARGET_DB: "test",
       },
     });
 
     if (seedResult.exitCode !== 0) {
-      console.error("❌ Failed to seed remote D1 dev database");
+      console.error("❌ Failed to seed remote D1 test database");
       process.exit(1);
     }
 
-    // Step 2: Start dev server pointing to remote D1 dev
+    // Step 2: Start dev server pointing to remote D1 test
     console.log("\n🌐 Starting E2E server on port", E2E_PORT, "...");
     serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
       env: {
         ...process.env,
-        SURETY_TARGET_DB: "dev",
+        SURETY_TARGET_DB: "test",
         NEXT_DIST_DIR: E2E_DIST_DIR,
         E2E_SKIP_AUTH: "true",
       },

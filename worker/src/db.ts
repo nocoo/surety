@@ -4,13 +4,13 @@
 
 export interface Env {
   DB_PROD: D1Database;
-  DB_DEV: D1Database;
+  DB_TEST: D1Database;
   WORKER_SHARED_SECRET: string;
 }
 
-const DB_MAP: Record<string, keyof Pick<Env, "DB_PROD" | "DB_DEV">> = {
+const DB_MAP: Record<string, keyof Pick<Env, "DB_PROD" | "DB_TEST">> = {
   production: "DB_PROD",
-  dev: "DB_DEV",
+  test: "DB_TEST",
 };
 
 export function resolveDb(

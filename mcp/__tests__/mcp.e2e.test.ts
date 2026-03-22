@@ -42,7 +42,7 @@ async function createMcpClient(
     env: {
       ...baseEnv,
       NODE_ENV: "development",
-      SURETY_TARGET_DB: "dev",
+      SURETY_TARGET_DB: "test",
       ...env,
     },
   });
@@ -87,7 +87,7 @@ beforeAll(async () => {
       stderr: "pipe",
       env: {
         ...process.env,
-        SURETY_TARGET_DB: "dev",
+        SURETY_TARGET_DB: "test",
       },
     },
   );

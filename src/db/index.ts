@@ -6,7 +6,7 @@
  *
  * The key design principle is request-scoped database access:
  * each API route calls getDbForRequest(request) to get a db instance
- * bound to the correct target database (production, dev).
+ * bound to the correct target database (production, test).
  */
 
 import * as schema from "./schema";
@@ -60,7 +60,7 @@ export function resolveTargetDb(cookieValue?: string): TargetDb {
 }
 
 function isValidTargetDb(value: string): value is TargetDb {
-  return ["production", "dev"].includes(value);
+  return ["production", "test"].includes(value);
 }
 
 // ---------- Remote database (sqlite-proxy → Worker proxy) ----------

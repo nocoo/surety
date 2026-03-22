@@ -49,8 +49,8 @@ describe("db/index", () => {
     });
 
     test("uses SURETY_TARGET_DB env var when set", () => {
-      process.env.SURETY_TARGET_DB = "dev";
-      expect(resolveTargetDb()).toBe("dev");
+      process.env.SURETY_TARGET_DB = "test";
+      expect(resolveTargetDb()).toBe("test");
     });
 
     test("validates SURETY_TARGET_DB value", () => {
@@ -59,13 +59,13 @@ describe("db/index", () => {
     });
 
     test("env var takes precedence over cookie", () => {
-      process.env.SURETY_TARGET_DB = "dev";
-      expect(resolveTargetDb("production")).toBe("dev");
+      process.env.SURETY_TARGET_DB = "test";
+      expect(resolveTargetDb("production")).toBe("test");
     });
 
     test("falls back to cookie value when no env var", () => {
       delete process.env.SURETY_TARGET_DB;
-      expect(resolveTargetDb("dev")).toBe("dev");
+      expect(resolveTargetDb("test")).toBe("test");
     });
 
     test("returns production for invalid cookie", () => {
@@ -74,7 +74,7 @@ describe("db/index", () => {
     });
 
     test("accepts all valid target db values", () => {
-      for (const target of ["production", "dev"] as const) {
+      for (const target of ["production", "test"] as const) {
         delete process.env.SURETY_TARGET_DB;
         expect(resolveTargetDb(target)).toBe(target);
       }
@@ -183,7 +183,7 @@ describe("db/index", () => {
     });
 
     test("returns in-memory db in test environment regardless of targetDb string", () => {
-      const db = getDbForRequest("dev");
+      const db = getDbForRequest("test");
       expect(db).toBeDefined();
       // Should still be the test db
     });

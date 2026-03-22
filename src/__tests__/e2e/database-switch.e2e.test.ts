@@ -41,8 +41,8 @@ describe("Database Switch API E2E", () => {
       expect(data.error).toContain("Invalid target database");
     });
 
-    test("E2E mode locks database to dev", async () => {
-      // E2E runner sets E2E_SKIP_AUTH=true and SURETY_TARGET_DB=dev
+    test("E2E mode locks database to test", async () => {
+      // E2E runner sets E2E_SKIP_AUTH=true and SURETY_TARGET_DB=test
       // Attempting to switch to production should be rejected
       const { status, data } = await apiRequest<SwitchResponse>(
         "/api/database/switch",

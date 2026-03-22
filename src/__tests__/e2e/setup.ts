@@ -44,25 +44,25 @@ export async function setupE2E(): Promise<void> {
   // Acquire exclusive lock covering the entire E2E run
   lockFd = acquireE2eLock();
 
-  // Seed remote D1 dev database
+  // Seed remote D1 test database
   const seedResult = Bun.spawnSync(["bun", "run", "scripts/seed-remote.ts"], {
     stdout: "inherit",
     stderr: "inherit",
     env: {
       ...process.env,
-      SURETY_TARGET_DB: "dev",
+      SURETY_TARGET_DB: "test",
     },
   });
 
   if (seedResult.exitCode !== 0) {
-    throw new Error("Failed to seed remote D1 dev database");
+    throw new Error("Failed to seed remote D1 test database");
   }
 
-  // Start dev server pointing to remote D1 dev
+  // Start dev server pointing to remote D1 test
   serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
     env: {
       ...process.env,
-      SURETY_TARGET_DB: "dev",
+      SURETY_TARGET_DB: "test",
       NEXT_DIST_DIR: E2E_DIST_DIR,
       E2E_SKIP_AUTH: "true",
     },

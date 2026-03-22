@@ -9,6 +9,6 @@ database_name = "surety-db"
 database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 
 [[d1_databases]]
-binding = "DB_DEV"
-database_name = "surety-db-dev"
-database_id = "779124b1-8e5d-4823-8065-035871e591d0"
+binding = "DB_TEST"
+database_name = "surety-db-test"
+database_id = "8650f8a3-72ce-4029-ac54-ec13ebb0c5b0"

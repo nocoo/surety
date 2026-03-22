@@ -8,7 +8,7 @@
  * SAFETY: Refuses to seed "production". SURETY_TARGET_DB must be explicitly set.
  *
  * Usage:
- *   SURETY_TARGET_DB=dev bun scripts/seed-remote.ts
+ *   SURETY_TARGET_DB=test bun scripts/seed-remote.ts
  *
  * Requires SURETY_WORKER_URL and SURETY_WORKER_SECRET in .env.
  */

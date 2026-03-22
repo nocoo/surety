@@ -137,12 +137,12 @@ describe("WorkerDbClient", () => {
         ),
       );
 
-      const client = new WorkerDbClient(WORKER_URL, SECRET, "dev");
+      const client = new WorkerDbClient(WORKER_URL, SECRET, "test");
       await client.query("SELECT 1");
 
       const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
       const headers = init.headers as Record<string, string>;
-      expect(headers["X-Target-DB"]).toBe("dev");
+      expect(headers["X-Target-DB"]).toBe("test");
     });
   });
 
