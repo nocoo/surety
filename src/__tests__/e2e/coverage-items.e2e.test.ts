@@ -36,7 +36,8 @@ describe("Coverage Items API E2E", () => {
     // Get or create a test member
     const { data: members } = await apiRequest<Member[]>("/api/members");
     if (members.length > 0) {
-      testMemberId = members[0]!.id;
+      const member = members[0] as Member;
+      testMemberId = member.id;
     } else {
       const { data } = await apiRequest<Member>("/api/members", {
         method: "POST",
@@ -121,7 +122,7 @@ describe("Coverage Items API E2E", () => {
       );
       expect(status).toBe(200);
       expect(data.length).toBe(1);
-      expect(data[0]!.name).toBe("住院医疗");
+      expect((data[0] as CoverageItem).name).toBe("住院医疗");
     });
 
     test("GET /api/policies/:id/coverage-items/:itemId returns single item", async () => {

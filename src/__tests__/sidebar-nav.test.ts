@@ -21,8 +21,8 @@ describe("Sidebar NAV_GROUPS", () => {
   test("总览 group contains dashboard, coverage-lookup, renewal-calendar", () => {
     const overview = NAV_GROUPS.find((g) => g.label === "总览");
     expect(overview).toBeDefined();
-    expect(overview!.items).toHaveLength(3);
-    expect(overview!.items.map((i) => i.href)).toEqual([
+    expect((overview as NavGroup).items).toHaveLength(3);
+    expect((overview as NavGroup).items.map((i) => i.href)).toEqual([
       "/",
       "/coverage-lookup",
       "/renewal-calendar",
@@ -32,8 +32,8 @@ describe("Sidebar NAV_GROUPS", () => {
   test("数据管理 group contains policies, members, insurers, assets", () => {
     const data = NAV_GROUPS.find((g) => g.label === "数据管理");
     expect(data).toBeDefined();
-    expect(data!.items).toHaveLength(4);
-    expect(data!.items.map((i) => i.href)).toEqual([
+    expect((data as NavGroup).items).toHaveLength(4);
+    expect((data as NavGroup).items.map((i) => i.href)).toEqual([
       "/policies",
       "/members",
       "/insurers",
@@ -44,8 +44,9 @@ describe("Sidebar NAV_GROUPS", () => {
   test("系统 group contains settings", () => {
     const system = NAV_GROUPS.find((g) => g.label === "系统");
     expect(system).toBeDefined();
-    expect(system!.items).toHaveLength(1);
-    expect(system!.items[0]!.href).toBe("/settings");
+    expect((system as NavGroup).items).toHaveLength(1);
+    const firstItem = (system as NavGroup).items[0] as NavItem;
+    expect(firstItem.href).toBe("/settings");
   });
 
   test("every item has required fields (href, label, icon)", () => {

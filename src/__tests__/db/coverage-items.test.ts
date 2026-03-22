@@ -97,9 +97,12 @@ describe("coverageItemsRepo", () => {
       ]);
 
       expect(items).toHaveLength(12);
-      expect(items[0]!.name).toBe("一般医疗保险金");
-      expect(items[8]!.isOptional).toBe(true);
-      expect(items[7]!.notes).toBe("赠险");
+      const first = items[0] as (typeof items)[number];
+      const eighth = items[7] as (typeof items)[number];
+      const ninth = items[8] as (typeof items)[number];
+      expect(first.name).toBe("一般医疗保险金");
+      expect(ninth.isOptional).toBe(true);
+      expect(eighth.notes).toBe("赠险");
     });
 
     test("returns empty array for empty input", async () => {

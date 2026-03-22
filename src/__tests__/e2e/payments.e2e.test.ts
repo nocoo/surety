@@ -27,7 +27,8 @@ describe("Payments API E2E", () => {
     // Get a policy to test payments
     const { data: policies } = await apiRequest<Policy[]>("/api/policies");
     if (policies.length > 0) {
-      testPolicyId = policies[0]!.id;
+      const policy = policies[0] as Policy;
+      testPolicyId = policy.id;
     }
   }, 60000);
 
@@ -52,8 +53,10 @@ describe("Payments API E2E", () => {
 
       if (data.length >= 2) {
         for (let i = 0; i < data.length - 1; i++) {
-          expect(data[i]!.periodNumber).toBeGreaterThanOrEqual(
-            data[i + 1]!.periodNumber
+          const curr = data[i] as Payment;
+          const next = data[i + 1] as Payment;
+          expect(curr.periodNumber).toBeGreaterThanOrEqual(
+            next.periodNumber
           );
         }
       }
@@ -65,7 +68,7 @@ describe("Payments API E2E", () => {
       );
 
       if (data.length > 0) {
-        const payment = data[0]!;
+        const payment = data[0] as Payment;
         expect(typeof payment.id).toBe("number");
         expect(typeof payment.policyId).toBe("number");
         expect(typeof payment.periodNumber).toBe("number");

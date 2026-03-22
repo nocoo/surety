@@ -98,7 +98,7 @@ describe("Coverage Lookup API E2E", () => {
       );
 
       if (data.members.length > 0) {
-        const member = data.members[0]!;
+        const member = data.members[0] as MemberCard;
         expect(typeof member.id).toBe("number");
         expect(typeof member.name).toBe("string");
         expect(typeof member.relation).toBe("string");
@@ -115,7 +115,7 @@ describe("Coverage Lookup API E2E", () => {
       );
 
       if (initial.members.length > 0) {
-        const memberId = initial.members[0]!.id;
+        const memberId = (initial.members[0] as MemberCard).id;
         const { status, data } = await apiRequest<CoverageLookupData>(
           `/api/coverage-lookup?type=member&id=${memberId}`
         );
@@ -133,7 +133,7 @@ describe("Coverage Lookup API E2E", () => {
 
       expect(Array.isArray(data.categoryGroups)).toBe(true);
       if (data.categoryGroups.length > 0) {
-        const group = data.categoryGroups[0]!;
+        const group = data.categoryGroups[0] as CategoryGroup;
         expect(typeof group.category).toBe("string");
         expect(typeof group.categoryLabel).toBe("string");
         expect(typeof group.categoryVariant).toBe("string");
@@ -162,7 +162,7 @@ describe("Coverage Lookup API E2E", () => {
       );
 
       if (data.assets.length > 0) {
-        const asset = data.assets[0]!;
+        const asset = data.assets[0] as AssetCard;
         expect(typeof asset.id).toBe("number");
         expect(typeof asset.name).toBe("string");
         expect(typeof asset.type).toBe("string");
@@ -180,7 +180,7 @@ describe("Coverage Lookup API E2E", () => {
       );
 
       if (initial.assets.length > 0) {
-        const assetId = initial.assets[0]!.id;
+        const assetId = (initial.assets[0] as AssetCard).id;
         const { status, data } = await apiRequest<CoverageLookupData>(
           `/api/coverage-lookup?type=asset&id=${assetId}`
         );
@@ -198,8 +198,8 @@ describe("Coverage Lookup API E2E", () => {
         "/api/coverage-lookup?type=member"
       );
 
-      if (data.categoryGroups.length > 0 && data.categoryGroups[0]!.policies.length > 0) {
-        const policy = data.categoryGroups[0]!.policies[0]!;
+      if (data.categoryGroups.length > 0 && (data.categoryGroups[0] as CategoryGroup).policies.length > 0) {
+        const policy = (data.categoryGroups[0] as CategoryGroup).policies[0] as PolicyCard;
         expect(typeof policy.id).toBe("number");
         expect(typeof policy.productName).toBe("string");
         expect(typeof policy.category).toBe("string");

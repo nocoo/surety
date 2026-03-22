@@ -102,8 +102,8 @@ describe("Renewal Calendar API E2E", () => {
 
       // Verify sorted order
       for (let i = 1; i < data.monthlyData.length; i++) {
-        const prev = data.monthlyData[i - 1]!.month;
-        const curr = data.monthlyData[i]!.month;
+        const prev = (data.monthlyData[i - 1] as MonthlyRenewal).month;
+        const curr = (data.monthlyData[i] as MonthlyRenewal).month;
         expect(prev.localeCompare(curr)).toBeLessThan(0);
       }
     });
@@ -114,7 +114,7 @@ describe("Renewal Calendar API E2E", () => {
       );
 
       if (data.monthlyData.length > 0) {
-        const month = data.monthlyData[0]!;
+        const month = data.monthlyData[0] as MonthlyRenewal;
         expect(typeof month.month).toBe("string");
         expect(typeof month.monthLabel).toBe("string");
         expect(Array.isArray(month.items)).toBe(true);
@@ -138,7 +138,7 @@ describe("Renewal Calendar API E2E", () => {
       const items = monthWithItems?.items ?? [];
 
       if (items.length > 0) {
-        const item = items[0]!;
+        const item = items[0] as RenewalItem;
         expect(typeof item.id).toBe("number");
         expect(typeof item.productName).toBe("string");
         expect(typeof item.category).toBe("string");

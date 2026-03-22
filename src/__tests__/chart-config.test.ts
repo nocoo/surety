@@ -31,14 +31,14 @@ describe("chart-config", () => {
 
   describe("getChartColor", () => {
     test("returns color at index", () => {
-      expect(getChartColor(0)).toBe(CHART_COLORS.palette[0]!);
-      expect(getChartColor(1)).toBe(CHART_COLORS.palette[1]!);
+      expect(getChartColor(0)).toBe(CHART_COLORS.palette[0] as string);
+      expect(getChartColor(1)).toBe(CHART_COLORS.palette[1] as string);
     });
 
     test("wraps around for index >= palette length", () => {
-      expect(getChartColor(24)).toBe(CHART_COLORS.palette[0]!);
-      expect(getChartColor(25)).toBe(CHART_COLORS.palette[1]!);
-      expect(getChartColor(48)).toBe(CHART_COLORS.palette[0]!);
+      expect(getChartColor(24)).toBe(CHART_COLORS.palette[0] as string);
+      expect(getChartColor(25)).toBe(CHART_COLORS.palette[1] as string);
+      expect(getChartColor(48)).toBe(CHART_COLORS.palette[0] as string);
     });
   });
 

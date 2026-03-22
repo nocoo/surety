@@ -108,7 +108,7 @@ describe("Dashboard API E2E", () => {
       const { data } = await apiRequest<DashboardResponse>("/api/dashboard");
 
       if (data.charts.premiumByCategory.length > 0) {
-        const item = data.charts.premiumByCategory[0]!;
+        const item = data.charts.premiumByCategory[0] as ChartData["premiumByCategory"][number];
         expect(typeof item.category).toBe("string");
         expect(typeof item.label).toBe("string");
         expect(typeof item.count).toBe("number");
@@ -121,7 +121,8 @@ describe("Dashboard API E2E", () => {
       const { data } = await apiRequest<DashboardResponse>("/api/dashboard");
 
       if (data.charts.premiumByMember.length > 0) {
-        const item = data.charts.premiumByMember[0]!;
+        const item = data.charts.premiumByMember[0] as ChartData["premiumByMember"][number];
+        if (!item) throw new Error("expected item");
         expect(typeof item.name).toBe("string");
         expect(typeof item.premium).toBe("number");
         expect(typeof item.count).toBe("number");

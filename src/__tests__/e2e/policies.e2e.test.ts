@@ -37,7 +37,8 @@ describe("Policies API E2E", () => {
 
     const { data: members } = await apiRequest<Member[]>("/api/members");
     if (members.length > 0) {
-      testMemberId = members[0]!.id;
+      const member = members[0] as Member;
+      testMemberId = member.id;
     } else {
       const { data } = await apiRequest<Member>("/api/members", {
         method: "POST",
@@ -440,7 +441,7 @@ describe("Policies API E2E", () => {
       expect(status).toBe(200);
       const target = data.find((p) => p.id === policyId);
       expect(target).toBeDefined();
-      expect(target!.guaranteedRenewalYears).toBe(20);
+      expect((target as PolicyListItem & { guaranteedRenewalYears: number | null }).guaranteedRenewalYears).toBe(20);
     });
 
     test("PUT /api/policies/:id updates guaranteedRenewalYears", async () => {

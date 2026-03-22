@@ -106,7 +106,7 @@ describe("backup service", () => {
     test("uses snake_case column names (raw SQL format)", async () => {
       await seedFamily();
       const backup = await buildBackup(db);
-      const member = backup.data.members[0]!;
+      const member = backup.data.members[0] as Record<string, unknown>;
       // Should have snake_case keys from conversion
       expect(member).toHaveProperty("birth_date");
       expect(member).toHaveProperty("created_at");
@@ -117,7 +117,7 @@ describe("backup service", () => {
     test("timestamps are raw integers (not Date objects)", async () => {
       await seedFamily();
       const backup = await buildBackup(db);
-      const member = backup.data.members[0]!;
+      const member = backup.data.members[0] as Record<string, unknown>;
       expect(typeof member.created_at).toBe("number");
     });
 
@@ -125,15 +125,18 @@ describe("backup service", () => {
       await seedFamily();
       const backup = await buildBackup(db);
       expect(backup.data.members.length).toBe(2);
-      expect(backup.data.members[0]!.name).toBe("张三");
-      expect(backup.data.members[1]!.name).toBe("李四");
+      const first = backup.data.members[0] as Record<string, unknown>;
+      const second = backup.data.members[1] as Record<string, unknown>;
+      expect(first.name).toBe("张三");
+      expect(second.name).toBe("李四");
     });
 
     test("includes seeded policies", async () => {
       await seedFamily();
       const backup = await buildBackup(db);
       expect(backup.data.policies.length).toBe(1);
-      expect(backup.data.policies[0]!.policy_number).toBe("POL-001");
+      const policy = backup.data.policies[0] as Record<string, unknown>;
+      expect(policy.policy_number).toBe("POL-001");
     });
 
     test("includes seeded settings", async () => {
@@ -152,7 +155,8 @@ describe("backup service", () => {
       await seedFamily();
       const backup = await buildBackup(db);
       expect(backup.data.assets.length).toBe(1);
-      expect(backup.data.assets[0]!.name).toBe("沪A12345");
+      const asset = backup.data.assets[0] as Record<string, unknown>;
+      expect(asset.name).toBe("沪A12345");
     });
 
     test("backup is JSON-serializable roundtrip", async () => {
@@ -277,7 +281,8 @@ describe("backup service", () => {
       const members = rawQuery("members") as { id: number }[];
       const memberIds = members.map((m) => m.id);
       // policy's applicant_id should match a member's id
-      expect(memberIds).toContain(policies[0]!.applicant_id);
+      const firstPolicy = policies[0] as { applicant_id: number };
+      expect(memberIds).toContain(firstPolicy.applicant_id);
     });
 
     test("restore with empty data clears everything", async () => {
@@ -376,7 +381,7 @@ describe("backup service", () => {
       // Corrupt the backup: duplicate policy_number will violate UNIQUE constraint
       const corruptBackup = JSON.parse(JSON.stringify(backup)) as BackupData;
       if (corruptBackup.data.policies.length > 0) {
-        corruptBackup.data.policies.push({ ...corruptBackup.data.policies[0]! });
+        corruptBackup.data.policies.push({ ...corruptBackup.data.policies[0] });
       }
 
       await expect(restoreBackup(db, corruptBackup)).rejects.toThrow();
@@ -384,7 +389,8 @@ describe("backup service", () => {
       // After rollback, the original data should still be intact
       const members = rawQuery("members") as { name: string }[];
       expect(members.length).toBe(1);
-      expect(members[0]!.name).toBe("Should survive");
+      const survivor = members[0] as { name: string };
+      expect(survivor.name).toBe("Should survive");
     });
   });
 
@@ -455,9 +461,9 @@ describe("backup service", () => {
       // Find a member INSERT statement
       const memberInsert = captured.find((s) => s.sql.startsWith("INSERT INTO members"));
       expect(memberInsert).toBeDefined();
-      expect(memberInsert!.sql).toContain("name");
-      expect(memberInsert!.sql).toContain("relation");
-      expect(memberInsert!.params.length).toBeGreaterThan(0);
+      expect((memberInsert as SqlStatement).sql).toContain("name");
+      expect((memberInsert as SqlStatement).sql).toContain("relation");
+      expect((memberInsert as SqlStatement).params.length).toBeGreaterThan(0);
     });
 
     test("batch path restores data correctly", async () => {
@@ -471,7 +477,8 @@ describe("backup service", () => {
       // Verify data was actually inserted via the executor
       const members = rawQuery("members") as { name: string }[];
       expect(members.length).toBe(2);
-      expect(members[0]!.name).toBe("张三");
+      const firstMember = members[0] as { name: string };
+      expect(firstMember.name).toBe("张三");
     });
 
     test("batch path handles Date and boolean conversions", async () => {
@@ -483,7 +490,7 @@ describe("backup service", () => {
       await restoreBackup(db, backup, executor);
 
       // Member INSERT should have integer timestamps (not Date objects)
-      const memberInsert = captured.find((s) => s.sql.startsWith("INSERT INTO members"))!;
+      const memberInsert = captured.find((s) => s.sql.startsWith("INSERT INTO members")) as SqlStatement;
       // created_at and updated_at should be numbers, not Date objects
       const dateParams = memberInsert.params.filter((p) => typeof p === "number" && p > 1600000000);
       expect(dateParams.length).toBeGreaterThanOrEqual(2); // at least created_at and updated_at
