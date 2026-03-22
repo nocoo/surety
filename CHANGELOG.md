@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - **G2 security gate** — `osv-scanner` (dependency CVE scan) + `gitleaks` (secret detection) as pre-push hooks
 - **lint-staged** — incremental ESLint on staged files only (replaces full-repo lint in pre-commit)
 - `osv-scanner.toml` configuration with 16 transitive CVE ignores (reviewed, expiry 2026-06-23)
+- `.gitleaks.toml` allowlist for test fixture false positives (test API keys in unit/E2E tests)
 
 ### Changed
 

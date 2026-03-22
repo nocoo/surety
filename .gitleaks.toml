@@ -1,0 +1,12 @@
+# gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+title = "Surety gitleaks config"
+
+[allowlist]
+  description = "Test fixtures and false positives"
+  paths = [
+    '''__tests__/.*\.test\.ts$''',
+    '''__tests__/e2e/.*\.test\.ts$''',
+    '''\.env\.example$''',
+  ]
