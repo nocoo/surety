@@ -191,7 +191,7 @@ brew install osv-scanner gitleaks
    ```
    - Use `command -v` guard with explicit warning when tools are missing
    - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain. `.next/` manifests are not lockfiles and won't be picked up by `--lockfile`
-   - **gitleaks**: Reads pre-push stdin (`local_ref local_sha remote_ref remote_sha`) to compute the exact commit range being pushed. For new branches, uses `origin/HEAD` (remote ref, not local branch) as the comparison base. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
+   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Reads pre-push stdin (`local_ref local_sha remote_ref remote_sha`) to compute the exact commit range being pushed. For new branches, uses `origin/HEAD` (remote ref, not local branch) as the comparison base. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
