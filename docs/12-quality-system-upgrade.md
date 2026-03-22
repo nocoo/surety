@@ -204,11 +204,11 @@ brew install osv-scanner gitleaks
      echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
-   - **`set -e`**: Ensures any command failure (including gitleaks) aborts the hook and blocks the push
+   - **`set -e`**: Ensures command failures (e.g., `bun run test:e2e`, `osv-scanner`) abort the hook. Note: `set -e` alone does NOT fix gitleaks failure propagation — the `<<<` here-string fix below is what makes `exit 1` inside the loop work
    - **stdin capture**: `PUSH_INFO=$(cat)` at script start preserves ref info before any child process can consume it
-   - **`<<< "$PUSH_INFO"` (not pipe)**: `while read` runs in the main shell, so `exit 1` terminates the hook. A pipe (`echo | while`) spawns a subshell where `exit 1` only exits the subshell, allowing the hook to succeed
+   - **`<<< "$PUSH_INFO"` (not pipe)**: This is the critical fix for gitleaks failure propagation. `while read` runs in the main shell, so `exit 1` terminates the hook. A pipe (`echo | while`) spawns a subshell where `exit 1` only exits the subshell, allowing the hook to succeed even when gitleaks finds secrets
    - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain
-   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). For incremental pushes, uses the exact `remote_sha..local_sha` range. For new branches (remote_sha is zero), uses `git merge-base origin/HEAD` as a best-effort approximation — this may over-scan commits already present on other remote refs, but guarantees no new commits are missed
+   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). For incremental pushes, uses the exact `remote_sha..local_sha` range. For new branches (remote_sha is zero), uses `git merge-base origin/HEAD` as a best-effort approximation — this may over-scan commits already on other remote refs. **Caveat**: if `origin/HEAD` is not set (e.g., bare clone without `git remote set-head`), the new-branch scan is skipped with a warning; this is a known gap traded for not blocking all pushes on misconfigured repos
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
