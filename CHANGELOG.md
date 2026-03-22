@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.2] - 2026-03-23
+
+### Added
+
+- **G1 ESLint strict upgrade** — enable `tseslint.configs.strict` overlay with `no-non-null-assertion`, `no-dynamic-delete`, and `--max-warnings=0` zero-tolerance policy
+- **G2 security gate** — `osv-scanner` (dependency CVE scan) + `gitleaks` (secret detection) as pre-push hooks
+- **lint-staged** — incremental ESLint on staged files only (replaces full-repo lint in pre-commit)
+- `osv-scanner.toml` configuration with 16 transitive CVE ignores (reviewed, expiry 2026-06-23)
+
+### Changed
+
+- **D1 test database renamed** — `surety-db-dev` / `DB_DEV` → `surety-db-test` / `DB_TEST` across Worker bindings, client types, E2E runners, seed scripts, and API routes
+- `TargetDb` type narrowed from `"production" | "dev"` to `"production" | "test"` for semantic clarity
+- Pre-commit hook: `bun run lint` → `bunx lint-staged` (faster, scoped to staged files)
+- Pre-push hook: added `osv-scanner --lockfile=bun.lock && gitleaks protect --staged --no-banner` before E2E
+- Upgraded `next` and `eslint-config-next` from 16.1.6 to 16.1.7
+
+### Fixed
+
+- 132 ESLint strict violations (129 `no-non-null-assertion` + 3 `no-dynamic-delete`) resolved with type-safe casts and null guards
+- 53 TypeScript `TS2532`/`TS18048` errors from stricter null-safety after removing `!` assertions
+- Database switch E2E test still referenced obsolete `"dev"` target
+
+### Removed
+
+- Obsolete `restore-prod.ts` script (dead code, zero references)
+
+### Documentation
+
+- Quality system upgrade plan (`docs/` numbered documents)
+- Updated CLAUDE.md D1 references, test framework description, and E2E isolation constraints
+
 ## [v1.3.1] - 2026-03-15
 
 ### Removed
