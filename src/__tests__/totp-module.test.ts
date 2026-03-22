@@ -124,7 +124,7 @@ describe("encryptSecret / decryptSecret", () => {
   test("throws on tampered ciphertext", () => {
     const encrypted = encryptSecret("secret", TEST_MASTER_KEY);
     const parts = encrypted.split(":");
-    const tampered = parts[0] + ":" + "ff" + parts[1]!.slice(2) + ":" + parts[2];
+    const tampered = parts[0] + ":" + "ff" + (parts[1] as string).slice(2) + ":" + parts[2];
     expect(() => decryptSecret(tampered, TEST_MASTER_KEY)).toThrow();
   });
 
@@ -264,7 +264,7 @@ describe("brute force protection", () => {
     const next = recordFailedAttempt(state, 5, 15);
     expect(next.failedAttempts).toBe(5);
     expect(next.lockUntil).not.toBeNull();
-    const lockTime = new Date(next.lockUntil!).getTime();
+    const lockTime = new Date(next.lockUntil as string).getTime();
     const expected = Date.now() + 15 * 60 * 1000;
     expect(Math.abs(lockTime - expected)).toBeLessThan(2000);
   });
@@ -308,7 +308,7 @@ describe("trusted device cookie", () => {
     const parts = cookieValue.split("|");
     expect(parts).toHaveLength(4);
     expect(parts[0]).toBe(email);
-    expect(new Date(parts[1]!).toISOString()).toBe(parts[1]!);
+    expect(new Date(parts[1] as string).toISOString()).toBe(parts[1] as string);
     expect(parts[2]).toBe("v1");
   });
 

@@ -34,11 +34,7 @@ describe("db/index", () => {
     closeDb();
     // Restore env
     for (const [key, value] of Object.entries(originalEnv)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
+      process.env[key] = value;
     }
   });
 

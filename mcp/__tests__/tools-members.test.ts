@@ -10,7 +10,7 @@ import {
   settingsRepo,
 } from "@/db/repositories";
 import { registerMemberTools } from "../tools/members";
-import { createMockServer, parseResult } from "./helpers";
+import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();
 
@@ -52,7 +52,7 @@ describe("list-members", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const handler = tools.get("list-members")!.handler;
+    const handler = getHandler(tools, "list-members");
     const result = await handler({});
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
@@ -61,7 +61,7 @@ describe("list-members", () => {
   test("should return empty array when no members exist", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("list-members")!.handler({});
+    const result = await getHandler(tools, "list-members")({});
     const data = parseResult(result);
     expect(data).toEqual([]);
   });
@@ -71,7 +71,7 @@ describe("list-members", () => {
     await enableMcp();
     const { dad, mom } = await seedMembers();
 
-    const result = await tools.get("list-members")!.handler({});
+    const result = await getHandler(tools, "list-members")({});
     const data = parseResult(result);
 
     expect(data).toHaveLength(3);
@@ -102,7 +102,7 @@ describe("list-members", () => {
       idCard: "310101199001011234",
     });
 
-    const result = await tools.get("list-members")!.handler({});
+    const result = await getHandler(tools, "list-members")({});
     const data = parseResult(result);
     expect(data[0]).not.toHaveProperty("idCard");
     expect(data[0]).not.toHaveProperty("createdAt");
@@ -115,7 +115,7 @@ describe("get-member", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools.get("get-member")!.handler({ memberId: 1 });
+    const result = await getHandler(tools, "get-member")({ memberId: 1 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -123,7 +123,7 @@ describe("get-member", () => {
   test("should return error for non-existent member", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("get-member")!.handler({ memberId: 999 });
+    const result = await getHandler(tools, "get-member")({ memberId: 999 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
   });
@@ -133,7 +133,7 @@ describe("get-member", () => {
     await enableMcp();
     const { dad } = await seedMembers();
 
-    const result = await tools.get("get-member")!.handler({
+    const result = await getHandler(tools, "get-member")({
       memberId: dad.id,
     });
     const data = parseResult(result);
@@ -163,7 +163,7 @@ describe("get-member", () => {
       status: "Active",
     });
 
-    const result = await tools.get("get-member")!.handler({
+    const result = await getHandler(tools, "get-member")({
       memberId: dad.id,
     });
     const data = parseResult(result);
@@ -194,7 +194,7 @@ describe("get-member", () => {
       status: "Active",
     });
 
-    const result = await tools.get("get-member")!.handler({
+    const result = await getHandler(tools, "get-member")({
       memberId: dad.id,
     });
     const data = parseResult(result);
@@ -223,7 +223,7 @@ describe("get-member", () => {
       status: "Active",
     });
 
-    const result = await tools.get("get-member")!.handler({
+    const result = await getHandler(tools, "get-member")({
       memberId: dad.id,
     });
     const data = parseResult(result);

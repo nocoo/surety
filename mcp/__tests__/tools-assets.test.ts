@@ -6,7 +6,7 @@ import { describe, test, expect, beforeEach } from "bun:test";
 import { createTestDb, resetTestDb } from "@/db";
 import { membersRepo, assetsRepo, settingsRepo } from "@/db/repositories";
 import { registerAssetTools } from "../tools/assets";
-import { createMockServer, parseResult } from "./helpers";
+import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();
 
@@ -25,7 +25,7 @@ describe("list-assets", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -33,7 +33,7 @@ describe("list-assets", () => {
   test("should return empty array when no assets exist", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     const data = parseResult(result);
     expect(data).toEqual([]);
   });
@@ -63,7 +63,7 @@ describe("list-assets", () => {
       details: JSON.stringify({ area: 120, address: "Pudong New Area" }),
     });
 
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     const data = parseResult(result);
 
     expect(data).toHaveLength(2);
@@ -88,7 +88,7 @@ describe("list-assets", () => {
       identifier: "京B99999",
     });
 
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     const data = parseResult(result);
 
     expect(data).toHaveLength(1);
@@ -105,7 +105,7 @@ describe("list-assets", () => {
       identifier: "ABC",
     });
 
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     const data = parseResult(result);
 
     expect(data[0].details).toBeUndefined();
@@ -121,7 +121,7 @@ describe("list-assets", () => {
       identifier: "ABC",
     });
 
-    const result = await tools.get("list-assets")!.handler({});
+    const result = await getHandler(tools, "list-assets")({});
     const data = parseResult(result);
 
     expect(data[0]).not.toHaveProperty("createdAt");

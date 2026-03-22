@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -17,11 +18,15 @@ const eslintConfig = defineConfig([
     // Playwright E2E tests (not React code):
     "e2e/**",
   ]),
-  // Strict mode: four-layer testing compliance
+  // tseslint strict — replaces manual rules
+  ...tseslint.configs.strict.map((config) => ({
+    ...config,
+    files: ["**/*.ts", "**/*.tsx"],
+  })),
+  // Override: allow underscore-prefixed unused vars
   {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },

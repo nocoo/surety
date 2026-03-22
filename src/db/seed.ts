@@ -321,7 +321,10 @@ export async function seedDatabase(repos?: AllRepos): Promise<SeedResult> {
 
   // Seed policies with related data
   for (const seed of policySeedData) {
-    const applicantId = memberMap.get(seed.applicantName)!;
+    const applicantId = memberMap.get(seed.applicantName);
+    if (applicantId === undefined) {
+      throw new Error(`Applicant "${seed.applicantName}" not found in memberMap`);
+    }
     const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
     const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
 

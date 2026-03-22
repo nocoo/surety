@@ -289,9 +289,9 @@ describe("Members API E2E", () => {
       expect(status).toBe(200);
       const target = data.find((m) => m.id === memberId);
       expect(target).toBeDefined();
-      expect(target!.idType).toBe("身份证");
-      expect(target!.idExpiry).toBe("2021-10-05|2041-10-05");
-      expect(target!.hasSocialInsurance).toBe(true);
+      expect((target as Member).idType).toBe("身份证");
+      expect((target as Member).idExpiry).toBe("2021-10-05|2041-10-05");
+      expect((target as Member).hasSocialInsurance).toBe(true);
     });
 
     test("PUT /api/members/:id updates new fields", async () => {

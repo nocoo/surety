@@ -65,10 +65,12 @@ export function registerCoverageTools(server: McpServer): void {
           if (!byCategory[p.category]) {
             byCategory[p.category] = { count: 0, premium: 0, sumAssured: 0 };
           }
-          const cat = byCategory[p.category]!;
-          cat.count++;
-          cat.premium += p.premium;
-          cat.sumAssured += p.sumAssured;
+          const cat = byCategory[p.category];
+          if (cat) {
+            cat.count++;
+            cat.premium += p.premium;
+            cat.sumAssured += p.sumAssured;
+          }
         }
 
         return {
@@ -246,10 +248,12 @@ export function registerCoverageTools(server: McpServer): void {
         if (!byCategory[p.category]) {
           byCategory[p.category] = { count: 0, premium: 0, sumAssured: 0 };
         }
-        const cat = byCategory[p.category]!;
-        cat.count++;
-        cat.premium += p.premium;
-        cat.sumAssured += p.sumAssured;
+        const cat = byCategory[p.category];
+        if (cat) {
+          cat.count++;
+          cat.premium += p.premium;
+          cat.sumAssured += p.sumAssured;
+        }
       }
 
       return {

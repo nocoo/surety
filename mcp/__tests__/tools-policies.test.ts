@@ -12,7 +12,7 @@ import {
   settingsRepo,
 } from "@/db/repositories";
 import { registerPolicyTools } from "../tools/policies";
-import { createMockServer, parseResult } from "./helpers";
+import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();
 
@@ -112,7 +112,7 @@ describe("list-policies", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools.get("list-policies")!.handler({});
+    const result = await getHandler(tools, "list-policies")({});
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -120,7 +120,7 @@ describe("list-policies", () => {
   test("should return empty array when no policies exist", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("list-policies")!.handler({});
+    const result = await getHandler(tools, "list-policies")({});
     const data = parseResult(result);
     expect(data).toEqual([]);
   });
@@ -130,7 +130,7 @@ describe("list-policies", () => {
     await enableMcp();
     const { dad } = await seedData();
 
-    const result = await tools.get("list-policies")!.handler({});
+    const result = await getHandler(tools, "list-policies")({});
     const data = parseResult(result);
 
     expect(data).toHaveLength(4);
@@ -149,9 +149,9 @@ describe("list-policies", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools
-      .get("list-policies")!
-      .handler({ status: "Lapsed" });
+    const result = await getHandler(tools, "list-policies")({
+      status: "Lapsed",
+    });
     const data = parseResult(result);
 
     expect(data).toHaveLength(1);
@@ -164,9 +164,9 @@ describe("list-policies", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools
-      .get("list-policies")!
-      .handler({ category: "Medical" });
+    const result = await getHandler(tools, "list-policies")({
+      category: "Medical",
+    });
     const data = parseResult(result);
 
     expect(data).toHaveLength(1);
@@ -178,9 +178,9 @@ describe("list-policies", () => {
     await enableMcp();
     const { mom } = await seedData();
 
-    const result = await tools
-      .get("list-policies")!
-      .handler({ memberId: mom.id });
+    const result = await getHandler(tools, "list-policies")({
+      memberId: mom.id,
+    });
     const data = parseResult(result);
 
     // mom is insured on POL-002
@@ -193,9 +193,10 @@ describe("list-policies", () => {
     await enableMcp();
     const { dad } = await seedData();
 
-    const result = await tools
-      .get("list-policies")!
-      .handler({ status: "Active", memberId: dad.id });
+    const result = await getHandler(tools, "list-policies")({
+      status: "Active",
+      memberId: dad.id,
+    });
     const data = parseResult(result);
 
     // dad is applicant on all 4, insured on POL-001 and POL-003
@@ -210,9 +211,7 @@ describe("get-policy", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: 1 });
+    const result = await getHandler(tools, "get-policy")({ policyId: 1 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -220,9 +219,7 @@ describe("get-policy", () => {
   test("should return error for non-existent policy", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: 999 });
+    const result = await getHandler(tools, "get-policy")({ policyId: 999 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
   });
@@ -232,9 +229,9 @@ describe("get-policy", () => {
     await enableMcp();
     const { lifePolicy } = await seedData();
 
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: lifePolicy.id });
+    const result = await getHandler(tools, "get-policy")({
+      policyId: lifePolicy.id,
+    });
     const data = parseResult(result);
 
     expect(data.id).toBe(lifePolicy.id);
@@ -253,9 +250,9 @@ describe("get-policy", () => {
     await enableMcp();
     const { propertyPolicy } = await seedData();
 
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: propertyPolicy.id });
+    const result = await getHandler(tools, "get-policy")({
+      policyId: propertyPolicy.id,
+    });
     const data = parseResult(result);
 
     expect(data.insuredAssetName).toBe("Tesla Model Y");
@@ -274,9 +271,9 @@ describe("get-policy", () => {
       rankOrder: 1,
     });
 
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: lifePolicy.id });
+    const result = await getHandler(tools, "get-policy")({
+      policyId: lifePolicy.id,
+    });
     const data = parseResult(result);
 
     expect(data.beneficiaries).toHaveLength(1);
@@ -297,9 +294,9 @@ describe("get-policy", () => {
       rankOrder: 2,
     });
 
-    const result = await tools
-      .get("get-policy")!
-      .handler({ policyId: lifePolicy.id });
+    const result = await getHandler(tools, "get-policy")({
+      policyId: lifePolicy.id,
+    });
     const data = parseResult(result);
 
     expect(data.beneficiaries).toHaveLength(1);

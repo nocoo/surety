@@ -83,19 +83,15 @@ describe("createRemoteDb", () => {
 
   afterEach(() => {
     for (const [key, value] of Object.entries(origEnv)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
+      process.env[key] = value;
     }
   });
 
   it("throws when SURETY_WORKER_URL is not set", async () => {
     // Temporarily exit test env so createRemoteDb is called
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
-    delete process.env.SURETY_WORKER_URL;
+    process.env.BUN_ENV = undefined;
+    process.env.SURETY_WORKER_URL = undefined;
     process.env.SURETY_WORKER_SECRET = "secret";
 
     // Dynamic import to get fresh module behavior
@@ -105,9 +101,9 @@ describe("createRemoteDb", () => {
 
   it("throws when SURETY_WORKER_SECRET is not set", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
+    process.env.BUN_ENV = undefined;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
-    delete process.env.SURETY_WORKER_SECRET;
+    process.env.SURETY_WORKER_SECRET = undefined;
 
     const { createRemoteDb } = await import("@/db");
     expect(() => createRemoteDb("production")).toThrow("SURETY_WORKER_SECRET is not set");
@@ -115,7 +111,7 @@ describe("createRemoteDb", () => {
 
   it("creates remote db when env vars are set", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
+    process.env.BUN_ENV = undefined;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
@@ -138,17 +134,13 @@ describe("getDbForRequest (non-test env)", () => {
 
   afterEach(() => {
     for (const [key, value] of Object.entries(origEnv)) {
-      if (value === undefined) {
-        delete process.env[key];
-      } else {
-        process.env[key] = value;
-      }
+      process.env[key] = value;
     }
   });
 
   it("uses target db from string parameter", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
+    process.env.BUN_ENV = undefined;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
@@ -159,8 +151,8 @@ describe("getDbForRequest (non-test env)", () => {
 
   it("extracts target db from Request cookie", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
-    delete process.env.SURETY_TARGET_DB;
+    process.env.BUN_ENV = undefined;
+    process.env.SURETY_TARGET_DB = undefined;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
@@ -174,8 +166,8 @@ describe("getDbForRequest (non-test env)", () => {
 
   it("defaults to production when no cookie or parameter", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
-    delete process.env.SURETY_TARGET_DB;
+    process.env.BUN_ENV = undefined;
+    process.env.SURETY_TARGET_DB = undefined;
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
@@ -186,9 +178,9 @@ describe("getDbForRequest (non-test env)", () => {
 
   it("throws when SURETY_WORKER_URL is not configured", async () => {
     env.NODE_ENV = "production";
-    delete process.env.BUN_ENV;
-    delete process.env.SURETY_WORKER_URL;
-    delete process.env.SURETY_WORKER_SECRET;
+    process.env.BUN_ENV = undefined;
+    process.env.SURETY_WORKER_URL = undefined;
+    process.env.SURETY_WORKER_SECRET = undefined;
 
     const { getDbForRequest } = await import("@/db");
     expect(() => getDbForRequest()).toThrow("SURETY_WORKER_URL is not set");

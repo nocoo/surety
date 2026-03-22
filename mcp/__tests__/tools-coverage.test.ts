@@ -11,7 +11,7 @@ import {
   settingsRepo,
 } from "@/db/repositories";
 import { registerCoverageTools } from "../tools/coverage";
-import { createMockServer, parseResult } from "./helpers";
+import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();
 
@@ -136,9 +136,10 @@ describe("coverage-analysis", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "member", id: 1 });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "member",
+      id: 1,
+    });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -146,9 +147,10 @@ describe("coverage-analysis", () => {
   test("should return error for non-existent member", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "member", id: 999 });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "member",
+      id: 999,
+    });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
   });
@@ -156,9 +158,10 @@ describe("coverage-analysis", () => {
   test("should return error for non-existent asset", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "asset", id: 999 });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "asset",
+      id: 999,
+    });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
   });
@@ -168,9 +171,10 @@ describe("coverage-analysis", () => {
     await enableMcp();
     const { dad } = await seedData();
 
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "member", id: dad.id });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "member",
+      id: dad.id,
+    });
     const data = parseResult(result);
 
     expect(data.name).toBe("Zhang San");
@@ -187,9 +191,10 @@ describe("coverage-analysis", () => {
     await enableMcp();
     const { dad } = await seedData();
 
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "member", id: dad.id });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "member",
+      id: dad.id,
+    });
     const data = parseResult(result);
 
     expect(data.byCategory.Life).toEqual({
@@ -211,9 +216,10 @@ describe("coverage-analysis", () => {
     await enableMcp();
     const { car, dad } = await seedData();
 
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "asset", id: car.id });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "asset",
+      id: car.id,
+    });
     const data = parseResult(result);
 
     expect(data.name).toBe("Tesla Model Y");
@@ -232,9 +238,10 @@ describe("coverage-analysis", () => {
       relation: "Parent",
     });
 
-    const result = await tools
-      .get("coverage-analysis")!
-      .handler({ type: "member", id: member.id });
+    const result = await getHandler(tools, "coverage-analysis")({
+      type: "member",
+      id: member.id,
+    });
     const data = parseResult(result);
 
     expect(data.policyCount).toBe(0);
@@ -252,7 +259,7 @@ describe("renewal-overview", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools.get("renewal-overview")!.handler({});
+    const result = await getHandler(tools, "renewal-overview")({});
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -260,7 +267,7 @@ describe("renewal-overview", () => {
   test("should return empty list when no policies exist", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("renewal-overview")!.handler({});
+    const result = await getHandler(tools, "renewal-overview")({});
     const data = parseResult(result);
     expect(data.total).toBe(0);
     expect(data.policies).toEqual([]);
@@ -271,7 +278,7 @@ describe("renewal-overview", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("renewal-overview")!.handler({});
+    const result = await getHandler(tools, "renewal-overview")({});
     const data = parseResult(result);
 
     // Policies with nextDueDate/expiryDate within 12 months from now
@@ -286,9 +293,7 @@ describe("renewal-overview", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools
-      .get("renewal-overview")!
-      .handler({ months: 1 });
+    const result = await getHandler(tools, "renewal-overview")({ months: 1 });
     const data = parseResult(result);
 
     expect(data.lookAheadMonths).toBe(1);
@@ -301,7 +306,7 @@ describe("renewal-overview", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("renewal-overview")!.handler({ months: 24 });
+    const result = await getHandler(tools, "renewal-overview")({ months: 24 });
     const data = parseResult(result);
 
     if (data.policies.length >= 2) {
@@ -320,7 +325,7 @@ describe("renewal-overview", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("renewal-overview")!.handler({ months: 24 });
+    const result = await getHandler(tools, "renewal-overview")({ months: 24 });
     const data = parseResult(result);
 
     if (data.policies.length > 0) {
@@ -333,7 +338,7 @@ describe("renewal-overview", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("renewal-overview")!.handler({ months: 120 });
+    const result = await getHandler(tools, "renewal-overview")({ months: 120 });
     const data = parseResult(result);
 
     // POL-003 is lapsed, should never appear
@@ -352,7 +357,7 @@ describe("dashboard-summary", () => {
 
   test("should return guard error when mcp is disabled", async () => {
     const tools = setup();
-    const result = await tools.get("dashboard-summary")!.handler({});
+    const result = await getHandler(tools, "dashboard-summary")({});
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("MCP access is disabled");
   });
@@ -360,7 +365,7 @@ describe("dashboard-summary", () => {
   test("should return zero stats when no data exists", async () => {
     const tools = setup();
     await enableMcp();
-    const result = await tools.get("dashboard-summary")!.handler({});
+    const result = await getHandler(tools, "dashboard-summary")({});
     const data = parseResult(result);
 
     expect(data.memberCount).toBe(0);
@@ -376,7 +381,7 @@ describe("dashboard-summary", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("dashboard-summary")!.handler({});
+    const result = await getHandler(tools, "dashboard-summary")({});
     const data = parseResult(result);
 
     expect(data.memberCount).toBe(2); // dad + mom
@@ -393,7 +398,7 @@ describe("dashboard-summary", () => {
     await enableMcp();
     await seedData();
 
-    const result = await tools.get("dashboard-summary")!.handler({});
+    const result = await getHandler(tools, "dashboard-summary")({});
     const data = parseResult(result);
 
     expect(data.byCategory.Life).toEqual({

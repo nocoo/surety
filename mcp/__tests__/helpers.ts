@@ -37,6 +37,21 @@ export function createMockServer() {
   return { server: server as any, tools };
 }
 
+/**
+ * Safely retrieve a tool handler from the captured tools map.
+ * Throws a clear error if the tool was not registered.
+ */
+export function getHandler(
+  tools: Map<string, CapturedTool>,
+  name: string,
+): ToolHandler {
+  const tool = tools.get(name);
+  if (!tool) {
+    throw new Error(`Tool "${name}" not registered`);
+  }
+  return tool.handler;
+}
+
 /** Parse the JSON text from a standard MCP tool result */
 export function parseResult(result: any): any {
   return JSON.parse(result.content[0].text);

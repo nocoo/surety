@@ -59,7 +59,7 @@ describe("mcpDisabledResult", () => {
     const result = mcpDisabledResult();
     expect(result.isError).toBe(true);
     expect(result.content).toHaveLength(1);
-    const first = result.content[0]!;
+    const first = result.content[0] as { type: string; text: string };
     expect(first.type).toBe("text");
     expect(first.text).toContain("MCP access is disabled");
     expect(first.text).toContain("http://localhost:7015/settings");

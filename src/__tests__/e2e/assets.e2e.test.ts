@@ -26,7 +26,8 @@ describe("Assets API E2E", () => {
     // Get a member to use as owner
     const { data: members } = await apiRequest<Member[]>("/api/members");
     if (members.length > 0) {
-      testOwnerId = members[0]!.id;
+      const member = members[0] as Member;
+      testOwnerId = member.id;
     }
   }, 60000);
 
@@ -44,7 +45,7 @@ describe("Assets API E2E", () => {
 
     test("seeded assets have correct structure", async () => {
       const { data } = await apiRequest<Asset[]>("/api/assets");
-      const asset = data[0]!;
+      const asset = data[0] as Asset;
 
       expect(typeof asset.id).toBe("number");
       expect(["RealEstate", "Vehicle"]).toContain(asset.type);
