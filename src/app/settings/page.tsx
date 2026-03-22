@@ -115,6 +115,7 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [mcpEnabled, setMcpEnabled] = useState(false);
   const [mcpLoading, setMcpLoading] = useState(true);
+  const [mcpPath, setMcpPath] = useState("~/workspace/personal/surety");
 
   // Import state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -792,22 +793,32 @@ export default function SettingsPage() {
                 <Separator className="my-4" />
                 <div className="rounded-widget bg-muted/50 p-4">
                   <p className="text-sm font-medium mb-2">配置方式</p>
-                  <p className="text-xs text-muted-foreground mb-2">
+                  <p className="text-xs text-muted-foreground mb-3">
                     在 AI 助手的 MCP 配置中添加以下内容：
                   </p>
+                  <div className="mb-3">
+                    <Label htmlFor="mcp-path" className="text-xs text-muted-foreground mb-1 block">
+                      项目路径
+                    </Label>
+                    <Input
+                      id="mcp-path"
+                      value={mcpPath}
+                      onChange={(e) => setMcpPath(e.target.value)}
+                      className="text-xs font-mono h-8"
+                      placeholder="~/workspace/personal/surety"
+                    />
+                  </div>
                   <pre className="text-xs bg-background rounded-widget p-3 overflow-x-auto">
 {`{
   "mcpServers": {
     "surety": {
       "command": "bun",
-      "args": ["run", "${typeof window !== "undefined" ? "" : ""}mcp/index.ts"]
+      "args": ["run", "${mcpPath}/mcp/index.ts"],
+      "cwd": "${mcpPath}"
     }
   }
 }`}
                   </pre>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    请将路径替换为实际的项目目录路径。
-                  </p>
                 </div>
               </>
             )}
