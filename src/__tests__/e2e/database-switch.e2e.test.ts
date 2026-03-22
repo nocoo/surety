@@ -56,18 +56,18 @@ describe("Database Switch API E2E", () => {
       expect(data.error).toContain("locked");
     });
 
-    test("E2E mode allows switching to dev", async () => {
+    test("E2E mode allows switching to test", async () => {
       const { status, data } = await apiRequest<SwitchResponse>(
         "/api/database/switch",
         {
           method: "POST",
-          body: JSON.stringify({ database: "dev" }),
+          body: JSON.stringify({ database: "test" }),
         },
       );
 
       expect(status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.database).toBe("dev");
+      expect(data.database).toBe("test");
     });
   });
 });
