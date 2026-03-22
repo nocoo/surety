@@ -156,6 +156,10 @@ brew install osv-scanner gitleaks
 
 1. Update `.husky/pre-push`:
    ```bash
+   # Capture pre-push stdin immediately — Git provides ref info via stdin,
+   # and child processes (bun run test:e2e) inherit stdin and may consume it.
+   PUSH_INFO=$(cat)
+
    bun run test:e2e
 
    # G2: Security gate — dependency vulnerability scan
@@ -168,17 +172,17 @@ brew install osv-scanner gitleaks
    fi
 
    # G2: Secret leak detection — scan commits being pushed
-   # Pre-push hook receives "local_ref local_sha remote_ref remote_sha" on stdin.
-   # We use remote_sha..local_sha for precise commit range.
+   # Uses captured PUSH_INFO (format: "local_ref local_sha remote_ref remote_sha" per line).
    ZERO="0000000000000000000000000000000000000000"
    if command -v gitleaks &> /dev/null; then
      echo "🔑 Checking for leaked secrets..."
-     while read -r local_ref local_sha remote_ref remote_sha; do
+     echo "$PUSH_INFO" | while read -r local_ref local_sha remote_ref remote_sha; do
+       [ -z "$local_sha" ] && continue
        if [ "$local_sha" = "$ZERO" ]; then
          continue  # branch deletion, skip
        fi
        if [ "$remote_sha" = "$ZERO" ]; then
-         # new branch: scan all commits not reachable from any remote ref
+         # new branch: scan all commits not reachable from remote default branch
          range="$(git merge-base --fork-point origin/HEAD "$local_sha" 2>/dev/null || git rev-parse origin/HEAD)..${local_sha}"
        else
          range="${remote_sha}..${local_sha}"
@@ -189,9 +193,9 @@ brew install osv-scanner gitleaks
      echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
-   - Use `command -v` guard with explicit warning when tools are missing
+   - **stdin capture**: `PUSH_INFO=$(cat)` at script start preserves ref info before any child process can consume it
    - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain. `.next/` manifests are not lockfiles and won't be picked up by `--lockfile`
-   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Reads pre-push stdin (`local_ref local_sha remote_ref remote_sha`) to compute the exact commit range being pushed. For new branches, uses `origin/HEAD` (remote ref, not local branch) as the comparison base. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
+   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Parses captured stdin to compute the exact commit range being pushed. For new branches, uses `origin/HEAD` (remote ref, not local branch) as the comparison base. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
