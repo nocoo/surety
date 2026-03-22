@@ -182,8 +182,12 @@ brew install osv-scanner gitleaks
          continue  # branch deletion, skip
        fi
        if [ "$remote_sha" = "$ZERO" ]; then
-         # new branch: scan all commits not reachable from remote default branch
-         range="$(git merge-base --fork-point origin/HEAD "$local_sha" 2>/dev/null || git rev-parse origin/HEAD)..${local_sha}"
+         # new branch: find fork point from remote default branch
+         base=$(git merge-base origin/HEAD "$local_sha" 2>/dev/null) || {
+           echo "⚠️  Cannot determine base commit (origin/HEAD missing?), skipping gitleaks for this ref"
+           continue
+         }
+         range="${base}..${local_sha}"
        else
          range="${remote_sha}..${local_sha}"
        fi
@@ -195,7 +199,7 @@ brew install osv-scanner gitleaks
    ```
    - **stdin capture**: `PUSH_INFO=$(cat)` at script start preserves ref info before any child process can consume it
    - **osv-scanner**: Scans both `bun.lock` (main app) and `worker/bun.lock` (D1 proxy worker) to cover the full supply chain. `.next/` manifests are not lockfiles and won't be picked up by `--lockfile`
-   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Parses captured stdin to compute the exact commit range being pushed. For new branches, uses `origin/HEAD` (remote ref, not local branch) as the comparison base. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
+   - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). Parses captured stdin to compute the exact commit range being pushed. For new branches, uses `git merge-base origin/HEAD` to find the fork point; if `origin/HEAD` is missing, skips with a warning instead of generating an invalid range. Handles branch deletion (skip), new branch, and incremental push (remote_sha..local_sha)
 
 **Files modified**:
 - `.husky/pre-push` — add G2 security scans
@@ -366,7 +370,7 @@ pre-commit (<30s):
 
 pre-push (<3min):
   ├── L2: bun run test:e2e (API E2E, remote D1 dev, port 7016)
-  ├── G2: osv-scanner --lockfile=bun.lock --lockfile=worker/bun.lock
+  ├── G2: osv-scanner scan source --lockfile=bun.lock --lockfile=worker/bun.lock
   └── G2: gitleaks git --log-opts (commit range from pre-push stdin, origin/HEAD base for new branches)
 
 on-demand:
