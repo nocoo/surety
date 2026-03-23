@@ -10,6 +10,7 @@ import { registerPolicyTools } from "./tools/policies";
 import { registerAssetTools } from "./tools/assets";
 import { registerInsurerTools } from "./tools/insurers";
 import { registerBeneficiaryTools } from "./tools/beneficiaries";
+import { registerPaymentTools } from "./tools/payments";
 import { registerCoverageTools } from "./tools/coverage";
 
 export function registerTools(server: McpServer): void {
@@ -18,5 +19,6 @@ export function registerTools(server: McpServer): void {
   registerAssetTools(server);
   registerInsurerTools(server);
   registerBeneficiaryTools(server);
+  registerPaymentTools(server);
   registerCoverageTools(server);
 }
