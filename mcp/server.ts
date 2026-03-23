@@ -11,6 +11,7 @@ import { registerAssetTools } from "./tools/assets";
 import { registerInsurerTools } from "./tools/insurers";
 import { registerBeneficiaryTools } from "./tools/beneficiaries";
 import { registerPaymentTools } from "./tools/payments";
+import { registerCashValueTools } from "./tools/cash-values";
 import { registerCoverageTools } from "./tools/coverage";
 
 export function registerTools(server: McpServer): void {
@@ -20,5 +21,6 @@ export function registerTools(server: McpServer): void {
   registerInsurerTools(server);
   registerBeneficiaryTools(server);
   registerPaymentTools(server);
+  registerCashValueTools(server);
   registerCoverageTools(server);
 }
