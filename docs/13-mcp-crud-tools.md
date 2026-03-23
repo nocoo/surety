@@ -482,3 +482,19 @@ describe("write tools", () => {
 | **Total** | **17** | **8** | **8** | **8** | **41** |
 
 > 验算：现有 5 read + 3 analytics = 8 tools。新增 12 read (list/get for 5 new entities + get-asset) + 8 create + 8 update + 8 delete - 3 unchanged analytics = 33 new tools。8 + 33 = **41**。Read 总数 = 5 existing + 12 new = 17。
+
+## 实施完成记录
+
+| # | Commit | Status | Tests | Coverage |
+|---|--------|--------|-------|----------|
+| 1 | `feat: add member CUD tools to mcp` | ✅ Done | 12 new tests | 100% |
+| 2 | `feat: add policy CUD tools to mcp` | ✅ Done | 15 new tests | 92.48% (batch executor untestable in UT) |
+| 3 | `feat: add asset CRUD tools to mcp` | ✅ Done | 13 new tests | 100% |
+| 4 | `feat: add insurer crud tools to mcp` | ✅ Done | 16 new tests | 100% |
+| 5 | `feat: add beneficiary crud tools to mcp` | ✅ Done | 19 new tests | 100% |
+| 6 | `feat: add payment crud tools to mcp` | ✅ Done | 17 new tests | 100% |
+| 7 | `feat: add cash value crud tools to mcp` | ✅ Done | 13 new tests | 100% |
+| 8 | `feat: add coverage item crud tools to mcp` | ✅ Done | 14 new tests | 100% |
+| 9 | `docs: update mcp docs for crud tools` | ✅ Done | — | — |
+
+**Final stats**: 617 tests, 91.26% line coverage, 41 MCP tools total.
