@@ -1,13 +1,28 @@
 /**
  * MCP Tools: Members
  *
- * Tools for querying family member information.
+ * Tools for querying and managing family member information.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { membersRepo, policiesRepo } from "@/db/repositories";
+import {
+  membersRepo,
+  policiesRepo,
+  beneficiariesRepo,
+  assetsRepo,
+} from "@/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
+
+/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function stripUndefined(obj: Record<string, unknown>): any {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) result[k] = v;
+  }
+  return result;
+}
 
 export function registerMemberTools(server: McpServer): void {
   server.tool(
@@ -93,6 +108,181 @@ export function registerMemberTools(server: McpServer): void {
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result) }],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // create-member
+  // -------------------------------------------------------------------------
+  server.tool(
+    "create-member",
+    "Create a new family member",
+    {
+      name: z.string().describe("Member name"),
+      relation: z
+        .enum(["Self", "Spouse", "Child", "Parent", "Pet"])
+        .describe("Relation to the primary insured"),
+      gender: z.enum(["M", "F"]).optional().describe("Gender"),
+      birthDate: z.string().optional().describe("Birth date (YYYY-MM-DD)"),
+      idCard: z.string().optional().describe("ID card number"),
+      idType: z.string().optional().describe("ID type (身份证/户口本/护照)"),
+      idExpiry: z
+        .string()
+        .optional()
+        .describe("ID expiry range (e.g. 2021-10-05|2041-10-05)"),
+      phone: z.string().optional().describe("Phone number"),
+      hasSocialInsurance: z
+        .boolean()
+        .optional()
+        .describe("Whether the member has social insurance"),
+    },
+    async (args) => {
+      const error = await checkMcpEnabled();
+      if (error) return mcpDisabledResult();
+
+      const member = await membersRepo.create(stripUndefined(args));
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(member) }],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // update-member
+  // -------------------------------------------------------------------------
+  server.tool(
+    "update-member",
+    "Update an existing family member",
+    {
+      memberId: z.number().describe("The member ID to update"),
+      name: z.string().optional().describe("Member name"),
+      relation: z
+        .enum(["Self", "Spouse", "Child", "Parent", "Pet"])
+        .optional()
+        .describe("Relation to the primary insured"),
+      gender: z.enum(["M", "F"]).optional().describe("Gender"),
+      birthDate: z.string().optional().describe("Birth date (YYYY-MM-DD)"),
+      idCard: z.string().optional().describe("ID card number"),
+      idType: z.string().optional().describe("ID type (身份证/户口本/护照)"),
+      idExpiry: z
+        .string()
+        .optional()
+        .describe("ID expiry range (e.g. 2021-10-05|2041-10-05)"),
+      phone: z.string().optional().describe("Phone number"),
+      hasSocialInsurance: z
+        .boolean()
+        .optional()
+        .describe("Whether the member has social insurance"),
+    },
+    async ({ memberId, ...data }) => {
+      const error = await checkMcpEnabled();
+      if (error) return mcpDisabledResult();
+
+      const updated = await membersRepo.update(memberId, stripUndefined(data));
+      if (!updated) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `Member with id ${memberId} not found`,
+            },
+          ],
+        };
+      }
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+      };
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // delete-member
+  // -------------------------------------------------------------------------
+  server.tool(
+    "delete-member",
+    "Delete a family member (fails if referenced by policies, beneficiaries, or assets)",
+    {
+      memberId: z.number().describe("The member ID to delete"),
+    },
+    async ({ memberId }) => {
+      const error = await checkMcpEnabled();
+      if (error) return mcpDisabledResult();
+
+      // Check if member exists
+      const member = await membersRepo.findById(memberId);
+      if (!member) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `Member with id ${memberId} not found`,
+            },
+          ],
+        };
+      }
+
+      // Check referencing policies
+      const asApplicant = await policiesRepo.findByApplicantId(memberId);
+      const asInsured = await policiesRepo.findByInsuredMemberId(memberId);
+
+      // Check referencing beneficiaries
+      const allBeneficiaries = await beneficiariesRepo.findAll();
+      const asBeneficiary = allBeneficiaries.filter(
+        (b) => b.memberId === memberId,
+      );
+
+      // Check referencing assets (assets.ownerId → members.id)
+      const ownedAssets = await assetsRepo.findByOwnerId(memberId);
+
+      if (
+        asApplicant.length ||
+        asInsured.length ||
+        asBeneficiary.length ||
+        ownedAssets.length
+      ) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({
+                error: "Cannot delete member: still referenced",
+                asApplicant: asApplicant.map((p) => ({
+                  id: p.id,
+                  policyNumber: p.policyNumber,
+                })),
+                asInsured: asInsured.map((p) => ({
+                  id: p.id,
+                  policyNumber: p.policyNumber,
+                })),
+                asBeneficiary: asBeneficiary.map((b) => ({
+                  id: b.id,
+                  policyId: b.policyId,
+                })),
+                ownedAssets: ownedAssets.map((a) => ({
+                  id: a.id,
+                  name: a.name,
+                })),
+              }),
+            },
+          ],
+        };
+      }
+
+      await membersRepo.delete(memberId);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ deleted: true, id: memberId }),
+          },
+        ],
       };
     },
   );
