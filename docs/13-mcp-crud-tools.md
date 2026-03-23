@@ -21,57 +21,55 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 
 | Entity | Repo CRUD | MCP 现状 | 缺失 |
 |--------|-----------|----------|------|
-| Members | full CRUD | list + get | **create, update, delete** |
-| Policies | full CRUD | list + get | **create, update, delete** |
-| Assets | full CRUD | list only | **get, create, update, delete** |
-| Insurers | full CRUD + findOrCreate | 无 | **全部** |
-| Beneficiaries | full CRUD + deleteByPolicyId | 内嵌于 get-policy | **独立 CRUD** |
-| Payments | full CRUD + createMany | 无 | **全部** |
-| CashValues | full CRUD + createMany | 无 | **全部** |
-| CoverageItems | full CRUD + createMany | 无 | **全部** |
+| Members | full CRUD | list + get (2 tools) | **create, update, delete** |
+| Policies | full CRUD | list + get (2 tools) | **create, update, delete** |
+| Assets | full CRUD | list (1 tool) | **get, create, update, delete** |
+| Insurers | full CRUD + findOrCreate | 无 (0 tools) | **全部** |
+| Beneficiaries | full CRUD + deleteByPolicyId | 内嵌于 get-policy (0 独立 tools) | **独立 CRUD** |
+| Payments | full CRUD + createMany | 无 (0 tools) | **全部** |
+| CashValues | full CRUD + createMany | 无 (0 tools) | **全部** |
+| CoverageItems | full CRUD + createMany | 无 (0 tools) | **全部** |
 
 ## 设计方案
 
-### 新增 MCP Tools 清单（27 个）
+### 新增 MCP Tools 清单（33 个新增，总计 41 个）
 
-#### Members（+3）
+#### Members（现有 2 + 新增 3 = 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
 | `create-member` | Create a new family member | `name`, `relation`, `gender?`, `birthDate?`, `idCard?`, `idType?`, `idExpiry?`, `phone?`, `hasSocialInsurance?` | `membersRepo.create()` |
 | `update-member` | Update an existing family member | `memberId`, + all optional fields | `membersRepo.update()` |
-| `delete-member` | Delete a family member | `memberId` | `membersRepo.delete()` |
+| `delete-member` | Delete a family member (fails if referenced by policies/beneficiaries) | `memberId` | see [Delete 安全策略](#2-delete-安全策略外键引用保护) |
 
-#### Policies（+3）
+#### Policies（现有 2 + 新增 3 = 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
-| `create-policy` | Create a new insurance policy | `applicantId`, `insuredType`, `category`, `insurerName`, `productName`, `policyNumber`, `sumAssured`, `premium`, `paymentFrequency`, `effectiveDate`, + optionals | `policiesRepo.create()` |
-| `update-policy` | Update an existing policy | `policyId`, + all optional fields | `policiesRepo.update()` |
-| `delete-policy` | Delete a policy and all related records | `policyId` | `policiesRepo.delete()` + cascade |
+| `create-policy` | Create a new insurance policy | see [Policy 参数设计](#1-policy-创建更新的-insuredtype-判别约束) | `policiesRepo.create()` |
+| `update-policy` | Update an existing policy | see [Policy 参数设计](#1-policy-创建更新的-insuredtype-判别约束) | `policiesRepo.update()` |
+| `delete-policy` | Delete a policy and all related records (single transaction) | `policyId` | see [级联删除事务](#4-delete-policy-级联删除的事务边界) |
 
-#### Assets（+3）
+#### Assets（现有 1 + 新增 4 = 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
 | `get-asset` | Get detailed info of a specific asset | `assetId` | `assetsRepo.findById()` |
 | `create-asset` | Create a new insured asset | `type`, `name`, `identifier`, `ownerId?`, `details?` | `assetsRepo.create()` |
 | `update-asset` | Update an existing asset | `assetId`, + all optional fields | `assetsRepo.update()` |
-| `delete-asset` | Delete an asset | `assetId` | `assetsRepo.delete()` |
+| `delete-asset` | Delete an asset (fails if referenced by policies) | `assetId` | see [Delete 安全策略](#2-delete-安全策略外键引用保护) |
 
-> Note: `get-asset` 补全现有 `list-assets` 的缺失。实际新增 4 个 tools。
-
-#### Insurers（+5，全新实体）
+#### Insurers（全新 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
 | `list-insurers` | List all insurance companies | — | `insurersRepo.findAll()` |
 | `get-insurer` | Get insurer details | `insurerId` | `insurersRepo.findById()` |
 | `create-insurer` | Create a new insurer | `name`, `phone?`, `website?` | `insurersRepo.create()` |
-| `update-insurer` | Update an existing insurer | `insurerId`, + optional fields | `insurersRepo.update()` |
-| `delete-insurer` | Delete an insurer | `insurerId` | `insurersRepo.delete()` |
+| `update-insurer` | Update insurer and sync name to related policies | `insurerId`, + optional fields | see [Insurer 名称同步](#3-insurer-rename-与-policy-冗余字段同步) |
+| `delete-insurer` | Delete an insurer (fails if referenced by policies) | `insurerId` | see [Delete 安全策略](#2-delete-安全策略外键引用保护) |
 
-#### Beneficiaries（+5，全新实体）
+#### Beneficiaries（全新 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
@@ -81,7 +79,7 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 | `update-beneficiary` | Update a beneficiary record | `beneficiaryId`, + optional fields | `beneficiariesRepo.update()` |
 | `delete-beneficiary` | Remove a beneficiary | `beneficiaryId` | `beneficiariesRepo.delete()` |
 
-#### Payments（+5，全新实体）
+#### Payments（全新 5）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
@@ -91,7 +89,7 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 | `update-payment` | Update a payment record | `paymentId`, + optional fields | `paymentsRepo.update()` |
 | `delete-payment` | Remove a payment record | `paymentId` | `paymentsRepo.delete()` |
 
-#### CashValues（+4，全新实体）
+#### CashValues（全新 4）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
@@ -100,7 +98,7 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 | `update-cash-value` | Update a cash value record | `cashValueId`, `policyYear?`, `value?` | `cashValuesRepo.update()` |
 | `delete-cash-value` | Remove a cash value record | `cashValueId` | `cashValuesRepo.delete()` |
 
-#### CoverageItems（+4，全新实体）
+#### CoverageItems（全新 4）
 
 | Tool | Description | Parameters | Repo Method |
 |------|-------------|------------|-------------|
@@ -167,33 +165,175 @@ export function registerTools(server: McpServer): void {
 
 ## 设计决策
 
-### 1. Tool 粒度：一操作一 Tool
+### 1. Policy 创建/更新的 insuredType 判别约束
+
+`policies` 表的 `insuredType` 是判别联合（discriminated union）：当 `insuredType = "Member"` 时必须提供 `insuredMemberId`；当 `insuredType = "Asset"` 时必须提供 `insuredAssetId`。两者互斥。
+
+**`create-policy` 参数设计**：
+
+Zod schema 使用 `z.discriminatedUnion` 在参数层强制约束：
+
+```typescript
+// 公共字段
+const policyBase = {
+  applicantId: z.number(),
+  category: z.enum(["Life", "CriticalIllness", "Medical", "Accident", "Annuity", "Property"]),
+  insurerName: z.string(),
+  productName: z.string(),
+  policyNumber: z.string(),
+  sumAssured: z.number(),
+  premium: z.number(),
+  paymentFrequency: z.enum(["Single", "Monthly", "Yearly"]),
+  effectiveDate: z.string(),
+  // ... other optional fields
+};
+
+// 判别联合
+z.discriminatedUnion("insuredType", [
+  z.object({ ...policyBase, insuredType: z.literal("Member"), insuredMemberId: z.number() }),
+  z.object({ ...policyBase, insuredType: z.literal("Asset"),  insuredAssetId: z.number() }),
+])
+```
+
+**`update-policy` 参数设计**：
+
+update 场景更复杂——若更改 `insuredType`，必须同时提供新的 FK 并清掉旧的 FK。在 tool handler 中实现：
+
+```typescript
+// update-policy handler 内部逻辑
+if (args.insuredType) {
+  if (args.insuredType === "Member") {
+    if (!args.insuredMemberId) return error("insuredMemberId is required when insuredType is Member");
+    updateData.insuredAssetId = null;   // 清掉 Asset 侧引用
+  } else {
+    if (!args.insuredAssetId) return error("insuredAssetId is required when insuredType is Asset");
+    updateData.insuredMemberId = null;  // 清掉 Member 侧引用
+  }
+}
+```
+
+涉及文件：`mcp/tools/policies.ts`，`src/db/schema.ts:77-82`
+
+**`create-policy` 自动关联 insurer**：
+
+创建保单时，handler 通过 `insurersRepo.findOrCreate(insurerName)` 自动维护 `insurerId`，调用者只需传 `insurerName`：
+
+```typescript
+// create-policy handler 内部
+const insurer = await insurersRepo.findOrCreate(args.insurerName);
+const policy = await policiesRepo.create({
+  ...args,
+  insurerId: insurer.id,
+});
+```
+
+### 2. Delete 安全策略：外键引用保护
+
+当前 schema **未启用 SQLite PRAGMA foreign_keys**，也未定义 `ON DELETE` 行为。D1 默认不强制 FK 约束，删除父记录不会自动 cascade 也不会 restrict。
+
+**MCP 层必须在应用层实现 restrict 语义**，避免产生孤儿记录：
+
+| Delete Tool | 被引用关系 | 策略 |
+|-------------|-----------|------|
+| `delete-member` | `policies.applicantId`, `policies.insuredMemberId`, `beneficiaries.memberId` | **Restrict**: 先查 policies + beneficiaries 是否引用，有则拒绝并返回具体引用列表 |
+| `delete-asset` | `policies.insuredAssetId` | **Restrict**: 先查 policies 是否引用，有则拒绝 |
+| `delete-insurer` | `policies.insurerId` | **Restrict**: 先查 policies 是否引用，有则拒绝 |
+| `delete-policy` | `beneficiaries`, `payments`, `cashValues`, `coverageItems` 的 `policyId` | **Cascade**: 单事务删除所有子记录 + 保单本身，见 [设计决策 #4](#4-delete-policy-级联删除的事务边界) |
+| `delete-beneficiary` | 无子引用 | 直接删除 |
+| `delete-payment` | 无子引用 | 直接删除 |
+| `delete-cash-value` | 无子引用 | 直接删除 |
+| `delete-coverage-item` | 无子引用 | 直接删除 |
+
+**`delete-member` 实现示例**：
+
+```typescript
+async ({ memberId }) => {
+  // Check referencing policies
+  const asApplicant = await policiesRepo.findByApplicantId(memberId);
+  const asInsured = await policiesRepo.findByInsuredMemberId(memberId);
+  const asBeneficiary = await beneficiariesRepo.findAll()
+    .then(all => all.filter(b => b.memberId === memberId));
+
+  if (asApplicant.length || asInsured.length || asBeneficiary.length) {
+    return {
+      isError: true,
+      content: [{ type: "text", text: JSON.stringify({
+        error: "Cannot delete member: still referenced",
+        asApplicant: asApplicant.map(p => ({ id: p.id, policyNumber: p.policyNumber })),
+        asInsured: asInsured.map(p => ({ id: p.id, policyNumber: p.policyNumber })),
+        asBeneficiary: asBeneficiary.map(b => ({ id: b.id, policyId: b.policyId })),
+      })}],
+    };
+  }
+
+  const deleted = await membersRepo.delete(memberId);
+  // ...
+};
+```
+
+涉及文件：`mcp/tools/members.ts`, `mcp/tools/assets.ts`, `mcp/tools/insurers.ts`
+
+### 3. Insurer Rename 与 Policy 冗余字段同步
+
+`policies` 表同时存储 `insurerId`（FK）和 `insurerName`（冗余展示字段）。当通过 `update-insurer` 修改保险公司名称时，必须同步更新所有关联保单的冗余名称：
+
+```typescript
+// update-insurer handler
+const updated = await insurersRepo.update(insurerId, data);
+if (data.name && updated) {
+  // 同步所有引用该 insurer 的 policy 冗余名称
+  const relatedPolicies = await policiesRepo.findAll();
+  const affectedPolicies = relatedPolicies.filter(p => p.insurerId === insurerId);
+  for (const p of affectedPolicies) {
+    await policiesRepo.update(p.id, { insurerName: data.name });
+  }
+}
+```
+
+> **未来优化**：当保单数量增长后，应在 Repo 层新增 `policiesRepo.updateByInsurerId(insurerId, patch)` 批量更新方法，避免 N+1 查询。当前保单规模（< 100）可接受逐条更新。
+
+涉及文件：`mcp/tools/insurers.ts`, `src/db/schema.ts:96-97`, `src/db/repositories/insurers.ts`
+
+### 4. Delete-Policy 级联删除的事务边界
+
+`delete-policy` 需要在**单个事务**中删除保单及其全部子记录。当前 Repo 层没有事务支持，需要在 tool handler 中使用 Drizzle 的事务 API：
+
+```typescript
+// delete-policy handler
+import { db } from "@/db";
+
+const policy = await policiesRepo.findById(policyId);
+if (!policy) return notFoundError(policyId);
+
+// 使用 Drizzle 事务保证原子性
+// 注意：sqlite-proxy 的事务通过 Worker proxy batch endpoint 实现
+await db.transaction(async (tx) => {
+  const txBeneficiaries = createBeneficiariesRepo(tx);
+  const txPayments = createPaymentsRepo(tx);
+  const txCashValues = createCashValuesRepo(tx);
+  const txCoverageItems = createCoverageItemsRepo(tx);
+  const txPolicies = createPoliciesRepo(tx);
+
+  await txBeneficiaries.deleteByPolicyId(policyId);
+  await txPayments.deleteByPolicyId(policyId);
+  await txCashValues.deleteByPolicyId(policyId);
+  await txCoverageItems.deleteByPolicyId(policyId);
+  await txPolicies.delete(policyId);
+});
+```
+
+**前置条件**：当前 sqlite-proxy 的 Worker 端需要支持 batch/transaction endpoint。如果 Worker 不支持事务，降级方案为按顺序执行 + 在最外层 try-catch 记录失败状态。实现时需先验证 Worker 的事务能力。
+
+涉及文件：`mcp/tools/policies.ts`, `src/db/index.ts`
+
+### 5. Tool 粒度：一操作一 Tool
 
 每个 CRUD 操作独立注册为一个 MCP tool，不合并为 `manage-xxx`。原因：
 - MCP 协议下 AI Agent 按 tool name 选择操作，语义清晰胜过数量精简
 - Zod schema 每个 tool 的参数严格匹配操作语义（create 必填 vs update 可选）
 - 与现有 read-only tools（`list-members` / `get-member`）风格一致
 
-### 2. Delete 操作：Policy 级联删除
-
-`delete-policy` 需级联删除关联子记录：
-```
-beneficiariesRepo.deleteByPolicyId(policyId)
-paymentsRepo.deleteByPolicyId(policyId)
-cashValuesRepo.deleteByPolicyId(policyId)
-coverageItemsRepo.deleteByPolicyId(policyId)
-policiesRepo.delete(policyId)
-```
-其他实体的 delete 为直接删除（无级联需求）。
-
-### 3. 参数验证：Zod Schema 层
-
-所有参数在 MCP tool 注册时通过 Zod schema 验证：
-- `create-*`：必填字段标记为 `z.xxx()`，可选字段标记为 `z.xxx().optional()`
-- `update-*`：除 ID 外全部 optional（partial update）
-- Enum 字段使用 `z.enum([...])` 强类型约束
-
-### 4. 返回格式：统一 JSON
+### 6. 返回格式：统一 JSON
 
 所有 write 操作返回创建/更新后的完整记录：
 ```typescript
@@ -203,11 +343,11 @@ return {
 ```
 Delete 操作返回 `{ deleted: true, id: xxx }`。
 
-### 5. Guard 复用
+### 7. Guard 复用
 
 所有新 tools 复用 `checkMcpEnabled()` + `mcpDisabledResult()` guard pattern。
 
-### 6. CashValues / CoverageItems 省略单条 get
+### 8. CashValues / CoverageItems 省略单条 get
 
 这两个实体总是以 policy 维度查询（`list-cash-values?policyId=X`），独立 `get-cash-value` 使用场景极少，省略以减少 tool 数量。需要时可通过 list + filter 实现。
 
@@ -236,30 +376,68 @@ import { createTestDb, resetTestDb } from "@/db";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();
-
-// 每个 tool 至少测试:
-// 1. Guard: MCP 关闭时返回 disabled error
-// 2. Happy path: 正常操作返回预期结果
-// 3. Not found: update/delete 不存在的 ID 返回 isError
-// 4. Validation: create 缺少必填字段时 Zod 自动拦截（由 MCP SDK 处理）
 ```
+
+**现有 helper 的局限性**：`createMockServer()` 捕获 handler 后，`getHandler()` 直接调用 handler 绕过了 Zod schema 解析。Zod 验证实际由 MCP SDK 的 `server.tool()` 在 transport 层执行。
+
+**测试覆盖策略**：
+
+| 测试层 | 覆盖内容 | 方式 |
+|--------|----------|------|
+| Unit (handler 直接调用) | Guard、业务逻辑、FK restrict、返回格式 | `getHandler()` + `parseResult()` |
+| Unit (schema 验证) | Zod discriminatedUnion、必填/可选字段 | 直接 `import { schema }` 并用 `schema.parse()` / `schema.safeParse()` 测试 |
+| E2E (transport 层) | MCP SDK 完整 schema → handler 流程 | `client.callTool()` 经过 stdio transport |
+
+每个 tool 至少测试：
+1. **Guard**: MCP 关闭时返回 disabled error
+2. **Happy path**: 正常操作返回预期结果
+3. **Not found**: update/delete 不存在的 ID 返回 isError
+4. **FK restrict** (delete-member/asset/insurer): 有引用时拒绝删除并返回引用详情
+5. **Discriminated union** (create-policy): `insuredType=Member` 但缺 `insuredMemberId` 时 schema reject
+6. **Insurer rename sync** (update-insurer): 改名后关联 policy 的 `insurerName` 同步更新
 
 ### Coverage Target
 
-每个新增 tool 文件至少 3 个 test cases（guard + happy path + not found），保持整体 MCP 测试覆盖率 > 90%。
+每个新增 tool 文件至少 3-5 个 test cases，保持整体 MCP 测试覆盖率 > 90%。
 
 ### E2E Tests
 
-`mcp/__tests__/mcp.e2e.test.ts` 扩展：抽检 2-3 个 write tools 的端到端流程（create → get → update → delete）。
+`mcp/__tests__/mcp.e2e.test.ts` 扩展：
+
+**隔离策略变更**：现有 E2E 在 `beforeAll` 对远端 test DB seed 一次。引入写入型 tools 后，write 操作会修改 DB 状态，影响后续测试。
+
+采用 **per-describe seed** 策略：
+```typescript
+// 现有 read-only tests 保持不变（beforeAll seed 一次）
+describe("read tools", () => { ... });
+
+// 写入型 tests 使用独立 describe，每组前重新 seed
+describe("write tools", () => {
+  beforeEach(async () => {
+    // re-seed remote D1 test database
+    await seedRemoteDb();
+  });
+
+  test("create → get → update → delete member", async () => { ... });
+  test("create policy with Member insuredType", async () => { ... });
+  test("delete-member fails when referenced by policies", async () => { ... });
+});
+```
+
+抽检 write tools 的端到端流程：
+- Member CRUD lifecycle
+- Policy create with discriminated union validation
+- delete-member restrict behavior
+- update-insurer name sync
 
 ## 完成后 Tool 总览
 
-扩展后 MCP 从 **8 tools** 增至 **35+ tools**：
+扩展后 MCP 从 **8 tools** 增至 **41 tools**（新增 33 个）：
 
 | Entity | Read | Create | Update | Delete | Total |
 |--------|------|--------|--------|--------|-------|
-| Members | list, get | create | update | delete | 4 → **5** |
-| Policies | list, get | create | update | delete | 4 → **5** |
+| Members | list, get | create | update | delete | 2 → **5** |
+| Policies | list, get | create | update | delete | 2 → **5** |
 | Assets | list, **get** | create | update | delete | 1 → **5** |
 | Insurers | **list, get** | **create** | **update** | **delete** | 0 → **5** |
 | Beneficiaries | **list, get** | **create** | **update** | **delete** | 0 → **5** |
@@ -267,4 +445,6 @@ createTestDb();
 | CashValues | **list** | **create** | **update** | **delete** | 0 → **4** |
 | CoverageItems | **list** | **create** | **update** | **delete** | 0 → **4** |
 | Coverage (analytics) | 3 tools | — | — | — | **3** |
-| **Total** | | | | | **41** |
+| **Total** | **16** | **8** | **8** | **8** | **41** |
+
+> 验算：现有 8 (5 read + 3 analytics) + 新增 33 (11 read + 8 create + 8 update + 8 delete - 2 analytics 不变) = 41。
