@@ -40,7 +40,7 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 |------|-------------|------------|-------------|
 | `create-member` | Create a new family member | `name`, `relation`, `gender?`, `birthDate?`, `idCard?`, `idType?`, `idExpiry?`, `phone?`, `hasSocialInsurance?` | `membersRepo.create()` |
 | `update-member` | Update an existing family member | `memberId`, + all optional fields | `membersRepo.update()` |
-| `delete-member` | Delete a family member (fails if referenced by policies/beneficiaries) | `memberId` | see [Delete 安全策略](#2-delete-安全策略外键引用保护) |
+| `delete-member` | Delete a family member (fails if referenced by policies/beneficiaries/assets) | `memberId` | see [Delete 安全策略](#2-delete-安全策略外键引用保护) |
 
 #### Policies（现有 2 + 新增 3 = 5）
 
@@ -227,6 +227,24 @@ const policy = await policiesRepo.create({
 });
 ```
 
+**`update-policy` 变更 insurerName 时同步 insurerId**：
+
+`update-policy` 接收 `insurerName` 变更时，必须同步更新 `insurerId`，保持两个字段一致。与 create 路径共用 `findOrCreate` 逻辑：
+
+```typescript
+// update-policy handler 内部
+if (args.insurerName) {
+  const insurer = await insurersRepo.findOrCreate(args.insurerName);
+  updateData.insurerId = insurer.id;
+  updateData.insurerName = args.insurerName;
+}
+```
+
+> **三条写路径的完整覆盖**：
+> - `create-policy`：`findOrCreate(insurerName)` → 写入 `insurerId` + `insurerName`
+> - `update-policy`：变更 `insurerName` 时 → `findOrCreate` → 同步 `insurerId`
+> - `update-insurer`：rename 时 → 反向同步所有关联 policy 的 `insurerName`（见 [§3](#3-insurer-rename-与-policy-冗余字段同步)）
+
 ### 2. Delete 安全策略：外键引用保护
 
 当前 schema **未启用 SQLite PRAGMA foreign_keys**，也未定义 `ON DELETE` 行为。D1 默认不强制 FK 约束，删除父记录不会自动 cascade 也不会 restrict。
@@ -235,7 +253,7 @@ const policy = await policiesRepo.create({
 
 | Delete Tool | 被引用关系 | 策略 |
 |-------------|-----------|------|
-| `delete-member` | `policies.applicantId`, `policies.insuredMemberId`, `beneficiaries.memberId` | **Restrict**: 先查 policies + beneficiaries 是否引用，有则拒绝并返回具体引用列表 |
+| `delete-member` | `policies.applicantId`, `policies.insuredMemberId`, `beneficiaries.memberId`, `assets.ownerId` | **Restrict**: 先查 policies + beneficiaries + assets 是否引用，有则拒绝并返回具体引用列表 |
 | `delete-asset` | `policies.insuredAssetId` | **Restrict**: 先查 policies 是否引用，有则拒绝 |
 | `delete-insurer` | `policies.insurerId` | **Restrict**: 先查 policies 是否引用，有则拒绝 |
 | `delete-policy` | `beneficiaries`, `payments`, `cashValues`, `coverageItems` 的 `policyId` | **Cascade**: 单事务删除所有子记录 + 保单本身，见 [设计决策 #4](#4-delete-policy-级联删除的事务边界) |
@@ -253,8 +271,10 @@ async ({ memberId }) => {
   const asInsured = await policiesRepo.findByInsuredMemberId(memberId);
   const asBeneficiary = await beneficiariesRepo.findAll()
     .then(all => all.filter(b => b.memberId === memberId));
+  // Check referencing assets (src/db/schema.ts:57 — assets.ownerId → members.id)
+  const ownedAssets = await assetsRepo.findByOwnerId(memberId);
 
-  if (asApplicant.length || asInsured.length || asBeneficiary.length) {
+  if (asApplicant.length || asInsured.length || asBeneficiary.length || ownedAssets.length) {
     return {
       isError: true,
       content: [{ type: "text", text: JSON.stringify({
@@ -262,6 +282,7 @@ async ({ memberId }) => {
         asApplicant: asApplicant.map(p => ({ id: p.id, policyNumber: p.policyNumber })),
         asInsured: asInsured.map(p => ({ id: p.id, policyNumber: p.policyNumber })),
         asBeneficiary: asBeneficiary.map(b => ({ id: b.id, policyId: b.policyId })),
+        ownedAssets: ownedAssets.map(a => ({ id: a.id, name: a.name })),
       })}],
     };
   }
@@ -294,37 +315,50 @@ if (data.name && updated) {
 
 涉及文件：`mcp/tools/insurers.ts`, `src/db/schema.ts:96-97`, `src/db/repositories/insurers.ts`
 
-### 4. Delete-Policy 级联删除的事务边界
+### 4. Delete-Policy 级联删除的原子批执行
 
-`delete-policy` 需要在**单个事务**中删除保单及其全部子记录。当前 Repo 层没有事务支持，需要在 tool handler 中使用 Drizzle 的事务 API：
+`delete-policy` 需要原子删除保单及其全部子记录。
+
+**关键约束**：`drizzle-orm/sqlite-proxy` 的 `transaction()` 实现是逐条发送 `BEGIN` / 业务 SQL / `COMMIT`（参见 `node_modules/drizzle-orm/sqlite-proxy/session.js:46-51`），每条 SQL 独立走 Worker `/query` endpoint，**不具备真正的原子性**——中间失败时 BEGIN 已提交的语句无法回滚。
+
+**正确路径**：使用 `createBatchExecutor()`（`src/db/index.ts:140`），它直接调用 `WorkerDbClient.batch()`（`src/db/worker-db-client.ts:66`），映射到 Worker 的 `/batch` endpoint，最终走 D1 的原子 batch API。D1 batch 内所有语句要么全部成功，要么全部回滚。
+
+**实现方案**：
 
 ```typescript
 // delete-policy handler
-import { db } from "@/db";
+import { createBatchExecutor } from "@/db";
+import { sql } from "drizzle-orm";
 
 const policy = await policiesRepo.findById(policyId);
 if (!policy) return notFoundError(policyId);
 
-// 使用 Drizzle 事务保证原子性
-// 注意：sqlite-proxy 的事务通过 Worker proxy batch endpoint 实现
-await db.transaction(async (tx) => {
-  const txBeneficiaries = createBeneficiariesRepo(tx);
-  const txPayments = createPaymentsRepo(tx);
-  const txCashValues = createCashValuesRepo(tx);
-  const txCoverageItems = createCoverageItemsRepo(tx);
-  const txPolicies = createPoliciesRepo(tx);
+// 构建原子 batch：5 条 DELETE 语句
+const statements = [
+  { sql: "DELETE FROM beneficiaries WHERE policy_id = ?", params: [policyId] },
+  { sql: "DELETE FROM payments WHERE policy_id = ?",      params: [policyId] },
+  { sql: "DELETE FROM cash_values WHERE policy_id = ?",    params: [policyId] },
+  { sql: "DELETE FROM coverage_items WHERE policy_id = ?", params: [policyId] },
+  { sql: "DELETE FROM policies WHERE id = ?",              params: [policyId] },
+];
 
-  await txBeneficiaries.deleteByPolicyId(policyId);
-  await txPayments.deleteByPolicyId(policyId);
-  await txCashValues.deleteByPolicyId(policyId);
-  await txCoverageItems.deleteByPolicyId(policyId);
-  await txPolicies.delete(policyId);
-});
+const batchExecutor = createBatchExecutor();
+if (batchExecutor) {
+  // Production: atomic via D1 batch API
+  await batchExecutor(statements);
+} else {
+  // Test env (bun:sqlite): sequential delete via repos (in-memory, no network)
+  await beneficiariesRepo.deleteByPolicyId(policyId);
+  await paymentsRepo.deleteByPolicyId(policyId);
+  await cashValuesRepo.deleteByPolicyId(policyId);
+  await coverageItemsRepo.deleteByPolicyId(policyId);
+  await policiesRepo.delete(policyId);
+}
 ```
 
-**前置条件**：当前 sqlite-proxy 的 Worker 端需要支持 batch/transaction endpoint。如果 Worker 不支持事务，降级方案为按顺序执行 + 在最外层 try-catch 记录失败状态。实现时需先验证 Worker 的事务能力。
+**Trade-off**：batch 路径使用 raw SQL 而非 Drizzle query builder，因为 `createBatchExecutor` 接受 `{ sql, params }` 数组。这是有意的——级联删除逻辑简单且固定（5 条 DELETE WHERE），raw SQL 可读性不差，且避免了为 batch 兼容性修改 Repo 层接口。
 
-涉及文件：`mcp/tools/policies.ts`, `src/db/index.ts`
+涉及文件：`mcp/tools/policies.ts`, `src/db/index.ts:140-149`, `src/db/worker-db-client.ts:66-94`
 
 ### 5. Tool 粒度：一操作一 Tool
 
@@ -445,6 +479,6 @@ describe("write tools", () => {
 | CashValues | **list** | **create** | **update** | **delete** | 0 → **4** |
 | CoverageItems | **list** | **create** | **update** | **delete** | 0 → **4** |
 | Coverage (analytics) | 3 tools | — | — | — | **3** |
-| **Total** | **16** | **8** | **8** | **8** | **41** |
+| **Total** | **17** | **8** | **8** | **8** | **41** |
 
-> 验算：现有 8 (5 read + 3 analytics) + 新增 33 (11 read + 8 create + 8 update + 8 delete - 2 analytics 不变) = 41。
+> 验算：现有 5 read + 3 analytics = 8 tools。新增 12 read (list/get for 5 new entities + get-asset) + 8 create + 8 update + 8 delete - 3 unchanged analytics = 33 new tools。8 + 33 = **41**。Read 总数 = 5 existing + 12 new = 17。
