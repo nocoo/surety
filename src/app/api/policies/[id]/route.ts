@@ -121,7 +121,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { repos } = await getReposFromRequest();
+  const { repos, batchExecute } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -129,10 +129,28 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
-  const deleted = await repos.policies.delete(policyId);
-
-  if (!deleted) {
+  const policy = await repos.policies.findById(policyId);
+  if (!policy) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+  }
+
+  // Cascade delete: remove child records then the policy itself.
+  // D1 enforces foreign_keys=ON, so we must delete children first.
+  if (batchExecute) {
+    await batchExecute([
+      { sql: "DELETE FROM beneficiaries WHERE policy_id = ?", params: [policyId] },
+      { sql: "DELETE FROM payments WHERE policy_id = ?", params: [policyId] },
+      { sql: "DELETE FROM cash_values WHERE policy_id = ?", params: [policyId] },
+      { sql: "DELETE FROM coverage_items WHERE policy_id = ?", params: [policyId] },
+      { sql: "DELETE FROM policies WHERE id = ?", params: [policyId] },
+    ]);
+  } else {
+    // Non-batch path (test env or fallback)
+    await repos.beneficiaries.deleteByPolicyId(policyId);
+    await repos.payments.deleteByPolicyId(policyId);
+    await repos.cashValues.deleteByPolicyId(policyId);
+    await repos.coverageItems.deleteByPolicyId(policyId);
+    await repos.policies.delete(policyId);
   }
 
   return NextResponse.json({ success: true });

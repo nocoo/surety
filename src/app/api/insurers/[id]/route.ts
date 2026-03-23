@@ -77,6 +77,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
+  // Check FK references: policies may reference this insurer
+  const policies = await repos.policies.findAll();
+  const linkedPolicies = policies.filter((p) => p.insurerId === insurerId);
+  if (linkedPolicies.length > 0) {
+    return NextResponse.json(
+      { error: `该保险公司关联了 ${linkedPolicies.length} 份保单，无法删除` },
+      { status: 409 }
+    );
+  }
+
   const deleted = await repos.insurers.delete(insurerId);
 
   if (!deleted) {

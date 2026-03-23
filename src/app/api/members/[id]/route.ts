@@ -84,6 +84,18 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
+  // Check FK references: policies may reference this member as applicant/insured
+  const policies = await repos.policies.findAll();
+  const linkedPolicies = policies.filter(
+    (p) => p.applicantId === memberId || p.insuredMemberId === memberId
+  );
+  if (linkedPolicies.length > 0) {
+    return NextResponse.json(
+      { error: `该成员关联了 ${linkedPolicies.length} 份保单，无法删除` },
+      { status: 409 }
+    );
+  }
+
   const deleted = await repos.members.delete(memberId);
 
   if (!deleted) {
