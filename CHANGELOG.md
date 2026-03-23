@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.3.3] - 2026-03-24
+
+### Added
+
+- **MCP CRUD tools** — full create/update/delete support for all 8 entities: member, policy, beneficiary, insurer, asset, payment, cash value, and coverage item
+- Editable project path input in MCP config display
+
+### Fixed
+
+- Cascade delete for policy children and FK restrict checks
+- Nullable fields for identity/status migration paths
+- Validation for beneficiary identity and payment status
+- Worker tsconfig strict extras (5 additional TS strict options)
+
+### Documentation
+
+- MCP CRUD tools expansion design doc
+- Updated MCP docs for CRUD tools
+
 ## [v1.3.2] - 2026-03-23
 
 ### Added
