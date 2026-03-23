@@ -9,6 +9,10 @@ import {
   policiesRepo,
   assetsRepo,
   beneficiariesRepo,
+  insurersRepo,
+  paymentsRepo,
+  cashValuesRepo,
+  coverageItemsRepo,
   settingsRepo,
 } from "@/db/repositories";
 import { registerPolicyTools } from "../tools/policies";
@@ -301,5 +305,304 @@ describe("get-policy", () => {
 
     expect(data.beneficiaries).toHaveLength(1);
     expect(data.beneficiaries[0].name).toBe("Wang Wu");
+  });
+});
+
+describe("create-policy", () => {
+  beforeEach(() => resetTestDb());
+
+  test("should return guard error when mcp is disabled", async () => {
+    const tools = setup();
+    const result = await getHandler(tools, "create-policy")({
+      applicantId: 1,
+      insuredType: "Member",
+      insuredMemberId: 1,
+      category: "Life",
+      insurerName: "Test",
+      productName: "Test",
+      policyNumber: "POL-NEW",
+      sumAssured: 100000,
+      premium: 1000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-01-01",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("MCP access is disabled");
+  });
+
+  test("should create a member-insured policy", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { dad } = await seedData();
+
+    const result = await getHandler(tools, "create-policy")({
+      applicantId: dad.id,
+      insuredType: "Member",
+      insuredMemberId: dad.id,
+      category: "CriticalIllness",
+      insurerName: "China Life",
+      productName: "CI Guard",
+      policyNumber: "POL-NEW-001",
+      sumAssured: 500000,
+      premium: 8000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-06-01",
+    });
+    const data = parseResult(result);
+
+    expect(data.id).toBeDefined();
+    expect(data.category).toBe("CriticalIllness");
+    expect(data.insuredMemberId).toBe(dad.id);
+    expect(data.insuredAssetId).toBeNull();
+    expect(data.status).toBe("Active");
+  });
+
+  test("should create an asset-insured policy", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { dad, car } = await seedData();
+
+    const result = await getHandler(tools, "create-policy")({
+      applicantId: dad.id,
+      insuredType: "Asset",
+      insuredAssetId: car.id,
+      category: "Property",
+      insurerName: "CPIC",
+      productName: "Auto Plus",
+      policyNumber: "POL-NEW-002",
+      sumAssured: 500000,
+      premium: 6000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-06-01",
+    });
+    const data = parseResult(result);
+
+    expect(data.insuredAssetId).toBe(car.id);
+    expect(data.insuredMemberId).toBeNull();
+  });
+
+  test("should auto-create insurer via findOrCreate", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { dad } = await seedData();
+
+    await getHandler(tools, "create-policy")({
+      applicantId: dad.id,
+      insuredType: "Member",
+      insuredMemberId: dad.id,
+      category: "Life",
+      insurerName: "Brand New Insurer",
+      productName: "New Product",
+      policyNumber: "POL-NEW-003",
+      sumAssured: 100000,
+      premium: 1000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-06-01",
+    });
+
+    const insurer = await insurersRepo.findByName("Brand New Insurer");
+    expect(insurer).toBeDefined();
+  });
+
+  test("should reject Member insuredType without insuredMemberId", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { dad } = await seedData();
+
+    const result = await getHandler(tools, "create-policy")({
+      applicantId: dad.id,
+      insuredType: "Member",
+      // insuredMemberId missing
+      category: "Life",
+      insurerName: "Test",
+      productName: "Test",
+      policyNumber: "POL-FAIL",
+      sumAssured: 100000,
+      premium: 1000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-01-01",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("insuredMemberId is required");
+  });
+
+  test("should reject Asset insuredType without insuredAssetId", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { dad } = await seedData();
+
+    const result = await getHandler(tools, "create-policy")({
+      applicantId: dad.id,
+      insuredType: "Asset",
+      // insuredAssetId missing
+      category: "Property",
+      insurerName: "Test",
+      productName: "Test",
+      policyNumber: "POL-FAIL-2",
+      sumAssured: 100000,
+      premium: 1000,
+      paymentFrequency: "Yearly",
+      effectiveDate: "2025-01-01",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("insuredAssetId is required");
+  });
+});
+
+describe("update-policy", () => {
+  beforeEach(() => resetTestDb());
+
+  test("should return guard error when mcp is disabled", async () => {
+    const tools = setup();
+    const result = await getHandler(tools, "update-policy")({
+      policyId: 1,
+      premium: 5000,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("MCP access is disabled");
+  });
+
+  test("should return error for non-existent policy", async () => {
+    const tools = setup();
+    await enableMcp();
+
+    const result = await getHandler(tools, "update-policy")({
+      policyId: 999,
+      premium: 5000,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("not found");
+  });
+
+  test("should update basic fields", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { lifePolicy } = await seedData();
+
+    const result = await getHandler(tools, "update-policy")({
+      policyId: lifePolicy.id,
+      premium: 3500,
+      notes: "Premium increased",
+    });
+    const data = parseResult(result);
+
+    expect(data.premium).toBe(3500);
+    expect(data.notes).toBe("Premium increased");
+    expect(data.productName).toBe("Term Life 30"); // unchanged
+  });
+
+  test("should switch insuredType from Member to Asset and clear opposing FK", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { lifePolicy, car } = await seedData();
+
+    const result = await getHandler(tools, "update-policy")({
+      policyId: lifePolicy.id,
+      insuredType: "Asset",
+      insuredAssetId: car.id,
+    });
+    const data = parseResult(result);
+
+    expect(data.insuredType).toBe("Asset");
+    expect(data.insuredAssetId).toBe(car.id);
+    expect(data.insuredMemberId).toBeNull();
+  });
+
+  test("should sync insurerId when insurerName changes", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { lifePolicy } = await seedData();
+
+    const result = await getHandler(tools, "update-policy")({
+      policyId: lifePolicy.id,
+      insurerName: "New Insurer Co",
+    });
+    const data = parseResult(result);
+
+    expect(data.insurerName).toBe("New Insurer Co");
+    // insurerId should point to the new insurer
+    const insurer = await insurersRepo.findByName("New Insurer Co");
+    expect(insurer).toBeDefined();
+    expect(data.insurerId).toBe(insurer?.id);
+  });
+
+  test("should reject insuredType=Member without insuredMemberId", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { propertyPolicy } = await seedData();
+
+    const result = await getHandler(tools, "update-policy")({
+      policyId: propertyPolicy.id,
+      insuredType: "Member",
+      // missing insuredMemberId
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("insuredMemberId is required");
+  });
+});
+
+describe("delete-policy", () => {
+  beforeEach(() => resetTestDb());
+
+  test("should return guard error when mcp is disabled", async () => {
+    const tools = setup();
+    const result = await getHandler(tools, "delete-policy")({ policyId: 1 });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("MCP access is disabled");
+  });
+
+  test("should return error for non-existent policy", async () => {
+    const tools = setup();
+    await enableMcp();
+
+    const result = await getHandler(tools, "delete-policy")({ policyId: 999 });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("not found");
+  });
+
+  test("should cascade delete policy and all child records", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { lifePolicy, mom } = await seedData();
+
+    // Create child records
+    await beneficiariesRepo.create({
+      policyId: lifePolicy.id,
+      memberId: mom.id,
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+    await paymentsRepo.create({
+      policyId: lifePolicy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+      status: "Paid",
+    });
+    await cashValuesRepo.create({
+      policyId: lifePolicy.id,
+      policyYear: 1,
+      value: 1500,
+    });
+    await coverageItemsRepo.create({
+      policyId: lifePolicy.id,
+      name: "Death Benefit",
+      sortOrder: 0,
+    });
+
+    const result = await getHandler(tools, "delete-policy")({
+      policyId: lifePolicy.id,
+    });
+    const data = parseResult(result);
+
+    expect(data.deleted).toBe(true);
+    expect(data.id).toBe(lifePolicy.id);
+
+    // Verify cascade
+    expect(await policiesRepo.findById(lifePolicy.id)).toBeUndefined();
+    expect(await beneficiariesRepo.findByPolicyId(lifePolicy.id)).toHaveLength(0);
+    expect(await paymentsRepo.findByPolicyId(lifePolicy.id)).toHaveLength(0);
+    expect(await cashValuesRepo.findByPolicyId(lifePolicy.id)).toHaveLength(0);
+    expect(await coverageItemsRepo.findByPolicyId(lifePolicy.id)).toHaveLength(0);
   });
 });
