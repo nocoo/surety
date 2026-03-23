@@ -22,7 +22,7 @@ export async function handleBatch(
   // Validate all statements before execution
   for (let i = 0; i < body.statements.length; i++) {
     const stmt = body.statements[i];
-    if (!stmt.sql || typeof stmt.sql !== "string") {
+    if (!stmt?.sql || typeof stmt.sql !== "string") {
       return jsonResponse(
         { error: `Invalid statement at index ${i}: missing 'sql'` },
         400,
