@@ -211,6 +211,38 @@ describe("create-payment", () => {
     expect(data.paidDate).toBe("2024-01-02");
     expect(data.paidAmount).toBe(3000);
   });
+
+  test("should reject Paid status without paidDate/paidAmount", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const result = await getHandler(tools, "create-payment")({
+      policyId: policy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+      status: "Paid",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("requires both paidDate and paidAmount");
+  });
+
+  test("should reject Pending status with paidDate", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const result = await getHandler(tools, "create-payment")({
+      policyId: policy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+      paidDate: "2024-01-05",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("must not have paidDate or paidAmount");
+  });
 });
 
 describe("update-payment", () => {
@@ -220,7 +252,7 @@ describe("update-payment", () => {
     const tools = setup();
     const result = await getHandler(tools, "update-payment")({
       paymentId: 1,
-      status: "Paid",
+      amount: 5000,
     });
     expect(result.isError).toBe(true);
   });
@@ -230,7 +262,7 @@ describe("update-payment", () => {
     await enableMcp();
     const result = await getHandler(tools, "update-payment")({
       paymentId: 999,
-      status: "Paid",
+      amount: 5000,
     });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("not found");
@@ -259,6 +291,49 @@ describe("update-payment", () => {
     expect(data.paidDate).toBe("2024-01-05");
     expect(data.paidAmount).toBe(3000);
     expect(data.amount).toBe(3000); // unchanged
+  });
+
+  test("should reject setting status to Paid without paidDate/paidAmount", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const payment = await paymentsRepo.create({
+      policyId: policy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+    });
+
+    const result = await getHandler(tools, "update-payment")({
+      paymentId: payment.id,
+      status: "Paid",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("requires both paidDate and paidAmount");
+  });
+
+  test("should reject setting status to Pending while keeping paidDate", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const payment = await paymentsRepo.create({
+      policyId: policy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+      status: "Paid",
+      paidDate: "2024-01-05",
+      paidAmount: 3000,
+    });
+
+    const result = await getHandler(tools, "update-payment")({
+      paymentId: payment.id,
+      status: "Pending",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("must not have paidDate or paidAmount");
   });
 });
 

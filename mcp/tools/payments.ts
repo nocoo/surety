@@ -22,6 +22,30 @@ function stripUndefined(obj: Record<string, unknown>): any {
 }
 
 export function registerPaymentTools(server: McpServer): void {
+  /**
+   * Validate payment status consistency.
+   * - status=Paid requires paidDate and paidAmount
+   * - status=Pending/Overdue must not have paidDate/paidAmount
+   * Returns error message string if invalid, undefined if ok.
+   */
+  function validatePaymentStatus(
+    status: string | undefined,
+    paidDate: string | null | undefined,
+    paidAmount: number | null | undefined,
+  ): string | undefined {
+    const effectiveStatus = status ?? "Pending";
+    if (effectiveStatus === "Paid") {
+      if (!paidDate || paidAmount == null) {
+        return "status 'Paid' requires both paidDate and paidAmount";
+      }
+    } else {
+      // Pending or Overdue
+      if (paidDate || paidAmount != null) {
+        return `status '${effectiveStatus}' must not have paidDate or paidAmount`;
+      }
+    }
+    return undefined;
+  }
   // -------------------------------------------------------------------------
   // list-payments
   // -------------------------------------------------------------------------
@@ -134,6 +158,15 @@ export function registerPaymentTools(server: McpServer): void {
         };
       }
 
+      // Validate payment status consistency
+      const statusError = validatePaymentStatus(args.status, args.paidDate, args.paidAmount);
+      if (statusError) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: statusError }],
+        };
+      }
+
       const payment = await paymentsRepo.create(stripUndefined(args));
 
       return {
@@ -161,8 +194,9 @@ export function registerPaymentTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await paymentsRepo.update(paymentId, stripUndefined(data));
-      if (!updated) {
+      // Fetch existing to compute effective state for validation
+      const existing = await paymentsRepo.findById(paymentId);
+      if (!existing) {
         return {
           isError: true,
           content: [
@@ -173,6 +207,21 @@ export function registerPaymentTools(server: McpServer): void {
           ],
         };
       }
+
+      // Compute effective state after update
+      const effectiveStatus = data.status ?? existing.status;
+      const effectivePaidDate = data.paidDate !== undefined ? data.paidDate : existing.paidDate;
+      const effectivePaidAmount = data.paidAmount !== undefined ? data.paidAmount : existing.paidAmount;
+
+      const statusError = validatePaymentStatus(effectiveStatus, effectivePaidDate, effectivePaidAmount);
+      if (statusError) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: statusError }],
+        };
+      }
+
+      const updated = await paymentsRepo.update(paymentId, stripUndefined(data));
 
       return {
         content: [{ type: "text" as const, text: JSON.stringify(updated) }],

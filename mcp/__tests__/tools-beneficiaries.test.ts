@@ -159,6 +159,7 @@ describe("create-beneficiary", () => {
     const tools = setup();
     const result = await getHandler(tools, "create-beneficiary")({
       policyId: 1,
+      memberId: 1,
       sharePercent: 100,
       rankOrder: 1,
     });
@@ -170,6 +171,7 @@ describe("create-beneficiary", () => {
     await enableMcp();
     const result = await getHandler(tools, "create-beneficiary")({
       policyId: 999,
+      memberId: 1,
       sharePercent: 100,
       rankOrder: 1,
     });
@@ -227,6 +229,36 @@ describe("create-beneficiary", () => {
     expect(data.externalName).toBe("Li Si");
     expect(data.externalIdCard).toBe("310101200001011234");
   });
+
+  test("should reject when neither memberId nor externalName provided", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const result = await getHandler(tools, "create-beneficiary")({
+      policyId: policy.id,
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Either memberId or externalName is required");
+  });
+
+  test("should reject when both memberId and externalName provided", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { member, policy } = await seedPolicy();
+
+    const result = await getHandler(tools, "create-beneficiary")({
+      policyId: policy.id,
+      memberId: member.id,
+      externalName: "Li Si",
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot set both memberId and externalName");
+  });
 });
 
 describe("update-beneficiary", () => {
@@ -273,6 +305,47 @@ describe("update-beneficiary", () => {
     expect(data.sharePercent).toBe(60);
     expect(data.rankOrder).toBe(2);
     expect(data.memberId).toBe(member.id); // unchanged
+  });
+
+  test("should return error for non-existent memberId", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { member, policy } = await seedPolicy();
+
+    const beneficiary = await beneficiariesRepo.create({
+      policyId: policy.id,
+      memberId: member.id,
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+
+    const result = await getHandler(tools, "update-beneficiary")({
+      beneficiaryId: beneficiary.id,
+      memberId: 999,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Member with id 999 not found");
+  });
+
+  test("should reject update that creates contradictory identity", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { member, policy } = await seedPolicy();
+
+    const beneficiary = await beneficiariesRepo.create({
+      policyId: policy.id,
+      memberId: member.id,
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+
+    // Try to add externalName while memberId already exists
+    const result = await getHandler(tools, "update-beneficiary")({
+      beneficiaryId: beneficiary.id,
+      externalName: "Li Si",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Cannot set both memberId and externalName");
   });
 });
 

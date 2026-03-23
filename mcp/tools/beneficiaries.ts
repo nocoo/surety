@@ -146,6 +146,30 @@ export function registerBeneficiaryTools(server: McpServer): void {
         };
       }
 
+      // Validate identity constraint: memberId XOR externalName (exactly one required)
+      if (args.memberId && args.externalName) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: "Cannot set both memberId and externalName — use one or the other",
+            },
+          ],
+        };
+      }
+      if (!args.memberId && !args.externalName) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: "Either memberId or externalName is required to identify the beneficiary",
+            },
+          ],
+        };
+      }
+
       // Validate member exists if memberId provided
       if (args.memberId) {
         const member = await membersRepo.findById(args.memberId);
@@ -187,6 +211,62 @@ export function registerBeneficiaryTools(server: McpServer): void {
     async ({ beneficiaryId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
+
+      // Validate beneficiary exists first (needed for identity constraint check)
+      const existing = await beneficiariesRepo.findById(beneficiaryId);
+      if (!existing) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `Beneficiary with id ${beneficiaryId} not found`,
+            },
+          ],
+        };
+      }
+
+      // Validate member exists if memberId provided
+      if (data.memberId) {
+        const member = await membersRepo.findById(data.memberId);
+        if (!member) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Member with id ${data.memberId} not found`,
+              },
+            ],
+          };
+        }
+      }
+
+      // Compute effective identity after update to enforce XOR constraint
+      const effectiveMemberId = data.memberId !== undefined ? data.memberId : existing.memberId;
+      const effectiveExternalName = data.externalName !== undefined ? data.externalName : existing.externalName;
+      if (effectiveMemberId && effectiveExternalName) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: "Cannot set both memberId and externalName — use one or the other",
+            },
+          ],
+        };
+      }
+      if (!effectiveMemberId && !effectiveExternalName) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: "Either memberId or externalName is required to identify the beneficiary",
+            },
+          ],
+        };
+      }
 
       const updated = await beneficiariesRepo.update(beneficiaryId, stripUndefined(data));
       if (!updated) {
