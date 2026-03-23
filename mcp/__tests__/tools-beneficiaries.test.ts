@@ -339,13 +339,61 @@ describe("update-beneficiary", () => {
       rankOrder: 1,
     });
 
-    // Try to add externalName while memberId already exists
+    // Try to add externalName while memberId already exists (without clearing memberId)
     const result = await getHandler(tools, "update-beneficiary")({
       beneficiaryId: beneficiary.id,
       externalName: "Li Si",
     });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("Cannot set both memberId and externalName");
+  });
+
+  test("should switch from member to external beneficiary", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { member, policy } = await seedPolicy();
+
+    const beneficiary = await beneficiariesRepo.create({
+      policyId: policy.id,
+      memberId: member.id,
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+
+    // Switch identity: clear memberId, set externalName
+    const result = await getHandler(tools, "update-beneficiary")({
+      beneficiaryId: beneficiary.id,
+      memberId: null,
+      externalName: "Wang Wu",
+      externalIdCard: "110101199901011234",
+    });
+    const data = parseResult(result);
+    expect(data.memberId).toBeNull();
+    expect(data.externalName).toBe("Wang Wu");
+  });
+
+  test("should switch from external to member beneficiary", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { member, policy } = await seedPolicy();
+
+    const beneficiary = await beneficiariesRepo.create({
+      policyId: policy.id,
+      externalName: "Wang Wu",
+      sharePercent: 100,
+      rankOrder: 1,
+    });
+
+    // Switch identity: set memberId, clear external fields
+    const result = await getHandler(tools, "update-beneficiary")({
+      beneficiaryId: beneficiary.id,
+      memberId: member.id,
+      externalName: null,
+      externalIdCard: null,
+    });
+    const data = parseResult(result);
+    expect(data.memberId).toBe(member.id);
+    expect(data.externalName).toBeNull();
   });
 });
 

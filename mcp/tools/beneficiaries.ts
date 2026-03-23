@@ -199,14 +199,14 @@ export function registerBeneficiaryTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "update-beneficiary",
-    "Update a beneficiary record",
+    "Update a beneficiary record. To switch identity type, pass the new identity and set the old one to null (e.g. memberId: 5, externalName: null).",
     {
       beneficiaryId: z.number().describe("The beneficiary ID to update"),
       sharePercent: z.number().optional().describe("Benefit share percentage"),
       rankOrder: z.number().optional().describe("Beneficiary rank order"),
-      memberId: z.number().optional().describe("Family member ID"),
-      externalName: z.string().optional().describe("External beneficiary name"),
-      externalIdCard: z.string().optional().describe("External beneficiary ID card number"),
+      memberId: z.number().nullable().optional().describe("Family member ID (null to clear)"),
+      externalName: z.string().nullable().optional().describe("External beneficiary name (null to clear)"),
+      externalIdCard: z.string().nullable().optional().describe("External beneficiary ID card number (null to clear)"),
     },
     async ({ beneficiaryId, ...data }) => {
       const error = await checkMcpEnabled();

@@ -180,15 +180,15 @@ export function registerPaymentTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "update-payment",
-    "Update a payment record",
+    "Update a payment record. To revert a paid record, set status and pass paidDate: null, paidAmount: null.",
     {
       paymentId: z.number().describe("The payment ID to update"),
       periodNumber: z.number().optional().describe("Payment period number"),
       dueDate: z.string().optional().describe("Payment due date (YYYY-MM-DD)"),
       amount: z.number().optional().describe("Payment amount due"),
       status: z.enum(["Pending", "Paid", "Overdue"]).optional().describe("Payment status"),
-      paidDate: z.string().optional().describe("Actual payment date (YYYY-MM-DD)"),
-      paidAmount: z.number().optional().describe("Actual amount paid"),
+      paidDate: z.string().nullable().optional().describe("Actual payment date (null to clear)"),
+      paidAmount: z.number().nullable().optional().describe("Actual amount paid (null to clear)"),
     },
     async ({ paymentId, ...data }) => {
       const error = await checkMcpEnabled();

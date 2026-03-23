@@ -328,12 +328,41 @@ describe("update-payment", () => {
       paidAmount: 3000,
     });
 
+    // Setting status to Pending without clearing paid fields should fail
     const result = await getHandler(tools, "update-payment")({
       paymentId: payment.id,
       status: "Pending",
     });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain("must not have paidDate or paidAmount");
+  });
+
+  test("should revert paid record to pending by clearing paid fields", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { policy } = await seedPolicy();
+
+    const payment = await paymentsRepo.create({
+      policyId: policy.id,
+      periodNumber: 1,
+      dueDate: "2024-01-01",
+      amount: 3000,
+      status: "Paid",
+      paidDate: "2024-01-05",
+      paidAmount: 3000,
+    });
+
+    // Properly revert: set status + clear paid fields with null
+    const result = await getHandler(tools, "update-payment")({
+      paymentId: payment.id,
+      status: "Pending",
+      paidDate: null,
+      paidAmount: null,
+    });
+    const data = parseResult(result);
+    expect(data.status).toBe("Pending");
+    expect(data.paidDate).toBeNull();
+    expect(data.paidAmount).toBeNull();
   });
 });
 
