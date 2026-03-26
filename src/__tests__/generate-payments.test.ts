@@ -126,7 +126,7 @@ describe("generatePaymentRecords", () => {
     expect(records[1]?.dueDate).toBe("2026-03-15");
   });
 
-  test("totalPayments null defaults to 1 for non-Single frequency", () => {
+  test("totalPayments null + no cutoff → only 1 record (safe default)", () => {
     const input: GeneratePaymentsInput = {
       policyId: 4,
       effectiveDate: "2025-01-01",
@@ -137,5 +137,39 @@ describe("generatePaymentRecords", () => {
     const records = generatePaymentRecords(input, null, new Set());
     expect(records).toHaveLength(1);
     expect(records[0]?.periodNumber).toBe(1);
+  });
+
+  test("totalPayments null + cutoff → generates up to cutoff date", () => {
+    // Yearly from 2024-03-24, cutoff end of 2026 → 3 records (2024, 2025, 2026)
+    const input: GeneratePaymentsInput = {
+      policyId: 5,
+      effectiveDate: "2024-03-24",
+      paymentFrequency: "Yearly",
+      totalPayments: null,
+      premium: 10000,
+    };
+    const cutoff = new Date("2026-12-31");
+    const records = generatePaymentRecords(input, cutoff, new Set());
+    expect(records).toHaveLength(3);
+    expect(records[0]?.dueDate).toBe("2024-03-24");
+    expect(records[1]?.dueDate).toBe("2025-03-24");
+    expect(records[2]?.dueDate).toBe("2026-03-24");
+  });
+
+  test("totalPayments null + monthly + cutoff → generates all months", () => {
+    // Monthly from 2026-01-15, cutoff 2026-03-31 → 3 records (Jan, Feb, Mar)
+    const input: GeneratePaymentsInput = {
+      policyId: 6,
+      effectiveDate: "2026-01-15",
+      paymentFrequency: "Monthly",
+      totalPayments: null,
+      premium: 800,
+    };
+    const cutoff = new Date("2026-03-31");
+    const records = generatePaymentRecords(input, cutoff, new Set());
+    expect(records).toHaveLength(3);
+    expect(records[0]?.dueDate).toBe("2026-01-15");
+    expect(records[1]?.dueDate).toBe("2026-02-15");
+    expect(records[2]?.dueDate).toBe("2026-03-15");
   });
 });
