@@ -16,6 +16,9 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
+import { statusConfig, categoryLabels, paymentFrequencyLabels, renewalTypeLabels } from "@/lib/constants/policy";
+import type { PolicyDetail, CoverageItem, Beneficiary, Payment } from "@/lib/types/policy";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,112 +31,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
 
-type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed" | "Expired";
-
-interface PolicyDetail {
-  id: number;
-  policyNumber: string;
-  productName: string;
-  insurerName: string;
-  insuredName: string;
-  insuredAssetName: string | null;
-  applicantName?: string;
-  category: string;
-  subCategory: string | null;
-  channel: string | null;
-  status: PolicyStatus;
-  premium: number;
-  sumAssured: number;
-  paymentFrequency: string;
-  paymentYears: number | null;
-  totalPayments: number | null;
-  renewalType: string | null;
-  paymentAccount: string | null;
-  nextDueDate: string | null;
-  effectiveDate: string;
-  expiryDate: string | null;
-  hesitationEndDate: string | null;
-  waitingDays: number | null;
-  guaranteedRenewalYears: number | null;
-  deathBenefit: string | null;
-  policyFilePath: string | null;
-  notes: string | null;
-}
-
-interface CoverageItem {
-  id: number;
-  policyId: number;
-  name: string;
-  periodLimit: number | null;
-  lifetimeLimit: number | null;
-  deductible: number | null;
-  coveragePercent: number | null;
-  isOptional: boolean | number;
-  notes: string | null;
-  sortOrder: number;
-}
-
-interface Beneficiary {
-  id: number;
-  name: string;
-  sharePercent: number;
-  rankOrder: number;
-}
-
-interface Payment {
-  id: number;
-  periodNumber: number;
-  dueDate: string;
-  amount: number;
-  status: string;
-  paidDate: string | null;
-}
-
 interface PolicyDetailDialogProps {
   policyId: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-const categoryLabels: Record<string, string> = {
-  Life: "寿险",
-  CriticalIllness: "重疾险",
-  Medical: "医疗险",
-  Accident: "意外险",
-  Annuity: "年金险",
-  Property: "财产险",
-};
-
-const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }> = {
-  Active: { label: "生效中", variant: "success" },
-  Expired: { label: "已过期", variant: "destructive" },
-  Lapsed: { label: "已失效", variant: "outline" },
-  Surrendered: { label: "已退保", variant: "warning" },
-  Claimed: { label: "已理赔", variant: "purple" },
-};
-
-const paymentFrequencyLabels: Record<string, string> = {
-  Single: "趸交",
-  Monthly: "月缴",
-  Yearly: "年缴",
-};
-
-const renewalTypeLabels: Record<string, string> = {
-  Manual: "手动续保",
-  Auto: "自动续保",
-  Yearly: "一年期",
-};
-
-function formatCurrency(value: number): string {
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
-  }
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 }
 
 function InfoRow({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {

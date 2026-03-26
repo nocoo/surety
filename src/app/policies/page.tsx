@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
+import { formatCurrency } from "@/lib/format";
+import { statusConfig, categoryLabels } from "@/lib/constants/policy";
+import type { PolicyStatus } from "@/lib/types/policy";
 import {
   Select,
   SelectContent,
@@ -47,7 +50,6 @@ import { PolicySheet } from "./policy-sheet";
 import { PolicyDetailDialog } from "./policy-detail-dialog";
 import { PaymentsDialog } from "./payments-dialog";
 
-type PolicyStatus = "Active" | "Expired" | "Lapsed" | "Surrendered" | "Claimed";
 
 interface Policy {
   id: number;
@@ -66,35 +68,6 @@ interface Policy {
   effectiveDate: string;
   expiryDate: string | null;
   channel: string | null;
-}
-
-const categoryLabels: Record<string, string> = {
-  Life: "寿险",
-  CriticalIllness: "重疾险",
-  Medical: "医疗险",
-  Accident: "意外险",
-  Annuity: "年金险",
-  Property: "财产险",
-};
-
-const statusConfig: Record<PolicyStatus, { label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }> = {
-  Active: { label: "生效中", variant: "success" },
-  Expired: { label: "已过期", variant: "destructive" },
-  Lapsed: { label: "已失效", variant: "outline" },
-  Surrendered: { label: "已退保", variant: "warning" },
-  Claimed: { label: "已理赔", variant: "purple" },
-};
-
-function formatCurrency(value: number): string {
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
-  }
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 }
 
 function getDaysUntil(dateStr: string | null): number | null {
