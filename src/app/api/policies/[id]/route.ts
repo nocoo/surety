@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { getR2ClientFromEnv } from "@/lib/r2-client";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 
 export const dynamic = "force-dynamic";
@@ -121,7 +122,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
-  const { repos, batchExecute } = await getReposFromRequest();
+  const { repos, targetDb, batchExecute } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);
 
@@ -134,10 +135,14 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }
 
-  // Cascade delete: remove child records then the policy itself.
-  // D1 enforces foreign_keys=ON, so we must delete children first.
+  // Collect R2 keys BEFORE deleting DB records (we need them for cleanup)
+  const policyAttachments = await repos.attachments.findByPolicyId(policyId);
+
+  // Cascade delete DB records first — this is the authoritative state.
+  // D1 enforces foreign_keys=ON, so we must delete children before the policy.
   if (batchExecute) {
     await batchExecute([
+      { sql: "DELETE FROM attachments WHERE policy_id = ?", params: [policyId] },
       { sql: "DELETE FROM beneficiaries WHERE policy_id = ?", params: [policyId] },
       { sql: "DELETE FROM payments WHERE policy_id = ?", params: [policyId] },
       { sql: "DELETE FROM cash_values WHERE policy_id = ?", params: [policyId] },
@@ -146,11 +151,23 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     ]);
   } else {
     // Non-batch path (test env or fallback)
+    await repos.attachments.deleteByPolicyId(policyId);
     await repos.beneficiaries.deleteByPolicyId(policyId);
     await repos.payments.deleteByPolicyId(policyId);
     await repos.cashValues.deleteByPolicyId(policyId);
     await repos.coverageItems.deleteByPolicyId(policyId);
     await repos.policies.delete(policyId);
+  }
+
+  // Clean up R2 objects AFTER DB delete — best-effort.
+  // If R2 cleanup fails, we have orphan R2 objects with no DB references (harmless,
+  // only wastes storage). This matches the consistency principle: prefer R2 orphans
+  // over DB records pointing to missing files.
+  if (policyAttachments.length > 0) {
+    const r2Client = getR2ClientFromEnv(targetDb);
+    await Promise.allSettled(
+      policyAttachments.map((a) => r2Client.delete(a.r2Key)),
+    );
   }
 
   return NextResponse.json({ success: true });

@@ -1,7 +1,7 @@
 /**
  * API helper functions for request-scoped database access.
  */
-import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance } from "@/db/index";
+import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance, type TargetDb } from "@/db/index";
 import { createAllRepos, type AllRepos } from "@/db/repositories";
 import type { BatchExecuteFn } from "@/db/backup";
 
@@ -15,6 +15,7 @@ import type { BatchExecuteFn } from "@/db/backup";
 export async function getReposFromRequest(): Promise<{
   db: DbInstance;
   repos: AllRepos;
+  targetDb: TargetDb;
   batchExecute?: BatchExecuteFn;
 }> {
   let cookieValue: string | undefined;
@@ -33,6 +34,6 @@ export async function getReposFromRequest(): Promise<{
   const db = getDbForRequest(targetDb);
   const repos = createAllRepos(db);
   const batchExecute = createBatchExecutor(targetDb);
-  return batchExecute ? { db, repos, batchExecute } : { db, repos };
+  return batchExecute ? { db, repos, targetDb, batchExecute } : { db, repos, targetDb };
 }
 
