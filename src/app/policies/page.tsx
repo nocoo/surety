@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users } from "lucide-react";
+import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { PolicySheet } from "./policy-sheet";
 
 
 interface Policy {
@@ -91,14 +90,12 @@ function PolicyMobileCard({
   copied,
   onViewDetail,
   onCopyPolicyNumber,
-  onEdit,
   onDelete,
 }: {
   policy: Policy;
   copied: boolean;
   onViewDetail: (policy: Policy) => void;
   onCopyPolicyNumber: (policy: Policy) => void;
-  onEdit: (policy: Policy) => void;
   onDelete: (policy: Policy) => void;
 }) {
   const status = statusConfig[policy.status];
@@ -178,10 +175,6 @@ function PolicyMobileCard({
           <Info className="mr-1.5 h-4 w-4" />
           详情
         </Button>
-        <Button variant="outline" size="sm" onClick={() => onEdit(policy)}>
-          <Pencil className="mr-1.5 h-4 w-4" />
-          编辑
-        </Button>
         <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => onDelete(policy)}>
           <Trash2 className="mr-1.5 h-4 w-4" />
           删除
@@ -204,8 +197,6 @@ export default function PoliciesPage() {
   const router = useRouter();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
@@ -386,16 +377,6 @@ export default function PoliciesPage() {
     </TableHead>
   );
 
-  const handleAdd = () => {
-    setEditingPolicy(null);
-    setSheetOpen(true);
-  };
-
-  const handleEdit = (policy: Policy) => {
-    setEditingPolicy(policy);
-    setSheetOpen(true);
-  };
-
   const handleDeleteClick = (policy: Policy) => {
     setPolicyToDelete(policy);
     setDeleteDialogOpen(true);
@@ -455,15 +436,11 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && 
+              {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") &&
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
           </div>
-          <Button onClick={handleAdd}>
-            <Plus className="mr-2 h-4 w-4" />
-            添加保单
-          </Button>
         </div>
 
         {/* Filter Area */}
@@ -574,7 +551,6 @@ export default function PoliciesPage() {
                   copied={copiedId === policy.id}
                   onViewDetail={handleViewDetail}
                   onCopyPolicyNumber={handleCopyPolicyNumber}
-                  onEdit={handleEdit}
                   onDelete={handleDeleteClick}
                 />
               ))}
@@ -716,24 +692,6 @@ export default function PoliciesPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => handleEdit(policy)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                  <span className="sr-only">编辑</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">编辑</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
                                   className="h-8 w-8 text-destructive hover:text-destructive"
                                   onClick={() => handleDeleteClick(policy)}
                                 >
@@ -839,14 +797,6 @@ export default function PoliciesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleEdit(policy)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
                                 className="h-8 w-8 text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteClick(policy)}
                               >
@@ -870,13 +820,6 @@ export default function PoliciesPage() {
           </div>
         )}
       </div>
-
-      <PolicySheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        policy={editingPolicy}
-        onSuccess={fetchPolicies}
-      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

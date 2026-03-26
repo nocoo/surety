@@ -12,6 +12,7 @@ import {
   statusConfig,
   categoryLabels,
   paymentFrequencyLabels,
+  renewalTypeLabels,
 } from "@/lib/constants/policy";
 import type { PolicyDetail, Beneficiary } from "@/lib/types/policy";
 
@@ -137,6 +138,30 @@ export function MetaColumn({ policy, beneficiaries }: MetaColumnProps) {
             label="保费"
             value={`${formatCurrency(policy.premium)}/${frequencyLabel}`}
           />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* 缴费详情 */}
+      <div>
+        <h3 className="text-sm font-medium text-muted-foreground mb-2">
+          缴费详情
+        </h3>
+        <div className="space-y-2">
+          {policy.paymentYears != null && (
+            <InfoRow label="缴费年限" value={`${policy.paymentYears} 年`} />
+          )}
+          {policy.totalPayments != null && (
+            <InfoRow label="总期数" value={`${policy.totalPayments} 期`} />
+          )}
+          {policy.renewalType && (
+            <InfoRow
+              label="续保方式"
+              value={renewalTypeLabels[policy.renewalType] ?? policy.renewalType}
+            />
+          )}
+          <InfoRow label="扣款账户" value={policy.paymentAccount} />
         </div>
       </div>
 
