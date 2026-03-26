@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Shield, Building2, Loader2 } from "lucide-react";
+import { Copy, Check, Pencil, Building2, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -168,7 +168,7 @@ function BasicInfoSection({
             className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setIsEditing(true)}
           >
-            <Shield className="h-3 w-3" />
+            <Pencil className="h-3 w-3" />
           </Button>
         ) : (
           <div className="flex items-center gap-1">
@@ -327,7 +327,7 @@ function CoverageInfoSection({
             className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setIsEditing(true)}
           >
-            <Shield className="h-3 w-3" />
+            <Pencil className="h-3 w-3" />
           </Button>
         ) : (
           <div className="flex items-center gap-1">
@@ -476,7 +476,7 @@ function PaymentDetailsSection({
             className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setIsEditing(true)}
           >
-            <Shield className="h-3 w-3" />
+            <Pencil className="h-3 w-3" />
           </Button>
         ) : (
           <div className="flex items-center gap-1">
@@ -506,28 +506,28 @@ function PaymentDetailsSection({
         )}
       </div>
       <div className="space-y-2">
-        {policy.paymentYears != null && (
+        {(isEditing || policy.paymentYears != null) && (
           <EditableInfoRow
             label="缴费年限"
-            value={`${policy.paymentYears} 年`}
+            value={policy.paymentYears != null ? `${policy.paymentYears} 年` : null}
             type="number"
             editValue={formData.paymentYears}
             onEditChange={isEditing ? (v) => updateField("paymentYears", v) : undefined}
           />
         )}
-        {policy.totalPayments != null && (
+        {(isEditing || policy.totalPayments != null) && (
           <EditableInfoRow
             label="总期数"
-            value={`${policy.totalPayments} 期`}
+            value={policy.totalPayments != null ? `${policy.totalPayments} 期` : null}
             type="number"
             editValue={formData.totalPayments}
             onEditChange={isEditing ? (v) => updateField("totalPayments", v) : undefined}
           />
         )}
-        {policy.renewalType && (
+        {(isEditing || policy.renewalType) && (
           <EditableInfoRow
             label="续保方式"
-            value={renewalTypeLabels[policy.renewalType] ?? policy.renewalType}
+            value={policy.renewalType ? (renewalTypeLabels[policy.renewalType] ?? policy.renewalType) : null}
             type="select"
             options={renewalTypes}
             editValue={formData.renewalType}
@@ -638,7 +638,7 @@ function DateInfoSection({
             className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setIsEditing(true)}
           >
-            <Shield className="h-3 w-3" />
+            <Pencil className="h-3 w-3" />
           </Button>
         ) : (
           <div className="flex items-center gap-1">
@@ -675,7 +675,7 @@ function DateInfoSection({
           editValue={formData.effectiveDate}
           onEditChange={isEditing ? (v) => updateField("effectiveDate", v) : undefined}
         />
-        {policy.expiryDate && (
+        {(isEditing || policy.expiryDate) && (
           <EditableInfoRow
             label="到期日期"
             value={policy.expiryDate}
@@ -684,7 +684,7 @@ function DateInfoSection({
             onEditChange={isEditing ? (v) => updateField("expiryDate", v) : undefined}
           />
         )}
-        {policy.hesitationEndDate && (
+        {(isEditing || policy.hesitationEndDate) && (
           <EditableInfoRow
             label="犹豫期截止"
             value={policy.hesitationEndDate}
@@ -693,19 +693,19 @@ function DateInfoSection({
             onEditChange={isEditing ? (v) => updateField("hesitationEndDate", v) : undefined}
           />
         )}
-        {policy.waitingDays != null && (
+        {(isEditing || policy.waitingDays != null) && (
           <EditableInfoRow
             label="等待期 (天)"
-            value={`${policy.waitingDays} 天`}
+            value={policy.waitingDays != null ? `${policy.waitingDays} 天` : null}
             type="number"
             editValue={formData.waitingDays}
             onEditChange={isEditing ? (v) => updateField("waitingDays", v) : undefined}
           />
         )}
-        {policy.guaranteedRenewalYears != null && (
+        {(isEditing || policy.guaranteedRenewalYears != null) && (
           <EditableInfoRow
             label="保证续保 (年)"
-            value={`${policy.guaranteedRenewalYears} 年`}
+            value={policy.guaranteedRenewalYears != null ? `${policy.guaranteedRenewalYears} 年` : null}
             type="number"
             editValue={formData.guaranteedRenewalYears}
             onEditChange={isEditing ? (v) => updateField("guaranteedRenewalYears", v) : undefined}
@@ -776,7 +776,7 @@ function NotesSection({
             className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={() => setIsEditing(true)}
           >
-            <Shield className="h-3 w-3" />
+            <Pencil className="h-3 w-3" />
           </Button>
         ) : (
           <div className="flex items-center gap-1">
@@ -838,7 +838,7 @@ export function MetaColumn({ policy, beneficiaries, onPolicyUpdate }: MetaColumn
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Shield className="size-5 text-primary shrink-0" />
+          <Pencil className="size-5 text-primary shrink-0" />
           <h2 className="text-lg font-semibold leading-tight">
             {policy.productName}
           </h2>

@@ -89,15 +89,20 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
     });
   }
 
-  // 5. guaranteedRenewalYears → effectiveDate + N years
-  if (policy.guaranteedRenewalYears != null) {
-    const d = addYears(effectiveDate, policy.guaranteedRenewalYears);
-    events.push({
-      date: d,
-      dateStr: formatDate(d),
-      label: `保证续保到期 (${policy.guaranteedRenewalYears}年)`,
-      type: d.getTime() <= todayTime ? "past" : "future",
-    });
+  // 5. guaranteedRenewalYears → individual renewal anniversary events
+  if (policy.guaranteedRenewalYears != null && policy.guaranteedRenewalYears > 0) {
+    for (let year = 1; year <= policy.guaranteedRenewalYears; year++) {
+      const d = addYears(effectiveDate, year);
+      const isLastYear = year === policy.guaranteedRenewalYears;
+      events.push({
+        date: d,
+        dateStr: formatDate(d),
+        label: isLastYear
+          ? `保证续保到期 (第${year}年)`
+          : `第${year}年续期`,
+        type: d.getTime() <= todayTime ? "past" : "future",
+      });
+    }
   }
 
   // 6. expiryDate

@@ -28,8 +28,8 @@ export function EditableInfoRow({
   onEditChange,
   options,
 }: EditableInfoRowProps) {
-  // Display mode - null/empty values hide the row
-  if (value == null || value === "") return null;
+  // Display mode - null/empty values hide the row (but edit mode always shows)
+  if (!onEditChange && (value == null || value === "")) return null;
 
   // Edit mode
   if (onEditChange) {

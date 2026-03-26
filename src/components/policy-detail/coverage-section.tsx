@@ -370,7 +370,7 @@ export function CoverageSection({
                     </div>
                   </div>
 
-                  <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  <div className="mt-1 space-y-1 text-sm">
                     {item.periodLimit !== null && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">

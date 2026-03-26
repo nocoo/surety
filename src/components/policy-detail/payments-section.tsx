@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Wand2, Check, X } from "lucide-react";
+import { Plus, Trash2, Wand2, Check, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -196,6 +196,8 @@ export function PaymentsSection({
   const [generateConfirmOpen, setGenerateConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [markingPaid, setMarkingPaid] = useState<number | null>(null);
+  const [editingPayment, setEditingPayment] = useState<number | null>(null);
+  const [editAmount, setEditAmount] = useState<string>("");
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -276,6 +278,31 @@ export function PaymentsSection({
       setResultMessage("标记失败，请重试");
     } finally {
       setMarkingPaid(null);
+    }
+  };
+
+  const handleUpdateAmount = async (payment: Payment) => {
+    const newAmount = Number(editAmount);
+    if (isNaN(newAmount) || newAmount <= 0) return;
+    try {
+      const res = await fetch(
+        `/api/policies/${policyId}/payments/${payment.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: newAmount }),
+        },
+      );
+      if (res.ok) {
+        const updated = (await res.json()) as Payment;
+        onPaymentsChange(
+          payments.map((p) => (p.id === payment.id ? updated : p)),
+        );
+      }
+    } catch {
+      setResultMessage("修改金额失败，请重试");
+    } finally {
+      setEditingPayment(null);
     }
   };
 
@@ -402,9 +429,57 @@ export function PaymentsSection({
                   第{p.periodNumber}期
                 </span>
                 <span className="text-sm font-mono">{p.dueDate}</span>
-                <span className="text-sm font-medium">
-                  {formatCurrencyFull(p.amount)}
-                </span>
+                {editingPayment === p.id ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value)}
+                      className="h-6 w-24 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void handleUpdateAmount(p);
+                        if (e.key === "Escape") setEditingPayment(null);
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-5"
+                      onClick={() => void handleUpdateAmount(p)}
+                    >
+                      <Check className="size-3" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-5"
+                      onClick={() => setEditingPayment(null)}
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      p.status !== "Paid" && "cursor-pointer hover:underline",
+                    )}
+                    onClick={() => {
+                      if (p.status !== "Paid") {
+                        setEditingPayment(p.id);
+                        setEditAmount(String(p.amount));
+                      }
+                    }}
+                  >
+                    {formatCurrencyFull(p.amount)}
+                    {p.status !== "Paid" && (
+                      <Pencil className="ml-1 inline size-3 text-muted-foreground" />
+                    )}
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -468,7 +543,7 @@ export function PaymentsSection({
           <AlertDialogHeader>
             <AlertDialogTitle>生成缴费记录</AlertDialogTitle>
             <AlertDialogDescription>
-              将根据保单信息自动生成从生效日到今天的缴费记录。已有的记录不会重复生成。是否继续？
+              将根据保单信息自动生成所有缴费记录（含未来期数）。已缴期标记为&ldquo;已缴&rdquo;，未来期标记为&ldquo;待缴&rdquo;。已有记录不会重复。是否继续？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

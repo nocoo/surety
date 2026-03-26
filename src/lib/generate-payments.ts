@@ -29,7 +29,8 @@ export function generatePaymentRecords(
   // Determine the upper bound on number of periods:
   // - Single: always 1
   // - totalPayments provided: use it
-  // - totalPayments null (open-ended): generate until cutoff, cap at 1200 (100 years monthly)
+  // - totalPayments null + cutoff: generate until cutoff, cap at 1200 (100 years monthly)
+  // - totalPayments null + no cutoff: only 1 (can't determine how many periods)
   const maxPeriods =
     paymentFrequency === "Single"
       ? 1

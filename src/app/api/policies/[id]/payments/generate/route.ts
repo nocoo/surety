@@ -9,7 +9,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 /**
  * POST /api/policies/[id]/payments/generate
  *
- * Auto-generate payment records from effectiveDate up to today.
+ * Auto-generate all payment records (past as Paid, future as Pending).
  * Idempotent: skips already-existing period numbers.
  */
 export async function POST(_request: NextRequest, context: RouteContext) {
@@ -40,10 +40,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     existingPayments.map((p) => p.periodNumber),
   );
 
-  // Generate records up to today
-  const today = new Date();
-  today.setHours(23, 59, 59, 999); // Include all of today
-
+  // Generate all payment records (past as Paid, future as Pending)
   const newRecords = generatePaymentRecords(
     {
       policyId,
@@ -52,7 +49,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       totalPayments: policy.totalPayments,
       premium: policy.premium,
     },
-    today,
+    null,
     existingPeriodNumbers,
   );
 
