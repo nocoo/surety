@@ -219,6 +219,26 @@ export type CoverageItem = typeof coverageItems.$inferSelect;
 export type NewCoverageItem = typeof coverageItems.$inferInsert;
 
 // ============================================================================
+// 9. attachments - 保单附件 (PDF files stored in R2)
+// ============================================================================
+export const attachments = sqliteTable("attachments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  policyId: integer("policy_id")
+    .notNull()
+    .references(() => policies.id),
+  filename: text("filename").notNull(), // original filename: "某某保单.pdf"
+  r2Key: text("r2_key").notNull().unique(), // R2 object key: "policies/42/uuid.pdf"
+  contentType: text("content_type").notNull(), // MIME type: "application/pdf"
+  size: integer("size").notNull(), // file size in bytes
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Attachment = typeof attachments.$inferSelect;
+export type NewAttachment = typeof attachments.$inferInsert;
+
+// ============================================================================
 // 10. settings - 全局设置
 // ============================================================================
 export const settings = sqliteTable("settings", {

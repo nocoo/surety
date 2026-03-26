@@ -202,6 +202,7 @@ export function resetTestDb(): void {
   initSchema();
 
   testSqlite.exec(`
+    DELETE FROM attachments;
     DELETE FROM coverage_items;
     DELETE FROM cash_values;
     DELETE FROM payments;
@@ -333,6 +334,18 @@ export function initSchema(): void {
       notes TEXT,
       sort_order INTEGER NOT NULL DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS attachments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      policy_id INTEGER NOT NULL REFERENCES policies(id),
+      filename TEXT NOT NULL,
+      r2_key TEXT NOT NULL UNIQUE,
+      content_type TEXT NOT NULL,
+      size INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_attachments_policy_id ON attachments(policy_id);
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
