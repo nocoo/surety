@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.0] - 2026-03-26
+
+### Added
+
+- **Policy detail page** — dedicated `/policies/[id]` page with 4-column responsive layout (Meta, Timeline, Coverage, Payments)
+  - **MetaColumn**: basic info, people, beneficiaries, attachments, payment details (years, total periods, renewal type, account)
+  - **TimelineColumn**: visual timeline with policy dates (effective, hesitation, waiting period, next due, renewal, expiry) with "today" marker
+  - **CoverageSection**: full CRUD for coverage items with inline add/edit/delete
+  - **PaymentsSection**: payment list, manual add, mark-paid, delete, auto-generate with confirmation
+- **Payment CRUD API** — POST create, PUT update, DELETE delete for payment records with 409 conflict on duplicate period numbers
+- **PolicyEditDialog** — Dialog-based edit form integrated into detail page header, replaced PolicySheet
+- **Unique constraint** — (policy_id, period_number) on payments table to prevent duplicate periods
+
+### Fixed
+
+- **Payment date overflow** — month-end and leap-day edge cases now clamp to target month end
+  - Jan 31 + 1 month → Feb 28/29 (not Mar 3)
+  - Feb 29 + 1 year → Feb 28 in non-leap years (not Mar 1)
+- **Payment generation bug** — fixed `totalPayments=null` only generating 1 record; now generates up to cutoff date (1200 cap)
+- **createMany batching** — split into batches of 10 to work around D1 bound parameter limit (~100)
+
+### Changed
+
+- **Entry points migration** — all "view detail" links now navigate to `/policies/[id]` instead of dialog
+  - Coverage lookup cards
+  - Renewal calendar product names
+  - Policies list table/cards
+- **Removed** — PolicyDetailDialog (946 lines) and PaymentsDialog (265 lines) replaced by detail page
+- **Removed** — "添加保单" button from policies list page (create flow to be reimplemented separately)
+
 ## [v1.4.0] - 2026-03-26
 
 ### Added
