@@ -29,7 +29,17 @@ export function createPaymentsRepo(dbInstance: DbInstance) {
     },
 
     async createMany(data: NewPayment[]): Promise<Payment[]> {
-      return await dbInstance.insert(payments).values(data).returning().all();
+      // D1 has a bound parameter limit (~100). Batch insert in chunks.
+      const batchSize = 10;
+      const results: Payment[] = [];
+
+      for (let i = 0; i < data.length; i += batchSize) {
+        const batch = data.slice(i, i + batchSize);
+        const inserted = await dbInstance.insert(payments).values(batch).returning().all();
+        results.push(...inserted);
+      }
+
+      return results;
     },
 
     async update(id: number, data: Partial<NewPayment>): Promise<Payment | undefined> {

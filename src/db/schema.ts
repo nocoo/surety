@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, unique } from "drizzle-orm/sqlite-core";
 
 // ============================================================================
 // 1. members - 家庭成员
@@ -164,20 +164,30 @@ export type NewBeneficiary = typeof beneficiaries.$inferInsert;
 // ============================================================================
 // 6. payments - 缴费记录
 // ============================================================================
-export const payments = sqliteTable("payments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  policyId: integer("policy_id")
-    .notNull()
-    .references(() => policies.id),
-  periodNumber: integer("period_number").notNull(),
-  dueDate: text("due_date").notNull(),
-  amount: real("amount").notNull(),
-  status: text("status", { enum: ["Pending", "Paid", "Overdue"] })
-    .notNull()
-    .default("Pending"),
-  paidDate: text("paid_date"),
-  paidAmount: real("paid_amount"),
-});
+export const payments = sqliteTable(
+  "payments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    policyId: integer("policy_id")
+      .notNull()
+      .references(() => policies.id),
+    periodNumber: integer("period_number").notNull(),
+    dueDate: text("due_date").notNull(),
+    amount: real("amount").notNull(),
+    status: text("status", { enum: ["Pending", "Paid", "Overdue"] })
+      .notNull()
+      .default("Pending"),
+    paidDate: text("paid_date"),
+    paidAmount: real("paid_amount"),
+  },
+  (table) => ({
+    // Ensure no duplicate period numbers per policy
+    uniquePolicyPeriod: unique("unique_policy_period").on(
+      table.policyId,
+      table.periodNumber,
+    ),
+  }),
+);
 
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;

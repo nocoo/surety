@@ -119,6 +119,39 @@ describe("Payments API E2E", () => {
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBe(0);
     });
+
+    test("POST returns 409 for duplicate period number", async () => {
+      // First, create a payment
+      const { status: createStatus } = await apiRequest<Payment>(
+        `/api/policies/${testPolicyId}/payments`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            dueDate: "2026-01-01",
+            amount: 1000,
+            periodNumber: 999,
+          }),
+        }
+      );
+      expect(createStatus).toBe(201);
+
+      // Try to create another payment with the same period number
+      const { status: dupStatus, data: dupData } = await apiRequest<{
+        error: string;
+      }>(
+        `/api/policies/${testPolicyId}/payments`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            dueDate: "2026-01-01",
+            amount: 2000,
+            periodNumber: 999,
+          }),
+        }
+      );
+      expect(dupStatus).toBe(409);
+      expect(dupData.error).toContain("999");
+    });
   });
 
   describe("Payment status verification", () => {

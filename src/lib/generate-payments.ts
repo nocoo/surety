@@ -23,7 +23,6 @@ export function generatePaymentRecords(
   existingPeriodNumbers: Set<number>,
 ): NewPayment[] {
   const { policyId, effectiveDate, paymentFrequency, premium } = input;
-  const startDate = new Date(effectiveDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -41,13 +40,34 @@ export function generatePaymentRecords(
   for (let i = 0; i < maxPeriods; i++) {
     const periodNumber = i + 1;
 
-    const dueDate = new Date(startDate);
+    // Parse start date as local (YYYY-MM-DD)
+    const [year, month, day] = effectiveDate.split("-").map(Number);
+    // Safe defaults for malformed input
+    const startYear = year ?? 0;
+    const startMonth = (month ?? 1) - 1; // JS months are 0-indexed
+    const startDay = day ?? 1;
+
+    let dueYear: number;
+    let dueMonth: number; // 0-indexed
+
     if (paymentFrequency === "Monthly") {
-      dueDate.setMonth(dueDate.getMonth() + i);
+      dueYear = startYear + Math.floor((startMonth + i) / 12);
+      dueMonth = (startMonth + i) % 12;
     } else if (paymentFrequency === "Yearly") {
-      dueDate.setFullYear(dueDate.getFullYear() + i);
+      dueYear = startYear + i;
+      dueMonth = startMonth;
+    } else {
+      // Single: use effectiveDate as-is
+      dueYear = startYear;
+      dueMonth = startMonth;
     }
-    // Single: dueDate stays at effectiveDate
+
+    // Clamp day to the last day of the target month
+    // E.g., Jan 31 + 1 month → Feb 28/29, Feb 29 + 1 year → Feb 28 (non-leap)
+    const lastDayOfTargetMonth = new Date(dueYear, dueMonth + 1, 0).getDate();
+    const dueDay = Math.min(startDay, lastDayOfTargetMonth);
+
+    const dueDate = new Date(dueYear, dueMonth, dueDay);
 
     // Cutoff: stop generating beyond the cutoff date
     if (cutoffDate !== null && dueDate > cutoffDate) break;

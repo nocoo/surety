@@ -50,6 +50,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Check for duplicate period number
+  const existing = await repos.payments.findByPolicyId(policyId);
+  if (existing.some((p) => p.periodNumber === body.periodNumber)) {
+    return NextResponse.json(
+      { error: `Period ${body.periodNumber} already exists for this policy` },
+      { status: 409 },
+    );
+  }
+
   const created = await repos.payments.create({
     policyId,
     periodNumber: body.periodNumber,

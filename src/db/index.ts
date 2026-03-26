@@ -315,6 +315,9 @@ export function initSchema(): void {
       paid_amount REAL
     );
 
+    -- Unique constraint: no duplicate period numbers per policy
+    CREATE UNIQUE INDEX IF NOT EXISTS unique_policy_period ON payments(policy_id, period_number);
+
     CREATE TABLE IF NOT EXISTS cash_values (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       policy_id INTEGER NOT NULL REFERENCES policies(id),

@@ -172,4 +172,103 @@ describe("generatePaymentRecords", () => {
     expect(records[1]?.dueDate).toBe("2026-02-15");
     expect(records[2]?.dueDate).toBe("2026-03-15");
   });
+
+  describe("month-end edge cases", () => {
+    test("Jan 31 + 1 month → Feb 28 (non-leap)", () => {
+      // 2025-01-31 + 1 month = 2025-02-28 (clamped to month end)
+      const input: GeneratePaymentsInput = {
+        policyId: 7,
+        effectiveDate: "2025-01-31",
+        paymentFrequency: "Monthly",
+        totalPayments: 3,
+        premium: 500,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(3);
+      expect(records[0]?.dueDate).toBe("2025-01-31");
+      expect(records[1]?.dueDate).toBe("2025-02-28"); // clamped to Feb end
+      expect(records[2]?.dueDate).toBe("2025-03-31");
+    });
+
+    test("Jan 31 + 1 month → Feb 29 (leap year)", () => {
+      // 2024-01-31 + 1 month = 2024-02-29 (leap year)
+      const input: GeneratePaymentsInput = {
+        policyId: 8,
+        effectiveDate: "2024-01-31",
+        paymentFrequency: "Monthly",
+        totalPayments: 3,
+        premium: 500,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(3);
+      expect(records[0]?.dueDate).toBe("2024-01-31");
+      expect(records[1]?.dueDate).toBe("2024-02-29"); // leap year
+      expect(records[2]?.dueDate).toBe("2024-03-31");
+    });
+
+    test("Mar 31 + 1 month → Apr 30", () => {
+      // 2025-03-31 + 1 month = 2025-04-30 (April has 30 days)
+      const input: GeneratePaymentsInput = {
+        policyId: 9,
+        effectiveDate: "2025-03-31",
+        paymentFrequency: "Monthly",
+        totalPayments: 2,
+        premium: 500,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(2);
+      expect(records[0]?.dueDate).toBe("2025-03-31");
+      expect(records[1]?.dueDate).toBe("2025-04-30"); // clamped to Apr end
+    });
+
+    test("Dec 31 + 1 month → Jan 31 (year rollover)", () => {
+      // 2024-12-31 + 1 month = 2025-01-31
+      const input: GeneratePaymentsInput = {
+        policyId: 10,
+        effectiveDate: "2024-12-31",
+        paymentFrequency: "Monthly",
+        totalPayments: 3,
+        premium: 500,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(3);
+      expect(records[0]?.dueDate).toBe("2024-12-31");
+      expect(records[1]?.dueDate).toBe("2025-01-31");
+      expect(records[2]?.dueDate).toBe("2025-02-28"); // 2025 is not leap
+    });
+  });
+
+  describe("leap day edge cases", () => {
+    test("Feb 29 + 1 year → Feb 28 (non-leap)", () => {
+      // 2024-02-29 + 1 year = 2025-02-28 (clamped to Feb end)
+      const input: GeneratePaymentsInput = {
+        policyId: 11,
+        effectiveDate: "2024-02-29",
+        paymentFrequency: "Yearly",
+        totalPayments: 3,
+        premium: 8000,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(3);
+      expect(records[0]?.dueDate).toBe("2024-02-29");
+      expect(records[1]?.dueDate).toBe("2025-02-28"); // non-leap year
+      expect(records[2]?.dueDate).toBe("2026-02-28"); // non-leap year
+    });
+
+    test("Feb 28 + 1 year → Feb 28 (non-leap to leap)", () => {
+      // 2023-02-28 + 1 year = 2024-02-28 (stays on 28th)
+      const input: GeneratePaymentsInput = {
+        policyId: 12,
+        effectiveDate: "2023-02-28",
+        paymentFrequency: "Yearly",
+        totalPayments: 3,
+        premium: 8000,
+      };
+      const records = generatePaymentRecords(input, null, new Set());
+      expect(records).toHaveLength(3);
+      expect(records[0]?.dueDate).toBe("2023-02-28");
+      expect(records[1]?.dueDate).toBe("2024-02-28"); // leap year, but 28th stays
+      expect(records[2]?.dueDate).toBe("2025-02-28"); // non-leap year
+    });
+  });
 });
