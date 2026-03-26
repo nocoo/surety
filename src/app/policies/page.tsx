@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
@@ -230,6 +231,29 @@ function getAriaSort(field: SortField, activeField: SortField, direction: SortDi
   return direction === "asc" ? "ascending" : "descending";
 }
 
+/**
+ * Reads ?detail={policyId} from the URL and opens the detail dialog.
+ * Isolated in its own component so it can be wrapped in <Suspense>
+ * (useSearchParams requires a Suspense boundary in Next.js App Router).
+ */
+function DetailParamWatcher({ onDetail }: { onDetail: (id: number) => void }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const detailId = searchParams.get("detail");
+    if (detailId) {
+      const id = Number(detailId);
+      if (!Number.isNaN(id) && id > 0) {
+        onDetail(id);
+      }
+      // Clean URL without triggering navigation
+      window.history.replaceState(null, "", "/policies");
+    }
+  }, [searchParams, onDetail]);
+
+  return null;
+}
+
 export default function PoliciesPage() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,6 +281,12 @@ export default function PoliciesPage() {
   // Sort state (persisted to localStorage)
   const [sortField, setSortField] = usePersistedState<SortField>("surety-sort-field", "insuredName");
   const [sortDirection, setSortDirection] = usePersistedState<SortDirection>("surety-sort-direction", "asc");
+
+  // Cross-page navigation: open detail dialog from ?detail={policyId}
+  const handleDetailParam = useCallback((id: number) => {
+    setDetailPolicyId(id);
+    setDetailOpen(true);
+  }, []);
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -490,6 +520,9 @@ export default function PoliciesPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "保单" }]}>
+      <Suspense fallback={null}>
+        <DetailParamWatcher onDetail={handleDetailParam} />
+      </Suspense>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
