@@ -10,7 +10,6 @@ import { MetaColumn } from "@/components/policy-detail/meta-column";
 import { TimelineColumn } from "@/components/policy-detail/timeline-column";
 import { CoverageSection } from "@/components/policy-detail/coverage-section";
 import { PaymentsSection } from "@/components/policy-detail/payments-section";
-import { PolicyEditButton } from "@/components/policy-detail/policy-edit-dialog";
 import type { PolicyDetail, CoverageItem, Beneficiary, Payment } from "@/lib/types/policy";
 
 export default function PolicyDetailPage() {
@@ -101,23 +100,21 @@ export default function PolicyDetailPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: policy.productName }]}>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4">
         <Button variant="ghost" size="sm" onClick={() => router.push("/policies")}>
           <ArrowLeft className="h-4 w-4 mr-1.5" />
           返回保单列表
         </Button>
-        <PolicyEditButton
-          policy={policy}
-          onSuccess={() => {
-            void refreshPolicy();
-          }}
-        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Col 1: Meta */}
         <div className="rounded-xl border bg-card p-5">
-          <MetaColumn policy={policy} beneficiaries={beneficiaries} />
+          <MetaColumn
+            policy={policy}
+            beneficiaries={beneficiaries}
+            onPolicyUpdate={refreshPolicy}
+          />
         </div>
 
         {/* Col 2: Timeline */}
