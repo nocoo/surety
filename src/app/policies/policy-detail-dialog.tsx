@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
+import { AttachmentSection } from "@/components/attachments/attachment-section";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed" | "Expired";
 
@@ -826,10 +827,10 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
               </div>
             )}
 
-            {/* Policy File */}
+            {/* Policy File — legacy link */}
             {policy.policyFilePath && (
               <div>
-                <h3 className="text-sm font-medium mb-3">保单文件</h3>
+                <h3 className="text-sm font-medium mb-3">保单文件（旧）</h3>
                 <div className="rounded-card bg-secondary p-4">
                   <a
                     href={policy.policyFilePath}
@@ -843,6 +844,10 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                 </div>
               </div>
             )}
+
+            {/* Attachments — new R2-backed upload */}
+            <Separator />
+            <AttachmentSection policyId={policy.id} />
           </div>
         )}
       </DialogContent>
