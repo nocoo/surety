@@ -108,7 +108,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 
           {/* View detail link */}
           <button
-            onClick={() => router.push(`/policies?detail=${policy.id}`)}
+            onClick={() => router.push(`/policies/${policy.id}`)}
             className="flex items-center gap-1.5 text-xs text-primary hover:underline pt-1"
           >
             <FileText className="h-3.5 w-3.5" />

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, Receipt, List, LayoutGrid, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
@@ -47,8 +47,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
-import { PolicyDetailDialog } from "./policy-detail-dialog";
-import { PaymentsDialog } from "./payments-dialog";
 
 
 interface Policy {
@@ -93,7 +91,6 @@ function PolicyMobileCard({
   copied,
   onViewDetail,
   onCopyPolicyNumber,
-  onViewPayments,
   onEdit,
   onDelete,
 }: {
@@ -101,7 +98,6 @@ function PolicyMobileCard({
   copied: boolean;
   onViewDetail: (policy: Policy) => void;
   onCopyPolicyNumber: (policy: Policy) => void;
-  onViewPayments: (policy: Policy) => void;
   onEdit: (policy: Policy) => void;
   onDelete: (policy: Policy) => void;
 }) {
@@ -178,9 +174,9 @@ function PolicyMobileCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={() => onViewPayments(policy)}>
-          <Receipt className="mr-1.5 h-4 w-4" />
-          缴费记录
+        <Button variant="outline" size="sm" onClick={() => onViewDetail(policy)}>
+          <Info className="mr-1.5 h-4 w-4" />
+          详情
         </Button>
         <Button variant="outline" size="sm" onClick={() => onEdit(policy)}>
           <Pencil className="mr-1.5 h-4 w-4" />
@@ -204,42 +200,15 @@ function getAriaSort(field: SortField, activeField: SortField, direction: SortDi
   return direction === "asc" ? "ascending" : "descending";
 }
 
-/**
- * Reads ?detail={policyId} from the URL and opens the detail dialog.
- * Isolated in its own component so it can be wrapped in <Suspense>
- * (useSearchParams requires a Suspense boundary in Next.js App Router).
- */
-function DetailParamWatcher({ onDetail }: { onDetail: (id: number) => void }) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const detailId = searchParams.get("detail");
-    if (detailId) {
-      const id = Number(detailId);
-      if (!Number.isNaN(id) && id > 0) {
-        onDetail(id);
-      }
-      // Clean URL without triggering navigation
-      window.history.replaceState(null, "", "/policies");
-    }
-  }, [searchParams, onDetail]);
-
-  return null;
-}
-
 export default function PoliciesPage() {
+  const router = useRouter();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailPolicyId, setDetailPolicyId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
-  const [paymentsOpen, setPaymentsOpen] = useState(false);
-  const [paymentsPolicyId, setPaymentsPolicyId] = useState<number | null>(null);
-  const [paymentsProductName, setPaymentsProductName] = useState<string>("");
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Filter state (persisted to localStorage)
@@ -254,12 +223,6 @@ export default function PoliciesPage() {
   // Sort state (persisted to localStorage)
   const [sortField, setSortField] = usePersistedState<SortField>("surety-sort-field", "insuredName");
   const [sortDirection, setSortDirection] = usePersistedState<SortDirection>("surety-sort-direction", "asc");
-
-  // Cross-page navigation: open detail dialog from ?detail={policyId}
-  const handleDetailParam = useCallback((id: number) => {
-    setDetailPolicyId(id);
-    setDetailOpen(true);
-  }, []);
 
   const fetchPolicies = () => {
     fetch("/api/policies")
@@ -473,14 +436,7 @@ export default function PoliciesPage() {
   };
 
   const handleViewDetail = (policy: Policy) => {
-    setDetailPolicyId(policy.id);
-    setDetailOpen(true);
-  };
-
-  const handleViewPayments = (policy: Policy) => {
-    setPaymentsPolicyId(policy.id);
-    setPaymentsProductName(policy.productName);
-    setPaymentsOpen(true);
+    router.push(`/policies/${policy.id}`);
   };
 
   if (loading) {
@@ -493,9 +449,6 @@ export default function PoliciesPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "保单" }]}>
-      <Suspense fallback={null}>
-        <DetailParamWatcher onDetail={handleDetailParam} />
-      </Suspense>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -621,7 +574,6 @@ export default function PoliciesPage() {
                   copied={copiedId === policy.id}
                   onViewDetail={handleViewDetail}
                   onCopyPolicyNumber={handleCopyPolicyNumber}
-                  onViewPayments={handleViewPayments}
                   onEdit={handleEdit}
                   onDelete={handleDeleteClick}
                 />
@@ -747,14 +699,14 @@ export default function PoliciesPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  onClick={() => handleViewPayments(policy)}
+                                  onClick={() => handleViewDetail(policy)}
                                 >
-                                  <Receipt className="h-4 w-4" />
-                                  <span className="sr-only">缴费记录</span>
+                                  <Info className="h-4 w-4" />
+                                  <span className="sr-only">查看详情</span>
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p className="text-xs">缴费记录</p>
+                                <p className="text-xs">查看详情</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -924,19 +876,6 @@ export default function PoliciesPage() {
         onOpenChange={setSheetOpen}
         policy={editingPolicy}
         onSuccess={fetchPolicies}
-      />
-
-      <PolicyDetailDialog
-        policyId={detailPolicyId}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-      />
-
-      <PaymentsDialog
-        policyId={paymentsPolicyId}
-        productName={paymentsProductName}
-        open={paymentsOpen}
-        onOpenChange={setPaymentsOpen}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

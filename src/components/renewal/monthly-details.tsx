@@ -35,7 +35,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/policies?detail=${item.id}`)}
+            onClick={() => router.push(`/policies/${item.id}`)}
             className="text-sm font-medium truncate text-primary hover:underline text-left"
           >
             {item.productName}
