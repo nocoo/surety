@@ -693,6 +693,38 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
               formatCurrency={formatCurrency}
             />
 
+            {/* Date Info */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">时间信息</h3>
+              <div className="rounded-card bg-secondary p-4 space-y-1">
+                <InfoRow label="生效日期" value={policy.effectiveDate} mono />
+                {policy.expiryDate && (
+                  <>
+                    <Separator />
+                    <InfoRow label="到期日期" value={policy.expiryDate} mono />
+                  </>
+                )}
+                {policy.hesitationEndDate && (
+                  <>
+                    <Separator />
+                    <InfoRow label="犹豫期结束" value={policy.hesitationEndDate} mono />
+                  </>
+                )}
+                {policy.waitingDays && (
+                  <>
+                    <Separator />
+                    <InfoRow label="等待期" value={`${policy.waitingDays} 天`} />
+                  </>
+                )}
+                {policy.guaranteedRenewalYears && (
+                  <>
+                    <Separator />
+                    <InfoRow label="保证续保" value={`${policy.guaranteedRenewalYears} 年`} />
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Payment Info */}
             <div>
               <h3 className="text-sm font-medium mb-3">缴费信息</h3>
@@ -728,38 +760,6 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                   <>
                     <Separator />
                     <InfoRow label="下次缴费日" value={policy.nextDueDate} mono />
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Date Info */}
-            <div>
-              <h3 className="text-sm font-medium mb-3">时间信息</h3>
-              <div className="rounded-card bg-secondary p-4 space-y-1">
-                <InfoRow label="生效日期" value={policy.effectiveDate} mono />
-                {policy.expiryDate && (
-                  <>
-                    <Separator />
-                    <InfoRow label="到期日期" value={policy.expiryDate} mono />
-                  </>
-                )}
-                {policy.hesitationEndDate && (
-                  <>
-                    <Separator />
-                    <InfoRow label="犹豫期结束" value={policy.hesitationEndDate} mono />
-                  </>
-                )}
-                {policy.waitingDays && (
-                  <>
-                    <Separator />
-                    <InfoRow label="等待期" value={`${policy.waitingDays} 天`} />
-                  </>
-                )}
-                {policy.guaranteedRenewalYears && (
-                  <>
-                    <Separator />
-                    <InfoRow label="保证续保" value={`${policy.guaranteedRenewalYears} 年`} />
                   </>
                 )}
               </div>
