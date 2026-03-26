@@ -947,8 +947,6 @@ export function MetaColumn({ policy, beneficiaries, onPolicyUpdate }: MetaColumn
 
       <NotesSection policy={policy} {...(onPolicyUpdate && { onPolicyUpdate })} />
 
-      <Separator />
-
       {/* 附件 */}
       <AttachmentSection policyId={policy.id} />
     </div>
