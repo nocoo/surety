@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users } from "lucide-react";
+import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { PolicySheet } from "./policy-sheet";
 
 
 interface Policy {
@@ -196,6 +197,7 @@ export default function PoliciesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Filter state (persisted to localStorage)
   const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
@@ -436,6 +438,10 @@ export default function PoliciesPage() {
               }
             </p>
           </div>
+          <Button onClick={() => setSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-1.5" />
+            新增保单
+          </Button>
         </div>
 
         {/* Filter Area */}
@@ -837,6 +843,12 @@ export default function PoliciesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PolicySheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onSuccess={fetchPolicies}
+      />
     </AppShell>
   );
 }
