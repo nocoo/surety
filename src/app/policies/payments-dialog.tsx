@@ -1,14 +1,25 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Receipt } from "lucide-react";
+import { Receipt, Wand2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Payment {
@@ -40,6 +51,9 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadedPolicyId, setLoadedPolicyId] = useState<number | null>(null);
+  const [generateConfirmOpen, setGenerateConfirmOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateResult, setGenerateResult] = useState<string | null>(null);
 
   const fetchPayments = useCallback(async (id: number) => {
     setLoading(true);
@@ -56,6 +70,31 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
       setLoading(false);
     }
   }, []);
+
+  const handleGeneratePayments = async () => {
+    if (!policyId) return;
+    setGenerating(true);
+    setGenerateResult(null);
+    try {
+      const res = await fetch(`/api/policies/${policyId}/payments/generate`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const msg = (body as { error?: string } | null)?.error ?? `生成失败 (${res.status})`;
+        setGenerateResult(msg);
+        return;
+      }
+      const data = (await res.json()) as { generated: number; payments: Payment[] };
+      setPayments(data.payments);
+      setGenerateResult(`成功生成 ${data.generated} 条缴费记录`);
+    } catch {
+      setGenerateResult("网络错误，请重试");
+    } finally {
+      setGenerating(false);
+      setGenerateConfirmOpen(false);
+    }
+  };
 
   useEffect(() => {
     if (open && policyId && policyId !== loadedPolicyId) {
@@ -79,8 +118,8 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
   const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+    <>
+    <Dialog open={open} onOpenChange={onOpenChange}>      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
@@ -96,8 +135,27 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
         )}
 
         {!loading && payments.length === 0 && (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
             <div className="text-muted-foreground">暂无缴费记录</div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setGenerateResult(null);
+                setGenerateConfirmOpen(true);
+              }}
+            >
+              <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+              生成缴费记录
+            </Button>
+            {generateResult && (
+              <p className={cn(
+                "text-sm",
+                generateResult.startsWith("成功") ? "text-emerald-600" : "text-destructive",
+              )}>
+                {generateResult}
+              </p>
+            )}
           </div>
         )}
 
@@ -110,13 +168,35 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
                 <span className="ml-2 font-medium">{payments.filter((p) => p.status === "Paid").length}</span>
                 <span className="text-muted-foreground ml-1">/ {payments.length} 期</span>
               </div>
-              <div className="text-sm font-medium">
-                {formatCurrency(totalPaid)}
-                {totalPaid < totalAmount && (
-                  <span className="text-muted-foreground ml-1">/ {formatCurrency(totalAmount)}</span>
-                )}
+              <div className="flex items-center gap-3">
+                <div className="text-sm font-medium">
+                  {formatCurrency(totalPaid)}
+                  {totalPaid < totalAmount && (
+                    <span className="text-muted-foreground ml-1">/ {formatCurrency(totalAmount)}</span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setGenerateResult(null);
+                    setGenerateConfirmOpen(true);
+                  }}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                  生成
+                </Button>
               </div>
             </div>
+
+            {generateResult && (
+              <p className={cn(
+                "text-sm",
+                generateResult.startsWith("成功") ? "text-emerald-600" : "text-destructive",
+              )}>
+                {generateResult}
+              </p>
+            )}
 
             {/* Payment List */}
             <div className="space-y-2">
@@ -162,5 +242,23 @@ export function PaymentsDialog({ policyId, productName, open, onOpenChange }: Pa
         )}
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={generateConfirmOpen} onOpenChange={setGenerateConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>生成缴费记录</AlertDialogTitle>
+          <AlertDialogDescription>
+            将根据保单信息自动生成从生效日到今天的缴费记录。已有的记录不会重复生成。是否继续？
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={generating}>取消</AlertDialogCancel>
+          <AlertDialogAction onClick={handleGeneratePayments} disabled={generating}>
+            {generating ? "生成中..." : "确认生成"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

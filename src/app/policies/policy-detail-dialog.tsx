@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Copy, Check, ExternalLink, Building2, Shield, Plus, Pencil, Trash2, X, Save } from "lucide-react";
+import { Copy, Check, ExternalLink, Building2, Shield, Plus, Pencil, Trash2, X, Save, Wand2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,16 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
 
 type PolicyStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed" | "Expired";
@@ -506,6 +516,9 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loadedPolicyId, setLoadedPolicyId] = useState<number | null>(null);
+  const [generateConfirmOpen, setGenerateConfirmOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateResult, setGenerateResult] = useState<string | null>(null);
 
   const fetchPolicyData = useCallback(async (id: number) => {
     setLoading(true);
@@ -555,12 +568,38 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
     }
   };
 
+  const handleGeneratePayments = async () => {
+    if (!policyId) return;
+    setGenerating(true);
+    setGenerateResult(null);
+    try {
+      const res = await fetch(`/api/policies/${policyId}/payments/generate`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const msg = (body as { error?: string } | null)?.error ?? `生成失败 (${res.status})`;
+        setGenerateResult(msg);
+        return;
+      }
+      const data = (await res.json()) as { generated: number; payments: Payment[] };
+      setPayments(data.payments);
+      setGenerateResult(`成功生成 ${data.generated} 条缴费记录`);
+    } catch {
+      setGenerateResult("网络错误，请重试");
+    } finally {
+      setGenerating(false);
+      setGenerateConfirmOpen(false);
+    }
+  };
+
   if (!open) return null;
 
   const status = policy ? statusConfig[policy.status] : null;
   const categoryLabel = policy ? (categoryLabels[policy.category] ?? policy.category) : "";
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[63rem] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -792,10 +831,33 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
               </div>
             )}
 
-            {/* Recent Payments */}
-            {payments.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium mb-3">缴费记录</h3>
+            {/* Payments */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium">缴费记录</h3>
+                {policy.paymentFrequency !== "Single" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setGenerateResult(null);
+                      setGenerateConfirmOpen(true);
+                    }}
+                  >
+                    <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                    生成缴费记录
+                  </Button>
+                )}
+              </div>
+              {generateResult && (
+                <p className={cn(
+                  "text-sm mb-2",
+                  generateResult.startsWith("成功") ? "text-emerald-600" : "text-destructive",
+                )}>
+                  {generateResult}
+                </p>
+              )}
+              {payments.length > 0 ? (
                 <div className="rounded-card bg-secondary p-4">
                   <div className="space-y-2">
                     {payments.slice(0, 5).map((p) => (
@@ -812,10 +874,19 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
                         </div>
                       </div>
                     ))}
+                    {payments.length > 5 && (
+                      <p className="text-xs text-muted-foreground text-center pt-1">
+                        共 {payments.length} 条记录，显示最近 5 条
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="rounded-card bg-secondary p-4">
+                  <p className="text-sm text-muted-foreground text-center">暂无缴费记录</p>
+                </div>
+              )}
+            </div>
 
             {/* Notes */}
             {policy.notes && (
@@ -852,5 +923,23 @@ export function PolicyDetailDialog({ policyId, open, onOpenChange }: PolicyDetai
         )}
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={generateConfirmOpen} onOpenChange={setGenerateConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>生成缴费记录</AlertDialogTitle>
+          <AlertDialogDescription>
+            将根据保单信息自动生成从生效日到今天的缴费记录。已有的记录不会重复生成。是否继续？
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={generating}>取消</AlertDialogCancel>
+          <AlertDialogAction onClick={handleGeneratePayments} disabled={generating}>
+            {generating ? "生成中..." : "确认生成"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
