@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { MonthlyRenewal, RenewalItem } from "@/lib/renewal-calendar-vm";
 import { formatCurrency } from "@/lib/chart-config";
@@ -17,6 +18,7 @@ interface MonthlyDetailsProps {
 }
 
 function RenewalRow({ item }: { item: RenewalItem }) {
+  const router = useRouter();
   const avatarColors = getMemberAvatarColors(item.insuredMemberName);
   const categoryConfig = getCategoryConfig(item.category);
 
@@ -32,7 +34,12 @@ function RenewalRow({ item }: { item: RenewalItem }) {
       {/* Main content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{item.productName}</p>
+          <button
+            onClick={() => router.push(`/policies?detail=${item.id}`)}
+            className="text-sm font-medium truncate text-primary hover:underline text-left"
+          >
+            {item.productName}
+          </button>
           <Badge variant={categoryConfig.variant} className="shrink-0">
             {categoryConfig.label}
           </Badge>
