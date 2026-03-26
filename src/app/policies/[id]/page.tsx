@@ -21,6 +21,8 @@ export default function PolicyDetailPage() {
   const [coverageItems, setCoverageItems] = useState<CoverageItem[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
+  const [members, setMembers] = useState<{ id: number; name: string }[]>([]);
+  const [assets, setAssets] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,11 +30,13 @@ export default function PolicyDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [policyRes, coverageRes, paymentsRes, beneficiariesRes] = await Promise.all([
+      const [policyRes, coverageRes, paymentsRes, beneficiariesRes, membersRes, assetsRes] = await Promise.all([
         fetch(`/api/policies/${id}`),
         fetch(`/api/policies/${id}/coverage-items`).catch(() => null),
         fetch(`/api/policies/${id}/payments`).catch(() => null),
         fetch(`/api/policies/${id}/beneficiaries`).catch(() => null),
+        fetch("/api/members").catch(() => null),
+        fetch("/api/assets").catch(() => null),
       ]);
 
       if (!policyRes.ok) {
@@ -45,6 +49,8 @@ export default function PolicyDetailPage() {
       setCoverageItems(coverageRes?.ok ? await coverageRes.json() : []);
       setPayments(paymentsRes?.ok ? await paymentsRes.json() : []);
       setBeneficiaries(beneficiariesRes?.ok ? await beneficiariesRes.json() : []);
+      setMembers(membersRes?.ok ? await membersRes.json() : []);
+      setAssets(assetsRes?.ok ? await assetsRes.json() : []);
     } catch {
       setError("网络错误");
     } finally {
@@ -113,6 +119,8 @@ export default function PolicyDetailPage() {
           <MetaColumn
             policy={policy}
             beneficiaries={beneficiaries}
+            members={members}
+            assets={assets}
             onPolicyUpdate={refreshPolicy}
           />
         </div>

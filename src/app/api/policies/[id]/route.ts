@@ -40,6 +40,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       ? assetMap.get(policy.insuredAssetId) ?? null
       : null,
     applicantId: policy.applicantId,
+    applicantName: memberMap.get(policy.applicantId) ?? "未知",
     insuredType: policy.insuredType,
     insuredMemberId: policy.insuredMemberId,
     insuredAssetId: policy.insuredAssetId,

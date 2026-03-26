@@ -23,6 +23,8 @@ import { EditableInfoRow } from "./editable-info-row";
 interface MetaColumnProps {
   policy: PolicyDetail;
   beneficiaries: Beneficiary[];
+  members: { id: number; name: string }[];
+  assets: { id: number; name: string }[];
   onPolicyUpdate?: () => void;
 }
 
@@ -718,6 +720,174 @@ function DateInfoSection({
   );
 }
 
+// Person Info Section (editable)
+function PersonInfoSection({
+  policy,
+  members,
+  assets,
+  onPolicyUpdate,
+}: {
+  policy: PolicyDetail;
+  members: { id: number; name: string }[];
+  assets: { id: number; name: string }[];
+  onPolicyUpdate?: () => void;
+}) {
+  type FormData = {
+    applicantId: string;
+    insuredMemberId: string;
+    insuredAssetId: string;
+  };
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    applicantId: String(policy.applicantId),
+    insuredMemberId: policy.insuredMemberId != null ? String(policy.insuredMemberId) : "",
+    insuredAssetId: policy.insuredAssetId != null ? String(policy.insuredAssetId) : "",
+  });
+
+  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/policies/${policy.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicantId: formData.applicantId ? Number(formData.applicantId) : undefined,
+          insuredMemberId: formData.insuredMemberId ? Number(formData.insuredMemberId) : null,
+          insuredAssetId: formData.insuredAssetId ? Number(formData.insuredAssetId) : null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("保存失败");
+      }
+
+      setIsEditing(false);
+      onPolicyUpdate?.();
+    } catch {
+      setError("保存失败，请重试");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      applicantId: String(policy.applicantId),
+      insuredMemberId: policy.insuredMemberId != null ? String(policy.insuredMemberId) : "",
+      insuredAssetId: policy.insuredAssetId != null ? String(policy.insuredAssetId) : "",
+    });
+    setIsEditing(false);
+    setError(null);
+  };
+
+  const memberOptions = members.map((m) => ({ value: String(m.id), label: m.name }));
+  const assetOptions = assets.map((a) => ({ value: String(a.id), label: a.name }));
+
+  return (
+    <div className="group">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium text-muted-foreground">
+          人员信息
+        </h3>
+        {!isEditing ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setIsEditing(true)}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-success hover:text-success"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-destructive hover:text-destructive"
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
+              X
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        {isEditing ? (
+          <>
+            <EditableInfoRow
+              label="被保人"
+              value={policy.insuredName}
+              type="select"
+              options={memberOptions}
+              editValue={formData.insuredMemberId}
+              onEditChange={(v) => updateField("insuredMemberId", v)}
+            />
+            <EditableInfoRow
+              label="投保人"
+              value={policy.applicantName ?? "未知"}
+              type="select"
+              options={memberOptions}
+              editValue={formData.applicantId}
+              onEditChange={(v) => updateField("applicantId", v)}
+            />
+            {assetOptions.length > 0 && (
+              <EditableInfoRow
+                label="保障标的"
+                value={policy.insuredAssetName}
+                type="select"
+                options={assetOptions}
+                editValue={formData.insuredAssetId}
+                onEditChange={(v) => updateField("insuredAssetId", v)}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <PersonRow name={policy.insuredName} label="被保人" />
+            {policy.applicantName && (
+              <PersonRow name={policy.applicantName} label="投保人" />
+            )}
+            {policy.insuredAssetName && (
+              <PersonRow
+                name={policy.insuredAssetName}
+                label="保障标的"
+                icon={
+                  <div className="flex size-6 items-center justify-center rounded-full bg-muted">
+                    <Building2 className="size-3.5 text-muted-foreground" />
+                  </div>
+                }
+              />
+            )}
+          </>
+        )}
+      </div>
+      {error && <p className="text-xs text-destructive mt-2">{error}</p>}
+    </div>
+  );
+}
+
 // Notes Section
 function NotesSection({
   policy,
@@ -823,7 +993,7 @@ function NotesSection({
   );
 }
 
-export function MetaColumn({ policy, beneficiaries, onPolicyUpdate }: MetaColumnProps) {
+export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpdate }: MetaColumnProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -884,28 +1054,12 @@ export function MetaColumn({ policy, beneficiaries, onPolicyUpdate }: MetaColumn
       <Separator />
 
       {/* 人员信息 */}
-      <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-2">
-          人员信息
-        </h3>
-        <div className="space-y-2">
-          <PersonRow name={policy.insuredName} label="被保人" />
-          {policy.applicantName && (
-            <PersonRow name={policy.applicantName} label="投保人" />
-          )}
-          {policy.insuredAssetName && (
-            <PersonRow
-              name={policy.insuredAssetName}
-              label="保障标的"
-              icon={
-                <div className="flex size-6 items-center justify-center rounded-full bg-muted">
-                  <Building2 className="size-3.5 text-muted-foreground" />
-                </div>
-              }
-            />
-          )}
-        </div>
-      </div>
+      <PersonInfoSection
+        policy={policy}
+        members={members}
+        assets={assets}
+        {...(onPolicyUpdate && { onPolicyUpdate })}
+      />
 
       {/* 受益人 */}
       {beneficiaries.length > 0 && (

@@ -14,6 +14,10 @@ export interface PolicyDetail {
   insuredName: string;
   insuredAssetName: string | null;
   applicantName?: string;
+  applicantId: number;
+  insuredType: "Member" | "Asset";
+  insuredMemberId: number | null;
+  insuredAssetId: number | null;
   category: string;
   subCategory: string | null;
   channel: string | null;
