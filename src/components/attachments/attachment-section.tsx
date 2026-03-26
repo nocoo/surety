@@ -29,6 +29,8 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
   const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   const fetchAttachments = useCallback(async () => {
     try {
       const res = await fetch(`/api/policies/${policyId}/attachments`);
@@ -54,13 +56,24 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
-      await fetch(
+      const res = await fetch(
         `/api/policies/${policyId}/attachments/${deleteTarget.id}`,
         { method: "DELETE" },
       );
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const msg =
+          (body as { error?: string } | null)?.error ??
+          `删除失败 (${res.status})`;
+        setDeleteError(msg);
+        return;
+      }
       setDeleteTarget(null);
       fetchAttachments();
+    } catch {
+      setDeleteError("网络错误，请重试");
     } finally {
       setDeleting(false);
     }
@@ -100,7 +113,10 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
         }}
       >
         <AlertDialogContent>
@@ -110,6 +126,9 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
               确定要删除附件 &quot;{deleteTarget?.filename}&quot; 吗？此操作不可撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <p className="text-sm text-destructive px-6">{deleteError}</p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
             <AlertDialogAction

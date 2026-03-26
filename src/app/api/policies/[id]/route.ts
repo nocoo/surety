@@ -135,8 +135,17 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Policy not found" }, { status: 404 });
   }
 
-  // Collect R2 keys BEFORE deleting DB records (we need them for cleanup)
+  // Collect R2 keys BEFORE deleting DB records (we need them for cleanup).
+  // Also create R2 client eagerly so env-missing errors don't fire after DB delete.
   const policyAttachments = await repos.attachments.findByPolicyId(policyId);
+  let r2Client: ReturnType<typeof getR2ClientFromEnv> | null = null;
+  if (policyAttachments.length > 0) {
+    try {
+      r2Client = getR2ClientFromEnv(targetDb);
+    } catch {
+      // env vars missing — R2 cleanup will be skipped (orphan objects, harmless)
+    }
+  }
 
   // Cascade delete DB records first — this is the authoritative state.
   // D1 enforces foreign_keys=ON, so we must delete children before the policy.
@@ -161,13 +170,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
   // Clean up R2 objects AFTER DB delete — best-effort.
   // If R2 cleanup fails, we have orphan R2 objects with no DB references (harmless,
-  // only wastes storage). This matches the consistency principle: prefer R2 orphans
-  // over DB records pointing to missing files.
-  if (policyAttachments.length > 0) {
-    const r2Client = getR2ClientFromEnv(targetDb);
-    await Promise.allSettled(
-      policyAttachments.map((a) => r2Client.delete(a.r2Key)),
-    );
+  // only wastes storage). Wrapped in try/catch so R2 errors never turn a
+  // successful DB delete into 500.
+  if (r2Client) {
+    try {
+      await Promise.allSettled(
+        policyAttachments.map((a) => r2Client.delete(a.r2Key)),
+      );
+    } catch {
+      // allSettled itself shouldn't throw, but guard against unexpected errors
+    }
   }
 
   return NextResponse.json({ success: true });

@@ -60,7 +60,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const headers = new Headers();
   headers.set("Content-Type", attachment.contentType);
   headers.set("Content-Length", attachment.size.toString());
-  headers.set("Cache-Control", "private, max-age=3600, immutable");
+  // no-store: URL is attachment-ID-based (not content-addressed), so a deleted
+  // attachment must not be served from browser cache.
+  headers.set("Cache-Control", "no-store");
   headers.set(
     "Content-Disposition",
     buildContentDisposition(disposition, attachment.filename),

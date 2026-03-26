@@ -64,13 +64,29 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Eagerly create R2 client BEFORE DB delete so that env-missing errors
+  // surface before any state change (user sees 500, nothing changed).
+  let r2Client: ReturnType<typeof getR2ClientFromEnv> | null = null;
+  try {
+    r2Client = getR2ClientFromEnv(targetDb);
+  } catch {
+    // env vars missing — we can still delete the DB record; R2 cleanup
+    // will simply be skipped (orphan R2 object, harmless).
+  }
+
   // Delete DB record first — if this fails, nothing has changed
   await repos.attachments.delete(attachment.id);
 
   // Then delete from R2 — best-effort; failure leaves an orphan object but
-  // the user-facing state is already correct (attachment gone from list)
-  const r2Client = getR2ClientFromEnv(targetDb);
-  await r2Client.delete(attachment.r2Key).catch(() => {});
+  // the user-facing state is already correct (attachment gone from list).
+  // Wrapped in try/catch so R2 errors never turn a successful DB delete into 500.
+  if (r2Client) {
+    try {
+      await r2Client.delete(attachment.r2Key);
+    } catch {
+      // R2 failure after DB delete → orphan object, harmless
+    }
+  }
 
   return new NextResponse(null, { status: 204 });
 }
