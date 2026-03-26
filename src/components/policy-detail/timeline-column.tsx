@@ -44,16 +44,16 @@ function getToday(): Date {
 function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
   const today = getToday();
   const todayTime = today.getTime();
-  const effective = parseDate(policy.effectiveDate);
 
   const events: TimelineEvent[] = [];
 
   // 1. effectiveDate — always present
+  const effectiveDate = parseDate(policy.effectiveDate);
   events.push({
-    date: effective,
+    date: effectiveDate,
     dateStr: policy.effectiveDate,
     label: "生效日期",
-    type: effective.getTime() <= todayTime ? "past" : "future",
+    type: effectiveDate.getTime() <= todayTime ? "past" : "future",
   });
 
   // 2. hesitationEndDate
@@ -69,7 +69,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
 
   // 3. waitingDays → effectiveDate + N days
   if (policy.waitingDays != null) {
-    const d = addDays(effective, policy.waitingDays);
+    const d = addDays(effectiveDate, policy.waitingDays);
     events.push({
       date: d,
       dateStr: formatDate(d),
@@ -91,7 +91,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
 
   // 5. guaranteedRenewalYears → effectiveDate + N years
   if (policy.guaranteedRenewalYears != null) {
-    const d = addYears(effective, policy.guaranteedRenewalYears);
+    const d = addYears(effectiveDate, policy.guaranteedRenewalYears);
     events.push({
       date: d,
       dateStr: formatDate(d),
@@ -109,6 +109,51 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
       label: "保单到期",
       type: d.getTime() <= todayTime ? "past" : "future",
     });
+  }
+
+  // 7. Future payment dates (for policies with totalPayments)
+  if (policy.totalPayments != null && policy.totalPayments > 0) {
+    const freq = policy.paymentFrequency;
+
+    for (let i = 1; i <= policy.totalPayments; i++) {
+      let dueDate: Date;
+      const [startYear, startMonth, startDay] = policy.effectiveDate.split("-").map(Number);
+      const startY = startYear ?? 0;
+      const startM = (startMonth ?? 1) - 1;
+
+      if (freq === "Monthly") {
+        const targetYear = startY + Math.floor((startM + i - 1) / 12);
+        const targetMonth = (startM + i - 1) % 12;
+        const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        const dueDay = Math.min(startDay ?? 1, lastDayOfTargetMonth);
+        dueDate = new Date(targetYear, targetMonth, dueDay);
+      } else if (freq === "Yearly") {
+        const targetYear = startY + i - 1;
+        dueDate = addYears(effectiveDate, i - 1);
+        // Clamp to month end for yearly edge case (leap day → Feb 28)
+        const lastDayOfTargetMonth = new Date(targetYear, startM + 1, 0).getDate();
+        const dueDay = Math.min(startDay ?? 1, lastDayOfTargetMonth);
+        dueDate = new Date(targetYear, startM, dueDay);
+      } else {
+        // Single or unknown - skip future payments
+        break;
+      }
+
+      // Skip if this is the same as nextDueDate (already added above)
+      if (policy.nextDueDate && formatDate(dueDate) === policy.nextDueDate) {
+        continue;
+      }
+
+      const dueDateStr = formatDate(dueDate);
+      const isPast = dueDate.getTime() <= todayTime;
+
+      events.push({
+        date: dueDate,
+        dateStr: dueDateStr,
+        label: `第 ${i} 期缴费`,
+        type: isPast ? "past" : "future",
+      });
+    }
   }
 
   // Insert "today" marker
