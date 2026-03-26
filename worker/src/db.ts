@@ -5,6 +5,8 @@
 export interface Env {
   DB_PROD: D1Database;
   DB_TEST: D1Database;
+  R2_PROD: R2Bucket;
+  R2_TEST: R2Bucket;
   WORKER_SHARED_SECRET: string;
 }
 
