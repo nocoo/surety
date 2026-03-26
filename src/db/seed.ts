@@ -1,5 +1,6 @@
 import type { NewMember, NewAsset, NewPolicy, NewBeneficiary } from "./schema";
 import type { AllRepos } from "./repositories";
+import { generatePaymentRecords } from "@/lib/generate-payments";
 import {
   membersRepo,
   assetsRepo,
@@ -228,40 +229,6 @@ export const policySeedData: PolicySeed[] = [
 // Helper Functions
 // ============================================================================
 
-interface PaymentRecord {
-  policyId: number;
-  periodNumber: number;
-  dueDate: string;
-  amount: number;
-  status: "Pending" | "Paid";
-}
-
-function generatePayments(policyId: number, policy: PolicySeed["policy"]): PaymentRecord[] {
-  const records: PaymentRecord[] = [];
-  const startDate = new Date(policy.effectiveDate);
-  const totalPayments = policy.totalPayments ?? 1;
-
-  for (let i = 0; i < totalPayments; i++) {
-    const dueDate = new Date(startDate);
-    if (policy.paymentFrequency === "Monthly") {
-      dueDate.setMonth(dueDate.getMonth() + i);
-    } else if (policy.paymentFrequency === "Yearly") {
-      dueDate.setFullYear(dueDate.getFullYear() + i);
-    }
-
-    const dueDateStr = dueDate.toISOString().split("T")[0];
-    records.push({
-      policyId,
-      periodNumber: i + 1,
-      dueDate: dueDateStr ?? "",
-      amount: policy.premium,
-      status: i === 0 ? "Paid" : "Pending",
-    });
-  }
-
-  return records;
-}
-
 // ============================================================================
 // Seed Function (reusable)
 // ============================================================================
@@ -350,7 +317,17 @@ export async function seedDatabase(repos?: AllRepos): Promise<SeedResult> {
     }
 
     // Payments
-    const paymentRecords = generatePayments(policy.id, seed.policy);
+    const paymentRecords = generatePaymentRecords(
+      {
+        policyId: policy.id,
+        effectiveDate: seed.policy.effectiveDate,
+        paymentFrequency: seed.policy.paymentFrequency,
+        totalPayments: seed.policy.totalPayments ?? null,
+        premium: seed.policy.premium,
+      },
+      null, // null = generate all periods (seed mode)
+      new Set(), // no existing records
+    );
     if (paymentRecords.length > 0) {
       await r.payments.createMany(paymentRecords);
     }
