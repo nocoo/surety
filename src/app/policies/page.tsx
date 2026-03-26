@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { formatCurrency } from "@/lib/format";
+import { getDaysFromToday, formatDaysFromToday } from "@/lib/date-utils";
 import { statusConfig, categoryLabels } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import {
@@ -68,21 +69,15 @@ interface Policy {
 }
 
 function getDaysUntil(dateStr: string | null): number | null {
-  if (!dateStr) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const targetDate = new Date(dateStr);
-  targetDate.setHours(0, 0, 0, 0);
-  const diffTime = targetDate.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return getDaysFromToday(dateStr);
 }
 
 function formatDaysUntil(days: number | null): { text: string; variant: "default" | "warning" | "destructive" } {
   if (days === null) return { text: "-", variant: "default" };
-  if (days < 0) return { text: `已过期 ${Math.abs(days)} 天`, variant: "destructive" };
+  if (days < 0) return { text: `${Math.abs(days)}天前`, variant: "destructive" };
   if (days === 0) return { text: "今天", variant: "warning" };
-  if (days <= 30) return { text: `${days} 天`, variant: "warning" };
-  return { text: `${days} 天`, variant: "default" };
+  if (days <= 30) return { text: `${days}天后`, variant: "warning" };
+  return { text: `${days}天后`, variant: "default" };
 }
 
 function PolicyMobileCard({
@@ -642,8 +637,13 @@ export default function PoliciesPage() {
                       <TableCell className="text-right text-muted-foreground">
                         {policy.premium > 0 ? formatCurrency(policy.premium) : "-"}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {policy.effectiveDate}
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-mono text-sm">{policy.effectiveDate}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDaysFromToday(getDaysFromToday(policy.effectiveDate)) ?? ""}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {(() => {

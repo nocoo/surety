@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { CircleCheck, Circle, CalendarDays, ArrowDown } from "lucide-react";
+import { getDaysFromToday, formatDaysFromToday } from "@/lib/date-utils";
 import type { PolicyDetail } from "@/lib/types/policy";
 
 interface TimelineEvent {
@@ -232,6 +233,11 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
                   }`}
                 >
                   {event.dateStr}
+                  {event.type !== "today" && (
+                    <span className="ml-1.5 font-sans text-muted-foreground/70">
+                      ({formatDaysFromToday(getDaysFromToday(event.dateStr))})
+                    </span>
+                  )}
                 </span>
                 <span
                   className={`text-sm ${

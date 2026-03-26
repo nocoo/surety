@@ -17,6 +17,7 @@ import {
   renewalTypeLabels,
 } from "@/lib/constants/policy";
 import type { PolicyDetail, Beneficiary } from "@/lib/types/policy";
+import { formatDateWithDays } from "@/lib/date-utils";
 import { EditableInfoRow } from "./editable-info-row";
 
 interface MetaColumnProps {
@@ -542,7 +543,7 @@ function PaymentDetailsSection({
         />
         <EditableInfoRow
           label="下次缴费日"
-          value={policy.nextDueDate}
+          value={formatDateWithDays(policy.nextDueDate)}
           type="date"
           editValue={formData.nextDueDate}
           onEditChange={isEditing ? (v) => updateField("nextDueDate", v) : undefined}
@@ -670,7 +671,7 @@ function DateInfoSection({
       <div className="space-y-2">
         <EditableInfoRow
           label="生效日期"
-          value={policy.effectiveDate}
+          value={formatDateWithDays(policy.effectiveDate)}
           type="date"
           editValue={formData.effectiveDate}
           onEditChange={isEditing ? (v) => updateField("effectiveDate", v) : undefined}
@@ -678,7 +679,7 @@ function DateInfoSection({
         {(isEditing || policy.expiryDate) && (
           <EditableInfoRow
             label="到期日期"
-            value={policy.expiryDate}
+            value={formatDateWithDays(policy.expiryDate)}
             type="date"
             editValue={formData.expiryDate}
             onEditChange={isEditing ? (v) => updateField("expiryDate", v) : undefined}
@@ -687,7 +688,7 @@ function DateInfoSection({
         {(isEditing || policy.hesitationEndDate) && (
           <EditableInfoRow
             label="犹豫期截止"
-            value={policy.hesitationEndDate}
+            value={formatDateWithDays(policy.hesitationEndDate)}
             type="date"
             editValue={formData.hesitationEndDate}
             onEditChange={isEditing ? (v) => updateField("hesitationEndDate", v) : undefined}
