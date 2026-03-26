@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Phone, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronRight, Phone, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PolicyCoverageCard } from "@/lib/coverage-lookup-vm";
 
@@ -11,6 +12,7 @@ interface PolicyCardProps {
 
 export function PolicyCard({ policy }: PolicyCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
   const detailsId = `policy-card-details-${policy.id}`;
 
   return (
@@ -103,6 +105,15 @@ export function PolicyCard({ policy }: PolicyCardProps) {
               类型: {policy.subCategory}
             </div>
           )}
+
+          {/* View detail link */}
+          <button
+            onClick={() => router.push(`/policies?detail=${policy.id}`)}
+            className="flex items-center gap-1.5 text-xs text-primary hover:underline pt-1"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            查看保单详情
+          </button>
         </div>
       )}
     </div>
