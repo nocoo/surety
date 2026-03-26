@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.4.0] - 2026-03-26
+
+### Added
+
+- **Policy PDF attachment** — drag-drop upload, in-browser PDF preview, and download for policy documents stored in Cloudflare R2 private buckets
+- Cloudflare R2 bucket bindings (prod/test) and Worker route handlers (PUT/GET/DELETE /r2/:key) with end-to-end streaming
+- Attachments DB schema with policy_id index, repository (factory pattern), and cascade delete support
+- Attachment validation: file type, size (50MB limit), PDF magic bytes (`%PDF-`), and per-policy count soft limit (20)
+- R2 client with Bearer auth, X-Target-DB header routing, RFC 5987 UTF-8 filename encoding, and `duplex: "half"` for streaming uploads
+- XHR upload-with-progress helper for large file uploads (fetch API lacks upload progress events)
+- AttachmentSection UI: AttachmentDropZone (react-dropzone), AttachmentList, AttachmentPreviewDialog (iframe PDF viewer)
+
+### Fixed
+
+- File download Cache-Control changed from `max-age=3600` to `no-store` — URL is attachment-ID-based, not content-addressed; prevents deleted files from being served from browser cache
+- R2 cleanup in delete paths moved before DB delete to prevent env-missing errors from turning successful DB deletes into 500
+- Frontend delete now checks HTTP response status and shows error message instead of silently closing the dialog
+
+### Changed
+
+- Policy cascade delete now includes attachments table and best-effort R2 object cleanup
+- Legacy `policyFilePath` link relabeled as "旧" for Phase 1 coexistence with new attachment system
+- Worker CORS expanded to include PUT and DELETE methods
+
 ## [v1.3.3] - 2026-03-24
 
 ### Added
