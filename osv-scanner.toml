@@ -84,3 +84,13 @@ reason = "Indirect: esbuild via drizzle-kit (devDependency)"
 id = "GHSA-w7fw-mjwx-w883"
 ignoreUntil = 2026-06-23
 reason = "Indirect: qs via express (devDependency chain)"
+
+[[IgnoredVulns]]
+id = "GHSA-3v7f-55p6-f55p"
+ignoreUntil = 2026-06-23
+reason = "Indirect: picomatch via micromatch/chokidar (transitive)"
+
+[[IgnoredVulns]]
+id = "GHSA-c2c7-rcm5-vvqj"
+ignoreUntil = 2026-06-23
+reason = "Indirect: picomatch via micromatch/chokidar (transitive)"
