@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -59,7 +60,7 @@ export function EditableInfoRow({
             type={type}
             value={inputValue}
             onChange={(e) => onEditChange(e.target.value)}
-            className="h-7 w-32"
+            className={cn("h-7", type === "date" ? "w-40" : "w-32")}
           />
         )}
       </div>
