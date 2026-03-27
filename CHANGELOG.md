@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.1] - 2026-03-27
+
+### Added
+
+- **Multi-file upload** — drag-and-drop supports multiple files in one operation; JPG/PNG images alongside PDF with per-format magic bytes validation
+- **Image preview** — attachment preview dialog renders images via `<img>` (PDF still uses `<iframe>`)
+- **Attachment picker** — when a policy has 2+ attachments, clicking preview opens a selection dialog before viewing
+- **Policy number editing** — BasicInfoSection now includes inline edit for policy number (保单号)
+- **Full payment editing** — payment records support full edit (period, due date, amount, status, paid date) via expanded PaymentForm, replacing inline amount-only edit
+- **Notes column in policy list** — 备注 column between 下次缴费 and 附件, responsive (hidden below xl breakpoint)
+- **Section header icons** — Banknote icon + count badge on payments section, Clock icon on timeline section
+- **Applicant avatar** — policy list table shows avatar for applicant matching insured column style
+
+### Fixed
+
+- **Timezone date bugs** — replaced all `new Date("YYYY-MM-DD")` (UTC parse) and `.toISOString().split("T")[0]` (UTC format) with canonical `parseLocalDate()` / `formatLocalDate()` pair across 9 bug sites
+- **insuredType mutual exclusion** — three-layer fix: frontend conditional UI, client-side field clearing, server-side normalization in API PUT
+- **Applicant null crash** — split member options so applicant selector (NOT NULL) no longer includes "未知/空白" option
+- **Empty fields unreachable** — all policy detail fields now always visible with "—" placeholder; removed conditional hiding of payment details, date info, and notes sections
+
+### Changed
+
+- **Meta column header icon** — Pencil → ShieldCheck to match policy context
+- **Payment card layout** — unified multi-line card style matching coverage section pattern (header row with status badge + hover action buttons, detail rows below)
+- **Column order** — policy list table and filters now show 投保人 before 被保人
+
 ## [v1.5.0] - 2026-03-26
 
 ### Added
