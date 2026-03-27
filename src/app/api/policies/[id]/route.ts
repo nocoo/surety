@@ -78,11 +78,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
+  // Server-side normalization: enforce insuredType mutual exclusion.
+  // When insuredType is "Member", clear insuredAssetId; when "Asset", clear insuredMemberId.
+  let { insuredMemberId, insuredAssetId } = body;
+  if (body.insuredType === "Member") {
+    insuredAssetId = null;
+  } else if (body.insuredType === "Asset") {
+    insuredMemberId = null;
+  }
+
   const updated = await repos.policies.update(policyId, {
     applicantId: body.applicantId,
     insuredType: body.insuredType,
-    insuredMemberId: body.insuredMemberId,
-    insuredAssetId: body.insuredAssetId,
+    insuredMemberId,
+    insuredAssetId,
     category: body.category,
     subCategory: body.subCategory,
     insurerName: body.insurerName,

@@ -734,6 +734,7 @@ function PersonInfoSection({
 }) {
   type FormData = {
     applicantId: string;
+    insuredType: "Member" | "Asset";
     insuredMemberId: string;
     insuredAssetId: string;
   };
@@ -743,6 +744,7 @@ function PersonInfoSection({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     applicantId: String(policy.applicantId),
+    insuredType: policy.insuredType as "Member" | "Asset",
     insuredMemberId: policy.insuredMemberId != null ? String(policy.insuredMemberId) : "",
     insuredAssetId: policy.insuredAssetId != null ? String(policy.insuredAssetId) : "",
   });
@@ -760,10 +762,13 @@ function PersonInfoSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           applicantId: formData.applicantId ? Number(formData.applicantId) : undefined,
-          insuredMemberId: formData.insuredMemberId && formData.insuredMemberId !== "__none__"
+          insuredType: formData.insuredType,
+          insuredMemberId: formData.insuredType === "Member" && formData.insuredMemberId && formData.insuredMemberId !== "__none__"
             ? Number(formData.insuredMemberId)
             : null,
-          insuredAssetId: formData.insuredAssetId ? Number(formData.insuredAssetId) : null,
+          insuredAssetId: formData.insuredType === "Asset" && formData.insuredAssetId
+            ? Number(formData.insuredAssetId)
+            : null,
         }),
       });
 
@@ -783,6 +788,7 @@ function PersonInfoSection({
   const handleCancel = () => {
     setFormData({
       applicantId: String(policy.applicantId),
+      insuredType: policy.insuredType as "Member" | "Asset",
       insuredMemberId: policy.insuredMemberId != null ? String(policy.insuredMemberId) : "",
       insuredAssetId: policy.insuredAssetId != null ? String(policy.insuredAssetId) : "",
     });
@@ -795,6 +801,11 @@ function PersonInfoSection({
     ...members.map((m) => ({ value: String(m.id), label: m.name })),
   ];
   const assetOptions = assets.map((a) => ({ value: String(a.id), label: a.name }));
+
+  const insuredTypeOptions = [
+    { value: "Member", label: "人" },
+    { value: "Asset", label: "财产" },
+  ];
 
   return (
     <div className="group">
@@ -842,13 +853,34 @@ function PersonInfoSection({
         {isEditing ? (
           <>
             <EditableInfoRow
-              label="被保人"
-              value={policy.insuredName}
+              label="被保类型"
+              value={formData.insuredType === "Member" ? "人" : "财产"}
               type="select"
-              options={memberOptions}
-              editValue={formData.insuredMemberId}
-              onEditChange={(v) => updateField("insuredMemberId", v)}
+              options={insuredTypeOptions}
+              editValue={formData.insuredType}
+              onEditChange={(v) => updateField("insuredType", v as "Member" | "Asset")}
             />
+            {formData.insuredType === "Member" ? (
+              <EditableInfoRow
+                label="被保人"
+                value={policy.insuredName}
+                type="select"
+                options={memberOptions}
+                editValue={formData.insuredMemberId}
+                onEditChange={(v) => updateField("insuredMemberId", v)}
+              />
+            ) : (
+              assetOptions.length > 0 && (
+                <EditableInfoRow
+                  label="保障标的"
+                  value={policy.insuredAssetName}
+                  type="select"
+                  options={assetOptions}
+                  editValue={formData.insuredAssetId}
+                  onEditChange={(v) => updateField("insuredAssetId", v)}
+                />
+              )
+            )}
             <EditableInfoRow
               label="投保人"
               value={policy.applicantName ?? "未知"}
@@ -857,16 +889,6 @@ function PersonInfoSection({
               editValue={formData.applicantId}
               onEditChange={(v) => updateField("applicantId", v)}
             />
-            {assetOptions.length > 0 && (
-              <EditableInfoRow
-                label="保障标的"
-                value={policy.insuredAssetName}
-                type="select"
-                options={assetOptions}
-                editValue={formData.insuredAssetId}
-                onEditChange={(v) => updateField("insuredAssetId", v)}
-              />
-            )}
           </>
         ) : (
           <>
