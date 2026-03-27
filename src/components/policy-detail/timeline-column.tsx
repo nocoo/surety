@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CircleCheck, Circle, CalendarDays, ArrowDown } from "lucide-react";
+import { CircleCheck, Circle, CalendarDays, ArrowDown, Clock } from "lucide-react";
 import { getDaysFromToday, formatDaysFromToday, parseLocalDate, formatLocalDate } from "@/lib/date-utils";
 import type { PolicyDetail } from "@/lib/types/policy";
 
@@ -175,6 +175,7 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
   return (
     <div className="space-y-1">
       <h3 className="text-sm font-medium text-muted-foreground mb-4">
+        <Clock className="mr-1.5 inline size-4 align-text-bottom" />
         保单时间线
       </h3>
       <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check, Pencil, Building2, Loader2 } from "lucide-react";
+import { Copy, Check, Pencil, Building2, Loader2, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -92,6 +92,7 @@ function BasicInfoSection({
 }) {
   type FormData = {
     productName: string;
+    policyNumber: string;
     insurerName: string;
     category: string;
     subCategory: string;
@@ -104,6 +105,7 @@ function BasicInfoSection({
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     productName: policy.productName,
+    policyNumber: policy.policyNumber,
     insurerName: policy.insurerName,
     category: policy.category,
     subCategory: policy.subCategory ?? "",
@@ -124,6 +126,7 @@ function BasicInfoSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productName: formData.productName,
+          policyNumber: formData.policyNumber,
           insurerName: formData.insurerName,
           category: formData.category,
           subCategory: formData.subCategory || null,
@@ -148,6 +151,7 @@ function BasicInfoSection({
   const handleCancel = () => {
     setFormData({
       productName: policy.productName,
+      policyNumber: policy.policyNumber,
       insurerName: policy.insurerName,
       category: policy.category,
       subCategory: policy.subCategory ?? "",
@@ -206,6 +210,12 @@ function BasicInfoSection({
           value={policy.productName}
           editValue={formData.productName}
           onEditChange={isEditing ? (v) => updateField("productName", v) : undefined}
+        />
+        <EditableInfoRow
+          label="保单号"
+          value={policy.policyNumber}
+          editValue={formData.policyNumber}
+          onEditChange={isEditing ? (v) => updateField("policyNumber", v) : undefined}
         />
         <EditableInfoRow
           label="保险公司"
@@ -509,34 +519,28 @@ function PaymentDetailsSection({
         )}
       </div>
       <div className="space-y-2">
-        {(isEditing || policy.paymentYears != null) && (
-          <EditableInfoRow
-            label="缴费年限"
-            value={policy.paymentYears != null ? `${policy.paymentYears} 年` : null}
-            type="number"
-            editValue={formData.paymentYears}
-            onEditChange={isEditing ? (v) => updateField("paymentYears", v) : undefined}
-          />
-        )}
-        {(isEditing || policy.totalPayments != null) && (
-          <EditableInfoRow
-            label="总期数"
-            value={policy.totalPayments != null ? `${policy.totalPayments} 期` : null}
-            type="number"
-            editValue={formData.totalPayments}
-            onEditChange={isEditing ? (v) => updateField("totalPayments", v) : undefined}
-          />
-        )}
-        {(isEditing || policy.renewalType) && (
-          <EditableInfoRow
-            label="续保方式"
-            value={policy.renewalType ? (renewalTypeLabels[policy.renewalType] ?? policy.renewalType) : null}
-            type="select"
-            options={renewalTypes}
-            editValue={formData.renewalType}
-            onEditChange={isEditing ? (v) => updateField("renewalType", v) : undefined}
-          />
-        )}
+        <EditableInfoRow
+          label="缴费年限"
+          value={policy.paymentYears != null ? `${policy.paymentYears} 年` : null}
+          type="number"
+          editValue={formData.paymentYears}
+          onEditChange={isEditing ? (v) => updateField("paymentYears", v) : undefined}
+        />
+        <EditableInfoRow
+          label="总期数"
+          value={policy.totalPayments != null ? `${policy.totalPayments} 期` : null}
+          type="number"
+          editValue={formData.totalPayments}
+          onEditChange={isEditing ? (v) => updateField("totalPayments", v) : undefined}
+        />
+        <EditableInfoRow
+          label="续保方式"
+          value={policy.renewalType ? (renewalTypeLabels[policy.renewalType] ?? policy.renewalType) : null}
+          type="select"
+          options={renewalTypes}
+          editValue={formData.renewalType}
+          onEditChange={isEditing ? (v) => updateField("renewalType", v) : undefined}
+        />
         <EditableInfoRow
           label="扣款账户"
           value={policy.paymentAccount}
@@ -678,42 +682,34 @@ function DateInfoSection({
           editValue={formData.effectiveDate}
           onEditChange={isEditing ? (v) => updateField("effectiveDate", v) : undefined}
         />
-        {(isEditing || policy.expiryDate) && (
-          <EditableInfoRow
-            label="到期日期"
-            value={formatDateWithDays(policy.expiryDate)}
-            type="date"
-            editValue={formData.expiryDate}
-            onEditChange={isEditing ? (v) => updateField("expiryDate", v) : undefined}
-          />
-        )}
-        {(isEditing || policy.hesitationEndDate) && (
-          <EditableInfoRow
-            label="犹豫期截止"
-            value={formatDateWithDays(policy.hesitationEndDate)}
-            type="date"
-            editValue={formData.hesitationEndDate}
-            onEditChange={isEditing ? (v) => updateField("hesitationEndDate", v) : undefined}
-          />
-        )}
-        {(isEditing || policy.waitingDays != null) && (
-          <EditableInfoRow
-            label="等待期 (天)"
-            value={policy.waitingDays != null ? `${policy.waitingDays} 天` : null}
-            type="number"
-            editValue={formData.waitingDays}
-            onEditChange={isEditing ? (v) => updateField("waitingDays", v) : undefined}
-          />
-        )}
-        {(isEditing || policy.guaranteedRenewalYears != null) && (
-          <EditableInfoRow
-            label="保证续保 (年)"
-            value={policy.guaranteedRenewalYears != null ? `${policy.guaranteedRenewalYears} 年` : null}
-            type="number"
-            editValue={formData.guaranteedRenewalYears}
-            onEditChange={isEditing ? (v) => updateField("guaranteedRenewalYears", v) : undefined}
-          />
-        )}
+        <EditableInfoRow
+          label="到期日期"
+          value={formatDateWithDays(policy.expiryDate)}
+          type="date"
+          editValue={formData.expiryDate}
+          onEditChange={isEditing ? (v) => updateField("expiryDate", v) : undefined}
+        />
+        <EditableInfoRow
+          label="犹豫期截止"
+          value={formatDateWithDays(policy.hesitationEndDate)}
+          type="date"
+          editValue={formData.hesitationEndDate}
+          onEditChange={isEditing ? (v) => updateField("hesitationEndDate", v) : undefined}
+        />
+        <EditableInfoRow
+          label="等待期 (天)"
+          value={policy.waitingDays != null ? `${policy.waitingDays} 天` : null}
+          type="number"
+          editValue={formData.waitingDays}
+          onEditChange={isEditing ? (v) => updateField("waitingDays", v) : undefined}
+        />
+        <EditableInfoRow
+          label="保证续保 (年)"
+          value={policy.guaranteedRenewalYears != null ? `${policy.guaranteedRenewalYears} 年` : null}
+          type="number"
+          editValue={formData.guaranteedRenewalYears}
+          onEditChange={isEditing ? (v) => updateField("guaranteedRenewalYears", v) : undefined}
+        />
       </div>
       {error && <p className="text-xs text-destructive mt-2">{error}</p>}
     </div>
@@ -960,8 +956,6 @@ function NotesSection({
     setError(null);
   };
 
-  if (!policy.notes && !isEditing) return null;
-
   return (
     <div className="group">
       <div className="flex items-center justify-between mb-2">
@@ -1014,8 +1008,10 @@ function NotesSection({
           />
           {error && <p className="text-xs text-destructive mt-2">{error}</p>}
         </div>
-      ) : (
+      ) : policy.notes ? (
         <p className="text-sm whitespace-pre-wrap">{policy.notes}</p>
+      ) : (
+        <p className="text-sm text-muted-foreground/50">—</p>
       )}
     </div>
   );
@@ -1037,7 +1033,7 @@ export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpd
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Pencil className="size-5 text-primary shrink-0" />
+          <ShieldCheck className="size-5 text-primary shrink-0" />
           <h2 className="text-lg font-semibold leading-tight">
             {policy.productName}
           </h2>

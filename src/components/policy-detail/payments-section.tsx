@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Wand2, Check, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Wand2, Check, X, Pencil, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,8 +53,18 @@ const emptyPaymentForm: PaymentFormData = {
   paidDate: today(),
 };
 
+function paymentToForm(p: Payment): PaymentFormData {
+  return {
+    periodNumber: String(p.periodNumber),
+    dueDate: p.dueDate,
+    amount: String(p.amount),
+    status: p.status === "Overdue" ? "Pending" : p.status,
+    paidDate: p.paidDate ?? today(),
+  };
+}
+
 // ---------------------------------------------------------------------------
-// Inline add form
+// Inline form (shared between add & edit)
 // ---------------------------------------------------------------------------
 
 function PaymentForm({
@@ -63,12 +73,14 @@ function PaymentForm({
   onSave,
   onCancel,
   saving,
+  saveLabel,
 }: {
   form: PaymentFormData;
   onChange: (f: PaymentFormData) => void;
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
+  saveLabel: string;
 }) {
   const update = (field: keyof PaymentFormData, value: string) =>
     onChange({ ...form, [field]: value });
@@ -160,7 +172,7 @@ function PaymentForm({
           disabled={saving || !canSave}
         >
           <Check className="mr-1 size-3.5" />
-          {saving ? "保存中..." : "添加"}
+          {saving ? "保存中..." : saveLabel}
         </Button>
       </div>
     </div>
@@ -197,8 +209,8 @@ export function PaymentsSection({
   const [generateConfirmOpen, setGenerateConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [markingPaid, setMarkingPaid] = useState<number | null>(null);
-  const [editingPayment, setEditingPayment] = useState<number | null>(null);
-  const [editAmount, setEditAmount] = useState<string>("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingForm, setEditingForm] = useState<PaymentFormData>(emptyPaymentForm);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -213,6 +225,17 @@ export function PaymentsSection({
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.paidAmount ?? p.amount), 0);
   const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+
+  // --- mutual exclusion ---
+  const startAdd = () => {
+    setAddingForm({ ...emptyPaymentForm });
+    setEditingId(null);
+  };
+  const startEdit = (payment: Payment) => {
+    setEditingId(payment.id);
+    setEditingForm(paymentToForm(payment));
+    setAddingForm(null);
+  };
 
   // --- handlers ---
   const handleAdd = async () => {
@@ -253,6 +276,52 @@ export function PaymentsSection({
     }
   };
 
+  const handleUpdate = async () => {
+    if (editingId === null) return;
+    setSaving(true);
+    setResultMessage(null);
+    try {
+      const body: Record<string, unknown> = {
+        periodNumber: Number(editingForm.periodNumber),
+        dueDate: editingForm.dueDate,
+        amount: Number(editingForm.amount),
+        status: editingForm.status,
+      };
+      if (editingForm.status === "Paid") {
+        body.paidDate = editingForm.paidDate || today();
+        body.paidAmount = Number(editingForm.amount);
+      } else {
+        body.paidDate = null;
+        body.paidAmount = null;
+      }
+      const res = await fetch(
+        `/api/policies/${policyId}/payments/${editingId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      if (res.ok) {
+        const updated = (await res.json()) as Payment;
+        onPaymentsChange(
+          payments.map((p) => (p.id === editingId ? updated : p)),
+        );
+        setEditingId(null);
+      } else {
+        const err = await res.json().catch(() => null);
+        setResultMessage(
+          (err as { error?: string } | null)?.error ??
+            `修改失败 (${res.status})`,
+        );
+      }
+    } catch {
+      setResultMessage("修改失败，请重试");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleMarkPaid = async (payment: Payment) => {
     setMarkingPaid(payment.id);
     setResultMessage(null);
@@ -279,31 +348,6 @@ export function PaymentsSection({
       setResultMessage("标记失败，请重试");
     } finally {
       setMarkingPaid(null);
-    }
-  };
-
-  const handleUpdateAmount = async (payment: Payment) => {
-    const newAmount = Number(editAmount);
-    if (isNaN(newAmount) || newAmount <= 0) return;
-    try {
-      const res = await fetch(
-        `/api/policies/${policyId}/payments/${payment.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: newAmount }),
-        },
-      );
-      if (res.ok) {
-        const updated = (await res.json()) as Payment;
-        onPaymentsChange(
-          payments.map((p) => (p.id === payment.id ? updated : p)),
-        );
-      }
-    } catch {
-      setResultMessage("修改金额失败，请重试");
-    } finally {
-      setEditingPayment(null);
     }
   };
 
@@ -356,9 +400,45 @@ export function PaymentsSection({
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-muted-foreground mb-3">
-        缴费记录
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">
+          <Banknote className="mr-1.5 inline size-4 align-text-bottom" />
+          缴费记录
+          {payments.length > 0 && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {payments.length}
+            </Badge>
+          )}
+        </h3>
+        <div className="flex gap-2">
+          {paymentFrequency !== "Single" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={generating}
+              onClick={() => {
+                setResultMessage(null);
+                setGenerateConfirmOpen(true);
+              }}
+            >
+              <Wand2 className="mr-1 size-3.5" />
+              生成缴费记录
+            </Button>
+          )}
+          {!addingForm && editingId === null && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={startAdd}
+            >
+              <Plus className="mr-1 size-3.5" />
+              手动添加
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Summary bar */}
       {payments.length > 0 && (
@@ -372,36 +452,6 @@ export function PaymentsSection({
           / {formatCurrencyFull(totalAmount)}
         </div>
       )}
-
-      {/* Action buttons */}
-      <div className="mb-3 flex gap-2">
-        {paymentFrequency !== "Single" && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={generating}
-            onClick={() => {
-              setResultMessage(null);
-              setGenerateConfirmOpen(true);
-            }}
-          >
-            <Wand2 className="mr-1 size-3.5" />
-            生成缴费记录
-          </Button>
-        )}
-        {!addingForm && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setAddingForm({ ...emptyPaymentForm })}
-          >
-            <Plus className="mr-1 size-3.5" />
-            手动添加
-          </Button>
-        )}
-      </div>
 
       {/* Result message */}
       {resultMessage && (
@@ -421,95 +471,84 @@ export function PaymentsSection({
       {sorted.length > 0 && (
         <div className="space-y-3">
           {sorted.map((p) => (
-            <div
-              key={p.id}
-              className="group flex items-center justify-between rounded-lg bg-muted/30 p-3"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">
-                  第{p.periodNumber}期
-                </span>
-                <span className="text-sm font-mono">{p.dueDate}</span>
-                {editingPayment === p.id ? (
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                      className="h-6 w-24 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleUpdateAmount(p);
-                        if (e.key === "Escape") setEditingPayment(null);
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-5"
-                      onClick={() => void handleUpdateAmount(p)}
-                    >
-                      <Check className="size-3" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-5"
-                      onClick={() => setEditingPayment(null)}
-                    >
-                      <X className="size-3" />
-                    </Button>
+            <div key={p.id}>
+              {editingId === p.id ? (
+                <PaymentForm
+                  form={editingForm}
+                  onChange={setEditingForm}
+                  onSave={handleUpdate}
+                  onCancel={() => setEditingId(null)}
+                  saving={saving}
+                  saveLabel="保存"
+                />
+              ) : (
+                <div className="group rounded-lg bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">
+                      第{p.periodNumber}期
+                      <span className="ml-2">
+                        <StatusBadge status={p.status} />
+                      </span>
+                    </span>
+                    <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6"
+                        onClick={() => startEdit(p)}
+                      >
+                        <Pencil className="size-3" />
+                      </Button>
+                      {p.status !== "Paid" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          disabled={markingPaid === p.id}
+                          onClick={() => void handleMarkPaid(p)}
+                          title="标记已缴"
+                        >
+                          <Check className="size-3" />
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(p.id)}
+                      >
+                        <Trash2 className="size-3" />
+                      </Button>
+                    </div>
                   </div>
-                ) : (
-                  <span
-                    className={cn(
-                      "text-sm font-medium",
-                      p.status !== "Paid" && "cursor-pointer hover:underline",
+
+                  <div className="mt-1 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">应缴日期</span>
+                      <span className="font-mono">{p.dueDate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">金额</span>
+                      <span>{formatCurrencyFull(p.amount)}</span>
+                    </div>
+                    {p.status === "Paid" && p.paidDate && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">实缴日期</span>
+                        <span className="font-mono">{p.paidDate}</span>
+                      </div>
                     )}
-                    onClick={() => {
-                      if (p.status !== "Paid") {
-                        setEditingPayment(p.id);
-                        setEditAmount(String(p.amount));
-                      }
-                    }}
-                  >
-                    {formatCurrencyFull(p.amount)}
-                    {p.status !== "Paid" && (
-                      <Pencil className="ml-1 inline size-3 text-muted-foreground" />
+                    {p.status === "Paid" && p.paidAmount != null && p.paidAmount !== p.amount && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">实缴金额</span>
+                        <span>{formatCurrencyFull(p.paidAmount)}</span>
+                      </div>
                     )}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <StatusBadge status={p.status} />
-
-                {p.status !== "Paid" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs opacity-0 transition-opacity group-hover:opacity-100"
-                    disabled={markingPaid === p.id}
-                    onClick={() => void handleMarkPaid(p)}
-                  >
-                    <Check className="mr-1 size-3" />
-                    {markingPaid === p.id ? "处理中..." : "标记已缴"}
-                  </Button>
-                )}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 text-destructive opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                  onClick={() => setDeleteTarget(p.id)}
-                >
-                  <Trash2 className="size-3" />
-                </Button>
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -531,6 +570,7 @@ export function PaymentsSection({
             onSave={handleAdd}
             onCancel={() => setAddingForm(null)}
             saving={saving}
+            saveLabel="添加"
           />
         </div>
       )}
