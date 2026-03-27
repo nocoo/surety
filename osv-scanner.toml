@@ -94,3 +94,8 @@ reason = "Indirect: picomatch via micromatch/chokidar (transitive)"
 id = "GHSA-c2c7-rcm5-vvqj"
 ignoreUntil = 2026-06-23
 reason = "Indirect: picomatch via micromatch/chokidar (transitive)"
+
+[[IgnoredVulns]]
+id = "GHSA-f886-m6hf-6m8v"
+ignoreUntil = 2026-06-23
+reason = "Indirect: brace-expansion via minimatch (eslint, @typescript-eslint)"
