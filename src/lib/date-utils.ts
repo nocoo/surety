@@ -1,4 +1,18 @@
 /**
+ * Parse a "YYYY-MM-DD" date string into a local-timezone Date at midnight.
+ * Using manual parsing avoids the browser's new Date("YYYY-MM-DD") behavior
+ * which produces UTC midnight — that shifts to the previous day in UTC-west
+ * timezones (e.g. America/Los_Angeles).
+ */
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0] ?? 0;
+  const month = (parts[1] ?? 1) - 1;
+  const day = parts[2] ?? 1;
+  return new Date(year, month, day);
+}
+
+/**
  * Calculate the number of days between a date and today.
  * Positive = future, negative = past.
  */
@@ -6,10 +20,10 @@ export function getDaysFromToday(dateStr: string | null): number | null {
   if (!dateStr) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
+  const target = parseLocalDate(dateStr);
   target.setHours(0, 0, 0, 0);
   const diffTime = target.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
 }
 
 /**
