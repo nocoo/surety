@@ -14,12 +14,17 @@ export async function GET() {
   const assets = await repos.assets.findAll();
   const assetMap = new Map(assets.map((a) => [a.id, a.name]));
 
+  const attachmentCounts = await repos.attachments.countGroupedByPolicyIds(
+    policies.map((p) => p.id),
+  );
+
   const result = policies.map((p) => ({
     id: p.id,
     policyNumber: p.policyNumber,
     productName: p.productName,
     insurerName: p.insurerName,
     applicantId: p.applicantId,
+    applicantName: memberMap.get(p.applicantId) ?? "未知",
     insuredMemberId: p.insuredMemberId,
     insuredName: p.insuredMemberId ? memberMap.get(p.insuredMemberId) ?? "未知" : "未知",
     insuredAssetId: p.insuredAssetId,
@@ -34,6 +39,7 @@ export async function GET() {
     expiryDate: p.expiryDate,
     guaranteedRenewalYears: p.guaranteedRenewalYears,
     channel: p.channel,
+    attachmentCount: attachmentCounts.get(p.id) ?? 0,
   }));
 
   return NextResponse.json(result);

@@ -760,7 +760,9 @@ function PersonInfoSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           applicantId: formData.applicantId ? Number(formData.applicantId) : undefined,
-          insuredMemberId: formData.insuredMemberId ? Number(formData.insuredMemberId) : null,
+          insuredMemberId: formData.insuredMemberId && formData.insuredMemberId !== "__none__"
+            ? Number(formData.insuredMemberId)
+            : null,
           insuredAssetId: formData.insuredAssetId ? Number(formData.insuredAssetId) : null,
         }),
       });
@@ -788,7 +790,10 @@ function PersonInfoSection({
     setError(null);
   };
 
-  const memberOptions = members.map((m) => ({ value: String(m.id), label: m.name }));
+  const memberOptions = [
+    { value: "__none__", label: "未知/空白" },
+    ...members.map((m) => ({ value: String(m.id), label: m.name })),
+  ];
   const assetOptions = assets.map((a) => ({ value: String(a.id), label: a.name }));
 
   return (

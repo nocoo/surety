@@ -110,7 +110,9 @@ function PolicyForm({
           applicantId: parseInt(formData.applicantId, 10),
           insuredType: formData.insuredType,
           insuredMemberId:
-            formData.insuredType === "Member" && formData.insuredMemberId
+            formData.insuredType === "Member" &&
+            formData.insuredMemberId &&
+            formData.insuredMemberId !== "__none__"
               ? parseInt(formData.insuredMemberId, 10)
               : null,
           insuredAssetId:
@@ -289,6 +291,7 @@ function PolicyForm({
                     <SelectValue placeholder="选择被保人" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="__none__">未知/空白</SelectItem>
                     {members.map((m) => (
                       <SelectItem key={m.id} value={String(m.id)}>
                         {m.name}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus } from "lucide-react";
+import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus, Paperclip } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
+import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
+import type { Attachment } from "@/db/schema";
 
 
 interface Policy {
@@ -55,6 +57,7 @@ interface Policy {
   policyNumber: string;
   productName: string;
   insurerName: string;
+  applicantName: string;
   insuredName: string;
   insuredAssetId: number | null;
   insuredAssetName: string | null;
@@ -67,6 +70,7 @@ interface Policy {
   effectiveDate: string;
   expiryDate: string | null;
   channel: string | null;
+  attachmentCount: number;
 }
 
 function getDaysUntil(dateStr: string | null): number | null {
@@ -139,6 +143,10 @@ function PolicyMobileCard({
           </div>
         </div>
         <div>
+          <div className="text-muted-foreground">投保人</div>
+          <div className="mt-1">{policy.applicantName}</div>
+        </div>
+        <div>
           <div className="text-muted-foreground">保额</div>
           <div className="mt-1 font-medium">{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}</div>
         </div>
@@ -180,7 +188,7 @@ function PolicyMobileCard({
   );
 }
 
-type SortField = "category" | "productName" | "insurerName" | "insuredName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
+type SortField = "category" | "productName" | "insurerName" | "insuredName" | "applicantName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
 type SortDirection = "asc" | "desc";
 type ViewMode = "list" | "byCategory" | "byInsured";
 
@@ -198,9 +206,12 @@ export default function PoliciesPage() {
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [previewPolicyId, setPreviewPolicyId] = useState<number | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
 
   // Filter state (persisted to localStorage)
   const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
+  const [filterApplicant, setFilterApplicant] = usePersistedState("surety-filter-applicant", "all");
   const [filterCategory, setFilterCategory] = usePersistedState("surety-filter-category", "all");
   const [filterAsset, setFilterAsset] = usePersistedState("surety-filter-asset", "all");
   const [filterStatus, setFilterStatus] = usePersistedState("surety-filter-status", "all");
@@ -229,6 +240,11 @@ export default function PoliciesPage() {
   // Get unique insured names and categories for filter options
   const insuredNames = useMemo(() => {
     const names = new Set(policies.map((p) => p.insuredName));
+    return Array.from(names).sort();
+  }, [policies]);
+
+  const applicantNames = useMemo(() => {
+    const names = new Set(policies.map((p) => p.applicantName));
     return Array.from(names).sort();
   }, [policies]);
 
@@ -261,6 +277,9 @@ export default function PoliciesPage() {
     if (filterInsured !== "all") {
       result = result.filter((p) => p.insuredName === filterInsured);
     }
+    if (filterApplicant !== "all") {
+      result = result.filter((p) => p.applicantName === filterApplicant);
+    }
     if (filterCategory !== "all") {
       result = result.filter((p) => p.category === filterCategory);
     }
@@ -287,6 +306,9 @@ export default function PoliciesPage() {
         case "insuredName":
           comparison = a.insuredName.localeCompare(b.insuredName, "zh-CN");
           break;
+        case "applicantName":
+          comparison = a.applicantName.localeCompare(b.applicantName, "zh-CN");
+          break;
         case "sumAssured":
           comparison = a.sumAssured - b.sumAssured;
           break;
@@ -304,7 +326,7 @@ export default function PoliciesPage() {
     });
 
     return result;
-  }, [policies, filterInsured, filterCategory, filterAsset, filterStatus, sortField, sortDirection]);
+  }, [policies, filterInsured, filterApplicant, filterCategory, filterAsset, filterStatus, sortField, sortDirection]);
 
   // Group policies by category
   const policiesByCategory = useMemo(() => {
@@ -417,6 +439,21 @@ export default function PoliciesPage() {
     router.push(`/policies/${policy.id}`);
   };
 
+  const handlePreviewAttachment = async (policy: Policy) => {
+    try {
+      const res = await fetch(`/api/policies/${policy.id}/attachments`);
+      if (!res.ok) return;
+      const attachments: Attachment[] = await res.json();
+      const first = attachments[0];
+      if (first) {
+        setPreviewPolicyId(policy.id);
+        setPreviewAttachment(first);
+      }
+    } catch {
+      // Silently fail
+    }
+  };
+
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
@@ -433,7 +470,7 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") &&
+              {(filterInsured !== "all" || filterApplicant !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") &&
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
@@ -456,6 +493,22 @@ export default function PoliciesPage() {
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
                   {insuredNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">投保人:</span>
+              <Select value={filterApplicant} onValueChange={setFilterApplicant}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  {applicantNames.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
@@ -513,12 +566,13 @@ export default function PoliciesPage() {
                 </SelectContent>
               </Select>
             </div>
-            {(filterInsured !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && (
+            {(filterInsured !== "all" || filterApplicant !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   setFilterInsured("all");
+                  setFilterApplicant("all");
                   setFilterCategory("all");
                   setFilterAsset("all");
                   setFilterStatus("all");
@@ -566,10 +620,12 @@ export default function PoliciesPage() {
                   {renderSortableHeader("productName", "产品名称")}
                   {renderSortableHeader("insurerName", "保险公司")}
                   {renderSortableHeader("insuredName", "被保人")}
+                  {renderSortableHeader("applicantName", "投保人")}
                   {renderSortableHeader("sumAssured", "保额", "text-right")}
                   {renderSortableHeader("premium", "年保费", "text-right")}
                   {renderSortableHeader("effectiveDate", "生效日期")}
                   {renderSortableHeader("nextDueDate", "下次缴费")}
+                  <TableHead className="w-[50px]">附件</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -637,6 +693,9 @@ export default function PoliciesPage() {
                           <span className="text-sm">{policy.insuredName}</span>
                         </div>
                       </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {policy.applicantName}
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         {policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
                       </TableCell>
@@ -671,6 +730,25 @@ export default function PoliciesPage() {
                             </div>
                           );
                         })()}
+                      </TableCell>
+                      <TableCell>
+                        {policy.attachmentCount > 0 && (
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handlePreviewAttachment(policy)}
+                                  className="inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                >
+                                  <Paperclip className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">{policy.attachmentCount} 个附件，点击预览</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -848,6 +926,18 @@ export default function PoliciesPage() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         onSuccess={fetchPolicies}
+      />
+
+      <AttachmentPreviewDialog
+        attachment={previewAttachment}
+        policyId={previewPolicyId ?? 0}
+        open={previewAttachment !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewAttachment(null);
+            setPreviewPolicyId(null);
+          }
+        }}
       />
     </AppShell>
   );

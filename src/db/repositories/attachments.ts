@@ -1,4 +1,4 @@
-import { eq, and, count as drizzleCount } from "drizzle-orm";
+import { eq, and, count as drizzleCount, inArray } from "drizzle-orm";
 import { db, type DbInstance } from "../index";
 import { attachments, type Attachment, type NewAttachment } from "../schema";
 
@@ -71,6 +71,26 @@ export function createAttachmentsRepo(dbInstance: DbInstance) {
         .where(eq(attachments.policyId, policyId))
         .get();
       return result?.count ?? 0;
+    },
+
+    /**
+     * Count attachments grouped by policy ID in a single query.
+     * Returns a Map of policyId → count (only includes policies that have attachments).
+     */
+    async countGroupedByPolicyIds(
+      policyIds: number[],
+    ): Promise<Map<number, number>> {
+      if (policyIds.length === 0) return new Map();
+      const rows = await dbInstance
+        .select({
+          policyId: attachments.policyId,
+          count: drizzleCount(),
+        })
+        .from(attachments)
+        .where(inArray(attachments.policyId, policyIds))
+        .groupBy(attachments.policyId)
+        .all();
+      return new Map(rows.map((r: { policyId: number; count: number }) => [r.policyId, r.count]));
     },
   };
 }
