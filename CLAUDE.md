@@ -76,9 +76,9 @@ Worker 源码在 `worker/` 目录，部署到 Cloudflare Workers，作为 Next.j
 | 项目 | 值 |
 |------|------|
 | Worker 名称 | `surety` |
-| Worker URL | `https://surety.nocoo.workers.dev` |
-| Custom Domain | `https://surety.worker.hexly.ai` |
-| D1 Database | `surety-db` (`9e57f832-0c6f-4456-8706-612f2965a66c`) |
+| Worker URL | `https://surety.<your-account>.workers.dev` |
+| Custom Domain | `<your-custom-domain>` |
+| D1 Database | `surety-db` (`<your-database-id>`) |
 | Liveness | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
 
 ### 部署命令
@@ -126,7 +126,7 @@ echo "<secret>" | cd worker && bunx wrangler secret put WORKER_SHARED_SECRET
 
 `.env` 中需要配置：
 ```
-SURETY_WORKER_URL=https://surety.worker.hexly.ai
+SURETY_WORKER_URL=<your-worker-url>
 SURETY_WORKER_SECRET=<worker_shared_secret>
 ```
 
