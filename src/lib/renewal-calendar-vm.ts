@@ -3,6 +3,8 @@
  * Pure functions for calculating renewal data - testable without API calls
  */
 
+import { parseLocalDate, formatLocalDate } from "@/lib/date-utils";
+
 // Category labels
 export const CATEGORY_LABELS: Record<string, string> = {
   Life: "寿险",
@@ -125,7 +127,7 @@ export function calculateRenewalDates(
   }
 
   const renewalDates: Date[] = [];
-  let currentDate = new Date(nextDueDate);
+  let currentDate = parseLocalDate(nextDueDate);
 
   // Interval in months
   const intervalMonths = paymentFrequency === "Monthly" ? 1 : 12;
@@ -195,7 +197,7 @@ export function calculateRenewalItems(
         category: policy.category,
         categoryLabel: CATEGORY_LABELS[policy.category] ?? policy.category,
         premium: policy.premium,
-        nextDueDate: date.toISOString().split("T")[0] ?? "",
+        nextDueDate: formatLocalDate(date),
         daysUntilDue: daysBetween(referenceDate, date),
         insuredMemberName: policy.insuredMemberName ?? "未知",
         isSavings: isSavingsPolicy(policy.category, policy.subCategory),

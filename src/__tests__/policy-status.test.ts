@@ -6,7 +6,8 @@ import {
 } from "@/db/types";
 
 describe("deriveDisplayStatus", () => {
-  const past = new Date("2026-01-01");
+  // Use explicit local-timezone Date construction for deterministic tests
+  const past = new Date(2026, 0, 1); // Jan 1, 2026 local midnight
 
   test("returns Active when DB status is Active and no expiryDate", () => {
     expect(deriveDisplayStatus("Active", null, past)).toBe("Active");
@@ -20,14 +21,14 @@ describe("deriveDisplayStatus", () => {
     expect(deriveDisplayStatus("Active", "2025-06-28", past)).toBe("Expired");
   });
 
-  test("returns Expired when expiryDate equals today's date (past midnight)", () => {
-    // expiryDate "2026-01-01" parsed as midnight, now is also midnight = not expired
-    const now = new Date("2026-01-01T00:00:00");
+  test("returns Active when expiryDate equals now's date at midnight", () => {
+    // expiryDate "2026-01-01" → local midnight; now is also local midnight = not expired
+    const now = new Date(2026, 0, 1, 0, 0, 0);
     expect(deriveDisplayStatus("Active", "2026-01-01", now)).toBe("Active");
   });
 
   test("returns Expired when expiryDate is before now within same day", () => {
-    const now = new Date("2026-01-02T12:00:00");
+    const now = new Date(2026, 0, 2, 12, 0, 0); // Jan 2 noon
     expect(deriveDisplayStatus("Active", "2026-01-01", now)).toBe("Expired");
   });
 
@@ -42,7 +43,7 @@ describe("deriveDisplayStatus", () => {
 });
 
 describe("isEffectivelyActive", () => {
-  const now = new Date("2026-02-10");
+  const now = new Date(2026, 1, 10); // Feb 10, 2026
 
   test("returns true for Active with no expiry", () => {
     expect(isEffectivelyActive("Active", null, now)).toBe(true);

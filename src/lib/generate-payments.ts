@@ -1,4 +1,5 @@
 import type { NewPayment } from "@/db/schema";
+import { formatLocalDate } from "@/lib/date-utils";
 
 export interface GeneratePaymentsInput {
   policyId: number;
@@ -76,7 +77,7 @@ export function generatePaymentRecords(
     // Skip already-existing periods (idempotency)
     if (existingPeriodNumbers.has(periodNumber)) continue;
 
-    const dueDateStr = dueDate.toISOString().split("T")[0] ?? "";
+    const dueDateStr = formatLocalDate(dueDate);
     const isPast = dueDate < today;
 
     records.push({

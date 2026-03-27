@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ShieldCheck, Github } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { todayStr } from "@/lib/date-utils";
 import LoadingScreen from "@/components/loading-screen";
 
 function Barcode() {
@@ -26,7 +27,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const year = new Date().getFullYear();
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const today = todayStr().replace(/-/g, "");
 
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/" });

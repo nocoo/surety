@@ -1,4 +1,5 @@
 import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
+import { parseLocalDate } from "@/lib/date-utils";
 import type { AllRepos } from "@/db/repositories";
 
 const categoryLabels: Record<string, string> = {
@@ -161,7 +162,7 @@ export async function getDashboardData(repos: AllRepos) {
 
   for (const p of activePolicies) {
     if (p.effectiveDate) {
-      const effectiveDate = new Date(p.effectiveDate);
+      const effectiveDate = parseLocalDate(p.effectiveDate);
       let nextRenewal = new Date(now.getFullYear(), effectiveDate.getMonth(), effectiveDate.getDate());
       if (nextRenewal <= now) {
         nextRenewal = new Date(now.getFullYear() + 1, effectiveDate.getMonth(), effectiveDate.getDate());
@@ -206,7 +207,7 @@ export async function getDashboardData(repos: AllRepos) {
 
   for (const p of activePolicies) {
     if (p.expiryDate) {
-      const expiryDate = new Date(p.expiryDate);
+      const expiryDate = parseLocalDate(p.expiryDate);
       if (expiryDate < now) continue;
 
       const categoryLabel = categoryLabels[p.category] ?? p.category;

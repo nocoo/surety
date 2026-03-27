@@ -62,10 +62,13 @@ const relationVariants: Record<Relation, "default" | "info" | "success" | "purpl
 function calculateAge(birthDate: string | null): number | null {
   if (!birthDate) return null;
   const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+  const parts = birthDate.split("-").map(Number);
+  const birthYear = parts[0] ?? 0;
+  const birthMonth = (parts[1] ?? 1) - 1;
+  const birthDay = parts[2] ?? 1;
+  let age = today.getFullYear() - birthYear;
+  const monthDiff = today.getMonth() - birthMonth;
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
     age--;
   }
   return age;

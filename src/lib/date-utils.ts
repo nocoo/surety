@@ -1,15 +1,54 @@
 /**
- * Parse a "YYYY-MM-DD" date string into a local-timezone Date at midnight.
- * Using manual parsing avoids the browser's new Date("YYYY-MM-DD") behavior
- * which produces UTC midnight — that shifts to the previous day in UTC-west
- * timezones (e.g. America/Los_Angeles).
+ * Canonical date conversion utilities.
+ *
+ * All "YYYY-MM-DD" strings stored in the database are timezone-agnostic
+ * calendar dates. These helpers ensure consistent local-timezone handling:
+ *
+ * - parseLocalDate():  "YYYY-MM-DD" → Date (local midnight)
+ * - formatLocalDate(): Date → "YYYY-MM-DD" (using local year/month/day)
+ *
+ * ⚠️  NEVER use `new Date("YYYY-MM-DD")` — it parses as UTC midnight,
+ *     which shifts to the previous calendar day in UTC-west timezones.
+ * ⚠️  NEVER use `date.toISOString().split("T")[0]` — it outputs the UTC
+ *     date, which shifts to the previous calendar day in UTC-east timezones.
  */
-function parseLocalDate(dateStr: string): Date {
+
+/**
+ * Parse a "YYYY-MM-DD" date string into a local-timezone Date at midnight.
+ *
+ * Using manual year/month/day extraction avoids the browser's
+ * `new Date("YYYY-MM-DD")` behavior which produces UTC midnight —
+ * that shifts to the previous day in UTC-west timezones
+ * (e.g. America/Los_Angeles) and can cause off-by-one errors.
+ */
+export function parseLocalDate(dateStr: string): Date {
   const parts = dateStr.split("-").map(Number);
   const year = parts[0] ?? 0;
   const month = (parts[1] ?? 1) - 1;
   const day = parts[2] ?? 1;
   return new Date(year, month, day);
+}
+
+/**
+ * Format a Date into a "YYYY-MM-DD" string using the local timezone.
+ *
+ * This is the inverse of `parseLocalDate()`. Uses `getFullYear()`,
+ * `getMonth()`, `getDate()` which return local-timezone components,
+ * unlike `toISOString()` which outputs UTC and can shift the date
+ * in UTC-east timezones (e.g. Asia/Shanghai).
+ */
+export function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get today's date as a "YYYY-MM-DD" string in the local timezone.
+ */
+export function todayStr(): string {
+  return formatLocalDate(new Date());
 }
 
 /**

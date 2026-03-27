@@ -1,3 +1,5 @@
+import { parseLocalDate } from "@/lib/date-utils";
+
 export type PolicyCategory =
   | "Life"
   | "CriticalIllness"
@@ -19,7 +21,7 @@ export function deriveDisplayStatus(
   now: Date = new Date(),
 ): PolicyStatus {
   if (dbStatus === "Active" && expiryDate) {
-    const expiry = new Date(expiryDate);
+    const expiry = parseLocalDate(expiryDate);
     if (expiry < now) return "Expired";
   }
   return dbStatus;

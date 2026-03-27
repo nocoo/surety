@@ -1,49 +1,98 @@
 import { describe, expect, test } from "bun:test";
-import { getDaysFromToday, formatDaysFromToday, formatDateWithDays } from "@/lib/date-utils";
+import {
+  parseLocalDate,
+  formatLocalDate,
+  todayStr,
+  getDaysFromToday,
+  formatDaysFromToday,
+  formatDateWithDays,
+} from "@/lib/date-utils";
 
 describe("date-utils", () => {
+  describe("parseLocalDate", () => {
+    test("parses YYYY-MM-DD to local midnight", () => {
+      const d = parseLocalDate("2026-03-27");
+      expect(d.getFullYear()).toBe(2026);
+      expect(d.getMonth()).toBe(2); // March = 2 (0-indexed)
+      expect(d.getDate()).toBe(27);
+      expect(d.getHours()).toBe(0);
+      expect(d.getMinutes()).toBe(0);
+    });
+
+    test("handles single-digit month and day", () => {
+      const d = parseLocalDate("2026-1-5");
+      expect(d.getFullYear()).toBe(2026);
+      expect(d.getMonth()).toBe(0); // January
+      expect(d.getDate()).toBe(5);
+    });
+
+    test("handles leap day", () => {
+      const d = parseLocalDate("2024-02-29");
+      expect(d.getMonth()).toBe(1);
+      expect(d.getDate()).toBe(29);
+    });
+  });
+
+  describe("formatLocalDate", () => {
+    test("formats Date to YYYY-MM-DD", () => {
+      const d = new Date(2026, 2, 27); // March 27, 2026 local
+      expect(formatLocalDate(d)).toBe("2026-03-27");
+    });
+
+    test("zero-pads single-digit month and day", () => {
+      const d = new Date(2026, 0, 5); // January 5
+      expect(formatLocalDate(d)).toBe("2026-01-05");
+    });
+
+    test("roundtrips with parseLocalDate", () => {
+      const original = "2026-12-31";
+      const d = parseLocalDate(original);
+      expect(formatLocalDate(d)).toBe(original);
+    });
+
+    test("roundtrips Feb 29 on a leap year", () => {
+      const original = "2024-02-29";
+      const d = parseLocalDate(original);
+      expect(formatLocalDate(d)).toBe(original);
+    });
+  });
+
+  describe("todayStr", () => {
+    test("returns today's date in YYYY-MM-DD format", () => {
+      const now = new Date();
+      const expected = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      expect(todayStr()).toBe(expected);
+    });
+
+    test("matches formatLocalDate(new Date())", () => {
+      expect(todayStr()).toBe(formatLocalDate(new Date()));
+    });
+  });
+
   describe("getDaysFromToday", () => {
     test("returns null for null input", () => {
       expect(getDaysFromToday(null)).toBeNull();
     });
 
     test("returns 0 for today's date", () => {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      expect(getDaysFromToday(dateStr)).toBe(0);
+      expect(getDaysFromToday(todayStr())).toBe(0);
     });
 
     test("returns positive for future dates", () => {
       const future = new Date();
       future.setDate(future.getDate() + 10);
-      const yyyy = future.getFullYear();
-      const mm = String(future.getMonth() + 1).padStart(2, "0");
-      const dd = String(future.getDate()).padStart(2, "0");
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      expect(getDaysFromToday(dateStr)).toBe(10);
+      expect(getDaysFromToday(formatLocalDate(future))).toBe(10);
     });
 
     test("returns negative for past dates", () => {
       const past = new Date();
       past.setDate(past.getDate() - 5);
-      const yyyy = past.getFullYear();
-      const mm = String(past.getMonth() + 1).padStart(2, "0");
-      const dd = String(past.getDate()).padStart(2, "0");
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      expect(getDaysFromToday(dateStr)).toBe(-5);
+      expect(getDaysFromToday(formatLocalDate(past))).toBe(-5);
     });
 
     test("parses date as local timezone (not UTC)", () => {
-      // Construct "today" string manually — this should ALWAYS return 0
-      // regardless of timezone, because we use local-date parsing.
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      const d = String(now.getDate()).padStart(2, "0");
-      expect(getDaysFromToday(`${y}-${m}-${d}`)).toBe(0);
+      // This should ALWAYS return 0 regardless of system timezone
+      expect(getDaysFromToday(todayStr())).toBe(0);
     });
   });
 
@@ -71,12 +120,8 @@ describe("date-utils", () => {
     });
 
     test("includes date and annotation for today", () => {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      const d = String(now.getDate()).padStart(2, "0");
-      const dateStr = `${y}-${m}-${d}`;
-      expect(formatDateWithDays(dateStr)).toBe(`${dateStr} (今天)`);
+      const today = todayStr();
+      expect(formatDateWithDays(today)).toBe(`${today} (今天)`);
     });
   });
 });

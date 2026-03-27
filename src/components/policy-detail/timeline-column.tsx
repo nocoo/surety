@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { CircleCheck, Circle, CalendarDays, ArrowDown } from "lucide-react";
-import { getDaysFromToday, formatDaysFromToday } from "@/lib/date-utils";
+import { getDaysFromToday, formatDaysFromToday, parseLocalDate, formatLocalDate } from "@/lib/date-utils";
 import type { PolicyDetail } from "@/lib/types/policy";
 
 interface TimelineEvent {
@@ -24,19 +24,6 @@ function addYears(date: Date, years: number): Date {
   return result;
 }
 
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function parseDate(dateStr: string): Date {
-  // Parse YYYY-MM-DD as local date (not UTC)
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
-}
-
 function getToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -49,7 +36,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
   const events: TimelineEvent[] = [];
 
   // 1. effectiveDate — always present
-  const effectiveDate = parseDate(policy.effectiveDate);
+  const effectiveDate = parseLocalDate(policy.effectiveDate);
   events.push({
     date: effectiveDate,
     dateStr: policy.effectiveDate,
@@ -59,7 +46,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
 
   // 2. hesitationEndDate
   if (policy.hesitationEndDate) {
-    const d = parseDate(policy.hesitationEndDate);
+    const d = parseLocalDate(policy.hesitationEndDate);
     events.push({
       date: d,
       dateStr: policy.hesitationEndDate,
@@ -73,7 +60,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
     const d = addDays(effectiveDate, policy.waitingDays);
     events.push({
       date: d,
-      dateStr: formatDate(d),
+      dateStr: formatLocalDate(d),
       label: `等待期结束 (${policy.waitingDays}天)`,
       type: d.getTime() <= todayTime ? "past" : "future",
     });
@@ -81,7 +68,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
 
   // 4. nextDueDate
   if (policy.nextDueDate) {
-    const d = parseDate(policy.nextDueDate);
+    const d = parseLocalDate(policy.nextDueDate);
     events.push({
       date: d,
       dateStr: policy.nextDueDate,
@@ -97,7 +84,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
       const isLastYear = year === policy.guaranteedRenewalYears;
       events.push({
         date: d,
-        dateStr: formatDate(d),
+        dateStr: formatLocalDate(d),
         label: isLastYear
           ? `保证续保到期 (第${year}年)`
           : `第${year}年续期`,
@@ -108,7 +95,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
 
   // 6. expiryDate
   if (policy.expiryDate) {
-    const d = parseDate(policy.expiryDate);
+    const d = parseLocalDate(policy.expiryDate);
     events.push({
       date: d,
       dateStr: policy.expiryDate,
@@ -146,11 +133,11 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
       }
 
       // Skip if this is the same as nextDueDate (already added above)
-      if (policy.nextDueDate && formatDate(dueDate) === policy.nextDueDate) {
+      if (policy.nextDueDate && formatLocalDate(dueDate) === policy.nextDueDate) {
         continue;
       }
 
-      const dueDateStr = formatDate(dueDate);
+      const dueDateStr = formatLocalDate(dueDate);
       const isPast = dueDate.getTime() <= todayTime;
 
       events.push({
@@ -165,7 +152,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
   // Insert "today" marker
   events.push({
     date: today,
-    dateStr: formatDate(today),
+    dateStr: formatLocalDate(today),
     label: "今天",
     type: "today",
   });
