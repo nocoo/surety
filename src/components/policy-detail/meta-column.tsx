@@ -796,9 +796,10 @@ function PersonInfoSection({
     setError(null);
   };
 
-  const memberOptions = [
+  const baseMemberOptions = members.map((m) => ({ value: String(m.id), label: m.name }));
+  const insuredMemberOptions = [
     { value: "__none__", label: "未知/空白" },
-    ...members.map((m) => ({ value: String(m.id), label: m.name })),
+    ...baseMemberOptions,
   ];
   const assetOptions = assets.map((a) => ({ value: String(a.id), label: a.name }));
 
@@ -865,7 +866,7 @@ function PersonInfoSection({
                 label="被保人"
                 value={policy.insuredName}
                 type="select"
-                options={memberOptions}
+                options={insuredMemberOptions}
                 editValue={formData.insuredMemberId}
                 onEditChange={(v) => updateField("insuredMemberId", v)}
               />
@@ -885,7 +886,7 @@ function PersonInfoSection({
               label="投保人"
               value={policy.applicantName ?? "未知"}
               type="select"
-              options={memberOptions}
+              options={baseMemberOptions}
               editValue={formData.applicantId}
               onEditChange={(v) => updateField("applicantId", v)}
             />
