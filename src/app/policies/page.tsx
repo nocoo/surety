@@ -77,6 +77,7 @@ interface Policy {
   effectiveDate: string;
   expiryDate: string | null;
   channel: string | null;
+  notes: string | null;
   attachmentCount: number;
 }
 
@@ -502,22 +503,6 @@ export default function PoliciesPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">被保人:</span>
-              <Select value={filterInsured} onValueChange={setFilterInsured}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  {insuredNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">投保人:</span>
               <Select value={filterApplicant} onValueChange={setFilterApplicant}>
                 <SelectTrigger className="w-[140px]">
@@ -526,6 +511,22 @@ export default function PoliciesPage() {
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
                   {applicantNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">被保人:</span>
+              <Select value={filterInsured} onValueChange={setFilterInsured}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="全部" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  {insuredNames.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
                     </SelectItem>
@@ -636,12 +637,13 @@ export default function PoliciesPage() {
                   {renderSortableHeader("category", "类型", "w-[90px]")}
                   {renderSortableHeader("productName", "产品名称")}
                   {renderSortableHeader("insurerName", "保险公司")}
-                  {renderSortableHeader("insuredName", "被保人")}
                   {renderSortableHeader("applicantName", "投保人")}
+                  {renderSortableHeader("insuredName", "被保人")}
                   {renderSortableHeader("sumAssured", "保额", "text-right")}
                   {renderSortableHeader("premium", "年保费", "text-right")}
                   {renderSortableHeader("effectiveDate", "生效日期")}
                   {renderSortableHeader("nextDueDate", "下次缴费")}
+                  <TableHead className="hidden xl:table-cell">备注</TableHead>
                   <TableHead className="w-[50px]">附件</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
@@ -703,15 +705,22 @@ export default function PoliciesPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
+                            <AvatarFallback className={cn("text-xs text-white", getAvatarColor(policy.applicantName ?? ""))}>
+                              {policy.applicantName?.[0] ?? "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{policy.applicantName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
                             <AvatarFallback className={cn("text-xs text-white", getAvatarColor(policy.insuredName ?? ""))}>
                               {policy.insuredName?.[0] ?? "?"}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-sm">{policy.insuredName}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {policy.applicantName}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
@@ -747,6 +756,13 @@ export default function PoliciesPage() {
                             </div>
                           );
                         })()}
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        {policy.notes ? (
+                          <span className="text-sm text-muted-foreground line-clamp-1 max-w-[200px]">{policy.notes}</span>
+                        ) : (
+                          <span className="text-muted-foreground/40">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {policy.attachmentCount > 0 && (

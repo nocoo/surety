@@ -39,6 +39,7 @@ export async function GET() {
     expiryDate: p.expiryDate,
     guaranteedRenewalYears: p.guaranteedRenewalYears,
     channel: p.channel,
+    notes: p.notes,
     attachmentCount: attachmentCounts.get(p.id) ?? 0,
   }));
 
