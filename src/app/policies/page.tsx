@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus, Paperclip } from "lucide-react";
+import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PageLoading } from "@/components/page-loading";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
 import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { formatBytes, isImageContentType } from "@/lib/attachment-validation";
 import type { Attachment } from "@/db/schema";
 
 
@@ -208,6 +215,8 @@ export default function PoliciesPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [previewPolicyId, setPreviewPolicyId] = useState<number | null>(null);
   const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
+  const [pickerAttachments, setPickerAttachments] = useState<Attachment[]>([]);
+  const [pickerPolicyId, setPickerPolicyId] = useState<number | null>(null);
 
   // Filter state (persisted to localStorage)
   const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
@@ -444,10 +453,18 @@ export default function PoliciesPage() {
       const res = await fetch(`/api/policies/${policy.id}/attachments`);
       if (!res.ok) return;
       const attachments: Attachment[] = await res.json();
-      const first = attachments[0];
-      if (first) {
-        setPreviewPolicyId(policy.id);
-        setPreviewAttachment(first);
+      if (attachments.length === 0) return;
+
+      if (attachments.length === 1) {
+        const first = attachments[0];
+        if (first) {
+          setPreviewPolicyId(policy.id);
+          setPreviewAttachment(first);
+        }
+      } else {
+        // Multiple attachments — show picker dialog
+        setPickerPolicyId(policy.id);
+        setPickerAttachments(attachments);
       }
     } catch {
       // Silently fail
@@ -939,6 +956,48 @@ export default function PoliciesPage() {
           }
         }}
       />
+
+      {/* Attachment picker dialog — shown when policy has 2+ attachments */}
+      <Dialog
+        open={pickerAttachments.length > 0}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPickerAttachments([]);
+            setPickerPolicyId(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>选择附件预览</DialogTitle>
+          </DialogHeader>
+          <ul className="divide-y divide-border max-h-[60vh] overflow-y-auto">
+            {pickerAttachments.map((att) => (
+              <li key={att.id}>
+                <button
+                  className="flex w-full items-center gap-3 px-2 py-3 hover:bg-muted/50 rounded transition-colors text-left"
+                  onClick={() => {
+                    setPreviewPolicyId(pickerPolicyId);
+                    setPreviewAttachment(att);
+                    setPickerAttachments([]);
+                    setPickerPolicyId(null);
+                  }}
+                >
+                  {isImageContentType(att.contentType) ? (
+                    <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" />
+                  ) : (
+                    <FileText className="h-5 w-5 text-red-500 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{att.filename}</p>
+                    <p className="text-xs text-muted-foreground">{formatBytes(att.size)}</p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

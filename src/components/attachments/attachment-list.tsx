@@ -1,8 +1,8 @@
 "use client";
 
-import { FileText, Download, Eye, Trash2 } from "lucide-react";
+import { FileText, ImageIcon, Download, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatBytes } from "@/lib/attachment-validation";
+import { formatBytes, isImageContentType } from "@/lib/attachment-validation";
 import type { Attachment } from "@/db/schema";
 
 interface AttachmentListProps {
@@ -19,6 +19,13 @@ function formatDate(date: Date | string): string {
     month: "2-digit",
     day: "2-digit",
   });
+}
+
+function AttachmentIcon({ contentType }: { contentType: string }) {
+  if (isImageContentType(contentType)) {
+    return <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" />;
+  }
+  return <FileText className="h-5 w-5 text-red-500 shrink-0" />;
 }
 
 export function AttachmentList({
@@ -39,7 +46,7 @@ export function AttachmentList({
     <ul className="divide-y divide-border">
       {attachments.map((attachment) => (
         <li key={attachment.id} className="flex items-center gap-3 py-3">
-          <FileText className="h-5 w-5 text-red-500 shrink-0" />
+          <AttachmentIcon contentType={attachment.contentType} />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">
               {attachment.filename}

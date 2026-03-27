@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { isImageContentType } from "@/lib/attachment-validation";
 import type { Attachment } from "@/db/schema";
 
 interface AttachmentPreviewDialogProps {
@@ -32,11 +34,23 @@ export function AttachmentPreviewDialog({
           <DialogTitle className="truncate">{attachment.filename}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <iframe
-            src={fileUrl}
-            className="w-full h-full rounded border"
-            title={`Preview: ${attachment.filename}`}
-          />
+          {isImageContentType(attachment.contentType) ? (
+            <div className="relative w-full h-full">
+              <Image
+                src={fileUrl}
+                alt={attachment.filename}
+                fill
+                className="object-contain rounded"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <iframe
+              src={fileUrl}
+              className="w-full h-full rounded border"
+              title={`Preview: ${attachment.filename}`}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

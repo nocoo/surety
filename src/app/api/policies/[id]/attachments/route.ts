@@ -3,7 +3,7 @@ import { getReposFromRequest } from "@/lib/api-helpers";
 import { getR2ClientFromEnv } from "@/lib/r2-client";
 import {
   validateFile,
-  validatePdfMagicBytes,
+  validateMagicBytes,
   generateR2Key,
   MAX_FILE_SIZE,
   MAX_ATTACHMENTS_PER_POLICY,
@@ -20,7 +20,7 @@ const MAX_REQUEST_BODY_SIZE = MAX_FILE_SIZE + 1024 * 1024; // 51 MB
 type RouteContext = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/policies/[id]/attachments — Upload a PDF attachment.
+ * POST /api/policies/[id]/attachments — Upload a file attachment (PDF, JPG, PNG).
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   // Pre-check Content-Length before buffering the body into memory.
@@ -65,8 +65,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
-  // Validate PDF magic bytes (prevents spoofed Content-Type)
-  const magicCheck = await validatePdfMagicBytes(file);
+  // Validate magic bytes (prevents spoofed Content-Type)
+  const magicCheck = await validateMagicBytes(file);
   if (!magicCheck.valid) {
     return NextResponse.json({ error: magicCheck.error }, { status: 400 });
   }
