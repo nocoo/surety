@@ -29,8 +29,8 @@ export function EditableInfoRow({
   onEditChange,
   options,
 }: EditableInfoRowProps) {
-  // Display mode - null/empty values hide the row (but edit mode always shows)
-  if (!onEditChange && (value == null || value === "")) return null;
+  // Display mode - show placeholder for empty values so users always see the field
+  const displayValue = (value == null || value === "") ? "—" : value;
 
   // Edit mode
   if (onEditChange) {
@@ -71,7 +71,7 @@ export function EditableInfoRow({
   return (
     <div className="flex items-center justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className={cn("font-medium", displayValue === "—" && "text-muted-foreground/50")}>{displayValue}</span>
     </div>
   );
 }
