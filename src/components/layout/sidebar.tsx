@@ -20,7 +20,6 @@ import {
 import { cn, getAvatarColor } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -94,7 +93,7 @@ function NavGroupSection({
     <Collapsible open={open} onOpenChange={setOpen}>
       <div className="px-3 mt-2">
         <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
             {group.label}
           </span>
           <span className="flex h-5 w-5 shrink-0 items-center justify-center">
@@ -277,9 +276,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
                     className="shrink-0"
                   />
                   <span className="text-lg font-bold tracking-tighter">surety</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal text-muted-foreground">
+                  <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground leading-none">
                     v{APP_VERSION}
-                  </Badge>
+                  </span>
                 </div>
                 <button
                   onClick={toggle}
