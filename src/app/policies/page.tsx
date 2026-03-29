@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, ArrowUpDown, ArrowUp, ArrowDown, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon } from "lucide-react";
+import { Trash2, Info, Check, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
+import { SortHeader } from "@/components/ui/sort-header";
 import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
 import {
   Dialog,
@@ -112,7 +113,7 @@ function PolicyMobileCard({
   const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
 
   return (
-    <div className="rounded-card border border-border/60 bg-card p-4 shadow-sm sm:hidden">
+    <div className="rounded-card bg-secondary p-4 sm:hidden">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -199,11 +200,6 @@ function PolicyMobileCard({
 type SortField = "category" | "productName" | "insurerName" | "insuredName" | "applicantName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
 type SortDirection = "asc" | "desc";
 type ViewMode = "list" | "byCategory" | "byInsured";
-
-function getAriaSort(field: SortField, activeField: SortField, direction: SortDirection): "ascending" | "descending" | "none" {
-  if (field !== activeField) return "none";
-  return direction === "asc" ? "ascending" : "descending";
-}
 
 export default function PoliciesPage() {
   const router = useRouter();
@@ -366,45 +362,14 @@ export default function PoliciesPage() {
     );
   }, [filteredPolicies]);
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field);
-      setSortDirection("asc");
+      setSortField(field as SortField);
+      setSortDirection("desc");
     }
   };
-
-  const renderSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-1 h-3 w-3 text-muted-foreground/50" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="ml-1 h-3 w-3" />
-    ) : (
-      <ArrowDown className="ml-1 h-3 w-3" />
-    );
-  };
-
-  const renderSortableHeader = (
-    field: SortField,
-    label: string,
-    className?: string
-  ) => (
-    <TableHead className={className} aria-sort={getAriaSort(field, sortField, sortDirection)}>
-      <button
-        onClick={() => handleSort(field)}
-        className={cn(
-          "inline-flex items-center hover:text-foreground transition-colors",
-          className?.includes("text-right") && "justify-end w-full"
-        )}
-        aria-label={`${label}，当前${getAriaSort(field, sortField, sortDirection) === "none" ? "未排序" : getAriaSort(field, sortField, sortDirection) === "ascending" ? "升序" : "降序"}，点击切换排序`}
-      >
-        {label}
-        {renderSortIcon(field)}
-      </button>
-    </TableHead>
-  );
 
   const handleDeleteClick = (policy: Policy) => {
     setPolicyToDelete(policy);
@@ -475,7 +440,7 @@ export default function PoliciesPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
-        <PageLoading />
+        <TablePageSkeleton rows={10} />
       </AppShell>
     );
   }
@@ -634,15 +599,15 @@ export default function PoliciesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[80px]">状态</TableHead>
-                  {renderSortableHeader("category", "类型", "w-[90px]")}
-                  {renderSortableHeader("productName", "产品名称")}
-                  {renderSortableHeader("insurerName", "保险公司")}
-                  {renderSortableHeader("applicantName", "投保人")}
-                  {renderSortableHeader("insuredName", "被保人")}
-                  {renderSortableHeader("sumAssured", "保额", "text-right")}
-                  {renderSortableHeader("premium", "年保费", "text-right")}
-                  {renderSortableHeader("effectiveDate", "生效日期")}
-                  {renderSortableHeader("nextDueDate", "下次缴费")}
+                  <SortHeader label="类型" sortKey="category" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} className="w-[90px]" />
+                  <SortHeader label="产品名称" sortKey="productName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
+                  <SortHeader label="保险公司" sortKey="insurerName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
+                  <SortHeader label="投保人" sortKey="applicantName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
+                  <SortHeader label="被保人" sortKey="insuredName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
+                  <SortHeader label="保额" sortKey="sumAssured" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} className="text-right" />
+                  <SortHeader label="年保费" sortKey="premium" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} className="text-right" />
+                  <SortHeader label="生效日期" sortKey="effectiveDate" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
+                  <SortHeader label="下次缴费" sortKey="nextDueDate" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
                   <TableHead className="hidden xl:table-cell">备注</TableHead>
                   <TableHead className="w-[50px]">附件</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>

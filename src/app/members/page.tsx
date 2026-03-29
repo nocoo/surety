@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -128,7 +128,7 @@ export default function MembersPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
-        <PageLoading />
+        <TablePageSkeleton />
       </AppShell>
     );
   }

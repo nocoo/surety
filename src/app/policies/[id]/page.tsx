@@ -115,7 +115,7 @@ export default function PolicyDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Col 1: Meta */}
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-card bg-secondary p-5">
           <MetaColumn
             policy={policy}
             beneficiaries={beneficiaries}
@@ -126,12 +126,12 @@ export default function PolicyDetailPage() {
         </div>
 
         {/* Col 2: Timeline */}
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-card bg-secondary p-5">
           <TimelineColumn policy={policy} />
         </div>
 
         {/* Col 3: Coverage Items */}
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-card bg-secondary p-5">
           <CoverageSection
             policyId={policy.id}
             items={coverageItems}
@@ -143,7 +143,7 @@ export default function PolicyDetailPage() {
         </div>
 
         {/* Col 4: Payments */}
-        <div className="rounded-xl border bg-card p-5">
+        <div className="rounded-card bg-secondary p-5">
           <PaymentsSection
             policyId={policy.id}
             payments={payments}

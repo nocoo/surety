@@ -31,16 +31,21 @@ const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
   Shield,
 };
 
-function StatCard({ label, value, iconName }: StatCardData) {
+function StatCard({ label, value, iconName, index }: StatCardData & { index: number }) {
   const Icon = ICON_MAP[iconName];
   return (
-    <div className="rounded-card bg-secondary p-6">
+    <div
+      className="rounded-card bg-secondary p-6 animate-fade-up"
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+        <div className="rounded-md bg-card p-2">
+          <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+        </div>
       </div>
       <div className="mt-2">
-        <span className="text-2xl font-bold font-display">{value}</span>
+        <span className="text-2xl font-bold font-display tabular-nums">{value}</span>
       </div>
     </div>
   );
@@ -79,8 +84,8 @@ export function DashboardContent({ data }: { data: DashboardData }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+        {statCards.map((stat, i) => (
+          <StatCard key={stat.label} {...stat} index={i} />
         ))}
       </div>
 
