@@ -13,7 +13,7 @@ export class PoliciesPage {
   }
 
   get addButton() {
-    return this.page.getByRole("button", { name: "添加保单" });
+    return this.page.getByRole("button", { name: "新增保单" });
   }
 
   get table() {
@@ -32,6 +32,11 @@ export class PoliciesPage {
   /** Edit button within a row */
   editButton(productName: string) {
     return this.row(productName).getByRole("button", { name: "编辑", exact: true });
+  }
+
+  /** View detail button within a row */
+  viewDetailButton(productName: string) {
+    return this.row(productName).getByRole("button", { name: "查看详情" });
   }
 
   /** Delete button within a row */
@@ -101,7 +106,7 @@ export class PoliciesPage {
   async selectCategory(label: string) {
     const triggers = this.sheet.locator('[data-slot="select-trigger"]');
     // Category is the first select after policyNumber row
-    await triggers.filter({ hasText: /选择险种|寿险|重疾险|医疗险|意外险|年金险|财产险/ }).first().click();
+    await triggers.filter({ hasText: /选择类型|寿险|重疾险|医疗险|意外险|年金险|财产险/ }).first().click();
     await this.page.getByRole("option", { name: label }).click();
   }
 
@@ -115,7 +120,7 @@ export class PoliciesPage {
   /** Select an insured member */
   async selectInsured(name: string) {
     const triggers = this.sheet.locator('[data-slot="select-trigger"]');
-    await triggers.filter({ hasText: /选择家庭成员/ }).first().click();
+    await triggers.filter({ hasText: /选择被保人/ }).first().click();
     await this.page.getByRole("option", { name }).click();
   }
 

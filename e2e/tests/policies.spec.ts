@@ -60,7 +60,7 @@ test.describe("Policies", () => {
   test("add a new policy", async () => {
     await policies.addButton.click();
     await expect(policies.sheet).toBeVisible();
-    await expect(policies.sheetTitle).toContainText("添加保单");
+    await expect(policies.sheetTitle).toContainText("新增保单");
 
     await policies.fillPolicyForm({
       productName: "E2E测试保单",
@@ -80,17 +80,26 @@ test.describe("Policies", () => {
     await expect(policies.row("E2E测试保单")).toBeVisible();
   });
 
-  test("edit an existing policy", async () => {
-    await policies.editButton("安行宝综合意外险").click();
-    await expect(policies.sheet).toBeVisible();
-    await expect(policies.sheetTitle).toContainText("编辑保单");
+  test("view policy detail navigates to detail page", async ({ page }) => {
+    // Click "查看详情" on a seed policy
+    await policies.viewDetailButton("安行宝综合意外险").click();
 
-    // Update premium
-    await policies.premiumInput.fill("500");
-    await policies.submitButton.click();
+    // Should navigate to detail page with breadcrumbs
+    await expect(page).toHaveURL(/\/policies\/\d+/, { timeout: 15_000 });
 
-    await expect(policies.sheet).not.toBeVisible();
-    await expect(policies.row("安行宝综合意外险")).toBeVisible();
+    // Wait for the detail page to finish loading (shows policy name as heading)
+    await expect(
+      page.getByRole("heading", { name: "安行宝综合意外险" })
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Breadcrumb should show policy name (scope to nav to avoid sidebar match)
+    const breadcrumb = page.locator('nav[aria-label="面包屑导航"]');
+    await expect(breadcrumb.getByRole("link", { name: "保单管理" })).toBeVisible();
+
+    // Back button returns to list
+    await page.getByRole("button", { name: "返回保单列表" }).click();
+    await expect(page).toHaveURL("/policies");
+    await expect(policies.heading).toBeVisible();
   });
 
   test("delete a policy", async () => {
