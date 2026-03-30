@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXTAUTH_URL || "http://localhost:7015"
+    process.env.NEXTAUTH_URL || "http://localhost:7012"
   ),
   title: "Surety - 家庭保单管理工具",
   description: "极简、本地化、隐私安全的家庭保障工具",

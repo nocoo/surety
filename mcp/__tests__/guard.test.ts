@@ -24,7 +24,7 @@ describe("checkMcpEnabled", () => {
     const result = await checkMcpEnabled();
     expect(result).toBeDefined();
     expect(result).toContain("MCP access is disabled");
-    expect(result).toContain("http://localhost:7015/settings");
+    expect(result).toContain("http://localhost:7012/settings");
   });
 
   test("should return error message when mcp.enabled is false", async () => {
@@ -62,6 +62,6 @@ describe("mcpDisabledResult", () => {
     const first = result.content[0] as { type: string; text: string };
     expect(first.type).toBe("text");
     expect(first.text).toContain("MCP access is disabled");
-    expect(first.text).toContain("http://localhost:7015/settings");
+    expect(first.text).toContain("http://localhost:7012/settings");
   });
 });

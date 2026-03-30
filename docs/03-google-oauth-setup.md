@@ -39,7 +39,7 @@ This guide explains how to set up Google OAuth for Surety.
 Add all domains where your app will run:
 
 ```
-http://localhost:7015
+http://localhost:7012
 https://yourdomain.com
 ```
 
@@ -48,7 +48,7 @@ https://yourdomain.com
 Add callback URLs for each domain:
 
 ```
-http://localhost:7015/api/auth/callback/google
+http://localhost:7012/api/auth/callback/google
 https://yourdomain.com/api/auth/callback/google
 ```
 

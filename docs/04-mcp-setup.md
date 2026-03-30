@@ -15,7 +15,7 @@ MCP is a standard protocol that enables AI assistants (Claude Code, Cursor, etc.
 
 ## Step 1: Enable MCP Access in Surety
 
-1. Open Surety at [http://localhost:7015](http://localhost:7015)
+1. Open Surety at [http://localhost:7012](http://localhost:7012)
 2. Navigate to **Settings** (gear icon in sidebar)
 3. Find the **MCP 访问** card and turn on the toggle switch
 4. The page will show a JSON config snippet — you'll use this in Step 2
@@ -181,7 +181,7 @@ Once connected, you can ask your AI assistant things like:
 
 ### "MCP access is disabled" error
 
-The MCP toggle in Settings is off. Open [http://localhost:7015/settings](http://localhost:7015/settings) and enable it.
+The MCP toggle in Settings is off. Open [http://localhost:7012/settings](http://localhost:7012/settings) and enable it.
 
 ### AI assistant can't find the MCP server
 

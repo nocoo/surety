@@ -60,7 +60,7 @@ NEXTAUTH_SECRET=your-generated-secret-here
 ALLOWED_EMAILS=your-email@gmail.com
 ```
 
-> 💡 **提示**: Google OAuth 回调地址设置为 `http://localhost:7015/api/auth/callback/google`
+> 💡 **提示**: Google OAuth 回调地址设置为 `http://localhost:7012/api/auth/callback/google`
 
 ### 3️⃣ 初始化数据库
 
@@ -82,7 +82,7 @@ SURETY_TARGET_DB=dev bun run db:seed
 bun dev
 ```
 
-打开浏览器访问 👉 [http://localhost:7015](http://localhost:7015)
+打开浏览器访问 👉 [http://localhost:7012](http://localhost:7012)
 
 ## 📁 项目结构
 
@@ -229,7 +229,7 @@ surety/
 
 | 命令 | 说明 |
 |------|------|
-| `bun dev` | 启动开发服务器 (端口 7015) |
+| `bun dev` | 启动开发服务器 (端口 7012) |
 | `bun run build` | 生产构建 |
 | `bun start` | 启动生产服务器 |
 | `bun test` | 运行单元测试 |

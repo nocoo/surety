@@ -3,9 +3,9 @@
   "version": "1.5.6",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 7015",
+    "dev": "next dev --port 7012",
     "build": "next build",
-    "start": "next start --port 7015",
+    "start": "next start --port 7012",
     "lint": "eslint --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",

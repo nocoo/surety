@@ -126,7 +126,7 @@ describe("MCP security guard", () => {
     try {
       const result = await callTool(client, "list-policies");
       expect(result.isError).toBe(true);
-      expect(result.text).toContain("http://localhost:7015/settings");
+      expect(result.text).toContain("http://localhost:7012/settings");
     } finally {
       await client.close();
       await transport.close();

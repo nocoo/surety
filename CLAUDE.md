@@ -53,7 +53,7 @@
 ## 常用命令
 
 ```bash
-bun dev              # 开发服务器 (7015)
+bun dev              # 开发服务器 (7012)
 bun run build        # 生产构建
 bun test             # 单元测试 (含 MCP)
 bun test --coverage  # 测试覆盖率
