@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { PolicyDetailSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { MetaColumn } from "@/components/policy-detail/meta-column";
 import { TimelineColumn } from "@/components/policy-detail/timeline-column";
@@ -85,7 +85,7 @@ export default function PolicyDetailPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: "加载中..." }]}>
-        <PageLoading />
+        <PolicyDetailSkeleton />
       </AppShell>
     );
   }

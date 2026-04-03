@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { RenewalCalendarSkeleton } from "@/components/skeletons";
 import {
   SummaryCards,
   MonthlyChart,
@@ -35,7 +35,7 @@ export default function RenewalCalendarPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <PageLoading />
+        <RenewalCalendarSkeleton />
       </AppShell>
     );
   }

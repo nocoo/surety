@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Home, Car, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { AssetsPageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -116,7 +116,7 @@ export default function AssetsPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "资产管理" }]}>
-        <PageLoading />
+        <AssetsPageSkeleton />
       </AppShell>
     );
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Users, Building2 } from "lucide-react";
 import { AppShell } from "@/components/layout";
-import { PageLoading } from "@/components/page-loading";
+import { CoverageLookupSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { MemberSelector, AssetSelector, CategorySection } from "@/components/coverage-lookup";
@@ -89,7 +89,7 @@ export default function CoverageLookupPage() {
   if (loading && !data) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <PageLoading />
+        <CoverageLookupSkeleton />
       </AppShell>
     );
   }
