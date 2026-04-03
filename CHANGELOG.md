@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.8] - 2026-04-04
+
+### Changed
+
+- **Per-page skeleton loading** — replaced generic spinner with layout-matched skeletons for insurers, assets, renewal calendar, coverage lookup, and policy detail pages (B-4 compliance)
+
 ## [v1.5.7] - 2026-04-04
 
 ### Security
