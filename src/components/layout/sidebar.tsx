@@ -16,9 +16,16 @@ import {
   Landmark,
   LogOut,
   ChevronUp,
+  type LucideIcon,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { APP_VERSION } from "@/lib/version";
+import {
+  NAV_GROUPS as NAV_GROUPS_DEF,
+  ALL_NAV_ITEMS as ALL_NAV_ITEMS_DEF,
+  type NavItemDef,
+  type NavGroupDef,
+} from "@/lib/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -29,52 +36,53 @@ import {
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useSidebar } from "./sidebar-context";
 
-// ── Types ──
+// ── Icon mapping ──
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  FileText,
+  Users,
+  Settings,
+  Building2,
+  CalendarClock,
+  ShieldCheck,
+  Landmark,
+};
+
+// ── Types (internal, with resolved icons) ──
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
 }
 
 interface NavGroup {
   label: string;
   items: NavItem[];
-  defaultOpen?: boolean;
+  defaultOpen?: boolean | undefined;
 }
 
-// ── Navigation config ──
+// ── Resolve icons from string names ──
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "总览",
-    defaultOpen: true,
-    items: [
-      { href: "/", label: "仪表盘", icon: LayoutDashboard },
-      { href: "/coverage-lookup", label: "保障速查", icon: ShieldCheck },
-      { href: "/renewal-calendar", label: "续保日历", icon: CalendarClock },
-    ],
-  },
-  {
-    label: "数据管理",
-    defaultOpen: true,
-    items: [
-      { href: "/policies", label: "保单管理", icon: FileText },
-      { href: "/members", label: "家庭成员", icon: Users },
-      { href: "/insurers", label: "保险公司", icon: Landmark },
-      { href: "/assets", label: "资产管理", icon: Building2 },
-    ],
-  },
-  {
-    label: "系统",
-    defaultOpen: true,
-    items: [
-      { href: "/settings", label: "系统设置", icon: Settings },
-    ],
-  },
-];
+function resolveNavItem(item: NavItemDef): NavItem {
+  return {
+    href: item.href,
+    label: item.label,
+    icon: ICON_MAP[item.icon] ?? LayoutDashboard,
+  };
+}
 
-const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+function resolveNavGroup(group: NavGroupDef): NavGroup {
+  return {
+    label: group.label,
+    items: group.items.map(resolveNavItem),
+    defaultOpen: group.defaultOpen,
+  };
+}
+
+const NAV_GROUPS: NavGroup[] = NAV_GROUPS_DEF.map(resolveNavGroup);
+const ALL_NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS_DEF.map(resolveNavItem);
 
 // ── Sub-components ──
 

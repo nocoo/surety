@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { NAV_GROUPS, ALL_NAV_ITEMS } from "@/components/layout/sidebar";
 import type { NavGroup, NavItem } from "@/components/layout/sidebar";
+import { LayoutDashboard } from "lucide-react";
 
 describe("Sidebar NAV_GROUPS", () => {
   test("has exactly 3 groups: 总览, 数据管理, 系统", () => {
@@ -97,7 +98,7 @@ describe("NavGroup type contract", () => {
   test("group satisfies NavGroup interface", () => {
     const group: NavGroup = {
       label: "Test",
-      items: [{ href: "/test", label: "Test", icon: () => null }],
+      items: [{ href: "/test", label: "Test", icon: LayoutDashboard }],
       defaultOpen: false,
     };
     expect(group.label).toBe("Test");
@@ -109,7 +110,7 @@ describe("NavGroup type contract", () => {
     const item: NavItem = {
       href: "/foo",
       label: "Foo",
-      icon: () => null,
+      icon: LayoutDashboard,
     };
     expect(item.href).toBe("/foo");
     expect(item.label).toBe("Foo");
