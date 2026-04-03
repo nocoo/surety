@@ -23,14 +23,38 @@ function Barcode() {
   );
 }
 
+/**
+ * Validate callbackUrl to prevent open redirect attacks.
+ * Only allows same-origin paths (starting with /).
+ */
+function getSafeCallbackUrl(callbackUrl: string | null): string {
+  if (!callbackUrl) return "/";
+
+  // Must be a relative path starting with /
+  if (!callbackUrl.startsWith("/")) return "/";
+
+  // Reject protocol-relative URLs (//example.com)
+  if (callbackUrl.startsWith("//")) return "/";
+
+  // Validate it's a proper path (no encoded chars that could bypass)
+  try {
+    const url = new URL(callbackUrl, window.location.origin);
+    if (url.origin !== window.location.origin) return "/";
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return "/";
+  }
+}
+
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const callbackUrl = searchParams.get("callbackUrl");
   const year = new Date().getFullYear();
   const today = todayStr().replace(/-/g, "");
 
   const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: getSafeCallbackUrl(callbackUrl) });
   };
 
   return (
