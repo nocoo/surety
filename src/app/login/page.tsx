@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ShieldCheck, Github } from "lucide-react";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeToggle, SiteFooter } from "@/components/layout";
 import { todayStr } from "@/lib/date-utils";
 import LoadingScreen from "@/components/loading-screen";
 
@@ -209,15 +209,7 @@ function LoginContent() {
         </div>
       </div>
       </div>
-      <footer className="py-4 text-center">
-        <p className="text-xs text-muted-foreground">
-          Powered by{" "}
-          <a href="https://github.com/nocoo/surety" target="_blank" rel="noopener noreferrer"
-             className="text-primary hover:text-primary/80 transition-colors">
-            surety
-          </a>
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
