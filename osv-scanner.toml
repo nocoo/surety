@@ -99,3 +99,10 @@ reason = "Indirect: picomatch via micromatch/chokidar (transitive)"
 id = "GHSA-f886-m6hf-6m8v"
 ignoreUntil = 2026-06-23
 reason = "Indirect: brace-expansion via minimatch (eslint, @typescript-eslint)"
+
+# --- Next.js ---
+
+[[IgnoredVulns]]
+id = "GHSA-5f7q-jpqc-wp7h"
+ignoreUntil = 2026-06-23
+reason = "Next.js 16 known issue, no fixed version available yet"

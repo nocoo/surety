@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.7] - 2026-04-04
+
+### Security
+
+- **callbackUrl validation** — login page now validates callbackUrl parameter to prevent open redirect attacks
+
+### Changed
+
+- **Navigation data extraction** — moved NAV_GROUPS to `@/lib/navigation.ts` (B-2 compliance)
+- **SiteFooter component** — extracted reusable footer component from login page (B-1 compliance)
+- **Dev port migration** — dev server port changed from 7015 to 7012
+
 ## [v1.5.1] - 2026-03-27
 
 ### Added
