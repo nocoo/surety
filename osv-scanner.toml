@@ -41,6 +41,36 @@ id = "GHSA-v8w9-8mx6-g223"
 ignoreUntil = 2026-06-23
 reason = "Indirect: hono via @modelcontextprotocol/sdk"
 
+[[IgnoredVulns]]
+id = "GHSA-92pp-h63x-v22m"
+ignoreUntil = 2026-06-23
+reason = "Indirect: @hono/node-server via @modelcontextprotocol/sdk"
+
+[[IgnoredVulns]]
+id = "GHSA-26pp-8wgv-hjvm"
+ignoreUntil = 2026-06-23
+reason = "Indirect: hono via @modelcontextprotocol/sdk"
+
+[[IgnoredVulns]]
+id = "GHSA-r5rp-j6wh-rvv4"
+ignoreUntil = 2026-06-23
+reason = "Indirect: hono via @modelcontextprotocol/sdk"
+
+[[IgnoredVulns]]
+id = "GHSA-wmmm-f939-6g9c"
+ignoreUntil = 2026-06-23
+reason = "Indirect: hono via @modelcontextprotocol/sdk"
+
+[[IgnoredVulns]]
+id = "GHSA-xf4j-xp2r-rqqx"
+ignoreUntil = 2026-06-23
+reason = "Indirect: hono via @modelcontextprotocol/sdk"
+
+[[IgnoredVulns]]
+id = "GHSA-xpcf-pg52-r92g"
+ignoreUntil = 2026-06-23
+reason = "Indirect: hono via @modelcontextprotocol/sdk"
+
 # --- eslint / @typescript-eslint transitive deps ---
 
 [[IgnoredVulns]]
@@ -100,9 +130,3 @@ id = "GHSA-f886-m6hf-6m8v"
 ignoreUntil = 2026-06-23
 reason = "Indirect: brace-expansion via minimatch (eslint, @typescript-eslint)"
 
-# --- Next.js ---
-
-[[IgnoredVulns]]
-id = "GHSA-5f7q-jpqc-wp7h"
-ignoreUntil = 2026-06-23
-reason = "Next.js 16 known issue, no fixed version available yet"
