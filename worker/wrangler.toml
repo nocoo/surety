@@ -6,12 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB_PROD"
 database_name = "surety-db"
-database_id = "<your-prod-d1-database-id>"
+database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 
 [[d1_databases]]
 binding = "DB_TEST"
 database_name = "surety-db-test"
-database_id = "<your-test-d1-database-id>"
+database_id = "8650f8a3-72ce-4029-ac54-ec13ebb0c5b0"
 
 [[r2_buckets]]
 binding = "R2_PROD"
