@@ -183,11 +183,11 @@ export function registerDoctorTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "update-doctor",
-    "Update a doctor (pass null to clear optional fields)",
+    "Update a doctor (pass null to clear optional fields). Cannot change hospital if doctor has medical visits.",
     {
       doctorId: z.number().describe("The doctor ID to update"),
       name: z.string().optional().describe("Doctor name"),
-      hospitalId: z.number().optional().describe("Hospital ID"),
+      hospitalId: z.number().optional().describe("Hospital ID (cannot change if doctor has visits)"),
       department: z.string().optional().describe("Department"),
       title: z.enum(DOCTOR_TITLES).nullable().optional().describe("Professional title (null to clear)"),
       specialty: z.string().nullable().optional().describe("Specialty areas (null to clear)"),
@@ -198,8 +198,22 @@ export function registerDoctorTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Verify hospital exists if being updated
-      if (data.hospitalId !== undefined) {
+      // Check if doctor exists first
+      const existing = await doctorsRepo.findById(doctorId);
+      if (!existing) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text" as const,
+              text: `Doctor with id ${doctorId} not found`,
+            },
+          ],
+        };
+      }
+
+      // Verify hospital exists if being updated, and check visit constraint
+      if (data.hospitalId !== undefined && data.hospitalId !== existing.hospitalId) {
         const hospital = await hospitalsRepo.findById(data.hospitalId);
         if (!hospital) {
           return {
@@ -208,6 +222,23 @@ export function registerDoctorTools(server: McpServer): void {
               {
                 type: "text" as const,
                 text: `Hospital with id ${data.hospitalId} not found`,
+              },
+            ],
+          };
+        }
+
+        // Cannot change hospital if doctor has medical visits
+        const visits = await medicalVisitsRepo.findByDoctorId(doctorId);
+        if (visits.length > 0) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: "Cannot change hospital: doctor has medical visits",
+                  visitCount: visits.length,
+                }),
               },
             ],
           };

@@ -310,6 +310,22 @@ export function registerMedicalVisitTools(server: McpServer): void {
         };
       }
 
+      // Verify member exists if being updated
+      if (data.memberId !== undefined && data.memberId !== existing.memberId) {
+        const member = await membersRepo.findById(data.memberId);
+        if (!member) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Member with id ${data.memberId} not found`,
+              },
+            ],
+          };
+        }
+      }
+
       // Determine effective hospitalId
       const hospitalId = data.hospitalId ?? existing.hospitalId;
 

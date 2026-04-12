@@ -60,10 +60,14 @@ interface MedicalVisit {
   doctorId: number | null;
   doctorName?: string | undefined;
   visitDate: string;
+  visitTimeStart?: string | null | undefined;
+  visitTimeEnd?: string | null | undefined;
   visitType: string;
   visitReason: string;
   department: string | null;
+  symptoms?: string | null | undefined;
   diagnosis: string | null;
+  assessment?: string | null | undefined;
   treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
@@ -262,19 +266,22 @@ export default function MedicalVisitsPage() {
                   <TableHead>就诊人</TableHead>
                   <TableHead>类型</TableHead>
                   <TableHead>月龄</TableHead>
-                  <TableHead>日期</TableHead>
                   <TableHead>距今</TableHead>
+                  <TableHead>时间</TableHead>
+                  <TableHead>就诊原因</TableHead>
                   <TableHead>医院</TableHead>
                   <TableHead>医生</TableHead>
-                  <TableHead>科室</TableHead>
+                  <TableHead>症状</TableHead>
                   <TableHead>诊断</TableHead>
+                  <TableHead>评估</TableHead>
+                  <TableHead>治疗方案</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredVisits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="h-24 text-center">
+                    <TableCell colSpan={13} className="h-24 text-center">
                       <div className="text-muted-foreground">
                         暂无就诊记录，点击上方按钮添加
                       </div>
@@ -302,20 +309,32 @@ export default function MedicalVisitsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                            {formatDate(visit.visitDate)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
                             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="text-sm">{formatDaysAgo(daysAgo)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                              {formatDate(visit.visitDate)}
+                            </div>
+                            {(visit.visitTimeStart || visit.visitTimeEnd) && (
+                              <span className="text-xs text-muted-foreground">
+                                {visit.visitTimeStart || "?"} - {visit.visitTimeEnd || "?"}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="max-w-[120px] truncate block">
+                            {visit.visitReason}
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="max-w-[120px] truncate">
+                            <span className="max-w-[100px] truncate">
                               {visit.hospitalName}
                             </span>
                           </div>
@@ -331,16 +350,36 @@ export default function MedicalVisitsPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {visit.department ? (
-                            <span>{visit.department}</span>
+                          {visit.symptoms ? (
+                            <span className="max-w-[100px] truncate block text-sm">
+                              {visit.symptoms}
+                            </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell>
                           {visit.diagnosis ? (
-                            <span className="max-w-[150px] truncate block">
+                            <span className="max-w-[100px] truncate block">
                               {visit.diagnosis}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {visit.assessment ? (
+                            <span className="max-w-[100px] truncate block text-sm">
+                              {visit.assessment}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {visit.treatment ? (
+                            <span className="max-w-[100px] truncate block text-sm">
+                              {visit.treatment}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>

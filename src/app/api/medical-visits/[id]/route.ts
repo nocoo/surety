@@ -84,6 +84,14 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Verify member exists if memberId is being updated
+  if (body.memberId !== undefined && body.memberId !== existing.memberId) {
+    const member = await repos.members.findById(body.memberId);
+    if (!member) {
+      return NextResponse.json({ error: "成员不存在" }, { status: 400 });
+    }
+  }
+
   // Verify hospital exists if hospitalId is being updated
   const hospitalId = body.hospitalId ?? existing.hospitalId;
   if (body.hospitalId) {

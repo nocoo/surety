@@ -281,6 +281,32 @@ describe("update-doctor", () => {
     expect(data.hospitalName).toBe("Hospital B");
   });
 
+  test("should refuse to change hospital when doctor has medical visits", async () => {
+    const tools = setup();
+    await enableMcp();
+    const h1 = await hospitalsRepo.create({ name: "Hospital A" });
+    const h2 = await hospitalsRepo.create({ name: "Hospital B" });
+    const doctor = await doctorsRepo.create({ name: "Dr. Test", hospitalId: h1.id, department: "Internal" });
+    const member = await membersRepo.create({ name: "Zhang San", relation: "Self" });
+    await medicalVisitsRepo.create({
+      memberId: member.id,
+      hospitalId: h1.id,
+      doctorId: doctor.id,
+      visitDate: "2024-01-01",
+      visitType: "门诊",
+      visitReason: "Checkup",
+    });
+
+    const result = await getHandler(tools, "update-doctor")({
+      doctorId: doctor.id,
+      hospitalId: h2.id,
+    });
+    expect(result.isError).toBe(true);
+    const data = parseResult(result);
+    expect(data.error).toContain("Cannot change hospital");
+    expect(data.visitCount).toBe(1);
+  });
+
   test("should clear nullable fields when passing null", async () => {
     const tools = setup();
     await enableMcp();

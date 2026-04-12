@@ -44,13 +44,27 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
 
+  const existing = await repos.doctors.findById(doctorId);
+  if (!existing) {
+    return NextResponse.json({ error: "Doctor not found" }, { status: 404 });
+  }
+
   const body = await request.json();
 
   // Verify hospital exists if hospitalId is being updated
-  if (body.hospitalId) {
+  if (body.hospitalId !== undefined && body.hospitalId !== existing.hospitalId) {
     const hospital = await repos.hospitals.findById(body.hospitalId);
     if (!hospital) {
       return NextResponse.json({ error: "Hospital not found" }, { status: 400 });
+    }
+
+    // Check if doctor is referenced by medical visits - cannot change hospital
+    const visits = await repos.medicalVisits.findByDoctorId(doctorId);
+    if (visits.length > 0) {
+      return NextResponse.json(
+        { error: `该医生有 ${visits.length} 条就诊记录，无法更改所属医院` },
+        { status: 409 }
+      );
     }
   }
 

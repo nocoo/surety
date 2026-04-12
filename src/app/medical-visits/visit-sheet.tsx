@@ -44,10 +44,14 @@ interface VisitFormData {
   hospitalId: number | null;
   doctorId: number | null;
   visitDate: string;
+  visitTimeStart: string;
+  visitTimeEnd: string;
   visitType: string;
   visitReason: string;
   department: string;
+  symptoms: string;
   diagnosis: string;
+  assessment: string;
   treatment: string;
   totalCost: string;
   insurancePaid: string;
@@ -61,10 +65,14 @@ interface MedicalVisit {
   hospitalId: number;
   doctorId: number | null;
   visitDate: string;
+  visitTimeStart?: string | null | undefined;
+  visitTimeEnd?: string | null | undefined;
   visitType: string;
   visitReason: string;
   department: string | null;
+  symptoms?: string | null | undefined;
   diagnosis: string | null;
+  assessment?: string | null | undefined;
   treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
@@ -94,10 +102,14 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
       hospitalId: visit.hospitalId,
       doctorId: visit.doctorId,
       visitDate: visit.visitDate,
+      visitTimeStart: visit.visitTimeStart ?? "",
+      visitTimeEnd: visit.visitTimeEnd ?? "",
       visitType: visit.visitType,
       visitReason: visit.visitReason,
       department: visit.department ?? "",
+      symptoms: visit.symptoms ?? "",
       diagnosis: visit.diagnosis ?? "",
+      assessment: visit.assessment ?? "",
       treatment: visit.treatment ?? "",
       totalCost: visit.totalCost?.toString() ?? "",
       insurancePaid: visit.insurancePaid?.toString() ?? "",
@@ -110,10 +122,14 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
     hospitalId: null,
     doctorId: null,
     visitDate: getTodayDate(),
+    visitTimeStart: "",
+    visitTimeEnd: "",
     visitType: "门诊",
     visitReason: "",
     department: "",
+    symptoms: "",
     diagnosis: "",
+    assessment: "",
     treatment: "",
     totalCost: "",
     insurancePaid: "",
@@ -200,10 +216,14 @@ function VisitForm({
           hospitalId: formData.hospitalId,
           doctorId: formData.doctorId,
           visitDate: formData.visitDate,
+          visitTimeStart: formData.visitTimeStart || null,
+          visitTimeEnd: formData.visitTimeEnd || null,
           visitType: formData.visitType,
           visitReason: formData.visitReason,
           department: formData.department || null,
+          symptoms: formData.symptoms || null,
           diagnosis: formData.diagnosis || null,
+          assessment: formData.assessment || null,
           treatment: formData.treatment || null,
           totalCost,
           insurancePaid,
@@ -291,6 +311,27 @@ function VisitForm({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="visitTimeStart">开始时间</Label>
+              <Input
+                id="visitTimeStart"
+                type="time"
+                value={formData.visitTimeStart}
+                onChange={(e) => handleChange("visitTimeStart", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="visitTimeEnd">结束时间</Label>
+              <Input
+                id="visitTimeEnd"
+                type="time"
+                value={formData.visitTimeEnd}
+                onChange={(e) => handleChange("visitTimeEnd", e.target.value)}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="visitReason">就诊原因</Label>
             <Input
@@ -355,12 +396,34 @@ function VisitForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="symptoms">症状</Label>
+            <Textarea
+              id="symptoms"
+              placeholder="主诉症状，如：发烧、咳嗽"
+              value={formData.symptoms}
+              onChange={(e) => handleChange("symptoms", e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="diagnosis">诊断</Label>
             <Textarea
               id="diagnosis"
               placeholder="诊断结果"
               value={formData.diagnosis}
               onChange={(e) => handleChange("diagnosis", e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="assessment">评估</Label>
+            <Textarea
+              id="assessment"
+              placeholder="医生评估意见"
+              value={formData.assessment}
+              onChange={(e) => handleChange("assessment", e.target.value)}
               rows={2}
             />
           </div>

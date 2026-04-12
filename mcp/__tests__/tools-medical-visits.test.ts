@@ -387,6 +387,23 @@ describe("update-medical-visit", () => {
     expect(result.content[0].text).toContain("Hospital with id 999 not found");
   });
 
+  test("should return error for non-existent member when updating memberId", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { hospital, member } = await createTestData();
+    const visit = await medicalVisitsRepo.create({
+      memberId: member.id,
+      hospitalId: hospital.id,
+      visitDate: "2024-01-01",
+      visitType: "门诊",
+      visitReason: "Checkup",
+    });
+
+    const result = await getHandler(tools, "update-medical-visit")({ visitId: visit.id, memberId: 999 });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain("Member with id 999 not found");
+  });
+
   test("should return error when doctor does not belong to hospital", async () => {
     const tools = setup();
     await enableMcp();
