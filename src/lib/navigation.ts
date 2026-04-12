@@ -39,6 +39,15 @@ export const NAV_GROUPS: NavGroupDef[] = [
     ],
   },
   {
+    label: "就诊管理",
+    defaultOpen: true,
+    items: [
+      { href: "/medical-visits", label: "就诊记录", icon: "Stethoscope" },
+      { href: "/hospitals", label: "医院管理", icon: "Hospital" },
+      { href: "/doctors", label: "医生管理", icon: "UserRound" },
+    ],
+  },
+  {
     label: "系统",
     defaultOpen: true,
     items: [{ href: "/settings", label: "系统设置", icon: "Settings" }],

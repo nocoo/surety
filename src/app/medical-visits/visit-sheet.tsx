@@ -1,0 +1,458 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+const VISIT_TYPES = ["门诊", "急诊", "体检", "复查", "预约", "儿保"];
+
+interface Member {
+  id: number;
+  name: string;
+}
+
+interface Hospital {
+  id: number;
+  name: string;
+}
+
+interface Doctor {
+  id: number;
+  name: string;
+  hospitalId: number;
+}
+
+interface VisitFormData {
+  memberId: number | null;
+  hospitalId: number | null;
+  doctorId: number | null;
+  visitDate: string;
+  visitType: string;
+  department: string;
+  diagnosis: string;
+  totalCost: string;
+  insurancePaid: string;
+  selfPaid: string;
+  prescription: string;
+  notes: string;
+}
+
+interface MedicalVisit {
+  id: number;
+  memberId: number;
+  hospitalId: number;
+  doctorId: number | null;
+  visitDate: string;
+  visitType: string;
+  department: string | null;
+  diagnosis: string | null;
+  totalCost: number | null;
+  insurancePaid: number | null;
+  selfPaid: number | null;
+  prescription: string | null;
+  notes: string | null;
+}
+
+interface VisitSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  visit?: MedicalVisit | null;
+  members: Member[];
+  hospitals: Hospital[];
+  doctors: Doctor[];
+  onSuccess?: () => void;
+}
+
+function getTodayDate(): string {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
+  if (visit) {
+    return {
+      memberId: visit.memberId,
+      hospitalId: visit.hospitalId,
+      doctorId: visit.doctorId,
+      visitDate: visit.visitDate,
+      visitType: visit.visitType,
+      department: visit.department ?? "",
+      diagnosis: visit.diagnosis ?? "",
+      totalCost: visit.totalCost?.toString() ?? "",
+      insurancePaid: visit.insurancePaid?.toString() ?? "",
+      selfPaid: visit.selfPaid?.toString() ?? "",
+      prescription: visit.prescription ?? "",
+      notes: visit.notes ?? "",
+    };
+  }
+  return {
+    memberId: null,
+    hospitalId: null,
+    doctorId: null,
+    visitDate: getTodayDate(),
+    visitType: "门诊",
+    department: "",
+    diagnosis: "",
+    totalCost: "",
+    insurancePaid: "",
+    selfPaid: "",
+    prescription: "",
+    notes: "",
+  };
+}
+
+function VisitForm({
+  visit,
+  members,
+  hospitals,
+  doctors,
+  onClose,
+  onSuccess,
+}: {
+  visit: MedicalVisit | null | undefined;
+  members: Member[];
+  hospitals: Hospital[];
+  doctors: Doctor[];
+  onClose: () => void;
+  onSuccess?: (() => void) | undefined;
+}) {
+  const isEditing = !!visit;
+  const [formData, setFormData] = useState<VisitFormData>(() =>
+    createFormData(visit)
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filter doctors by selected hospital
+  const filteredDoctors = useMemo(() => {
+    if (!formData.hospitalId) return [];
+    return doctors.filter((d) => d.hospitalId === formData.hospitalId);
+  }, [doctors, formData.hospitalId]);
+
+  const handleChange = <K extends keyof VisitFormData>(
+    field: K,
+    value: VisitFormData[K]
+  ) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      // Clear doctor selection when hospital changes
+      if (field === "hospitalId") {
+        newData.doctorId = null;
+      }
+      return newData;
+    });
+    setError(null);
+  };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!formData.memberId) {
+      setError("请选择就诊人");
+      return;
+    }
+    if (!formData.hospitalId) {
+      setError("请选择医院");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const url = isEditing ? `/api/medical-visits/${visit.id}` : "/api/medical-visits";
+      const method = isEditing ? "PUT" : "POST";
+
+      const totalCost = formData.totalCost ? parseFloat(formData.totalCost) : null;
+      const insurancePaid = formData.insurancePaid ? parseFloat(formData.insurancePaid) : null;
+      const selfPaid = formData.selfPaid ? parseFloat(formData.selfPaid) : null;
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: formData.memberId,
+          hospitalId: formData.hospitalId,
+          doctorId: formData.doctorId,
+          visitDate: formData.visitDate,
+          visitType: formData.visitType,
+          department: formData.department || null,
+          diagnosis: formData.diagnosis || null,
+          totalCost,
+          insurancePaid,
+          selfPaid,
+          prescription: formData.prescription || null,
+          notes: formData.notes || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "保存失败");
+      }
+
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>{isEditing ? "编辑就诊记录" : "添加就诊记录"}</SheetTitle>
+        <SheetDescription>
+          {isEditing ? "修改就诊记录信息" : "添加新的就诊记录"}
+        </SheetDescription>
+      </SheetHeader>
+
+      <form
+        onSubmit={onSubmit}
+        className="flex-1 space-y-6 overflow-y-auto px-4 py-6"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="memberId">就诊人</Label>
+              <Select
+                value={formData.memberId?.toString() ?? ""}
+                onValueChange={(value) => handleChange("memberId", parseInt(value, 10))}
+              >
+                <SelectTrigger id="memberId">
+                  <SelectValue placeholder="选择成员" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id.toString()}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="visitType">就诊类型</Label>
+              <Select
+                value={formData.visitType}
+                onValueChange={(value) => handleChange("visitType", value)}
+              >
+                <SelectTrigger id="visitType">
+                  <SelectValue placeholder="选择类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VISIT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="visitDate">就诊日期</Label>
+            <Input
+              id="visitDate"
+              type="date"
+              value={formData.visitDate}
+              onChange={(e) => handleChange("visitDate", e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hospitalId">医院</Label>
+            <Select
+              value={formData.hospitalId?.toString() ?? ""}
+              onValueChange={(value) => handleChange("hospitalId", parseInt(value, 10))}
+            >
+              <SelectTrigger id="hospitalId">
+                <SelectValue placeholder="选择医院" />
+              </SelectTrigger>
+              <SelectContent>
+                {hospitals.map((hospital) => (
+                  <SelectItem key={hospital.id} value={hospital.id.toString()}>
+                    {hospital.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="doctorId">医生（可选）</Label>
+              <Select
+                value={formData.doctorId?.toString() ?? "none"}
+                onValueChange={(value) => handleChange("doctorId", value === "none" ? null : parseInt(value, 10))}
+                disabled={!formData.hospitalId || filteredDoctors.length === 0}
+              >
+                <SelectTrigger id="doctorId">
+                  <SelectValue placeholder={!formData.hospitalId ? "请先选择医院" : "选择医生"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">不选择</SelectItem>
+                  {filteredDoctors.map((doctor) => (
+                    <SelectItem key={doctor.id} value={doctor.id.toString()}>
+                      {doctor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department">科室</Label>
+              <Input
+                id="department"
+                placeholder="例如：儿科"
+                value={formData.department}
+                onChange={(e) => handleChange("department", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="diagnosis">诊断</Label>
+            <Textarea
+              id="diagnosis"
+              placeholder="诊断结果"
+              value={formData.diagnosis}
+              onChange={(e) => handleChange("diagnosis", e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="totalCost">总费用</Label>
+              <Input
+                id="totalCost"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={formData.totalCost}
+                onChange={(e) => handleChange("totalCost", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="insurancePaid">医保支付</Label>
+              <Input
+                id="insurancePaid"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={formData.insurancePaid}
+                onChange={(e) => handleChange("insurancePaid", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="selfPaid">自付</Label>
+              <Input
+                id="selfPaid"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={formData.selfPaid}
+                onChange={(e) => handleChange("selfPaid", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="prescription">处方/用药</Label>
+            <Textarea
+              id="prescription"
+              placeholder="处方或用药信息"
+              value={formData.prescription}
+              onChange={(e) => handleChange("prescription", e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">备注</Label>
+            <Textarea
+              id="notes"
+              placeholder="其他需要记录的信息"
+              value={formData.notes}
+              onChange={(e) => handleChange("notes", e.target.value)}
+              rows={2}
+            />
+          </div>
+        </div>
+
+        {error && (
+          <div className="rounded-widget bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <SheetFooter className="flex-row justify-end gap-2 border-t pt-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            取消
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "保存中..." : isEditing ? "保存修改" : "添加"}
+          </Button>
+        </SheetFooter>
+      </form>
+    </>
+  );
+}
+
+export function VisitSheet({
+  open,
+  onOpenChange,
+  visit,
+  members,
+  hospitals,
+  doctors,
+  onSuccess,
+}: VisitSheetProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="flex w-full flex-col sm:max-w-md">
+        <VisitForm
+          key={visit?.id ?? "new"}
+          visit={visit}
+          members={members}
+          hospitals={hospitals}
+          doctors={doctors}
+          onClose={() => onOpenChange(false)}
+          onSuccess={onSuccess}
+        />
+      </SheetContent>
+    </Sheet>
+  );
+}

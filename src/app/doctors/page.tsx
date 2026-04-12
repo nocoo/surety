@@ -1,0 +1,309 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Plus, Pencil, Trash2, Phone, Building2, Stethoscope } from "lucide-react";
+import { AppShell } from "@/components/layout";
+import { TablePageSkeleton } from "@/components/skeletons";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DoctorSheet } from "./doctor-sheet";
+
+interface Hospital {
+  id: number;
+  name: string;
+}
+
+interface Doctor {
+  id: number;
+  name: string;
+  hospitalId: number;
+  hospitalName?: string;
+  department: string | null;
+  title: string | null;
+  specialty: string | null;
+  phone: string | null;
+  notes: string | null;
+  visitCount?: number;
+}
+
+export default function DoctorsPage() {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+
+  const fetchData = () => {
+    Promise.all([
+      fetch("/api/doctors").then((res) => res.json()),
+      fetch("/api/hospitals").then((res) => res.json()),
+    ])
+      .then(([doctorsData, hospitalsData]: [Doctor[], Hospital[]]) => {
+        // Enrich doctors with hospital names
+        const hospitalMap = new Map(hospitalsData.map((h) => [h.id, h.name]));
+        const enrichedDoctors = doctorsData.map((d) => ({
+          ...d,
+          hospitalName: hospitalMap.get(d.hospitalId) ?? "未知医院",
+        }));
+        setDoctors(enrichedDoctors);
+        setHospitals(hospitalsData);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAdd = () => {
+    setEditingDoctor(null);
+    setSheetOpen(true);
+  };
+
+  const handleEdit = (doctor: Doctor) => {
+    setEditingDoctor(doctor);
+    setSheetOpen(true);
+  };
+
+  const handleDeleteClick = (doctor: Doctor) => {
+    setDoctorToDelete(doctor);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!doctorToDelete) return;
+
+    const response = await fetch(`/api/doctors/${doctorToDelete.id}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      fetchData();
+    }
+    setDeleteDialogOpen(false);
+    setDoctorToDelete(null);
+  };
+
+  if (loading) {
+    return (
+      <AppShell breadcrumbs={[{ label: "医生管理" }]}>
+        <TablePageSkeleton />
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell breadcrumbs={[{ label: "医生管理" }]}>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">医生管理</h1>
+            <p className="text-sm text-muted-foreground">
+              共 {doctors.length} 位医生
+            </p>
+          </div>
+          <Button onClick={handleAdd} disabled={hospitals.length === 0}>
+            <Plus className="mr-2 h-4 w-4" />
+            添加医生
+          </Button>
+        </div>
+
+        {hospitals.length === 0 ? (
+          <div className="rounded-card bg-secondary p-8 text-center">
+            <Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-medium">请先添加医院</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              医生需要关联到医院，请先在医院管理中添加医院
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-card bg-secondary">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>姓名</TableHead>
+                  <TableHead>医院</TableHead>
+                  <TableHead>科室</TableHead>
+                  <TableHead>职称</TableHead>
+                  <TableHead>专长</TableHead>
+                  <TableHead>电话</TableHead>
+                  <TableHead className="text-center">就诊次数</TableHead>
+                  <TableHead className="w-[100px]">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {doctors.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center">
+                      <div className="text-muted-foreground">
+                        暂无医生，点击上方按钮添加
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  doctors.map((doctor) => (
+                    <TableRow key={doctor.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <span className="font-medium">{doctor.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="max-w-[150px] truncate">
+                            {doctor.hospitalName}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {doctor.department ? (
+                          <span>{doctor.department}</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {doctor.title ? (
+                          <Badge variant="outline">{doctor.title}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {doctor.specialty ? (
+                          <span className="max-w-[150px] truncate block">
+                            {doctor.specialty}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {doctor.phone ? (
+                          <a
+                            href={`tel:${doctor.phone}`}
+                            className="inline-flex items-center gap-1.5 hover:underline"
+                          >
+                            <Phone className="h-3.5 w-3.5 text-primary" />
+                            {doctor.phone}
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {doctor.visitCount && doctor.visitCount > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <Stethoscope className="h-3 w-3 text-primary" />
+                            <span className="text-sm">{doctor.visitCount}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(doctor)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">编辑</span>
+                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span tabIndex={0}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                    disabled={(doctor.visitCount ?? 0) > 0}
+                                    onClick={() => handleDeleteClick(doctor)}
+                                    aria-label={
+                                      (doctor.visitCount ?? 0) > 0
+                                        ? "已有就诊记录，无法删除医生"
+                                        : "删除医生"
+                                    }
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="sr-only">删除</span>
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {(doctor.visitCount ?? 0) > 0 && (
+                                <TooltipContent>
+                                  已有就诊记录，无法删除
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      <DoctorSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        doctor={editingDoctor}
+        hospitals={hospitals}
+        onSuccess={fetchData}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除医生「{doctorToDelete?.name}」吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AppShell>
+  );
+}

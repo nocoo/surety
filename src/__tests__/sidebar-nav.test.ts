@@ -4,11 +4,12 @@ import type { NavGroup, NavItem } from "@/components/layout/sidebar";
 import { LayoutDashboard } from "lucide-react";
 
 describe("Sidebar NAV_GROUPS", () => {
-  test("has exactly 3 groups: 总览, 数据管理, 系统", () => {
-    expect(NAV_GROUPS).toHaveLength(3);
+  test("has exactly 4 groups: 总览, 数据管理, 就诊管理, 系统", () => {
+    expect(NAV_GROUPS).toHaveLength(4);
     expect(NAV_GROUPS.map((g) => g.label)).toEqual([
       "总览",
       "数据管理",
+      "就诊管理",
       "系统",
     ]);
   });
@@ -39,6 +40,17 @@ describe("Sidebar NAV_GROUPS", () => {
       "/members",
       "/insurers",
       "/assets",
+    ]);
+  });
+
+  test("就诊管理 group contains medical-visits, hospitals, doctors", () => {
+    const medical = NAV_GROUPS.find((g) => g.label === "就诊管理");
+    expect(medical).toBeDefined();
+    expect((medical as NavGroup).items).toHaveLength(3);
+    expect((medical as NavGroup).items.map((i) => i.href)).toEqual([
+      "/medical-visits",
+      "/hospitals",
+      "/doctors",
     ]);
   });
 
@@ -75,11 +87,11 @@ describe("ALL_NAV_ITEMS", () => {
     expect(ALL_NAV_ITEMS).toEqual(expected);
   });
 
-  test("has 8 total navigation items", () => {
-    expect(ALL_NAV_ITEMS).toHaveLength(8);
+  test("has 11 total navigation items", () => {
+    expect(ALL_NAV_ITEMS).toHaveLength(11);
   });
 
-  test("preserves group order (总览 items first, then 数据管理, then 系统)", () => {
+  test("preserves group order (总览 items first, then 数据管理, then 就诊管理, then 系统)", () => {
     const labels = ALL_NAV_ITEMS.map((i) => i.label);
     expect(labels).toEqual([
       "仪表盘",
@@ -89,6 +101,9 @@ describe("ALL_NAV_ITEMS", () => {
       "家庭成员",
       "保险公司",
       "资产管理",
+      "就诊记录",
+      "医院管理",
+      "医生管理",
       "系统设置",
     ]);
   });

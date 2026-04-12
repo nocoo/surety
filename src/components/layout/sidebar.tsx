@@ -16,6 +16,9 @@ import {
   Landmark,
   LogOut,
   ChevronUp,
+  Stethoscope,
+  Hospital,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
@@ -47,6 +50,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CalendarClock,
   ShieldCheck,
   Landmark,
+  Stethoscope,
+  Hospital,
+  UserRound,
 };
 
 // ── Types (internal, with resolved icons) ──
