@@ -14,6 +14,9 @@ import { registerPaymentTools } from "./tools/payments";
 import { registerCashValueTools } from "./tools/cash-values";
 import { registerCoverageItemTools } from "./tools/coverage-items";
 import { registerCoverageTools } from "./tools/coverage";
+import { registerHospitalTools } from "./tools/hospitals";
+import { registerDoctorTools } from "./tools/doctors";
+import { registerMedicalVisitTools } from "./tools/medical-visits";
 
 export function registerTools(server: McpServer): void {
   registerMemberTools(server);
@@ -25,4 +28,7 @@ export function registerTools(server: McpServer): void {
   registerCashValueTools(server);
   registerCoverageItemTools(server);
   registerCoverageTools(server);
+  registerHospitalTools(server);
+  registerDoctorTools(server);
+  registerMedicalVisitTools(server);
 }
