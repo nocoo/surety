@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Phone, MapPin, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
@@ -12,6 +12,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,6 +38,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { HospitalSheet } from "./hospital-sheet";
+
+const HOSPITAL_LEVELS = ["三甲", "三乙", "二甲", "二乙", "一级", "社区", "诊所", "未评级"];
 
 interface Hospital {
   id: number;
@@ -52,6 +61,17 @@ export default function HospitalsPage() {
   const [hospitalToDelete, setHospitalToDelete] = useState<Hospital | null>(
     null
   );
+  const [filterLevel, setFilterLevel] = useState<string>("all");
+  const [filterPublic, setFilterPublic] = useState<string>("all");
+
+  const filteredHospitals = useMemo(() => {
+    return hospitals.filter((h) => {
+      if (filterLevel !== "all" && h.level !== filterLevel) return false;
+      if (filterPublic === "public" && !h.isPublic) return false;
+      if (filterPublic === "private" && h.isPublic) return false;
+      return true;
+    });
+  }, [hospitals, filterLevel, filterPublic]);
 
   const fetchHospitals = () => {
     fetch("/api/hospitals")
@@ -112,12 +132,47 @@ export default function HospitalsPage() {
             <h1 className="text-2xl font-semibold tracking-tight">医院管理</h1>
             <p className="text-sm text-muted-foreground">
               共 {hospitals.length} 家医院
+              {filteredHospitals.length !== hospitals.length && (
+                <span>，当前筛选显示 {filteredHospitals.length} 家</span>
+              )}
             </p>
           </div>
           <Button onClick={handleAdd}>
             <Plus className="mr-2 h-4 w-4" />
             添加医院
           </Button>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">级别</span>
+            <Select value={filterLevel} onValueChange={setFilterLevel}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="全部级别" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部级别</SelectItem>
+                {HOSPITAL_LEVELS.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">性质</span>
+            <Select value={filterPublic} onValueChange={setFilterPublic}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="全部性质" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="public">公立</SelectItem>
+                <SelectItem value="private">私立</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="rounded-card bg-secondary">
@@ -134,16 +189,18 @@ export default function HospitalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {hospitals.length === 0 ? (
+              {filteredHospitals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
                     <div className="text-muted-foreground">
-                      暂无医院，点击上方按钮添加
+                      {hospitals.length === 0
+                        ? "暂无医院，点击上方按钮添加"
+                        : "没有符合筛选条件的医院"}
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                hospitals.map((hospital) => (
+                filteredHospitals.map((hospital) => (
                   <TableRow key={hospital.id} className="hover:bg-muted/50">
                     <TableCell>
                       <span className="font-medium">{hospital.name}</span>

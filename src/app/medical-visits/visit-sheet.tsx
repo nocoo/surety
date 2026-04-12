@@ -166,6 +166,23 @@ function VisitForm({
     return doctors.filter((d) => d.hospitalId === formData.hospitalId);
   }, [doctors, formData.hospitalId]);
 
+  // Check cost consistency
+  const costMismatch = useMemo(() => {
+    const total = formData.totalCost ? parseFloat(formData.totalCost) : null;
+    const insurance = formData.insurancePaid ? parseFloat(formData.insurancePaid) : null;
+    const self = formData.selfPaid ? parseFloat(formData.selfPaid) : null;
+
+    // Only check if all three values are provided
+    if (total === null || insurance === null || self === null) return null;
+    if (isNaN(total) || isNaN(insurance) || isNaN(self)) return null;
+
+    const sum = insurance + self;
+    const diff = Math.abs(total - sum);
+    // Allow small floating point tolerance
+    if (diff < 0.01) return null;
+    return { total, sum, diff };
+  }, [formData.totalCost, formData.insurancePaid, formData.selfPaid]);
+
   const handleChange = <K extends keyof VisitFormData>(
     field: K,
     value: VisitFormData[K]
@@ -466,6 +483,12 @@ function VisitForm({
               />
             </div>
           </div>
+
+          {costMismatch && (
+            <div className="rounded-widget bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-sm text-yellow-700 dark:text-yellow-400">
+              费用不一致：医保({costMismatch.sum.toFixed(2)}) ≠ 总费用({costMismatch.total.toFixed(2)})，差额 {costMismatch.diff.toFixed(2)} 元
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="treatment">治疗方案</Label>

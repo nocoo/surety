@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Phone, Building2, Stethoscope } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
@@ -20,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +65,12 @@ export default function DoctorsPage() {
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+  const [filterHospitalId, setFilterHospitalId] = useState<string>("all");
+
+  const filteredDoctors = useMemo(() => {
+    if (filterHospitalId === "all") return doctors;
+    return doctors.filter((d) => d.hospitalId === Number(filterHospitalId));
+  }, [doctors, filterHospitalId]);
 
   const fetchData = () => {
     Promise.all([
@@ -127,6 +140,9 @@ export default function DoctorsPage() {
             <h1 className="text-2xl font-semibold tracking-tight">医生管理</h1>
             <p className="text-sm text-muted-foreground">
               共 {doctors.length} 位医生
+              {filteredDoctors.length !== doctors.length && (
+                <span>，当前筛选显示 {filteredDoctors.length} 位</span>
+              )}
             </p>
           </div>
           <Button onClick={handleAdd} disabled={hospitals.length === 0}>
@@ -134,6 +150,27 @@ export default function DoctorsPage() {
             添加医生
           </Button>
         </div>
+
+        {hospitals.length > 0 && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">医院</span>
+              <Select value={filterHospitalId} onValueChange={setFilterHospitalId}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="全部医院" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部医院</SelectItem>
+                  {hospitals.map((hospital) => (
+                    <SelectItem key={hospital.id} value={String(hospital.id)}>
+                      {hospital.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
 
         {hospitals.length === 0 ? (
           <div className="rounded-card bg-secondary p-8 text-center">
@@ -159,16 +196,18 @@ export default function DoctorsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {doctors.length === 0 ? (
+                {filteredDoctors.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center">
                       <div className="text-muted-foreground">
-                        暂无医生，点击上方按钮添加
+                        {doctors.length === 0
+                          ? "暂无医生，点击上方按钮添加"
+                          : "没有符合筛选条件的医生"}
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  doctors.map((doctor) => (
+                  filteredDoctors.map((doctor) => (
                     <TableRow key={doctor.id} className="hover:bg-muted/50">
                       <TableCell>
                         <span className="font-medium">{doctor.name}</span>
