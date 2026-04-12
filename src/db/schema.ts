@@ -261,3 +261,93 @@ export const settings = sqliteTable("settings", {
 
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+
+// ============================================================================
+// 11. hospitals - 医院
+// ============================================================================
+export const hospitals = sqliteTable("hospitals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  level: text("level", {
+    enum: ["三甲", "三乙", "二甲", "二乙", "一级", "社区", "诊所", "未评级"],
+  }),
+  isPublic: integer("is_public", { mode: "boolean" }).default(true),
+  address: text("address"),
+  phone: text("phone"),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Hospital = typeof hospitals.$inferSelect;
+export type NewHospital = typeof hospitals.$inferInsert;
+
+// ============================================================================
+// 12. doctors - 医生
+// ============================================================================
+export const doctors = sqliteTable("doctors", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  hospitalId: integer("hospital_id")
+    .notNull()
+    .references(() => hospitals.id),
+  department: text("department").notNull(),
+  title: text("title", {
+    enum: ["主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
+  }),
+  specialty: text("specialty"),
+  phone: text("phone"),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Doctor = typeof doctors.$inferSelect;
+export type NewDoctor = typeof doctors.$inferInsert;
+
+// ============================================================================
+// 13. medicalVisits - 就诊记录
+// ============================================================================
+export const medicalVisits = sqliteTable("medical_visits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  memberId: integer("member_id")
+    .notNull()
+    .references(() => members.id),
+  hospitalId: integer("hospital_id")
+    .notNull()
+    .references(() => hospitals.id),
+  doctorId: integer("doctor_id").references(() => doctors.id),
+  visitDate: text("visit_date").notNull(),
+  visitTimeStart: text("visit_time_start"),
+  visitTimeEnd: text("visit_time_end"),
+  visitType: text("visit_type", {
+    enum: ["儿保", "门诊", "急诊", "体检", "复查", "预约"],
+  }).notNull(),
+  visitReason: text("visit_reason").notNull(),
+  department: text("department"),
+  symptoms: text("symptoms"), // JSON array: ["便血", "喂养"]
+  diagnosis: text("diagnosis"),
+  assessment: text("assessment"),
+  treatment: text("treatment"),
+  totalCost: real("total_cost"),
+  insurancePaid: real("insurance_paid"),
+  selfPaid: real("self_paid"),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type MedicalVisit = typeof medicalVisits.$inferSelect;
+export type NewMedicalVisit = typeof medicalVisits.$inferInsert;
