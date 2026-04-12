@@ -7,6 +7,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { z } from "zod";
+
 export type ToolHandler = (args: any) => Promise<any>;
 
 export interface CapturedTool {
@@ -40,6 +42,8 @@ export function createMockServer() {
 /**
  * Safely retrieve a tool handler from the captured tools map.
  * Throws a clear error if the tool was not registered.
+ * The returned handler validates args against the tool's Zod schema
+ * before invoking the actual handler (mimicking MCP SDK behavior).
  */
 export function getHandler(
   tools: Map<string, CapturedTool>,
@@ -49,7 +53,23 @@ export function getHandler(
   if (!tool) {
     throw new Error(`Tool "${name}" not registered`);
   }
-  return tool.handler;
+  // Wrap handler to validate args against schema first
+  return async (args: any) => {
+    const zodSchema = z.object(tool.schema);
+    const parsed = zodSchema.safeParse(args);
+    if (!parsed.success) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text: `Validation error: ${parsed.error.message}`,
+          },
+        ],
+      };
+    }
+    return tool.handler(parsed.data);
+  };
 }
 
 /** Parse the JSON text from a standard MCP tool result */

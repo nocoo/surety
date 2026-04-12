@@ -146,6 +146,32 @@ describe("create-doctor", () => {
     expect(result.content[0].text).toContain("Hospital with id 999 not found");
   });
 
+  test("should reject empty string for required name field", async () => {
+    const tools = setup();
+    await enableMcp();
+    const hospital = await hospitalsRepo.create({ name: "Test Hospital" });
+
+    const result = await getHandler(tools, "create-doctor")({
+      name: "",
+      hospitalId: hospital.id,
+      department: "Internal",
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  test("should reject empty string for required department field", async () => {
+    const tools = setup();
+    await enableMcp();
+    const hospital = await hospitalsRepo.create({ name: "Test Hospital" });
+
+    const result = await getHandler(tools, "create-doctor")({
+      name: "Dr. Test",
+      hospitalId: hospital.id,
+      department: "",
+    });
+    expect(result.isError).toBe(true);
+  });
+
   test("should create a doctor with required fields", async () => {
     const tools = setup();
     await enableMcp();
@@ -253,6 +279,37 @@ describe("update-doctor", () => {
     const data = parseResult(result);
     expect(data.hospitalId).toBe(h2.id);
     expect(data.hospitalName).toBe("Hospital B");
+  });
+
+  test("should clear nullable fields when passing null", async () => {
+    const tools = setup();
+    await enableMcp();
+    const hospital = await hospitalsRepo.create({ name: "Test Hospital" });
+    const doctor = await doctorsRepo.create({
+      name: "Dr. Test",
+      hospitalId: hospital.id,
+      department: "Internal",
+      title: "主任医师",
+      specialty: "Heart surgery",
+      phone: "13800138000",
+      notes: "Expert",
+    });
+
+    const result = await getHandler(tools, "update-doctor")({
+      doctorId: doctor.id,
+      title: null,
+      specialty: null,
+      phone: null,
+      notes: null,
+    });
+    const data = parseResult(result);
+    expect(data.title).toBeNull();
+    expect(data.specialty).toBeNull();
+    expect(data.phone).toBeNull();
+    expect(data.notes).toBeNull();
+    // Required fields remain unchanged
+    expect(data.name).toBe("Dr. Test");
+    expect(data.department).toBe("Internal");
   });
 });
 

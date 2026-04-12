@@ -125,7 +125,7 @@ export function registerHospitalTools(server: McpServer): void {
     "create-hospital",
     "Create a new hospital",
     {
-      name: z.string().describe("Hospital name"),
+      name: z.string().min(1).describe("Hospital name (required, non-empty)"),
       level: z
         .enum(HOSPITAL_LEVELS)
         .optional()
@@ -152,18 +152,19 @@ export function registerHospitalTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "update-hospital",
-    "Update a hospital",
+    "Update a hospital (pass null to clear optional fields)",
     {
       hospitalId: z.number().describe("The hospital ID to update"),
       name: z.string().optional().describe("Hospital name"),
       level: z
         .enum(HOSPITAL_LEVELS)
+        .nullable()
         .optional()
-        .describe("Hospital level"),
+        .describe("Hospital level (null to clear)"),
       isPublic: z.boolean().optional().describe("Whether public hospital"),
-      address: z.string().optional().describe("Hospital address"),
-      phone: z.string().optional().describe("Contact phone"),
-      notes: z.string().optional().describe("Additional notes"),
+      address: z.string().nullable().optional().describe("Hospital address (null to clear)"),
+      phone: z.string().nullable().optional().describe("Contact phone (null to clear)"),
+      notes: z.string().nullable().optional().describe("Additional notes (null to clear)"),
     },
     async ({ hospitalId, ...data }) => {
       const error = await checkMcpEnabled();

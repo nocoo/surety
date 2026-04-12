@@ -133,9 +133,9 @@ export function registerDoctorTools(server: McpServer): void {
     "create-doctor",
     "Create a new doctor",
     {
-      name: z.string().describe("Doctor name"),
+      name: z.string().min(1).describe("Doctor name (required, non-empty)"),
       hospitalId: z.number().describe("Hospital ID the doctor belongs to"),
-      department: z.string().describe("Department (required)"),
+      department: z.string().min(1).describe("Department (required, non-empty)"),
       title: z
         .enum(DOCTOR_TITLES)
         .optional()
@@ -183,16 +183,16 @@ export function registerDoctorTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "update-doctor",
-    "Update a doctor",
+    "Update a doctor (pass null to clear optional fields)",
     {
       doctorId: z.number().describe("The doctor ID to update"),
       name: z.string().optional().describe("Doctor name"),
       hospitalId: z.number().optional().describe("Hospital ID"),
       department: z.string().optional().describe("Department"),
-      title: z.enum(DOCTOR_TITLES).optional().describe("Professional title"),
-      specialty: z.string().optional().describe("Specialty areas"),
-      phone: z.string().optional().describe("Contact phone"),
-      notes: z.string().optional().describe("Additional notes"),
+      title: z.enum(DOCTOR_TITLES).nullable().optional().describe("Professional title (null to clear)"),
+      specialty: z.string().nullable().optional().describe("Specialty areas (null to clear)"),
+      phone: z.string().nullable().optional().describe("Contact phone (null to clear)"),
+      notes: z.string().nullable().optional().describe("Additional notes (null to clear)"),
     },
     async ({ doctorId, ...data }) => {
       const error = await checkMcpEnabled();

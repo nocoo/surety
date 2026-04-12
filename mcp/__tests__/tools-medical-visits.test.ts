@@ -294,6 +294,20 @@ describe("create-medical-visit", () => {
     expect(result.content[0].text).toContain("Cost inconsistency");
   });
 
+  test("should reject empty string for required visitReason field", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { hospital, member } = await createTestData();
+    const result = await getHandler(tools, "create-medical-visit")({
+      memberId: member.id,
+      hospitalId: hospital.id,
+      visitDate: "2024-01-01",
+      visitType: "门诊",
+      visitReason: "",
+    });
+    expect(result.isError).toBe(true);
+  });
+
   test("should create a visit with required fields", async () => {
     const tools = setup();
     await enableMcp();
@@ -483,6 +497,38 @@ describe("update-medical-visit", () => {
     const data = parseResult(result);
     expect(data.doctorId).toBeNull();
     expect(data.doctorName).toBeNull();
+  });
+
+  test("should clear nullable fields when passing null", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { hospital, member } = await createTestData();
+    const visit = await medicalVisitsRepo.create({
+      memberId: member.id,
+      hospitalId: hospital.id,
+      visitDate: "2024-01-01",
+      visitType: "门诊",
+      visitReason: "Checkup",
+      department: "Internal",
+      diagnosis: "Healthy",
+      treatment: "None",
+      notes: "All good",
+    });
+
+    const result = await getHandler(tools, "update-medical-visit")({
+      visitId: visit.id,
+      department: null,
+      diagnosis: null,
+      treatment: null,
+      notes: null,
+    });
+    const data = parseResult(result);
+    expect(data.department).toBeNull();
+    expect(data.diagnosis).toBeNull();
+    expect(data.treatment).toBeNull();
+    expect(data.notes).toBeNull();
+    // Required fields remain unchanged
+    expect(data.visitReason).toBe("Checkup");
   });
 });
 

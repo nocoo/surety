@@ -101,6 +101,13 @@ describe("create-hospital", () => {
     expect(result.isError).toBe(true);
   });
 
+  test("should reject empty string for required name field", async () => {
+    const tools = setup();
+    await enableMcp();
+    const result = await getHandler(tools, "create-hospital")({ name: "" });
+    expect(result.isError).toBe(true);
+  });
+
   test("should create a hospital with minimal fields", async () => {
     const tools = setup();
     await enableMcp();
@@ -160,6 +167,33 @@ describe("update-hospital", () => {
     const data = parseResult(result);
     expect(data.name).toBe("New Name");
     expect(data.level).toBe("二甲");
+  });
+
+  test("should clear nullable fields when passing null", async () => {
+    const tools = setup();
+    await enableMcp();
+    const hospital = await hospitalsRepo.create({
+      name: "Test Hospital",
+      level: "三甲",
+      address: "123 Main St",
+      phone: "400-123-4567",
+      notes: "Some notes",
+    });
+
+    const result = await getHandler(tools, "update-hospital")({
+      hospitalId: hospital.id,
+      level: null,
+      address: null,
+      phone: null,
+      notes: null,
+    });
+    const data = parseResult(result);
+    expect(data.level).toBeNull();
+    expect(data.address).toBeNull();
+    expect(data.phone).toBeNull();
+    expect(data.notes).toBeNull();
+    // name should remain unchanged
+    expect(data.name).toBe("Test Hospital");
   });
 });
 

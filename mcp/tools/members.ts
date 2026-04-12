@@ -11,6 +11,7 @@ import {
   policiesRepo,
   beneficiariesRepo,
   assetsRepo,
+  medicalVisitsRepo,
 } from "@/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 
@@ -204,7 +205,7 @@ export function registerMemberTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "delete-member",
-    "Delete a family member (fails if referenced by policies, beneficiaries, or assets)",
+    "Delete a family member (fails if referenced by policies, beneficiaries, assets, or medical visits)",
     {
       memberId: z.number().describe("The member ID to delete"),
     },
@@ -239,11 +240,15 @@ export function registerMemberTools(server: McpServer): void {
       // Check referencing assets (assets.ownerId → members.id)
       const ownedAssets = await assetsRepo.findByOwnerId(memberId);
 
+      // Check referencing medical visits
+      const medicalVisits = await medicalVisitsRepo.findByMemberId(memberId);
+
       if (
         asApplicant.length ||
         asInsured.length ||
         asBeneficiary.length ||
-        ownedAssets.length
+        ownedAssets.length ||
+        medicalVisits.length
       ) {
         return {
           isError: true,
@@ -268,6 +273,11 @@ export function registerMemberTools(server: McpServer): void {
                   id: a.id,
                   name: a.name,
                 })),
+                medicalVisits: medicalVisits.slice(0, 5).map((v) => ({
+                  id: v.id,
+                  visitDate: v.visitDate,
+                })),
+                medicalVisitCount: medicalVisits.length,
               }),
             },
           ],

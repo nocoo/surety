@@ -10,6 +10,8 @@ import {
   beneficiariesRepo,
   assetsRepo,
   settingsRepo,
+  hospitalsRepo,
+  medicalVisitsRepo,
 } from "@/db/repositories";
 import { registerMemberTools } from "../tools/members";
 import { createMockServer, getHandler, parseResult } from "./helpers";
@@ -461,5 +463,31 @@ describe("delete-member", () => {
     expect(data.error).toContain("still referenced");
     expect(data.ownedAssets).toHaveLength(1);
     expect(data.ownedAssets[0].name).toBe("Tesla Model 3");
+  });
+
+  test("should refuse to delete member who has medical visits", async () => {
+    const tools = setup();
+    await enableMcp();
+    const { kid } = await seedMembers();
+
+    const hospital = await hospitalsRepo.create({ name: "Test Hospital" });
+    await medicalVisitsRepo.create({
+      memberId: kid.id,
+      hospitalId: hospital.id,
+      visitDate: "2024-01-15",
+      visitType: "儿保",
+      visitReason: "Routine checkup",
+    });
+
+    const result = await getHandler(tools, "delete-member")({
+      memberId: kid.id,
+    });
+    expect(result.isError).toBe(true);
+
+    const data = parseResult(result);
+    expect(data.error).toContain("still referenced");
+    expect(data.medicalVisitCount).toBe(1);
+    expect(data.medicalVisits).toHaveLength(1);
+    expect(data.medicalVisits[0].visitDate).toBe("2024-01-15");
   });
 });
