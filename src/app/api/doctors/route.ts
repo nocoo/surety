@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   // Verify hospital exists
   const hospital = await repos.hospitals.findById(body.hospitalId);
   if (!hospital) {
-    return NextResponse.json({ error: "Hospital not found" }, { status: 400 });
+    return NextResponse.json({ error: "医院不存在" }, { status: 400 });
   }
 
   const doctor = await repos.doctors.create({

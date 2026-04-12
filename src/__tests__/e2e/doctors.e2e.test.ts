@@ -187,7 +187,7 @@ describe("Doctors API E2E", () => {
       );
 
       expect(status).toBe(400);
-      expect(data.error).toContain("Hospital");
+      expect(data.error).toContain("医院");
     });
 
     test("PUT /api/doctors/:id with empty department returns 400", async () => {

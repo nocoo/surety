@@ -104,13 +104,13 @@ export async function POST(request: NextRequest) {
   // Verify member exists
   const member = await repos.members.findById(body.memberId);
   if (!member) {
-    return NextResponse.json({ error: "Member not found" }, { status: 400 });
+    return NextResponse.json({ error: "成员不存在" }, { status: 400 });
   }
 
   // Verify hospital exists
   const hospital = await repos.hospitals.findById(body.hospitalId);
   if (!hospital) {
-    return NextResponse.json({ error: "Hospital not found" }, { status: 400 });
+    return NextResponse.json({ error: "医院不存在" }, { status: 400 });
   }
 
   // Verify doctor exists and belongs to hospital
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
   if (body.doctorId) {
     const doctor = await repos.doctors.findById(body.doctorId);
     if (!doctor) {
-      return NextResponse.json({ error: "Doctor not found" }, { status: 400 });
+      return NextResponse.json({ error: "医生不存在" }, { status: 400 });
     }
     if (doctor.hospitalId !== body.hospitalId) {
       return NextResponse.json(
