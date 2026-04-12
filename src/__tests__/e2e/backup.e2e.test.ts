@@ -14,6 +14,9 @@ interface BackupData {
     cashValues: unknown[];
     coverageItems: unknown[];
     settings: unknown[];
+    hospitals: unknown[];
+    doctors: unknown[];
+    medicalVisits: unknown[];
   };
 }
 
@@ -27,6 +30,9 @@ const ALL_TABLE_KEYS = [
   "cashValues",
   "coverageItems",
   "settings",
+  "hospitals",
+  "doctors",
+  "medicalVisits",
 ] as const;
 
 describe("Backup API E2E", () => {
@@ -66,7 +72,7 @@ describe("Backup API E2E", () => {
     expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
   });
 
-  test("response body contains all 9 table keys", async () => {
+  test("response body contains all 12 table keys", async () => {
     const response = await fetch(`${getBaseUrl()}/api/backup`);
     const backup: BackupData = await response.json();
 
