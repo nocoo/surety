@@ -202,6 +202,9 @@ export function resetTestDb(): void {
   initSchema();
 
   testSqlite.exec(`
+    DELETE FROM medical_visits;
+    DELETE FROM doctors;
+    DELETE FROM hospitals;
     DELETE FROM attachments;
     DELETE FROM coverage_items;
     DELETE FROM cash_values;
@@ -353,6 +356,54 @@ export function initSchema(): void {
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS hospitals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      level TEXT,
+      is_public INTEGER DEFAULT 1,
+      address TEXT,
+      phone TEXT,
+      notes TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS doctors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
+      department TEXT NOT NULL,
+      title TEXT,
+      specialty TEXT,
+      phone TEXT,
+      notes TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS medical_visits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL REFERENCES members(id),
+      hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
+      doctor_id INTEGER REFERENCES doctors(id),
+      visit_date TEXT NOT NULL,
+      visit_time_start TEXT,
+      visit_time_end TEXT,
+      visit_type TEXT NOT NULL,
+      visit_reason TEXT NOT NULL,
+      department TEXT,
+      symptoms TEXT,
+      diagnosis TEXT,
+      assessment TEXT,
+      treatment TEXT,
+      total_cost REAL,
+      insurance_paid REAL,
+      self_paid REAL,
+      notes TEXT,
+      created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
   `);
