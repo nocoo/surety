@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, KeyboardEvent } from "react";
+import { X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +24,79 @@ import {
 } from "@/components/ui/sheet";
 
 const VISIT_TYPES = ["门诊", "急诊", "体检", "复查", "预约", "儿保"];
+
+// Tag input component for symptoms
+function TagInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string[];
+  onChange: (tags: string[]) => void;
+  placeholder?: string;
+}) {
+  const [inputValue, setInputValue] = useState("");
+
+  const addTag = useCallback((tag: string) => {
+    const trimmed = tag.trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setInputValue("");
+  }, [value, onChange]);
+
+  const removeTag = useCallback((index: number) => {
+    onChange(value.filter((_, i) => i !== index));
+  }, [value, onChange]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "," || e.key === "、") {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        addTag(inputValue);
+      }
+    } else if (e.key === "Backspace" && !inputValue && value.length > 0) {
+      removeTag(value.length - 1);
+    }
+  }, [inputValue, value.length, addTag, removeTag]);
+
+  const handleBlur = useCallback(() => {
+    if (inputValue.trim()) {
+      addTag(inputValue);
+    }
+  }, [inputValue, addTag]);
+
+  return (
+    <div className="flex flex-wrap gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[80px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      {value.map((tag, index) => (
+        <Badge
+          key={index}
+          variant="secondary"
+          className="gap-1 pr-1"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => removeTag(index)}
+            className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
+          >
+            <X className="h-3 w-3" />
+            <span className="sr-only">删除 {tag}</span>
+          </button>
+        </Badge>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        placeholder={value.length === 0 ? placeholder : "继续输入..."}
+        className="flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
 
 interface Member {
   id: number;
@@ -49,7 +124,7 @@ interface VisitFormData {
   visitType: string;
   visitReason: string;
   department: string;
-  symptoms: string;
+  symptoms: string[];  // Array of symptom strings
   diagnosis: string;
   assessment: string;
   treatment: string;
@@ -95,6 +170,23 @@ function getTodayDate(): string {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 }
 
+function parseSymptomsJson(symptoms: string | null | undefined): string[] {
+  if (!symptoms) return [];
+  try {
+    const parsed = JSON.parse(symptoms);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((s) => typeof s === "string" && s.length > 0);
+    }
+  } catch {
+    // Not JSON, try splitting for legacy data
+  }
+  // Fallback: split by delimiters
+  return symptoms
+    .split(/[,，、]/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
 function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
   if (visit) {
     return {
@@ -107,7 +199,7 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
       visitType: visit.visitType,
       visitReason: visit.visitReason,
       department: visit.department ?? "",
-      symptoms: visit.symptoms ?? "",
+      symptoms: parseSymptomsJson(visit.symptoms),
       diagnosis: visit.diagnosis ?? "",
       assessment: visit.assessment ?? "",
       treatment: visit.treatment ?? "",
@@ -127,7 +219,7 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
     visitType: "门诊",
     visitReason: "",
     department: "",
-    symptoms: "",
+    symptoms: [],
     diagnosis: "",
     assessment: "",
     treatment: "",
@@ -238,7 +330,7 @@ function VisitForm({
           visitType: formData.visitType,
           visitReason: formData.visitReason,
           department: formData.department || null,
-          symptoms: formData.symptoms || null,
+          symptoms: formData.symptoms.length > 0 ? JSON.stringify(formData.symptoms) : null,
           diagnosis: formData.diagnosis || null,
           assessment: formData.assessment || null,
           treatment: formData.treatment || null,
@@ -414,13 +506,14 @@ function VisitForm({
 
           <div className="space-y-2">
             <Label htmlFor="symptoms">症状</Label>
-            <Textarea
-              id="symptoms"
-              placeholder="主诉症状，如：发烧、咳嗽"
+            <TagInput
               value={formData.symptoms}
-              onChange={(e) => handleChange("symptoms", e.target.value)}
-              rows={2}
+              onChange={(tags) => handleChange("symptoms", tags)}
+              placeholder="输入症状后按回车，如：发烧、咳嗽"
             />
+            <p className="text-xs text-muted-foreground">
+              输入后按回车或逗号添加，按 Backspace 删除
+            </p>
           </div>
 
           <div className="space-y-2">

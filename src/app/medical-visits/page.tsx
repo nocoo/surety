@@ -96,7 +96,16 @@ const SYMPTOM_COLORS = [
 
 function parseSymptoms(symptoms: string | null | undefined): string[] {
   if (!symptoms) return [];
-  // Split by comma, Chinese comma, or pause mark
+  // Try parsing as JSON array first (the canonical format)
+  try {
+    const parsed = JSON.parse(symptoms);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((s) => typeof s === "string" && s.length > 0);
+    }
+  } catch {
+    // Not JSON, fall back to splitting by delimiters for legacy data
+  }
+  // Fallback: split by comma, Chinese comma, or pause mark
   return symptoms
     .split(/[,，、]/)
     .map((s) => s.trim())
