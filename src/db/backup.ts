@@ -35,6 +35,9 @@ export interface BackupData {
     cashValues: BackupRow[];
     coverageItems: BackupRow[];
     settings: BackupRow[];
+    hospitals: BackupRow[];
+    doctors: BackupRow[];
+    medicalVisits: BackupRow[];
   };
 }
 
@@ -48,6 +51,9 @@ export interface RestoreCounts {
   cashValues: number;
   coverageItems: number;
   settings: number;
+  hospitals: number;
+  doctors: number;
+  medicalVisits: number;
 }
 
 /** All table keys in the backup, ordered for display. */
@@ -61,6 +67,9 @@ export const ALL_TABLE_KEYS = [
   "cashValues",
   "coverageItems",
   "settings",
+  "hospitals",
+  "doctors",
+  "medicalVisits",
 ] as const;
 
 export type TableKey = (typeof ALL_TABLE_KEYS)[number];
@@ -79,6 +88,9 @@ const TABLE_NAME_MAP: Record<TableKey, string> = {
   cashValues: "cash_values",
   coverageItems: "coverage_items",
   settings: "settings",
+  hospitals: "hospitals",
+  doctors: "doctors",
+  medicalVisits: "medical_visits",
 };
 
 // ── Column mapping (camelCase ↔ snake_case) ─────────────────────────
@@ -98,6 +110,9 @@ const SCHEMA_TABLE_MAP: Record<TableKey, any> = {
   cashValues: schema.cashValues,
   coverageItems: schema.coverageItems,
   settings: schema.settings,
+  hospitals: schema.hospitals,
+  doctors: schema.doctors,
+  medicalVisits: schema.medicalVisits,
 };
 
 /**
@@ -132,7 +147,7 @@ const TIMESTAMP_COLUMNS = new Set(["createdAt", "updatedAt"]);
  * Set of camelCase column names that use `{ mode: "boolean" }` in the schema.
  * Drizzle returns boolean; backup format expects 0/1 integer.
  */
-const BOOLEAN_COLUMNS = new Set(["hasSocialInsurance", "isOptional", "archived"]);
+const BOOLEAN_COLUMNS = new Set(["hasSocialInsurance", "isOptional", "archived", "isPublic"]);
 
 /**
  * Convert a Drizzle ORM row (camelCase, Date objects) to backup format
@@ -204,6 +219,9 @@ export async function buildBackup(db: DbInstance): Promise<BackupData> {
       cashValues: await queryTable("cashValues"),
       coverageItems: await queryTable("coverageItems"),
       settings: await queryTable("settings"),
+      hospitals: await queryTable("hospitals"),
+      doctors: await queryTable("doctors"),
+      medicalVisits: await queryTable("medicalVisits"),
     },
   };
 }
@@ -247,6 +265,9 @@ export function validateBackup(payload: unknown): string | null {
  * FK-safe deletion order (children first).
  */
 const DELETE_ORDER: readonly TableKey[] = [
+  "medicalVisits",
+  "doctors",
+  "hospitals",
   "coverageItems",
   "cashValues",
   "payments",
@@ -271,6 +292,9 @@ const INSERT_ORDER: readonly TableKey[] = [
   "cashValues",
   "coverageItems",
   "settings",
+  "hospitals",
+  "doctors",
+  "medicalVisits",
 ];
 
 /**
@@ -365,6 +389,9 @@ export async function restoreBackup(
     cashValues: 0,
     coverageItems: 0,
     settings: 0,
+    hospitals: 0,
+    doctors: 0,
+    medicalVisits: 0,
   };
 
   if (batchExecute) {

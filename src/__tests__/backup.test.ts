@@ -302,6 +302,9 @@ describe("backup service", () => {
           cashValues: [],
           coverageItems: [],
           settings: [],
+          hospitals: [],
+          doctors: [],
+          medicalVisits: [],
         },
       };
 
@@ -437,7 +440,7 @@ describe("backup service", () => {
 
       // Should have DELETEs for all tables + sqlite_sequence
       const deleteStmts = captured.filter((s) => s.sql.startsWith("DELETE FROM"));
-      expect(deleteStmts.length).toBe(10); // 9 tables + sqlite_sequence
+      expect(deleteStmts.length).toBe(13); // 12 tables + sqlite_sequence
 
       // Should have INSERTs
       const insertStmts = captured.filter((s) => s.sql.startsWith("INSERT INTO"));
