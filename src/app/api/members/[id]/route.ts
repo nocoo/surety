@@ -96,6 +96,15 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Check FK references: medical visits may reference this member
+  const visits = await repos.medicalVisits.findByMemberId(memberId);
+  if (visits.length > 0) {
+    return NextResponse.json(
+      { error: `该成员有 ${visits.length} 条就诊记录，无法删除` },
+      { status: 409 }
+    );
+  }
+
   const deleted = await repos.members.delete(memberId);
 
   if (!deleted) {
