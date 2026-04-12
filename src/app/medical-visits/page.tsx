@@ -61,12 +61,13 @@ interface MedicalVisit {
   doctorName?: string | undefined;
   visitDate: string;
   visitType: string;
+  visitReason: string;
   department: string | null;
   diagnosis: string | null;
+  treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
   selfPaid: number | null;
-  prescription: string | null;
   notes: string | null;
 }
 

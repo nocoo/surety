@@ -45,12 +45,13 @@ interface VisitFormData {
   doctorId: number | null;
   visitDate: string;
   visitType: string;
+  visitReason: string;
   department: string;
   diagnosis: string;
+  treatment: string;
   totalCost: string;
   insurancePaid: string;
   selfPaid: string;
-  prescription: string;
   notes: string;
 }
 
@@ -61,12 +62,13 @@ interface MedicalVisit {
   doctorId: number | null;
   visitDate: string;
   visitType: string;
+  visitReason: string;
   department: string | null;
   diagnosis: string | null;
+  treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
   selfPaid: number | null;
-  prescription: string | null;
   notes: string | null;
 }
 
@@ -93,12 +95,13 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
       doctorId: visit.doctorId,
       visitDate: visit.visitDate,
       visitType: visit.visitType,
+      visitReason: visit.visitReason,
       department: visit.department ?? "",
       diagnosis: visit.diagnosis ?? "",
+      treatment: visit.treatment ?? "",
       totalCost: visit.totalCost?.toString() ?? "",
       insurancePaid: visit.insurancePaid?.toString() ?? "",
       selfPaid: visit.selfPaid?.toString() ?? "",
-      prescription: visit.prescription ?? "",
       notes: visit.notes ?? "",
     };
   }
@@ -108,12 +111,13 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
     doctorId: null,
     visitDate: getTodayDate(),
     visitType: "门诊",
+    visitReason: "",
     department: "",
     diagnosis: "",
+    treatment: "",
     totalCost: "",
     insurancePaid: "",
     selfPaid: "",
-    prescription: "",
     notes: "",
   };
 }
@@ -172,6 +176,10 @@ function VisitForm({
       setError("请选择医院");
       return;
     }
+    if (!formData.visitReason.trim()) {
+      setError("请填写就诊原因");
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -193,12 +201,13 @@ function VisitForm({
           doctorId: formData.doctorId,
           visitDate: formData.visitDate,
           visitType: formData.visitType,
+          visitReason: formData.visitReason,
           department: formData.department || null,
           diagnosis: formData.diagnosis || null,
+          treatment: formData.treatment || null,
           totalCost,
           insurancePaid,
           selfPaid,
-          prescription: formData.prescription || null,
           notes: formData.notes || null,
         }),
       });
@@ -278,6 +287,17 @@ function VisitForm({
               type="date"
               value={formData.visitDate}
               onChange={(e) => handleChange("visitDate", e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="visitReason">就诊原因</Label>
+            <Input
+              id="visitReason"
+              placeholder="例如：发烧、咳嗽、常规体检"
+              value={formData.visitReason}
+              onChange={(e) => handleChange("visitReason", e.target.value)}
               required
             />
           </div>
@@ -385,12 +405,12 @@ function VisitForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="prescription">处方/用药</Label>
+            <Label htmlFor="treatment">治疗方案</Label>
             <Textarea
-              id="prescription"
-              placeholder="处方或用药信息"
-              value={formData.prescription}
-              onChange={(e) => handleChange("prescription", e.target.value)}
+              id="treatment"
+              placeholder="处方、用药或治疗方案"
+              value={formData.treatment}
+              onChange={(e) => handleChange("treatment", e.target.value)}
               rows={2}
             />
           </div>

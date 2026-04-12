@@ -120,6 +120,11 @@ function DoctorForm({
       return;
     }
 
+    if (!formData.department.trim()) {
+      setError("请填写科室");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -133,7 +138,7 @@ function DoctorForm({
         body: JSON.stringify({
           name: formData.name,
           hospitalId: formData.hospitalId,
-          department: formData.department || null,
+          department: formData.department,
           title: formData.title || null,
           specialty: formData.specialty || null,
           phone: formData.phone || null,
@@ -206,6 +211,7 @@ function DoctorForm({
               placeholder="例如：儿科、内科、外科"
               value={formData.department}
               onChange={(e) => handleChange("department", e.target.value)}
+              required
             />
           </div>
 

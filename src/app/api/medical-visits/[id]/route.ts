@@ -93,9 +93,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
   }
 
-  // Verify doctor exists and belongs to hospital if doctorId is being updated
-  if (body.doctorId) {
-    const doctor = await repos.doctors.findById(body.doctorId);
+  // Determine effective doctorId after update
+  // If body.doctorId is explicitly null, clear doctor; if undefined, keep existing
+  const effectiveDoctorId =
+    body.doctorId === null
+      ? null
+      : body.doctorId !== undefined
+        ? body.doctorId
+        : existing.doctorId;
+
+  // Verify doctor exists and belongs to the (possibly new) hospital
+  if (effectiveDoctorId) {
+    const doctor = await repos.doctors.findById(effectiveDoctorId);
     if (!doctor) {
       return NextResponse.json({ error: "Doctor not found" }, { status: 400 });
     }

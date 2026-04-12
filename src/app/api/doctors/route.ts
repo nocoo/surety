@@ -19,6 +19,15 @@ export async function GET(request: NextRequest) {
   const hospitals = await repos.hospitals.findAll();
   const hospitalMap = new Map(hospitals.map((h) => [h.id, h.name]));
 
+  // Get visit counts for each doctor
+  const allVisits = await repos.medicalVisits.findAll();
+  const visitCountMap = new Map<number, number>();
+  for (const visit of allVisits) {
+    if (visit.doctorId) {
+      visitCountMap.set(visit.doctorId, (visitCountMap.get(visit.doctorId) ?? 0) + 1);
+    }
+  }
+
   return NextResponse.json(
     doctors.map((d) => ({
       id: d.id,
@@ -30,6 +39,7 @@ export async function GET(request: NextRequest) {
       specialty: d.specialty,
       phone: d.phone,
       notes: d.notes,
+      visitCount: visitCountMap.get(d.id) ?? 0,
     }))
   );
 }

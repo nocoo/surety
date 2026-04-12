@@ -54,6 +54,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
   }
 
+  // Validate department is not empty/null (required field)
+  if (body.department !== undefined && !body.department?.trim()) {
+    return NextResponse.json({ error: "科室不能为空" }, { status: 400 });
+  }
+
   const updated = await repos.doctors.update(doctorId, {
     name: body.name,
     hospitalId: body.hospitalId,
