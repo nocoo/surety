@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, type DbInstance } from "../index";
 import { settings, type Setting } from "../schema";
 
@@ -14,22 +14,15 @@ export function createSettingsRepo(dbInstance: DbInstance) {
     },
 
     async set(key: string, value: string): Promise<Setting> {
-      const existing = await dbInstance
-        .select()
-        .from(settings)
-        .where(eq(settings.key, key))
+      return await dbInstance
+        .insert(settings)
+        .values({ key, value })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { value, updatedAt: sql`(unixepoch())` },
+        })
+        .returning()
         .get();
-
-      if (existing) {
-        return await dbInstance
-          .update(settings)
-          .set({ value, updatedAt: new Date() })
-          .where(eq(settings.key, key))
-          .returning()
-          .get();
-      }
-
-      return await dbInstance.insert(settings).values({ key, value }).returning().get();
     },
 
     async delete(key: string): Promise<boolean> {
