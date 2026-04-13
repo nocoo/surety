@@ -11,7 +11,7 @@ import {
   settingsRepo,
   insurersRepo,
 } from "./repositories";
-import { db, type DbInstance } from "./index";
+import type { DbInstance } from "./index";
 
 // ============================================================================
 // Seed Data Definitions
@@ -274,11 +274,7 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
     insurers: insurersRepo,
   };
 
-  // Use provided dbInstance or fallback to the global proxy
-  const dbToUse = dbInstance ?? db;
-
-  // Wrap all seed operations in a transaction
-  return await dbToUse.transaction(async () => {
+  const doSeed = async (): Promise<SeedResult> => {
     // Seed members
     const memberMap = new Map<string, number>();
     for (const member of familyMembers) {
@@ -376,5 +372,13 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
       assets: familyAssets.length,
       policies: policySeedData.length,
     };
-  });
+  };
+
+  // Only wrap in transaction when an explicit dbInstance is provided
+  // (bun-sqlite supports SQL transactions; D1 sqlite-proxy does NOT —
+  //  D1 rejects BEGIN/COMMIT and requires its JS transaction API)
+  if (dbInstance) {
+    return await dbInstance.transaction(async () => doSeed());
+  }
+  return await doSeed();
 }
