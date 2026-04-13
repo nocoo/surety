@@ -39,8 +39,10 @@ interface PaymentFormData {
   periodNumber: string;
   dueDate: string;
   amount: string;
-  status: "Pending" | "Paid";
+  status: "Pending" | "Paid" | "Overdue";
   paidDate: string;
+  // Track the original status to preserve Overdue when editing
+  originalStatus: "Pending" | "Paid" | "Overdue" | undefined;
 }
 
 const today = () => todayStr();
@@ -51,6 +53,7 @@ const emptyPaymentForm: PaymentFormData = {
   amount: "",
   status: "Pending",
   paidDate: today(),
+  originalStatus: undefined,
 };
 
 function paymentToForm(p: Payment): PaymentFormData {
@@ -58,8 +61,11 @@ function paymentToForm(p: Payment): PaymentFormData {
     periodNumber: String(p.periodNumber),
     dueDate: p.dueDate,
     amount: String(p.amount),
+    // Keep original status for display, but map to Pending for form interaction
+    // (UI only shows Pending/Paid options, but we preserve Overdue when submitting)
     status: p.status === "Overdue" ? "Pending" : p.status,
     paidDate: p.paidDate ?? today(),
+    originalStatus: p.status,
   };
 }
 
@@ -281,11 +287,20 @@ export function PaymentsSection({
     setSaving(true);
     setResultMessage(null);
     try {
+      // Determine the status to submit:
+      // - If user changed to Paid, use Paid
+      // - If user kept as Pending but original was Overdue, preserve Overdue
+      // - Otherwise use the form status
+      let submitStatus: "Pending" | "Paid" | "Overdue" = editingForm.status;
+      if (editingForm.status === "Pending" && editingForm.originalStatus === "Overdue") {
+        submitStatus = "Overdue";
+      }
+
       const body: Record<string, unknown> = {
         periodNumber: Number(editingForm.periodNumber),
         dueDate: editingForm.dueDate,
         amount: Number(editingForm.amount),
-        status: editingForm.status,
+        status: submitStatus,
       };
       if (editingForm.status === "Paid") {
         body.paidDate = editingForm.paidDate || today();
@@ -343,6 +358,12 @@ export function PaymentsSection({
         onPaymentsChange(
           payments.map((p) => (p.id === payment.id ? updated : p)),
         );
+      } else {
+        const err = await res.json().catch(() => null);
+        setResultMessage(
+          (err as { error?: string } | null)?.error ??
+            `标记失败 (${res.status})`,
+        );
       }
     } catch {
       setResultMessage("标记失败，请重试");
@@ -360,6 +381,12 @@ export function PaymentsSection({
       );
       if (res.ok) {
         onPaymentsChange(payments.filter((p) => p.id !== paymentId));
+      } else {
+        const err = await res.json().catch(() => null);
+        setResultMessage(
+          (err as { error?: string } | null)?.error ??
+            `删除失败 (${res.status})`,
+        );
       }
     } catch {
       setResultMessage("删除失败，请重试");
