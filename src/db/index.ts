@@ -435,10 +435,12 @@ export function closeDb(): void {
 // ---------- Proxy for backward compatibility ----------
 
 /**
- * Dynamic db Proxy — routes to the correct database instance.
+ * Dynamic db Proxy — ONLY for use in tests.
  *
  * In test environment: uses in-memory SQLite.
- * In production: remote D1 via sqlite-proxy.
+ * Outside test environment: throws an error to enforce request-scoped DB access.
+ *
+ * Non-test code should use getDbForRequest() instead.
  */
 export const db = new Proxy({} as DbInstance, {
   get(_, prop) {
@@ -446,7 +448,9 @@ export const db = new Proxy({} as DbInstance, {
       if (!testDbInstance) createTestDb();
       return testDbInstance[prop];
     }
-    const remoteDb = createRemoteDb(resolveTargetDb());
-    return remoteDb[prop];
+    throw new Error(
+      "Global `db` proxy is only available in test environment. " +
+      "Use getDbForRequest() for request-scoped database access.",
+    );
   },
 });
