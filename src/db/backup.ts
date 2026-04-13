@@ -34,6 +34,7 @@ export interface BackupData {
     payments: BackupRow[];
     cashValues: BackupRow[];
     coverageItems: BackupRow[];
+    attachments: BackupRow[];
     settings: BackupRow[];
     hospitals: BackupRow[];
     doctors: BackupRow[];
@@ -50,6 +51,7 @@ export interface RestoreCounts {
   payments: number;
   cashValues: number;
   coverageItems: number;
+  attachments: number;
   settings: number;
   hospitals: number;
   doctors: number;
@@ -66,6 +68,7 @@ export const ALL_TABLE_KEYS = [
   "payments",
   "cashValues",
   "coverageItems",
+  "attachments",
   "settings",
   "hospitals",
   "doctors",
@@ -87,6 +90,7 @@ const TABLE_NAME_MAP: Record<TableKey, string> = {
   payments: "payments",
   cashValues: "cash_values",
   coverageItems: "coverage_items",
+  attachments: "attachments",
   settings: "settings",
   hospitals: "hospitals",
   doctors: "doctors",
@@ -109,6 +113,7 @@ const SCHEMA_TABLE_MAP: Record<TableKey, any> = {
   payments: schema.payments,
   cashValues: schema.cashValues,
   coverageItems: schema.coverageItems,
+  attachments: schema.attachments,
   settings: schema.settings,
   hospitals: schema.hospitals,
   doctors: schema.doctors,
@@ -218,6 +223,7 @@ export async function buildBackup(db: DbInstance): Promise<BackupData> {
       payments: await queryTable("payments"),
       cashValues: await queryTable("cashValues"),
       coverageItems: await queryTable("coverageItems"),
+      attachments: await queryTable("attachments"),
       settings: await queryTable("settings"),
       hospitals: await queryTable("hospitals"),
       doctors: await queryTable("doctors"),
@@ -236,8 +242,30 @@ export function buildBackupFilename(): string {
 // ── Import ───────────────────────────────────────────────────────────
 
 /**
+ * Table keys added after the stable v1 baseline (9 keys).
+ * Only these may be absent in older backups and will be backfilled with [].
+ * All original v1 keys are still required — a payload missing them is
+ * treated as corrupt/partial and rejected to prevent accidental data wipe.
+ *
+ * History:
+ *   v1 baseline (9 keys): members, insurers, assets, policies, beneficiaries,
+ *                          payments, cashValues, coverageItems, settings
+ *   Later additions:       hospitals, doctors, medicalVisits, attachments
+ */
+const BACKFILL_ALLOWED_KEYS: ReadonlySet<TableKey> = new Set([
+  "hospitals",
+  "doctors",
+  "medicalVisits",
+  "attachments",
+]);
+
+/**
  * Validate that a parsed JSON object looks like a valid backup payload.
  * Returns an error message string if invalid, or null if valid.
+ *
+ * Keys listed in BACKFILL_ALLOWED_KEYS may be absent (backfilled with []).
+ * All other table keys are required — missing ones indicate a corrupt or
+ * partial backup that must not be fed into the destructive restore path.
  */
 export function validateBackup(payload: unknown): string | null {
   if (payload == null || typeof payload !== "object") {
@@ -253,8 +281,15 @@ export function validateBackup(payload: unknown): string | null {
   const data = obj.data as Record<string, unknown>;
   for (const key of ALL_TABLE_KEYS) {
     const val = data[key];
-    // undefined/null is ok (treated as empty), but if present must be array
-    if (val !== undefined && val !== null && !Array.isArray(val)) {
+    if (val === undefined || val === null) {
+      // Only backfill keys added after the initial v1 format
+      if (BACKFILL_ALLOWED_KEYS.has(key)) {
+        data[key] = [];
+        continue;
+      }
+      return `Missing required table key: data.${key}`;
+    }
+    if (!Array.isArray(val)) {
       return `data.${key} must be an array, got ${typeof val}`;
     }
   }
@@ -272,6 +307,7 @@ const DELETE_ORDER: readonly TableKey[] = [
   "cashValues",
   "payments",
   "beneficiaries",
+  "attachments",
   "policies",
   "assets",
   "insurers",
@@ -291,6 +327,7 @@ const INSERT_ORDER: readonly TableKey[] = [
   "payments",
   "cashValues",
   "coverageItems",
+  "attachments",
   "settings",
   "hospitals",
   "doctors",
@@ -388,6 +425,7 @@ export async function restoreBackup(
     payments: 0,
     cashValues: 0,
     coverageItems: 0,
+    attachments: 0,
     settings: 0,
     hospitals: 0,
     doctors: 0,
@@ -398,7 +436,7 @@ export async function restoreBackup(
     // D1 path: collect all statements and execute atomically via batch API
     const statements: SqlStatement[] = [];
 
-    // 1. Clear all tables (FK-safe order)
+    // 1. Clear all tables (FK-safe order) — full destructive replace
     for (const key of DELETE_ORDER) {
       statements.push({ sql: `DELETE FROM ${TABLE_NAME_MAP[key]}`, params: [] });
     }
@@ -425,7 +463,7 @@ export async function restoreBackup(
     // bun-sqlite path: local transaction with Drizzle ORM insert
     await db.run(sql.raw("BEGIN TRANSACTION"));
     try {
-      // 1. Clear all tables (FK-safe order)
+      // 1. Clear all tables (FK-safe order) — full destructive replace
       for (const key of DELETE_ORDER) {
         const tableName = TABLE_NAME_MAP[key];
         await db.run(sql.raw(`DELETE FROM ${tableName}`));
