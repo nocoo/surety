@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Phone, MapPin, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Phone, MapPin, Users, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,8 @@ interface Hospital {
 export default function HospitalsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingHospital, setEditingHospital] = useState<Hospital | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -75,12 +77,19 @@ export default function HospitalsPage() {
 
   const fetchHospitals = () => {
     fetch("/api/hospitals")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      })
       .then((data: Hospital[]) => {
         setHospitals(data);
+        setError(null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("加载医院列表失败，请刷新页面重试");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -105,21 +114,36 @@ export default function HospitalsPage() {
   const handleDeleteConfirm = async () => {
     if (!hospitalToDelete) return;
 
+    setDeleteError(null);
     const response = await fetch(`/api/hospitals/${hospitalToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
+      setDeleteDialogOpen(false);
+      setHospitalToDelete(null);
       fetchHospitals();
+    } else {
+      setDeleteError("删除医院失败，请重试");
     }
-    setDeleteDialogOpen(false);
-    setHospitalToDelete(null);
   };
 
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "医院管理" }]}>
         <TablePageSkeleton />
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "医院管理" }]}>
+        <div className="rounded-card bg-secondary p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+          <h3 className="mt-4 text-lg font-medium">加载失败</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </AppShell>
     );
   }
@@ -310,7 +334,10 @@ export default function HospitalsPage() {
         onSuccess={fetchHospitals}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setDeleteError(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -318,6 +345,12 @@ export default function HospitalsPage() {
               确定要删除医院「{hospitalToDelete?.name}」吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{deleteError}</span>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction

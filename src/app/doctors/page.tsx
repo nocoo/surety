@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Phone, Building2, Stethoscope } from "lucide-react";
+import { Plus, Pencil, Trash2, Phone, Building2, Stethoscope, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,8 @@ export default function DoctorsPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,8 +76,14 @@ export default function DoctorsPage() {
 
   const fetchData = () => {
     Promise.all([
-      fetch("/api/doctors").then((res) => res.json()),
-      fetch("/api/hospitals").then((res) => res.json()),
+      fetch("/api/doctors").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
+      fetch("/api/hospitals").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
     ])
       .then(([doctorsData, hospitalsData]: [Doctor[], Hospital[]]) => {
         // Enrich doctors with hospital names
@@ -86,9 +94,13 @@ export default function DoctorsPage() {
         }));
         setDoctors(enrichedDoctors);
         setHospitals(hospitalsData);
+        setError(null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("加载医生列表失败，请刷新页面重试");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -113,21 +125,36 @@ export default function DoctorsPage() {
   const handleDeleteConfirm = async () => {
     if (!doctorToDelete) return;
 
+    setDeleteError(null);
     const response = await fetch(`/api/doctors/${doctorToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
+      setDeleteDialogOpen(false);
+      setDoctorToDelete(null);
       fetchData();
+    } else {
+      setDeleteError("删除医生失败，请重试");
     }
-    setDeleteDialogOpen(false);
-    setDoctorToDelete(null);
   };
 
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "医生管理" }]}>
         <TablePageSkeleton />
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "医生管理" }]}>
+        <div className="rounded-card bg-secondary p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+          <h3 className="mt-4 text-lg font-medium">加载失败</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </AppShell>
     );
   }
@@ -324,7 +351,10 @@ export default function DoctorsPage() {
         onSuccess={fetchData}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setDeleteError(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -332,6 +362,12 @@ export default function DoctorsPage() {
               确定要删除医生「{doctorToDelete?.name}」吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{deleteError}</span>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
