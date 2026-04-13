@@ -20,6 +20,14 @@ export function createBeneficiariesRepo(dbInstance: DbInstance) {
         .all();
     },
 
+    async findByMemberId(memberId: number): Promise<Beneficiary[]> {
+      return await dbInstance
+        .select()
+        .from(beneficiaries)
+        .where(eq(beneficiaries.memberId, memberId))
+        .all();
+    },
+
     async create(data: NewBeneficiary): Promise<Beneficiary> {
       return await dbInstance.insert(beneficiaries).values(data).returning().get();
     },
