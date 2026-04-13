@@ -242,12 +242,22 @@ export function buildBackupFilename(): string {
 // ── Import ───────────────────────────────────────────────────────────
 
 /**
- * Table keys that were added after the initial v1 backup format.
+ * Table keys added after the stable v1 baseline (9 keys).
  * Only these may be absent in older backups and will be backfilled with [].
  * All original v1 keys are still required — a payload missing them is
  * treated as corrupt/partial and rejected to prevent accidental data wipe.
+ *
+ * History:
+ *   v1 baseline (9 keys): members, insurers, assets, policies, beneficiaries,
+ *                          payments, cashValues, coverageItems, settings
+ *   Later additions:       hospitals, doctors, medicalVisits, attachments
  */
-const BACKFILL_ALLOWED_KEYS: ReadonlySet<TableKey> = new Set(["attachments"]);
+const BACKFILL_ALLOWED_KEYS: ReadonlySet<TableKey> = new Set([
+  "hospitals",
+  "doctors",
+  "medicalVisits",
+  "attachments",
+]);
 
 /**
  * Validate that a parsed JSON object looks like a valid backup payload.

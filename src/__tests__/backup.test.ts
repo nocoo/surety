@@ -201,21 +201,27 @@ describe("backup service", () => {
       );
     });
 
-    test("old backup missing 'attachments' is backfilled and accepted", () => {
-      // Old backups without 'attachments' should still pass — it's a known new-table key
+    test("old v1 backup with original 9 keys is backfilled and accepted", () => {
+      // The original v1 baseline had 9 keys; hospitals, doctors, medicalVisits, attachments came later
+      const v1BaselineKeys = [
+        "members", "insurers", "assets", "policies", "beneficiaries",
+        "payments", "cashValues", "coverageItems", "settings",
+      ];
       const data: Record<string, unknown[]> = {};
-      for (const key of ALL_TABLE_KEYS) {
-        if (key !== "attachments") data[key] = [];
-      }
+      for (const key of v1BaselineKeys) data[key] = [];
       const payload = { version: 1, data };
       expect(validateBackup(payload)).toBeNull();
-      // After validation, the missing key should be backfilled
-      expect((payload.data as Record<string, unknown>).attachments).toEqual([]);
+      // All later-added keys should be backfilled
+      const d = payload.data as Record<string, unknown>;
+      expect(d.hospitals).toEqual([]);
+      expect(d.doctors).toEqual([]);
+      expect(d.medicalVisits).toEqual([]);
+      expect(d.attachments).toEqual([]);
     });
 
     test("partial backup missing original v1 keys is rejected", () => {
-      // A payload with only 'attachments' and nothing else is corrupt — must be rejected
-      expect(validateBackup({ version: 1, data: { attachments: [] } })).toMatch(
+      // A payload with only later-added keys and nothing else is corrupt — must be rejected
+      expect(validateBackup({ version: 1, data: { attachments: [], hospitals: [] } })).toMatch(
         /Missing required table key/,
       );
     });
