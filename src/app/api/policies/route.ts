@@ -68,14 +68,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Resolve insurer: find or create by name, persist both insurerId and insurerName
+  const insurer = await repos.insurers.findOrCreate(body.insurerName);
+
+  // Server-side normalization: enforce insuredType mutual exclusion.
+  // When insuredType is "Member", clear insuredAssetId; when "Asset", clear insuredMemberId.
+  let insuredMemberId = body.insuredMemberId ?? null;
+  let insuredAssetId = body.insuredAssetId ?? null;
+  const insuredType = body.insuredType ?? "Member";
+  if (insuredType === "Member") {
+    insuredAssetId = null;
+  } else if (insuredType === "Asset") {
+    insuredMemberId = null;
+  }
+
   const policy = await repos.policies.create({
     applicantId: body.applicantId,
-    insuredType: body.insuredType ?? "Member",
-    insuredMemberId: body.insuredMemberId ?? null,
-    insuredAssetId: body.insuredAssetId ?? null,
+    insuredType,
+    insuredMemberId,
+    insuredAssetId,
     category: body.category,
     subCategory: body.subCategory ?? null,
-    insurerName: body.insurerName,
+    insurerId: insurer.id,
+    insurerName: insurer.name,
     productName: body.productName,
     policyNumber: body.policyNumber,
     channel: body.channel ?? null,
