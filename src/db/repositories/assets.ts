@@ -30,8 +30,8 @@ export function createAssetsRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const result = await dbInstance.delete(assets).where(eq(assets.id, id)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(assets).where(eq(assets.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

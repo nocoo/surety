@@ -31,8 +31,8 @@ export function createHospitalsRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const result = await dbInstance.delete(hospitals).where(eq(hospitals.id, id)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(hospitals).where(eq(hospitals.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

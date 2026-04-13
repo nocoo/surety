@@ -42,16 +42,17 @@ export function createBeneficiariesRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const result = await dbInstance.delete(beneficiaries).where(eq(beneficiaries.id, id)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(beneficiaries).where(eq(beneficiaries.id, id)).returning().all();
+      return rows.length > 0;
     },
 
     async deleteByPolicyId(policyId: number): Promise<number> {
-      const result = await dbInstance
+      const rows = await dbInstance
         .delete(beneficiaries)
         .where(eq(beneficiaries.policyId, policyId))
-        .run();
-      return result.changes ?? result.rowsAffected ?? 0;
+        .returning()
+        .all();
+      return rows.length;
     },
   };
 }

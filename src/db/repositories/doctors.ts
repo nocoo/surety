@@ -34,8 +34,8 @@ export function createDoctorsRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const result = await dbInstance.delete(doctors).where(eq(doctors.id, id)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(doctors).where(eq(doctors.id, id)).returning().all();
+      return rows.length > 0;
     },
   };
 }

@@ -52,16 +52,17 @@ export function createPaymentsRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const result = await dbInstance.delete(payments).where(eq(payments.id, id)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(payments).where(eq(payments.id, id)).returning().all();
+      return rows.length > 0;
     },
 
     async deleteByPolicyId(policyId: number): Promise<number> {
-      const result = await dbInstance
+      const rows = await dbInstance
         .delete(payments)
         .where(eq(payments.policyId, policyId))
-        .run();
-      return result.changes ?? result.rowsAffected ?? 0;
+        .returning()
+        .all();
+      return rows.length;
     },
   };
 }

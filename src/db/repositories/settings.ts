@@ -33,8 +33,8 @@ export function createSettingsRepo(dbInstance: DbInstance) {
     },
 
     async delete(key: string): Promise<boolean> {
-      const result = await dbInstance.delete(settings).where(eq(settings.key, key)).run();
-      return (result.changes ?? result.rowsAffected ?? 0) > 0;
+      const rows = await dbInstance.delete(settings).where(eq(settings.key, key)).returning().all();
+      return rows.length > 0;
     },
 
     async getNumber(key: string): Promise<number | undefined> {
