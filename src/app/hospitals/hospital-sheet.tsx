@@ -265,7 +265,7 @@ export function HospitalSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <HospitalForm
-          key={hospital?.id ?? "new"}
+          key={open ? (hospital?.id ?? "new") : "closed"}
           hospital={hospital}
           onClose={() => onOpenChange(false)}
           onSuccess={onSuccess}

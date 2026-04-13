@@ -643,7 +643,7 @@ export function VisitSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <VisitForm
-          key={visit?.id ?? "new"}
+          key={open ? (visit?.id ?? "new") : "closed"}
           visit={visit}
           members={members}
           hospitals={hospitals}
