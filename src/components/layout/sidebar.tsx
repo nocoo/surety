@@ -179,16 +179,19 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 
   const handleNavigate = () => setMobileOpen(false);
 
+  // Mobile drawer always renders expanded (full-width) navigation
+  const isCollapsed = mobile ? false : collapsed;
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         aria-label={mobile ? "主导航抽屉" : "主导航"}
         className={cn(
           "sticky top-0 flex h-screen shrink-0 flex-col bg-background transition-all duration-300 ease-in-out overflow-hidden",
-          collapsed ? "w-[68px]" : "w-[260px]"
+          isCollapsed ? "w-[68px]" : "w-[260px]"
         )}
       >
-        {collapsed ? (
+        {isCollapsed ? (
           /* ── Collapsed (icon-only) view ── */
           <div className="flex h-screen w-[68px] flex-col items-center">
             {/* Logo */}
