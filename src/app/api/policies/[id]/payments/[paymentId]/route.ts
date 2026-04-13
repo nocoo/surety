@@ -27,6 +27,20 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
+  // Check for periodNumber duplicate if being updated
+  if (body.periodNumber !== undefined && body.periodNumber !== existing.periodNumber) {
+    const policyPayments = await repos.payments.findByPolicyId(policyId);
+    const duplicate = policyPayments.find(
+      (p) => p.periodNumber === body.periodNumber && p.id !== paymentIdNum
+    );
+    if (duplicate) {
+      return NextResponse.json(
+        { error: `该保单已存在第 ${body.periodNumber} 期缴费记录` },
+        { status: 409 }
+      );
+    }
+  }
+
   const updated = await repos.payments.update(paymentIdNum, {
     periodNumber: body.periodNumber ?? existing.periodNumber,
     dueDate: body.dueDate ?? existing.dueDate,

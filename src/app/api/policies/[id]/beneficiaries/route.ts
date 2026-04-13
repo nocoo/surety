@@ -14,6 +14,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid policy ID" }, { status: 400 });
   }
 
+  // Check if parent policy exists
+  const policy = await repos.policies.findById(policyId);
+  if (!policy) {
+    return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+  }
+
   const records = await repos.beneficiaries.findByPolicyId(policyId);
   const members = await repos.members.findAll();
   const memberMap = new Map(members.map((m) => [m.id, m.name]));

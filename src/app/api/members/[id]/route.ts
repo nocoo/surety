@@ -96,6 +96,15 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
   }
 
+  // Check FK references: beneficiaries may reference this member
+  const beneficiaryRefs = await repos.beneficiaries.findByMemberId(memberId);
+  if (beneficiaryRefs.length > 0) {
+    return NextResponse.json(
+      { error: `该成员是 ${beneficiaryRefs.length} 份保单的受益人，无法删除` },
+      { status: 409 }
+    );
+  }
+
   // Check FK references: medical visits may reference this member
   const visits = await repos.medicalVisits.findByMemberId(memberId);
   if (visits.length > 0) {
