@@ -19,16 +19,7 @@ import {
 import { createBatchExecutor } from "@/db";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-
-/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripUndefined(obj: Record<string, unknown>): any {
-  const result: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) result[k] = v;
-  }
-  return result;
-}
+import { stripUndefined } from "./shared";
 
 const policyCategories = [
   "Life",

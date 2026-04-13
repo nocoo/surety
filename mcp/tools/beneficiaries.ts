@@ -10,16 +10,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { beneficiariesRepo, policiesRepo, membersRepo } from "@/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-
-/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripUndefined(obj: Record<string, unknown>): any {
-  const result: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) result[k] = v;
-  }
-  return result;
-}
+import { stripUndefined } from "./shared";
 
 export function registerBeneficiaryTools(server: McpServer): void {
   // -------------------------------------------------------------------------
