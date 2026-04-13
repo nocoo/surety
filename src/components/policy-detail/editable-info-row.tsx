@@ -18,7 +18,7 @@ interface EditableInfoRowProps {
   type?: InputType;
   editValue?: string;
   onEditChange?: ((value: string) => void) | undefined;
-  options?: readonly { value: string; label: string }[];
+  options?: readonly { value: string; label: string; disabled?: boolean }[];
 }
 
 export function EditableInfoRow({
@@ -49,7 +49,7 @@ export function EditableInfoRow({
             </SelectTrigger>
             <SelectContent>
               {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+                <SelectItem key={opt.value} value={opt.value} disabled={opt.disabled ?? false}>
                   {opt.label}
                 </SelectItem>
               ))}
