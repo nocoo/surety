@@ -21,9 +21,13 @@ export function createInsurersRepo(dbInstance: DbInstance) {
     },
 
     async findOrCreate(name: string): Promise<Insurer> {
-      const existing = await this.findByName(name);
-      if (existing) return existing;
-      return await this.create({ name });
+      return await dbInstance
+        .insert(insurers)
+        .values({ name })
+        .onConflictDoNothing({ target: insurers.name })
+        .returning()
+        .get()
+        ?? await this.findByName(name) as Insurer;
     },
 
     async update(id: number, data: Partial<NewInsurer>): Promise<Insurer | undefined> {
