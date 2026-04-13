@@ -6,6 +6,7 @@
 
 import type { PolicyCategory } from "@/db/types";
 import { CATEGORY_CONFIG, getCategoryConfig } from "./category-config";
+import { formatCurrency } from "./format";
 
 // ============================================================================
 // Types
@@ -138,7 +139,7 @@ export const CATEGORY_ORDER: PolicyCategory[] = [
 // ============================================================================
 
 /**
- * Format currency for display
+ * Format sum assured for display (compact form: 万)
  */
 export function formatSumAssured(value: number): string {
   if (value >= 10000) {
@@ -149,11 +150,9 @@ export function formatSumAssured(value: number): string {
 }
 
 /**
- * Format premium for display
+ * Format premium for display - delegates to shared formatCurrency
  */
-export function formatPremium(value: number): string {
-  return `¥${value.toLocaleString()}`;
-}
+export const formatPremium = formatCurrency;
 
 /**
  * Build member coverage cards from raw data

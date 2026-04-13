@@ -132,8 +132,8 @@ export function calculateRenewalDates(
   // Interval in months
   const intervalMonths = paymentFrequency === "Monthly" ? 1 : 12;
 
-  // Find all renewal dates within the period
-  while (currentDate <= endDate) {
+  // Find all renewal dates within the period [startDate, endDate)
+  while (currentDate < endDate) {
     if (currentDate >= startDate) {
       renewalDates.push(new Date(currentDate));
     }
@@ -168,14 +168,19 @@ export function formatYearMonth(date: Date): string {
 }
 
 /**
- * Transform policy data to renewal items within a time range
+ * Transform policy data to renewal items within a time range.
+ * Window: [referenceDate, endOfLastMonth) - exclusive of monthsAhead boundary.
+ * This matches generateConsecutiveMonths which produces months 0..monthsAhead-1.
  */
 export function calculateRenewalItems(
   policies: PolicyForRenewal[],
   referenceDate: Date,
   monthsAhead: number = 12
 ): RenewalItem[] {
+  // End date is the first day of the month AFTER the last included month
+  // e.g., monthsAhead=12 means we include months 0-11, end boundary is start of month 12
   const endDate = addMonths(referenceDate, monthsAhead);
+  endDate.setDate(1); // Normalize to first day of the boundary month
   const items: RenewalItem[] = [];
 
   for (const policy of policies) {
@@ -210,7 +215,8 @@ export function calculateRenewalItems(
 }
 
 /**
- * Generate all 12 consecutive months starting from reference date
+ * Generate consecutive months starting from reference date.
+ * Returns months [0, monthsCount) relative to referenceDate.
  */
 export function generateConsecutiveMonths(
   referenceDate: Date,
@@ -225,7 +231,8 @@ export function generateConsecutiveMonths(
 }
 
 /**
- * Group renewal items by month, ensuring all 12 consecutive months are present
+ * Group renewal items by month, ensuring all consecutive months are present.
+ * Uses the same monthsCount boundary as calculateRenewalItems.
  */
 export function groupByMonth(
   items: RenewalItem[],

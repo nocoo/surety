@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   FileText,
   Users,
@@ -54,27 +55,43 @@ function StatCard({ label, value, iconName, index }: StatCardData & { index: num
 export function DashboardContent({ data }: { data: DashboardData }) {
   const statCards = createStatCards(data.stats);
 
-  const premiumByCategoryData = data.charts.premiumByCategory.map((item) => ({
-    name: item.label,
-    value: item.premium,
-    count: item.count,
-  }));
+  const premiumByCategoryData = useMemo(
+    () =>
+      data.charts.premiumByCategory.map((item) => ({
+        name: item.label,
+        value: item.premium,
+        count: item.count,
+      })),
+    [data.charts.premiumByCategory]
+  );
 
-  const coverageData = data.charts.coverageByCategory.map((item) => ({
-    name: item.label,
-    value: item.sumAssured,
-  }));
+  const coverageData = useMemo(
+    () =>
+      data.charts.coverageByCategory.map((item) => ({
+        name: item.label,
+        value: item.sumAssured,
+      })),
+    [data.charts.coverageByCategory]
+  );
 
-  const categoryCountData = data.charts.premiumByCategory.map((item) => ({
-    name: item.label,
-    value: item.count,
-  }));
+  const categoryCountData = useMemo(
+    () =>
+      data.charts.premiumByCategory.map((item) => ({
+        name: item.label,
+        value: item.count,
+      })),
+    [data.charts.premiumByCategory]
+  );
 
-  const channelData = data.charts.policyByChannel.map((item) => ({
-    name: item.name,
-    value: item.premium,
-    count: item.count,
-  }));
+  const channelData = useMemo(
+    () =>
+      data.charts.policyByChannel.map((item) => ({
+        name: item.name,
+        value: item.premium,
+        count: item.count,
+      })),
+    [data.charts.policyByChannel]
+  );
 
   return (
     <div className="space-y-8">

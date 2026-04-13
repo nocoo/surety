@@ -34,9 +34,13 @@ describe("coverage-lookup-vm", () => {
   });
 
   describe("formatPremium", () => {
-    test("formats with ¥ prefix and locale string", () => {
+    test("formats with ¥ prefix for small values", () => {
       expect(formatPremium(1000)).toBe("¥1,000");
-      expect(formatPremium(12345)).toBe("¥12,345");
+    });
+
+    test("formats large values in 万 (compact form)", () => {
+      expect(formatPremium(12345)).toBe("1.2万");
+      expect(formatPremium(50000)).toBe("5万");
     });
   });
 
