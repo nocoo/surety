@@ -28,6 +28,7 @@ interface DonutChartProps {
   data: DonutChartItem[];
   title: string;
   icon: LucideIcon;
+  emptyMessage?: string;
 }
 
 function ChartTooltip({
@@ -50,7 +51,19 @@ function ChartTooltip({
   );
 }
 
-export function DonutChart({ data, title, icon }: DonutChartProps) {
+export function DonutChart({ data, title, icon, emptyMessage = "暂无数据" }: DonutChartProps) {
+  const hasData = data.length > 0 && data.some((item) => item.value > 0);
+
+  if (!hasData) {
+    return (
+      <ChartCard title={title} icon={icon}>
+        <div className="flex items-center justify-center h-full text-muted-foreground">
+          {emptyMessage}
+        </div>
+      </ChartCard>
+    );
+  }
+
   const shouldUseCompactLabels = data.length > 5;
   const labelThreshold = 0.08;
   const shouldShowLegend = shouldUseCompactLabels;
