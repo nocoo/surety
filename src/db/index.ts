@@ -328,6 +328,9 @@ export function initSchema(): void {
       value REAL NOT NULL
     );
 
+    -- Unique constraint: no duplicate policy_year per policy
+    CREATE UNIQUE INDEX IF NOT EXISTS unique_policy_year ON cash_values(policy_id, policy_year);
+
     CREATE TABLE IF NOT EXISTS coverage_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       policy_id INTEGER NOT NULL REFERENCES policies(id),

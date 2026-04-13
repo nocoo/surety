@@ -195,14 +195,24 @@ export type NewPayment = typeof payments.$inferInsert;
 // ============================================================================
 // 7. cashValues - 现金价值
 // ============================================================================
-export const cashValues = sqliteTable("cash_values", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  policyId: integer("policy_id")
-    .notNull()
-    .references(() => policies.id),
-  policyYear: integer("policy_year").notNull(),
-  value: real("value").notNull(),
-});
+export const cashValues = sqliteTable(
+  "cash_values",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    policyId: integer("policy_id")
+      .notNull()
+      .references(() => policies.id),
+    policyYear: integer("policy_year").notNull(),
+    value: real("value").notNull(),
+  },
+  (table) => ({
+    // Ensure no duplicate policy_year per policy
+    uniquePolicyYear: unique("unique_policy_year").on(
+      table.policyId,
+      table.policyYear,
+    ),
+  }),
+);
 
 export type CashValue = typeof cashValues.$inferSelect;
 export type NewCashValue = typeof cashValues.$inferInsert;
