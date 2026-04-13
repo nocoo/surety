@@ -406,6 +406,17 @@ export function initSchema(): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    -- Performance indexes on foreign keys
+    CREATE INDEX IF NOT EXISTS idx_policies_insurer_id ON policies(insurer_id);
+    CREATE INDEX IF NOT EXISTS idx_policies_insured_member_id ON policies(insured_member_id);
+    CREATE INDEX IF NOT EXISTS idx_policies_insured_asset_id ON policies(insured_asset_id);
+    CREATE INDEX IF NOT EXISTS idx_beneficiaries_policy_id ON beneficiaries(policy_id);
+    CREATE INDEX IF NOT EXISTS idx_payments_policy_id ON payments(policy_id);
+    CREATE INDEX IF NOT EXISTS idx_coverage_items_policy_id ON coverage_items(policy_id);
+    CREATE INDEX IF NOT EXISTS idx_medical_visits_member_id ON medical_visits(member_id);
+    CREATE INDEX IF NOT EXISTS idx_medical_visits_hospital_id ON medical_visits(hospital_id);
+    CREATE INDEX IF NOT EXISTS idx_medical_visits_doctor_id ON medical_visits(doctor_id);
   `);
 }
 
