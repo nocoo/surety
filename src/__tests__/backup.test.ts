@@ -81,7 +81,7 @@ describe("backup service", () => {
       expect(new Date(backup.exportedAt).toISOString()).toBe(backup.exportedAt);
     });
 
-    test("includes all 9 table keys", async () => {
+    test("includes all 13 table keys", async () => {
       const keys = Object.keys((await buildBackup(db)).data);
       for (const key of ALL_TABLE_KEYS) {
         expect(keys).toContain(key);
@@ -201,9 +201,16 @@ describe("backup service", () => {
       );
     });
 
-    test("valid payload requires all table keys", () => {
-      // Empty data object should fail - missing required table keys
-      expect(validateBackup({ version: 1, data: {} })).toMatch(/Missing required table key/);
+    test("valid payload with missing keys backfills empty arrays", () => {
+      // Old backups without 'attachments' should still pass — missing keys get backfilled
+      const data: Record<string, unknown[]> = {};
+      for (const key of ALL_TABLE_KEYS) {
+        if (key !== "attachments") data[key] = [];
+      }
+      const payload = { version: 1, data };
+      expect(validateBackup(payload)).toBeNull();
+      // After validation, the missing key should be backfilled
+      expect((payload.data as Record<string, unknown>).attachments).toEqual([]);
     });
 
     test("valid payload with empty arrays passes", () => {
@@ -286,7 +293,7 @@ describe("backup service", () => {
       expect(memberIds).toContain(firstPolicy.applicant_id);
     });
 
-    test("restore with empty arrays preserves existing data", async () => {
+    test("restore with empty arrays clears everything", async () => {
       await seedFamily();
       expect(rawQuery("members").length).toBe(2);
 
@@ -310,12 +317,11 @@ describe("backup service", () => {
         },
       };
 
-      // When backup has empty arrays, existing data should be preserved
-      // (only tables with actual data in backup will be cleared and replaced)
+      // Empty arrays mean "this table had zero rows at backup time" — restore should clear existing data
       await restoreBackup(db, emptyBackup);
-      expect(rawQuery("members").length).toBe(2); // Data preserved
-      expect(rawQuery("policies").length).toBe(1);
-      expect(rawQuery("settings").length).toBe(2);
+      expect(rawQuery("members")).toEqual([]);
+      expect(rawQuery("policies")).toEqual([]);
+      expect(rawQuery("settings")).toEqual([]);
     });
 
     test("restore throws on invalid payload", async () => {
@@ -442,10 +448,9 @@ describe("backup service", () => {
       // Should have collected DELETE + INSERT statements
       expect(captured.length).toBeGreaterThan(0);
 
-      // Should have DELETEs only for tables that have data in the backup
+      // Should have DELETEs for all tables + sqlite_sequence
       const deleteStmts = captured.filter((s) => s.sql.startsWith("DELETE FROM"));
-      // Only tables with data: members(2), insurers(1), assets(1), policies(1), beneficiaries(1), settings(2) = 6 tables
-      expect(deleteStmts.length).toBe(6);
+      expect(deleteStmts.length).toBe(14); // 13 tables + sqlite_sequence
 
       // Should have INSERTs
       const insertStmts = captured.filter((s) => s.sql.startsWith("INSERT INTO"));
