@@ -8,16 +8,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { assetsRepo, membersRepo, policiesRepo } from "@/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-
-/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripUndefined(obj: Record<string, unknown>): any {
-  const result: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) result[k] = v;
-  }
-  return result;
-}
+import { stripUndefined, tryParseJson, validateJson } from "./shared";
 
 export function registerAssetTools(server: McpServer): void {
   server.tool(
@@ -38,7 +29,7 @@ export function registerAssetTools(server: McpServer): void {
             type: a.type,
             identifier: a.identifier,
             ownerName: owner?.name,
-            details: a.details ? JSON.parse(a.details) : undefined,
+            details: a.details ? tryParseJson(a.details) : undefined,
           };
         }),
       );
@@ -80,7 +71,7 @@ export function registerAssetTools(server: McpServer): void {
       const result = {
         ...asset,
         ownerName: owner?.name,
-        details: asset.details ? JSON.parse(asset.details) : undefined,
+        details: asset.details ? tryParseJson(asset.details) : undefined,
       };
 
       return {
@@ -113,6 +104,22 @@ export function registerAssetTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
+      // Validate JSON format for details field
+      if (args.details !== undefined) {
+        const jsonError = validateJson(args.details);
+        if (jsonError) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Invalid JSON in details field: ${jsonError}`,
+              },
+            ],
+          };
+        }
+      }
+
       const asset = await assetsRepo.create(stripUndefined(args));
 
       return {
@@ -138,6 +145,22 @@ export function registerAssetTools(server: McpServer): void {
     async ({ assetId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
+
+      // Validate JSON format for details field
+      if (data.details !== undefined) {
+        const jsonError = validateJson(data.details);
+        if (jsonError) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Invalid JSON in details field: ${jsonError}`,
+              },
+            ],
+          };
+        }
+      }
 
       const updated = await assetsRepo.update(assetId, stripUndefined(data));
       if (!updated) {

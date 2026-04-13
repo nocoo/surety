@@ -14,7 +14,7 @@ import { settingsRepo } from "@/db/repositories";
 
 const DISABLED_MESSAGE = [
   "MCP access is disabled.",
-  "To enable it, open the Surety settings page at http://localhost:7012/settings",
+  "To enable it, open the Surety settings page at /settings",
   "and turn on the MCP Access toggle.",
 ].join(" ");
 

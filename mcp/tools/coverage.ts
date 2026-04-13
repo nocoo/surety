@@ -13,6 +13,7 @@ import {
 } from "@/db/repositories";
 import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
+import { parseLocalDate } from "./shared";
 
 export function registerCoverageTools(server: McpServer): void {
   // -------------------------------------------------------------------------
@@ -174,8 +175,8 @@ export function registerCoverageTools(server: McpServer): void {
           .filter((p) => {
             const dateStr = p.nextDueDate ?? p.expiryDate;
             if (!dateStr) return false;
-            const date = new Date(dateStr);
-            return date >= now && date <= cutoff;
+            const date = parseLocalDate(dateStr);
+            return date && date >= now && date <= cutoff;
           })
           .map(async (p) => {
             const applicant = await membersRepo.findById(p.applicantId);
