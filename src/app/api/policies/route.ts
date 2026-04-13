@@ -68,8 +68,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Resolve insurer: find or create by name, persist both insurerId and insurerName
-  const insurer = await repos.insurers.findOrCreate(body.insurerName);
+  // Validate applicant exists before any side effects (e.g. creating insurer)
+  const applicant = await repos.members.findById(body.applicantId);
+  if (!applicant) {
+    return NextResponse.json({ error: "投保人不存在" }, { status: 400 });
+  }
 
   // Server-side normalization: enforce insuredType mutual exclusion.
   // When insuredType is "Member", clear insuredAssetId; when "Asset", clear insuredMemberId.
@@ -81,6 +84,9 @@ export async function POST(request: NextRequest) {
   } else if (insuredType === "Asset") {
     insuredMemberId = null;
   }
+
+  // Resolve insurer AFTER all validation passes — avoids orphan insurer on bad requests
+  const insurer = await repos.insurers.findOrCreate(body.insurerName);
 
   const policy = await repos.policies.create({
     applicantId: body.applicantId,
