@@ -23,6 +23,7 @@ interface AttachmentSectionProps {
 export function AttachmentSection({ policyId }: AttachmentSectionProps) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(
     null,
   );
@@ -32,14 +33,17 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchAttachments = useCallback(async () => {
+    setLoadError(null);
     try {
       const res = await fetch(`/api/policies/${policyId}/attachments`);
       if (res.ok) {
         const data = (await res.json()) as Attachment[];
         setAttachments(data);
+      } else {
+        setLoadError(`加载附件失败 (${res.status})`);
       }
     } catch {
-      // Silently fail — user can retry by reloading
+      setLoadError("网络错误，无法加载附件");
     } finally {
       setLoading(false);
     }
@@ -92,6 +96,20 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
         <p className="text-sm text-muted-foreground text-center py-4">
           加载中...
         </p>
+      ) : loadError ? (
+        <div className="rounded-lg bg-destructive/10 p-4 text-center">
+          <p className="text-sm text-destructive">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              fetchAttachments();
+            }}
+            className="mt-2 text-sm text-primary hover:underline"
+          >
+            点击重试
+          </button>
+        </div>
       ) : (
         <AttachmentList
           attachments={attachments}
