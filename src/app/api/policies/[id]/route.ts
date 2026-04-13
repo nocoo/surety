@@ -87,6 +87,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     insuredMemberId = null;
   }
 
+  // Resolve insurer: find or create by name, persist both insurerId and insurerName
+  const insurer = body.insurerName
+    ? await repos.insurers.findOrCreate(body.insurerName)
+    : null;
+
   const updated = await repos.policies.update(policyId, {
     applicantId: body.applicantId,
     insuredType: body.insuredType,
@@ -94,7 +99,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     insuredAssetId,
     category: body.category,
     subCategory: body.subCategory,
-    insurerName: body.insurerName,
+    ...(insurer && { insurerId: insurer.id, insurerName: insurer.name }),
     productName: body.productName,
     policyNumber: body.policyNumber,
     channel: body.channel,
