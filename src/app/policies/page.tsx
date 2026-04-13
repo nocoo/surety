@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon } from "lucide-react";
+import { Trash2, Info, Check, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon, AlertCircle, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -205,6 +205,7 @@ export default function PoliciesPage() {
   const router = useRouter();
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [policyToDelete, setPolicyToDelete] = useState<Policy | null>(null);
@@ -231,12 +232,19 @@ export default function PoliciesPage() {
 
   const fetchPolicies = () => {
     fetch("/api/policies")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      })
       .then((data: Policy[]) => {
         setPolicies(data);
+        setError(null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("加载保单列表失败，请刷新页面重试");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -385,6 +393,8 @@ export default function PoliciesPage() {
       });
       if (response.ok) {
         setActionError(null);
+        setDeleteDialogOpen(false);
+        setPolicyToDelete(null);
         fetchPolicies();
       } else {
         throw new Error("DELETE_FAILED");
@@ -393,8 +403,6 @@ export default function PoliciesPage() {
       console.error("Error deleting policy:", error);
       setActionError("删除保单失败，请重试");
     }
-    setDeleteDialogOpen(false);
-    setPolicyToDelete(null);
   };
 
   const handleCopyPolicyNumber = async (policy: Policy) => {
@@ -441,6 +449,18 @@ export default function PoliciesPage() {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
         <TablePageSkeleton rows={10} />
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "保单" }]}>
+        <div className="rounded-card bg-secondary p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+          <h3 className="mt-4 text-lg font-medium">加载失败</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </AppShell>
     );
   }
@@ -578,8 +598,19 @@ export default function PoliciesPage() {
           </ToggleGroup>
         </div>
 
+        {/* Empty State */}
+        {policies.length === 0 && (
+          <div className="rounded-card bg-secondary p-8 text-center">
+            <Shield className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-medium">暂无保单</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              点击上方按钮添加您的第一份保单
+            </p>
+          </div>
+        )}
+
         {/* List View */}
-        {viewMode === "list" && (
+        {viewMode === "list" && policies.length > 0 && (
           <>
             <div className="space-y-3 sm:hidden">
               {filteredPolicies.map((policy) => (
@@ -798,7 +829,7 @@ export default function PoliciesPage() {
         )}
 
         {/* Grouped Views */}
-        {(viewMode === "byCategory" || viewMode === "byInsured") && (
+        {(viewMode === "byCategory" || viewMode === "byInsured") && policies.length > 0 && (
           <div className="space-y-6">
             {(viewMode === "byCategory" ? policiesByCategory : policiesByInsured).map(([groupKey, groupPolicies]) => {
               const groupLabel = viewMode === "byCategory" 
@@ -903,7 +934,10 @@ export default function PoliciesPage() {
         )}
       </div>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setActionError(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -911,6 +945,12 @@ export default function PoliciesPage() {
               确定要删除保单「{policyToDelete?.productName}」吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {actionError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{actionError}</span>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, AlertCircle, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,8 @@ function calculateAge(birthDate: string | null): number | null {
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -84,12 +86,19 @@ export default function MembersPage() {
 
   const fetchMembers = () => {
     fetch("/api/members")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      })
       .then((data: Member[]) => {
         setMembers(data);
+        setError(null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("加载家庭成员失败，请刷新页面重试");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -114,21 +123,36 @@ export default function MembersPage() {
   const handleDeleteConfirm = async () => {
     if (!memberToDelete) return;
 
+    setDeleteError(null);
     const response = await fetch(`/api/members/${memberToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
+      setDeleteDialogOpen(false);
+      setMemberToDelete(null);
       fetchMembers();
+    } else {
+      setDeleteError("删除成员失败，请重试");
     }
-    setDeleteDialogOpen(false);
-    setMemberToDelete(null);
   };
 
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
         <TablePageSkeleton />
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
+        <div className="rounded-card bg-secondary p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+          <h3 className="mt-4 text-lg font-medium">加载失败</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </AppShell>
     );
   }
@@ -149,6 +173,15 @@ export default function MembersPage() {
           </Button>
         </div>
 
+        {members.length === 0 ? (
+          <div className="rounded-card bg-secondary p-8 text-center">
+            <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-medium">暂无家庭成员</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              点击上方按钮添加您的第一位家庭成员
+            </p>
+          </div>
+        ) : (
         <div className="rounded-card bg-secondary">
           <Table>
             <TableHeader>
@@ -261,6 +294,7 @@ export default function MembersPage() {
             </TableBody>
           </Table>
         </div>
+        )}
       </div>
 
       <MemberSheet
@@ -270,7 +304,10 @@ export default function MembersPage() {
         onSuccess={fetchMembers}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setDeleteError(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -278,6 +315,12 @@ export default function MembersPage() {
               确定要删除成员「{memberToDelete?.name}」吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{deleteError}</span>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">

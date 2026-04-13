@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,8 @@ export default function MedicalVisitsPage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingVisit, setEditingVisit] = useState<MedicalVisit | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -167,10 +169,22 @@ export default function MedicalVisitsPage() {
 
   const fetchData = () => {
     Promise.all([
-      fetch("/api/medical-visits").then((res) => res.json()),
-      fetch("/api/members").then((res) => res.json()),
-      fetch("/api/hospitals").then((res) => res.json()),
-      fetch("/api/doctors").then((res) => res.json()),
+      fetch("/api/medical-visits").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
+      fetch("/api/members").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
+      fetch("/api/hospitals").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
+      fetch("/api/doctors").then((res) => {
+        if (!res.ok) throw new Error("FETCH_FAILED");
+        return res.json();
+      }),
     ])
       .then(([visitsData, membersData, hospitalsData, doctorsData]: [MedicalVisit[], Member[], Hospital[], Doctor[]]) => {
         const memberMap = new Map(membersData.map((m) => [m.id, m]));
@@ -192,9 +206,13 @@ export default function MedicalVisitsPage() {
         setMembers(membersData);
         setHospitals(hospitalsData);
         setDoctors(doctorsData);
+        setError(null);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setError("加载就诊记录失败，请刷新页面重试");
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -224,15 +242,18 @@ export default function MedicalVisitsPage() {
   const handleDeleteConfirm = async () => {
     if (!visitToDelete) return;
 
+    setDeleteError(null);
     const response = await fetch(`/api/medical-visits/${visitToDelete.id}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
+      setDeleteDialogOpen(false);
+      setVisitToDelete(null);
       fetchData();
+    } else {
+      setDeleteError("删除就诊记录失败，请重试");
     }
-    setDeleteDialogOpen(false);
-    setVisitToDelete(null);
   };
 
   const canAddVisit = members.length > 0 && hospitals.length > 0;
@@ -241,6 +262,18 @@ export default function MedicalVisitsPage() {
     return (
       <AppShell breadcrumbs={[{ label: "就诊记录" }]}>
         <TablePageSkeleton />
+      </AppShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "就诊记录" }]}>
+        <div className="rounded-card bg-secondary p-8 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+          <h3 className="mt-4 text-lg font-medium">加载失败</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </AppShell>
     );
   }
@@ -467,7 +500,10 @@ export default function MedicalVisitsPage() {
         onSuccess={fetchData}
       />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) setDeleteError(null);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
@@ -475,6 +511,12 @@ export default function MedicalVisitsPage() {
               确定要删除「{visitToDelete?.memberName}」在 {visitToDelete?.visitDate} 的就诊记录吗？此操作无法撤销。
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteError && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span>{deleteError}</span>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
