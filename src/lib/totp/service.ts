@@ -205,7 +205,13 @@ export class TotpService {
     }
 
     // Decrypt and verify
-    const secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+    let secretBase32: string;
+    try {
+      secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+    } catch {
+      return { error: "2FA configuration is corrupted (decryption failed)" };
+    }
+
     const valid = verifyToken(secretBase32, token, email, this.config.issuer, this.config.window);
 
     if (!valid) {
@@ -272,7 +278,13 @@ export class TotpService {
         return { error: "2FA configuration is corrupted" };
       }
 
-      const secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+      let secretBase32: string;
+      try {
+        secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+      } catch {
+        return { error: "2FA configuration is corrupted (decryption failed)" };
+      }
+
       verified = verifyToken(secretBase32, token, email, this.config.issuer, this.config.window);
     }
 
@@ -311,7 +323,13 @@ export class TotpService {
       return { error: "2FA configuration is corrupted" };
     }
 
-    const secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+    let secretBase32: string;
+    try {
+      secretBase32 = decryptSecret(encrypted, this.config.masterKey);
+    } catch {
+      return { error: "2FA configuration is corrupted (decryption failed)" };
+    }
+
     const valid = verifyToken(secretBase32, token, email, this.config.issuer, this.config.window);
 
     if (!valid) {
