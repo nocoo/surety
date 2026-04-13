@@ -215,6 +215,7 @@ export function CoverageSection({
   const [editingForm, setEditingForm] = useState<CoverageFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -233,19 +234,30 @@ export function CoverageSection({
   const handleAdd = async () => {
     if (!addingForm || !addingForm.name.trim()) return;
     setSaving(true);
+    setErrorMessage(null);
     try {
+      // Use max(sortOrder) + 1 instead of items.length for correct ordering
+      const maxSortOrder = items.length > 0
+        ? Math.max(...items.map(i => i.sortOrder))
+        : -1;
       const res = await fetch(`/api/policies/${policyId}/coverage-items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formToPayload(addingForm, items.length)),
+        body: JSON.stringify(formToPayload(addingForm, maxSortOrder + 1)),
       });
       if (res.ok) {
         const created = (await res.json()) as CoverageItem;
         onItemsChange([...items, created]);
         setAddingForm(null);
+      } else {
+        const err = await res.json().catch(() => null);
+        setErrorMessage(
+          (err as { error?: string } | null)?.error ??
+            `添加失败 (${res.status})`,
+        );
       }
-    } catch (e) {
-      console.error("Failed to add coverage item:", e);
+    } catch {
+      setErrorMessage("网络错误，请重试");
     } finally {
       setSaving(false);
     }
@@ -254,6 +266,7 @@ export function CoverageSection({
   const handleUpdate = async () => {
     if (editingId === null || !editingForm.name.trim()) return;
     setSaving(true);
+    setErrorMessage(null);
     try {
       const existing = items.find((i) => i.id === editingId);
       const res = await fetch(
@@ -270,15 +283,22 @@ export function CoverageSection({
         const updated = (await res.json()) as CoverageItem;
         onItemsChange(items.map((i) => (i.id === editingId ? updated : i)));
         setEditingId(null);
+      } else {
+        const err = await res.json().catch(() => null);
+        setErrorMessage(
+          (err as { error?: string } | null)?.error ??
+            `修改失败 (${res.status})`,
+        );
       }
-    } catch (e) {
-      console.error("Failed to update coverage item:", e);
+    } catch {
+      setErrorMessage("修改失败，请重试");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (itemId: number) => {
+    setErrorMessage(null);
     try {
       const res = await fetch(
         `/api/policies/${policyId}/coverage-items/${itemId}`,
@@ -286,9 +306,15 @@ export function CoverageSection({
       );
       if (res.ok) {
         onItemsChange(items.filter((i) => i.id !== itemId));
+      } else {
+        const err = await res.json().catch(() => null);
+        setErrorMessage(
+          (err as { error?: string } | null)?.error ??
+            `删除失败 (${res.status})`,
+        );
       }
-    } catch (e) {
-      console.error("Failed to delete coverage item:", e);
+    } catch {
+      setErrorMessage("删除失败，请重试");
     } finally {
       setDeleteTarget(null);
     }
@@ -318,6 +344,11 @@ export function CoverageSection({
           </Button>
         )}
       </div>
+
+      {/* Error message */}
+      {errorMessage && (
+        <p className="mb-2 text-sm text-destructive">{errorMessage}</p>
+      )}
 
       {/* Item list */}
       {sorted.length > 0 && (
