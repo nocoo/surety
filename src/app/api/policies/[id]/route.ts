@@ -98,48 +98,61 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     ? await repos.insurers.findOrCreate(body.insurerName)
     : null;
 
-  const updated = await repos.policies.update(policyId, {
-    applicantId: body.applicantId,
-    insuredType: body.insuredType,
-    insuredMemberId,
-    insuredAssetId,
-    category: body.category,
-    subCategory: body.subCategory,
-    ...(insurer && { insurerId: insurer.id, insurerName: insurer.name }),
-    productName: body.productName,
-    policyNumber: body.policyNumber,
-    channel: body.channel,
-    sumAssured: body.sumAssured,
-    premium: body.premium,
-    paymentFrequency: body.paymentFrequency,
-    paymentYears: body.paymentYears,
-    totalPayments: body.totalPayments,
-    renewalType: body.renewalType,
-    paymentAccount: body.paymentAccount,
-    nextDueDate: body.nextDueDate,
-    effectiveDate: body.effectiveDate,
-    expiryDate: body.expiryDate,
-    hesitationEndDate: body.hesitationEndDate,
-    waitingDays: body.waitingDays,
-    guaranteedRenewalYears: body.guaranteedRenewalYears,
-    status: body.status,
-    deathBenefit: body.deathBenefit,
-    policyFilePath: body.policyFilePath,
-    notes: body.notes,
-  });
+  try {
+    const updated = await repos.policies.update(policyId, {
+      applicantId: body.applicantId,
+      insuredType: body.insuredType,
+      insuredMemberId,
+      insuredAssetId,
+      category: body.category,
+      subCategory: body.subCategory,
+      ...(insurer && { insurerId: insurer.id, insurerName: insurer.name }),
+      productName: body.productName,
+      policyNumber: body.policyNumber,
+      channel: body.channel,
+      sumAssured: body.sumAssured,
+      premium: body.premium,
+      paymentFrequency: body.paymentFrequency,
+      paymentYears: body.paymentYears,
+      totalPayments: body.totalPayments,
+      renewalType: body.renewalType,
+      paymentAccount: body.paymentAccount,
+      nextDueDate: body.nextDueDate,
+      effectiveDate: body.effectiveDate,
+      expiryDate: body.expiryDate,
+      hesitationEndDate: body.hesitationEndDate,
+      waitingDays: body.waitingDays,
+      guaranteedRenewalYears: body.guaranteedRenewalYears,
+      status: body.status,
+      deathBenefit: body.deathBenefit,
+      policyFilePath: body.policyFilePath,
+      notes: body.notes,
+    });
 
-  if (!updated) {
-    return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+    if (!updated) {
+      return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      id: updated.id,
+      policyNumber: updated.policyNumber,
+      productName: updated.productName,
+      insurerName: updated.insurerName,
+      category: updated.category,
+      status: updated.status,
+    });
+  } catch (err) {
+    // Roll back newly created insurer to avoid orphan records
+    if (insurer?.created) {
+      await repos.insurers.delete(insurer.id).catch(() => {});
+    }
+    const message = err instanceof Error ? err.message : "更新保单失败";
+    const isConstraint = message.includes("UNIQUE") || message.includes("constraint");
+    return NextResponse.json(
+      { error: isConstraint ? "保单编号已存在" : "更新保单失败" },
+      { status: isConstraint ? 409 : 500 }
+    );
   }
-
-  return NextResponse.json({
-    id: updated.id,
-    policyNumber: updated.policyNumber,
-    productName: updated.productName,
-    insurerName: updated.insurerName,
-    category: updated.category,
-    status: updated.status,
-  });
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {

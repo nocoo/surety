@@ -88,46 +88,59 @@ export async function POST(request: NextRequest) {
   // Resolve insurer AFTER all validation passes — avoids orphan insurer on bad requests
   const insurer = await repos.insurers.findOrCreate(body.insurerName);
 
-  const policy = await repos.policies.create({
-    applicantId: body.applicantId,
-    insuredType,
-    insuredMemberId,
-    insuredAssetId,
-    category: body.category,
-    subCategory: body.subCategory ?? null,
-    insurerId: insurer.id,
-    insurerName: insurer.name,
-    productName: body.productName,
-    policyNumber: body.policyNumber,
-    channel: body.channel ?? null,
-    sumAssured: body.sumAssured ?? 0,
-    premium: body.premium ?? 0,
-    paymentFrequency: body.paymentFrequency ?? "Yearly",
-    paymentYears: body.paymentYears ?? null,
-    totalPayments: body.totalPayments ?? null,
-    renewalType: body.renewalType ?? null,
-    paymentAccount: body.paymentAccount ?? null,
-    nextDueDate: body.nextDueDate ?? null,
-    effectiveDate: body.effectiveDate,
-    expiryDate: body.expiryDate ?? null,
-    hesitationEndDate: body.hesitationEndDate ?? null,
-    waitingDays: body.waitingDays ?? null,
-    guaranteedRenewalYears: body.guaranteedRenewalYears ?? null,
-    status: body.status ?? "Active",
-    deathBenefit: body.deathBenefit ?? null,
-    policyFilePath: body.policyFilePath ?? null,
-    notes: body.notes ?? null,
-  });
+  try {
+    const policy = await repos.policies.create({
+      applicantId: body.applicantId,
+      insuredType,
+      insuredMemberId,
+      insuredAssetId,
+      category: body.category,
+      subCategory: body.subCategory ?? null,
+      insurerId: insurer.id,
+      insurerName: insurer.name,
+      productName: body.productName,
+      policyNumber: body.policyNumber,
+      channel: body.channel ?? null,
+      sumAssured: body.sumAssured ?? 0,
+      premium: body.premium ?? 0,
+      paymentFrequency: body.paymentFrequency ?? "Yearly",
+      paymentYears: body.paymentYears ?? null,
+      totalPayments: body.totalPayments ?? null,
+      renewalType: body.renewalType ?? null,
+      paymentAccount: body.paymentAccount ?? null,
+      nextDueDate: body.nextDueDate ?? null,
+      effectiveDate: body.effectiveDate,
+      expiryDate: body.expiryDate ?? null,
+      hesitationEndDate: body.hesitationEndDate ?? null,
+      waitingDays: body.waitingDays ?? null,
+      guaranteedRenewalYears: body.guaranteedRenewalYears ?? null,
+      status: body.status ?? "Active",
+      deathBenefit: body.deathBenefit ?? null,
+      policyFilePath: body.policyFilePath ?? null,
+      notes: body.notes ?? null,
+    });
 
-  return NextResponse.json(
-    {
-      id: policy.id,
-      policyNumber: policy.policyNumber,
-      productName: policy.productName,
-      insurerName: policy.insurerName,
-      category: policy.category,
-      status: policy.status,
-    },
-    { status: 201 }
-  );
+    return NextResponse.json(
+      {
+        id: policy.id,
+        policyNumber: policy.policyNumber,
+        productName: policy.productName,
+        insurerName: policy.insurerName,
+        category: policy.category,
+        status: policy.status,
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    // Roll back newly created insurer to avoid orphan records
+    if (insurer.created) {
+      await repos.insurers.delete(insurer.id).catch(() => {});
+    }
+    const message = err instanceof Error ? err.message : "创建保单失败";
+    const isConstraint = message.includes("UNIQUE") || message.includes("constraint");
+    return NextResponse.json(
+      { error: isConstraint ? "保单编号已存在" : "创建保单失败" },
+      { status: isConstraint ? 409 : 500 }
+    );
+  }
 }

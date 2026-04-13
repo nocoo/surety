@@ -85,6 +85,7 @@ describe("insurersRepo", () => {
 
       expect(insurer.id).toBeGreaterThan(0);
       expect(insurer.name).toBe("新保险公司");
+      expect(insurer.created).toBe(true);
     });
 
     test("returns existing insurer when already exists", async () => {
@@ -93,6 +94,7 @@ describe("insurersRepo", () => {
 
       expect(found.id).toBe(created.id);
       expect(found.phone).toBe("95519");
+      expect(found.created).toBe(false);
     });
   });
 
