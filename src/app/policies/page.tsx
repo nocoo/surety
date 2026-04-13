@@ -397,11 +397,11 @@ export default function PoliciesPage() {
         setPolicyToDelete(null);
         fetchPolicies();
       } else {
-        throw new Error("DELETE_FAILED");
+        const data = await response.json().catch(() => null);
+        setActionError(data?.error ?? "删除保单失败，请重试");
       }
-    } catch (error) {
-      console.error("Error deleting policy:", error);
-      setActionError("删除保单失败，请重试");
+    } catch {
+      setActionError("网络异常，请检查连接后重试");
     }
   };
 

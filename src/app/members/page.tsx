@@ -124,16 +124,21 @@ export default function MembersPage() {
     if (!memberToDelete) return;
 
     setDeleteError(null);
-    const response = await fetch(`/api/members/${memberToDelete.id}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/members/${memberToDelete.id}`, {
+        method: "DELETE",
+      });
 
-    if (response.ok) {
-      setDeleteDialogOpen(false);
-      setMemberToDelete(null);
-      fetchMembers();
-    } else {
-      setDeleteError("删除成员失败，请重试");
+      if (response.ok) {
+        setDeleteDialogOpen(false);
+        setMemberToDelete(null);
+        fetchMembers();
+      } else {
+        const data = await response.json().catch(() => null);
+        setDeleteError(data?.error ?? "删除成员失败，请重试");
+      }
+    } catch {
+      setDeleteError("网络异常，请检查连接后重试");
     }
   };
 

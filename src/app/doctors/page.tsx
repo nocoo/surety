@@ -126,16 +126,21 @@ export default function DoctorsPage() {
     if (!doctorToDelete) return;
 
     setDeleteError(null);
-    const response = await fetch(`/api/doctors/${doctorToDelete.id}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/doctors/${doctorToDelete.id}`, {
+        method: "DELETE",
+      });
 
-    if (response.ok) {
-      setDeleteDialogOpen(false);
-      setDoctorToDelete(null);
-      fetchData();
-    } else {
-      setDeleteError("删除医生失败，请重试");
+      if (response.ok) {
+        setDeleteDialogOpen(false);
+        setDoctorToDelete(null);
+        fetchData();
+      } else {
+        const data = await response.json().catch(() => null);
+        setDeleteError(data?.error ?? "删除医生失败，请重试");
+      }
+    } catch {
+      setDeleteError("网络异常，请检查连接后重试");
     }
   };
 

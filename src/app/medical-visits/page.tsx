@@ -243,16 +243,21 @@ export default function MedicalVisitsPage() {
     if (!visitToDelete) return;
 
     setDeleteError(null);
-    const response = await fetch(`/api/medical-visits/${visitToDelete.id}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/medical-visits/${visitToDelete.id}`, {
+        method: "DELETE",
+      });
 
-    if (response.ok) {
-      setDeleteDialogOpen(false);
-      setVisitToDelete(null);
-      fetchData();
-    } else {
-      setDeleteError("删除就诊记录失败，请重试");
+      if (response.ok) {
+        setDeleteDialogOpen(false);
+        setVisitToDelete(null);
+        fetchData();
+      } else {
+        const data = await response.json().catch(() => null);
+        setDeleteError(data?.error ?? "删除就诊记录失败，请重试");
+      }
+    } catch {
+      setDeleteError("网络异常，请检查连接后重试");
     }
   };
 
