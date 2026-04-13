@@ -16,7 +16,7 @@ import {
   paymentFrequencyLabels,
   renewalTypeLabels,
 } from "@/lib/constants/policy";
-import type { PolicyDetail, Beneficiary } from "@/lib/types/policy";
+import type { PolicyDetail, Beneficiary, PolicyStatus } from "@/lib/types/policy";
 import { formatDateWithDays } from "@/lib/date-utils";
 import { EditableInfoRow } from "./editable-info-row";
 
@@ -49,12 +49,23 @@ const renewalTypes = [
   { value: "Yearly", label: "一年期" },
 ] as const;
 
+// DB-persisted statuses (Expired is derived, not directly settable)
 const statuses = [
   { value: "Active", label: "生效中" },
   { value: "Lapsed", label: "已失效" },
   { value: "Surrendered", label: "已退保" },
   { value: "Claimed", label: "已理赔" },
 ] as const;
+
+// Persistable status type (excludes Expired which is derived)
+type PersistableStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
+
+// Map display status to the appropriate form status for editing
+// Expired maps to Active (the source status before expiry was derived)
+function toEditableStatus(status: PolicyStatus): PersistableStatus {
+  if (status === "Expired") return "Active";
+  return status;
+}
 
 function PersonRow({
   name,
@@ -97,7 +108,7 @@ function BasicInfoSection({
     category: string;
     subCategory: string;
     channel: string;
-    status: typeof policy.status;
+    status: PersistableStatus;
   };
 
   const [isEditing, setIsEditing] = useState(false);
@@ -110,7 +121,7 @@ function BasicInfoSection({
     category: policy.category,
     subCategory: policy.subCategory ?? "",
     channel: policy.channel ?? "",
-    status: policy.status,
+    status: toEditableStatus(policy.status),
   });
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
@@ -156,7 +167,7 @@ function BasicInfoSection({
       category: policy.category,
       subCategory: policy.subCategory ?? "",
       channel: policy.channel ?? "",
-      status: policy.status,
+      status: toEditableStatus(policy.status),
     });
     setIsEditing(false);
     setError(null);
@@ -249,7 +260,7 @@ function BasicInfoSection({
           type="select"
           options={statuses}
           editValue={formData.status}
-          onEditChange={isEditing ? (v) => updateField("status", v as typeof policy.status) : undefined}
+          onEditChange={isEditing ? (v) => updateField("status", v as PersistableStatus) : undefined}
         />
       </div>
       {error && <p className="text-xs text-destructive mt-2">{error}</p>}
@@ -799,9 +810,11 @@ function PersonInfoSection({
   ];
   const assetOptions = assets.map((a) => ({ value: String(a.id), label: a.name }));
 
+  // Disable Asset option when no assets exist
+  const hasAssets = assets.length > 0;
   const insuredTypeOptions = [
     { value: "Member", label: "人" },
-    { value: "Asset", label: "财产" },
+    { value: "Asset", label: hasAssets ? "财产" : "财产 (无可选资产)", disabled: !hasAssets },
   ];
 
   return (
