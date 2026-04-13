@@ -46,8 +46,8 @@ export function createPoliciesRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const rows = await dbInstance.delete(policies).where(eq(policies.id, id)).returning().all();
-      return rows.length > 0;
+      const result = await dbInstance.delete(policies).where(eq(policies.id, id)).run();
+      return (result.changes ?? result.rowsAffected ?? 0) > 0;
     },
   };
 }

@@ -11,6 +11,7 @@ import {
   settingsRepo,
   insurersRepo,
 } from "./repositories";
+import { db, type DbInstance } from "./index";
 
 // ============================================================================
 // Seed Data Definitions
@@ -229,6 +230,18 @@ export const policySeedData: PolicySeed[] = [
 // Helper Functions
 // ============================================================================
 
+/**
+ * Lookup helper that throws if the key is not found in the map.
+ * Prevents silently passing undefined to downstream inserts.
+ */
+function requireLookup<K, V>(map: Map<K, V>, key: K, label: string): V {
+  const value = map.get(key);
+  if (value === undefined) {
+    throw new Error(`${label} "${key}" not found in lookup map`);
+  }
+  return value;
+}
+
 // ============================================================================
 // Seed Function (reusable)
 // ============================================================================
@@ -246,8 +259,10 @@ export interface SeedResult {
  * @param repos - Optional repos instance. When omitted, uses global singletons
  *                (backward compat). Scripts should pass createAllRepos(db) to
  *                avoid the global db Proxy.
+ * @param dbInstance - Optional db instance for transaction support. When provided,
+ *                     all seed operations are wrapped in a transaction.
  */
-export async function seedDatabase(repos?: AllRepos): Promise<SeedResult> {
+export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): Promise<SeedResult> {
   const r = repos ?? {
     members: membersRepo,
     assets: assetsRepo,
@@ -259,98 +274,107 @@ export async function seedDatabase(repos?: AllRepos): Promise<SeedResult> {
     insurers: insurersRepo,
   };
 
-  // Seed members
-  const memberMap = new Map<string, number>();
-  for (const member of familyMembers) {
-    const created = await r.members.create(member);
-    memberMap.set(member.name, created.id);
-  }
+  // Use provided dbInstance or fallback to the global proxy
+  const dbToUse = dbInstance ?? db;
 
-  // Seed assets
-  const assetMap = new Map<string, number>();
-  for (const asset of familyAssets) {
-    const ownerId = memberMap.get(asset.ownerName);
-    const created = await r.assets.create({
-      type: asset.type,
-      name: asset.name,
-      identifier: asset.identifier,
-      ownerId,
-      details: asset.details,
-    });
-    assetMap.set(asset.identifier, created.id);
-  }
-
-  // Seed insurers (extract unique insurer names from policies)
-  const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
-  for (const name of uniqueInsurers) {
-    await r.insurers.findOrCreate(name);
-  }
-
-  // Seed policies with related data
-  for (const seed of policySeedData) {
-    const applicantId = memberMap.get(seed.applicantName);
-    if (applicantId === undefined) {
-      throw new Error(`Applicant "${seed.applicantName}" not found in memberMap`);
+  // Wrap all seed operations in a transaction
+  return await dbToUse.transaction(async () => {
+    // Seed members
+    const memberMap = new Map<string, number>();
+    for (const member of familyMembers) {
+      const created = await r.members.create(member);
+      memberMap.set(member.name, created.id);
     }
-    const insuredMemberId = seed.insuredName ? memberMap.get(seed.insuredName) : undefined;
-    const insuredAssetId = seed.insuredAssetIdentifier ? assetMap.get(seed.insuredAssetIdentifier) : undefined;
 
-    const policy = await r.policies.create({
-      ...seed.policy,
-      applicantId,
-      insuredMemberId,
-      insuredAssetId,
-    });
+    // Seed assets
+    const assetMap = new Map<string, number>();
+    for (const asset of familyAssets) {
+      const ownerId = requireLookup(memberMap, asset.ownerName, "Asset owner");
+      const created = await r.assets.create({
+        type: asset.type,
+        name: asset.name,
+        identifier: asset.identifier,
+        ownerId,
+        details: asset.details,
+      });
+      assetMap.set(asset.identifier, created.id);
+    }
 
-    // Beneficiaries
-    if (seed.beneficiaries) {
-      for (const b of seed.beneficiaries) {
-        const bene: NewBeneficiary = {
+    // Seed insurers (extract unique insurer names from policies)
+    const uniqueInsurers = [...new Set(policySeedData.map((s) => s.policy.insurerName))];
+    for (const name of uniqueInsurers) {
+      await r.insurers.findOrCreate(name);
+    }
+
+    // Seed policies with related data
+    for (const seed of policySeedData) {
+      const applicantId = requireLookup(memberMap, seed.applicantName, "Applicant");
+      const insuredMemberId = seed.insuredName
+        ? requireLookup(memberMap, seed.insuredName, "Insured member")
+        : undefined;
+      const insuredAssetId = seed.insuredAssetIdentifier
+        ? requireLookup(assetMap, seed.insuredAssetIdentifier, "Insured asset")
+        : undefined;
+
+      const policy = await r.policies.create({
+        ...seed.policy,
+        applicantId,
+        insuredMemberId,
+        insuredAssetId,
+      });
+
+      // Beneficiaries
+      if (seed.beneficiaries) {
+        for (const b of seed.beneficiaries) {
+          const bene: NewBeneficiary = {
+            policyId: policy.id,
+            memberId: b.memberName
+              ? requireLookup(memberMap, b.memberName, "Beneficiary member")
+              : undefined,
+            externalName: b.externalName,
+            sharePercent: b.sharePercent,
+            rankOrder: b.rankOrder,
+          };
+          await r.beneficiaries.create(bene);
+        }
+      }
+
+      // Payments
+      const paymentRecords = generatePaymentRecords(
+        {
           policyId: policy.id,
-          memberId: b.memberName ? memberMap.get(b.memberName) : undefined,
-          externalName: b.externalName,
-          sharePercent: b.sharePercent,
-          rankOrder: b.rankOrder,
-        };
-        await r.beneficiaries.create(bene);
+          effectiveDate: seed.policy.effectiveDate,
+          paymentFrequency: seed.policy.paymentFrequency,
+          totalPayments: seed.policy.totalPayments ?? null,
+          premium: seed.policy.premium,
+        },
+        null, // null = generate all periods (seed mode)
+        new Set(), // no existing records
+      );
+      if (paymentRecords.length > 0) {
+        await r.payments.createMany(paymentRecords);
+      }
+
+      // Cash values
+      if (seed.cashValueYears) {
+        const cvRecords = seed.cashValueYears.map((year, idx) => ({
+          policyId: policy.id,
+          policyYear: year,
+          value: Math.round(seed.policy.premium * (idx + 1) * 0.3),
+        }));
+        await r.cashValues.createMany(cvRecords);
       }
     }
 
-    // Payments
-    const paymentRecords = generatePaymentRecords(
-      {
-        policyId: policy.id,
-        effectiveDate: seed.policy.effectiveDate,
-        paymentFrequency: seed.policy.paymentFrequency,
-        totalPayments: seed.policy.totalPayments ?? null,
-        premium: seed.policy.premium,
-      },
-      null, // null = generate all periods (seed mode)
-      new Set(), // no existing records
-    );
-    if (paymentRecords.length > 0) {
-      await r.payments.createMany(paymentRecords);
-    }
+    // Seed settings
+    await r.settings.set("annualIncome", "600000");
+    await r.settings.setNumber("emergencyFundMonths", 6);
+    await r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
 
-    // Cash values
-    if (seed.cashValueYears) {
-      const cvRecords = seed.cashValueYears.map((year, idx) => ({
-        policyId: policy.id,
-        policyYear: year,
-        value: Math.round(seed.policy.premium * (idx + 1) * 0.3),
-      }));
-      await r.cashValues.createMany(cvRecords);
-    }
-  }
-
-  // Seed settings
-  await r.settings.set("annualIncome", "600000");
-  await r.settings.setNumber("emergencyFundMonths", 6);
-  await r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
-
-  return {
-    members: familyMembers.length,
-    assets: familyAssets.length,
-    policies: policySeedData.length,
-  };
+    return {
+      members: familyMembers.length,
+      assets: familyAssets.length,
+      policies: policySeedData.length,
+    };
+  });
 }

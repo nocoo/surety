@@ -38,17 +38,16 @@ export function createCashValuesRepo(dbInstance: DbInstance) {
     },
 
     async delete(id: number): Promise<boolean> {
-      const rows = await dbInstance.delete(cashValues).where(eq(cashValues.id, id)).returning().all();
-      return rows.length > 0;
+      const result = await dbInstance.delete(cashValues).where(eq(cashValues.id, id)).run();
+      return (result.changes ?? result.rowsAffected ?? 0) > 0;
     },
 
     async deleteByPolicyId(policyId: number): Promise<number> {
-      const rows = await dbInstance
+      const result = await dbInstance
         .delete(cashValues)
         .where(eq(cashValues.policyId, policyId))
-        .returning()
-        .all();
-      return rows.length;
+        .run();
+      return result.changes ?? result.rowsAffected ?? 0;
     },
   };
 }
