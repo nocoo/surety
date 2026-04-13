@@ -78,6 +78,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
   const body = await request.json();
 
+  // Check policy exists before any side effects (e.g. creating insurer)
+  const existing = await repos.policies.findById(policyId);
+  if (!existing) {
+    return NextResponse.json({ error: "Policy not found" }, { status: 404 });
+  }
+
   // Server-side normalization: enforce insuredType mutual exclusion.
   // When insuredType is "Member", clear insuredAssetId; when "Asset", clear insuredMemberId.
   let { insuredMemberId, insuredAssetId } = body;
