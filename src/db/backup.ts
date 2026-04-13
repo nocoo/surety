@@ -34,6 +34,7 @@ export interface BackupData {
     payments: BackupRow[];
     cashValues: BackupRow[];
     coverageItems: BackupRow[];
+    attachments: BackupRow[];
     settings: BackupRow[];
     hospitals: BackupRow[];
     doctors: BackupRow[];
@@ -50,6 +51,7 @@ export interface RestoreCounts {
   payments: number;
   cashValues: number;
   coverageItems: number;
+  attachments: number;
   settings: number;
   hospitals: number;
   doctors: number;
@@ -66,6 +68,7 @@ export const ALL_TABLE_KEYS = [
   "payments",
   "cashValues",
   "coverageItems",
+  "attachments",
   "settings",
   "hospitals",
   "doctors",
@@ -87,6 +90,7 @@ const TABLE_NAME_MAP: Record<TableKey, string> = {
   payments: "payments",
   cashValues: "cash_values",
   coverageItems: "coverage_items",
+  attachments: "attachments",
   settings: "settings",
   hospitals: "hospitals",
   doctors: "doctors",
@@ -109,6 +113,7 @@ const SCHEMA_TABLE_MAP: Record<TableKey, any> = {
   payments: schema.payments,
   cashValues: schema.cashValues,
   coverageItems: schema.coverageItems,
+  attachments: schema.attachments,
   settings: schema.settings,
   hospitals: schema.hospitals,
   doctors: schema.doctors,
@@ -218,6 +223,7 @@ export async function buildBackup(db: DbInstance): Promise<BackupData> {
       payments: await queryTable("payments"),
       cashValues: await queryTable("cashValues"),
       coverageItems: await queryTable("coverageItems"),
+      attachments: await queryTable("attachments"),
       settings: await queryTable("settings"),
       hospitals: await queryTable("hospitals"),
       doctors: await queryTable("doctors"),
@@ -238,6 +244,9 @@ export function buildBackupFilename(): string {
 /**
  * Validate that a parsed JSON object looks like a valid backup payload.
  * Returns an error message string if invalid, or null if valid.
+ *
+ * For v1 backups, ALL table keys must be present (as arrays, even if empty).
+ * Partial backups are rejected to prevent data integrity issues during restore.
  */
 export function validateBackup(payload: unknown): string | null {
   if (payload == null || typeof payload !== "object") {
@@ -253,8 +262,11 @@ export function validateBackup(payload: unknown): string | null {
   const data = obj.data as Record<string, unknown>;
   for (const key of ALL_TABLE_KEYS) {
     const val = data[key];
-    // undefined/null is ok (treated as empty), but if present must be array
-    if (val !== undefined && val !== null && !Array.isArray(val)) {
+    // For v1 backups, require ALL table keys to be present as arrays
+    if (val === undefined || val === null) {
+      return `Missing required table key: data.${key}`;
+    }
+    if (!Array.isArray(val)) {
       return `data.${key} must be an array, got ${typeof val}`;
     }
   }
@@ -272,6 +284,7 @@ const DELETE_ORDER: readonly TableKey[] = [
   "cashValues",
   "payments",
   "beneficiaries",
+  "attachments",
   "policies",
   "assets",
   "insurers",
@@ -291,6 +304,7 @@ const INSERT_ORDER: readonly TableKey[] = [
   "payments",
   "cashValues",
   "coverageItems",
+  "attachments",
   "settings",
   "hospitals",
   "doctors",
@@ -388,6 +402,7 @@ export async function restoreBackup(
     payments: 0,
     cashValues: 0,
     coverageItems: 0,
+    attachments: 0,
     settings: 0,
     hospitals: 0,
     doctors: 0,
@@ -398,11 +413,14 @@ export async function restoreBackup(
     // D1 path: collect all statements and execute atomically via batch API
     const statements: SqlStatement[] = [];
 
-    // 1. Clear all tables (FK-safe order)
+    // 1. Clear tables that have data in the backup (FK-safe order)
+    // Only delete if the backup contains data for that table
     for (const key of DELETE_ORDER) {
-      statements.push({ sql: `DELETE FROM ${TABLE_NAME_MAP[key]}`, params: [] });
+      const rows = data[key];
+      if (rows && rows.length > 0) {
+        statements.push({ sql: `DELETE FROM ${TABLE_NAME_MAP[key]}`, params: [] });
+      }
     }
-    statements.push({ sql: "DELETE FROM sqlite_sequence", params: [] });
 
     // 2. Build INSERT statements (FK-safe order)
     for (const key of INSERT_ORDER) {
@@ -425,12 +443,15 @@ export async function restoreBackup(
     // bun-sqlite path: local transaction with Drizzle ORM insert
     await db.run(sql.raw("BEGIN TRANSACTION"));
     try {
-      // 1. Clear all tables (FK-safe order)
+      // 1. Clear tables that have data in the backup (FK-safe order)
+      // Only delete if the backup contains data for that table
       for (const key of DELETE_ORDER) {
-        const tableName = TABLE_NAME_MAP[key];
-        await db.run(sql.raw(`DELETE FROM ${tableName}`));
+        const rows = data[key];
+        if (rows && rows.length > 0) {
+          const tableName = TABLE_NAME_MAP[key];
+          await db.run(sql.raw(`DELETE FROM ${tableName}`));
+        }
       }
-      await db.run(sql.raw("DELETE FROM sqlite_sequence"));
 
       // 2. Insert rows via Drizzle ORM (FK-safe order)
       for (const key of INSERT_ORDER) {

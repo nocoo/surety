@@ -201,8 +201,9 @@ describe("backup service", () => {
       );
     });
 
-    test("valid payload passes", () => {
-      expect(validateBackup({ version: 1, data: {} })).toBeNull();
+    test("valid payload requires all table keys", () => {
+      // Empty data object should fail - missing required table keys
+      expect(validateBackup({ version: 1, data: {} })).toMatch(/Missing required table key/);
     });
 
     test("valid payload with empty arrays passes", () => {
@@ -285,7 +286,7 @@ describe("backup service", () => {
       expect(memberIds).toContain(firstPolicy.applicant_id);
     });
 
-    test("restore with empty data clears everything", async () => {
+    test("restore with empty arrays preserves existing data", async () => {
       await seedFamily();
       expect(rawQuery("members").length).toBe(2);
 
@@ -301,6 +302,7 @@ describe("backup service", () => {
           payments: [],
           cashValues: [],
           coverageItems: [],
+          attachments: [],
           settings: [],
           hospitals: [],
           doctors: [],
@@ -308,10 +310,12 @@ describe("backup service", () => {
         },
       };
 
+      // When backup has empty arrays, existing data should be preserved
+      // (only tables with actual data in backup will be cleared and replaced)
       await restoreBackup(db, emptyBackup);
-      expect(rawQuery("members")).toEqual([]);
-      expect(rawQuery("policies")).toEqual([]);
-      expect(rawQuery("settings")).toEqual([]);
+      expect(rawQuery("members").length).toBe(2); // Data preserved
+      expect(rawQuery("policies").length).toBe(1);
+      expect(rawQuery("settings").length).toBe(2);
     });
 
     test("restore throws on invalid payload", async () => {
@@ -438,9 +442,10 @@ describe("backup service", () => {
       // Should have collected DELETE + INSERT statements
       expect(captured.length).toBeGreaterThan(0);
 
-      // Should have DELETEs for all tables + sqlite_sequence
+      // Should have DELETEs only for tables that have data in the backup
       const deleteStmts = captured.filter((s) => s.sql.startsWith("DELETE FROM"));
-      expect(deleteStmts.length).toBe(13); // 12 tables + sqlite_sequence
+      // Only tables with data: members(2), insurers(1), assets(1), policies(1), beneficiaries(1), settings(2) = 6 tables
+      expect(deleteStmts.length).toBe(6);
 
       // Should have INSERTs
       const insertStmts = captured.filter((s) => s.sql.startsWith("INSERT INTO"));
