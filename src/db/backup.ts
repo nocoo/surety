@@ -242,12 +242,20 @@ export function buildBackupFilename(): string {
 // ── Import ───────────────────────────────────────────────────────────
 
 /**
+ * Table keys that were added after the initial v1 backup format.
+ * Only these may be absent in older backups and will be backfilled with [].
+ * All original v1 keys are still required — a payload missing them is
+ * treated as corrupt/partial and rejected to prevent accidental data wipe.
+ */
+const BACKFILL_ALLOWED_KEYS: ReadonlySet<TableKey> = new Set(["attachments"]);
+
+/**
  * Validate that a parsed JSON object looks like a valid backup payload.
  * Returns an error message string if invalid, or null if valid.
  *
- * Missing table keys are automatically backfilled with empty arrays for
- * forward-compatibility (older backups won't have newer tables like attachments).
- * If a key is present, it must be an array.
+ * Keys listed in BACKFILL_ALLOWED_KEYS may be absent (backfilled with []).
+ * All other table keys are required — missing ones indicate a corrupt or
+ * partial backup that must not be fed into the destructive restore path.
  */
 export function validateBackup(payload: unknown): string | null {
   if (payload == null || typeof payload !== "object") {
@@ -263,10 +271,13 @@ export function validateBackup(payload: unknown): string | null {
   const data = obj.data as Record<string, unknown>;
   for (const key of ALL_TABLE_KEYS) {
     const val = data[key];
-    // Missing keys are backfilled with empty arrays (forward-compat for older backups)
     if (val === undefined || val === null) {
-      data[key] = [];
-      continue;
+      // Only backfill keys added after the initial v1 format
+      if (BACKFILL_ALLOWED_KEYS.has(key)) {
+        data[key] = [];
+        continue;
+      }
+      return `Missing required table key: data.${key}`;
     }
     if (!Array.isArray(val)) {
       return `data.${key} must be an array, got ${typeof val}`;

@@ -201,8 +201,8 @@ describe("backup service", () => {
       );
     });
 
-    test("valid payload with missing keys backfills empty arrays", () => {
-      // Old backups without 'attachments' should still pass — missing keys get backfilled
+    test("old backup missing 'attachments' is backfilled and accepted", () => {
+      // Old backups without 'attachments' should still pass — it's a known new-table key
       const data: Record<string, unknown[]> = {};
       for (const key of ALL_TABLE_KEYS) {
         if (key !== "attachments") data[key] = [];
@@ -211,6 +211,17 @@ describe("backup service", () => {
       expect(validateBackup(payload)).toBeNull();
       // After validation, the missing key should be backfilled
       expect((payload.data as Record<string, unknown>).attachments).toEqual([]);
+    });
+
+    test("partial backup missing original v1 keys is rejected", () => {
+      // A payload with only 'attachments' and nothing else is corrupt — must be rejected
+      expect(validateBackup({ version: 1, data: { attachments: [] } })).toMatch(
+        /Missing required table key/,
+      );
+    });
+
+    test("empty data object is rejected", () => {
+      expect(validateBackup({ version: 1, data: {} })).toMatch(/Missing required table key/);
     });
 
     test("valid payload with empty arrays passes", () => {
