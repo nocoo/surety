@@ -343,7 +343,7 @@ export function MemberSheet({ open, onOpenChange, member, onSuccess }: MemberShe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         <MemberForm
-          key={member?.id ?? "new"}
+          key={open ? (member?.id ?? "new") : "closed"}
           member={member}
           onClose={() => onOpenChange(false)}
           onSuccess={onSuccess}
