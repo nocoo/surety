@@ -82,15 +82,31 @@ function PolicyForm({
   const [assets, setAssets] = useState<{ id: number; name: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoadingPrerequisites, setIsLoadingPrerequisites] = useState(true);
+  const [prerequisiteError, setPrerequisiteError] = useState<string | null>(null);
 
   useEffect(() => {
+    setIsLoadingPrerequisites(true);
+    setPrerequisiteError(null);
     Promise.all([
-      fetch("/api/members").then((r) => (r.ok ? r.json() : [])),
-      fetch("/api/assets").then((r) => (r.ok ? r.json() : [])),
-    ]).then(([m, a]) => {
-      setMembers(m);
-      setAssets(a);
-    });
+      fetch("/api/members").then((r) => {
+        if (!r.ok) throw new Error("Failed to load members");
+        return r.json();
+      }),
+      fetch("/api/assets").then((r) => {
+        if (!r.ok) throw new Error("Failed to load assets");
+        return r.json();
+      }),
+    ])
+      .then(([m, a]) => {
+        setMembers(m);
+        setAssets(a);
+        setIsLoadingPrerequisites(false);
+      })
+      .catch((err) => {
+        setPrerequisiteError(err instanceof Error ? err.message : "加载数据失败");
+        setIsLoadingPrerequisites(false);
+      });
   }, []);
 
   const handleChange = (field: keyof PolicyFormData, value: string) => {
@@ -170,6 +186,15 @@ function PolicyForm({
             role="alert"
           >
             {submitError}
+          </div>
+        )}
+
+        {prerequisiteError && (
+          <div
+            className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
+            {prerequisiteError}
           </div>
         )}
 
@@ -424,8 +449,15 @@ function PolicyForm({
           >
             取消
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "创建中..." : "创建保单"}
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoadingPrerequisites || !!prerequisiteError}
+          >
+            {isLoadingPrerequisites
+              ? "加载中..."
+              : isSubmitting
+                ? "创建中..."
+                : "创建保单"}
           </Button>
         </SheetFooter>
       </form>
@@ -439,6 +471,7 @@ export function PolicySheet({ open, onOpenChange, onSuccess }: PolicySheetProps)
       <SheetContent className="flex w-full flex-col sm:max-w-md">
         {open && (
           <PolicyForm
+            key={open ? "open" : "closed"}
             onClose={() => onOpenChange(false)}
             {...(onSuccess && { onSuccess })}
           />
