@@ -76,13 +76,13 @@ interface MedicalVisit {
   notes: string | null;
 }
 
-const VISIT_TYPE_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const VISIT_TYPE_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "purple" | "teal"> = {
   "门诊": "default",
   "急诊": "destructive",
-  "体检": "secondary",
-  "复查": "outline",
-  "预约": "outline",
-  "儿保": "secondary",
+  "体检": "teal",
+  "复查": "info",
+  "预约": "purple",
+  "儿保": "success",
 };
 
 // Color palette for symptom tags - cycle through these colors
