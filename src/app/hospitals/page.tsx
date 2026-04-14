@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Phone, MapPin, Users, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -38,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { HospitalSheet } from "./hospital-sheet";
+import { cn, getAvatarColor, getHospitalInitial } from "@/lib/utils";
 
 const HOSPITAL_LEVELS = ["三甲", "三乙", "二甲", "二乙", "一级", "社区", "诊所", "未评级"];
 
@@ -232,7 +234,14 @@ export default function HospitalsPage() {
                 filteredHospitals.map((hospital) => (
                   <TableRow key={hospital.id} className="hover:bg-muted/50">
                     <TableCell>
-                      <span className="font-medium">{hospital.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-7 w-7">
+                          <AvatarFallback className={cn("text-xs text-white", getAvatarColor(hospital.name))}>
+                            {getHospitalInitial(hospital.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">{hospital.name}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {hospital.level ? (

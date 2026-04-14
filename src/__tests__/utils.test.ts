@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cn, hashString, getAvatarColor } from "@/lib/utils";
+import { cn, hashString, getAvatarColor, getHospitalInitial } from "@/lib/utils";
 
 describe("cn utility", () => {
   test("merges class names", () => {
@@ -63,6 +63,29 @@ describe("getAvatarColor", () => {
   test("returns bg-* class", () => {
     const color = getAvatarColor("李四");
     expect(color).toMatch(/^bg-[a-z-]+(?:\/\d+)?$/);
+  });
+});
+
+describe("getHospitalInitial", () => {
+  test("skips common city prefix", () => {
+    expect(getHospitalInitial("北京协和医院")).toBe("协");
+    expect(getHospitalInitial("上海瑞金医院")).toBe("瑞");
+    expect(getHospitalInitial("广州妇幼保健院")).toBe("妇");
+  });
+
+  test("skips longer city prefixes", () => {
+    expect(getHospitalInitial("石家庄市第一医院")).toBe("市");
+    expect(getHospitalInitial("呼和浩特中心医院")).toBe("中");
+  });
+
+  test("returns first char for non-prefixed names", () => {
+    expect(getHospitalInitial("协和医院")).toBe("协");
+    expect(getHospitalInitial("Mayo Clinic")).toBe("M");
+  });
+
+  test("handles edge cases", () => {
+    expect(getHospitalInitial("")).toBe("?");
+    expect(getHospitalInitial("北京")).toBe("北"); // prefix alone, no remaining chars
   });
 });
 

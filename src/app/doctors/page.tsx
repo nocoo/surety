@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Phone, Building2, Stethoscope, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -38,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DoctorSheet } from "./doctor-sheet";
+import { cn, getAvatarColor } from "@/lib/utils";
 
 interface Hospital {
   id: number;
@@ -242,7 +244,14 @@ export default function DoctorsPage() {
                   filteredDoctors.map((doctor) => (
                     <TableRow key={doctor.id} className="hover:bg-muted/50">
                       <TableCell>
-                        <span className="font-medium">{doctor.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className={cn("text-xs text-white", getAvatarColor(doctor.name))}>
+                              {doctor.name[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{doctor.name}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
