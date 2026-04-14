@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock, AlertCircl
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -32,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VisitSheet } from "./visit-sheet";
+import { cn, getAvatarColor } from "@/lib/utils";
 
 interface Member {
   id: number;
@@ -359,7 +361,14 @@ export default function MedicalVisitsPage() {
                     return (
                       <TableRow key={visit.id} className="hover:bg-muted/50">
                         <TableCell>
-                          <span className="font-medium">{visit.memberName}</span>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-7 w-7">
+                              <AvatarFallback className={cn("text-xs text-white", getAvatarColor(visit.memberName ?? ""))}>
+                                {visit.memberName?.[0] ?? "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{visit.memberName}</span>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>
