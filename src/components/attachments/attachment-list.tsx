@@ -43,7 +43,7 @@ export function AttachmentList({
   }
 
   return (
-    <ul className="divide-y divide-border">
+    <ul className="divide-y divide-border/50">
       {attachments.map((attachment) => (
         <li key={attachment.id} className="flex items-center gap-3 py-3">
           <AttachmentIcon contentType={attachment.contentType} />

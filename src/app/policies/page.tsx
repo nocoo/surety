@@ -867,7 +867,7 @@ export default function PoliciesPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="divide-y">
+                  <div className="divide-y divide-border/50">
                     {groupPolicies.map((policy) => {
                       const status = statusConfig[policy.status];
                       const categoryLabel = categoryLabels[policy.category] ?? policy.category;
@@ -992,7 +992,7 @@ export default function PoliciesPage() {
           <DialogHeader>
             <DialogTitle>选择附件预览</DialogTitle>
           </DialogHeader>
-          <ul className="divide-y divide-border max-h-[60vh] overflow-y-auto">
+          <ul className="divide-y divide-border/50 max-h-[60vh] overflow-y-auto">
             {pickerAttachments.map((att) => (
               <li key={att.id}>
                 <button
