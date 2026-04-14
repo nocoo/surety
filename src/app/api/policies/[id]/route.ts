@@ -146,11 +146,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (insurer?.created) {
       await repos.insurers.delete(insurer.id).catch(() => {});
     }
-    const message = err instanceof Error ? err.message : "更新保单失败";
-    const isConstraint = message.includes("UNIQUE") || message.includes("constraint");
+    const message = err instanceof Error ? err.message : "";
+    const isDuplicatePolicyNumber = message.includes("UNIQUE") && message.includes("policy_number");
     return NextResponse.json(
-      { error: isConstraint ? "保单编号已存在" : "更新保单失败" },
-      { status: isConstraint ? 409 : 500 }
+      { error: isDuplicatePolicyNumber ? "保单编号已存在" : "更新保单失败" },
+      { status: isDuplicatePolicyNumber ? 409 : 500 }
     );
   }
 }
