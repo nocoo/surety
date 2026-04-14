@@ -133,6 +133,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     });
 
     if (!updated) {
+      // Policy was deleted between pre-check and update (race condition).
+      // Roll back newly created insurer before returning 404.
+      if (insurer?.created) {
+        await repos.insurers.delete(insurer.id).catch(() => {});
+      }
       return NextResponse.json({ error: "Policy not found" }, { status: 404 });
     }
 
