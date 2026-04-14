@@ -369,7 +369,6 @@ export const medicalVisits = sqliteTable(
     department: text("department"),
     symptoms: text("symptoms"), // JSON array: ["便血", "喂养"]
     diagnosis: text("diagnosis"),
-    assessment: text("assessment"),
     treatment: text("treatment"),
     totalCost: real("total_cost"),
     insurancePaid: real("insurance_paid"),

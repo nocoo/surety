@@ -126,7 +126,6 @@ interface VisitFormData {
   department: string;
   symptoms: string[];  // Array of symptom strings
   diagnosis: string;
-  assessment: string;
   treatment: string;
   totalCost: string;
   insurancePaid: string;
@@ -147,7 +146,6 @@ interface MedicalVisit {
   department: string | null;
   symptoms?: string | null | undefined;
   diagnosis: string | null;
-  assessment?: string | null | undefined;
   treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
@@ -201,7 +199,6 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
       department: visit.department ?? "",
       symptoms: parseSymptomsJson(visit.symptoms),
       diagnosis: visit.diagnosis ?? "",
-      assessment: visit.assessment ?? "",
       treatment: visit.treatment ?? "",
       totalCost: visit.totalCost?.toString() ?? "",
       insurancePaid: visit.insurancePaid?.toString() ?? "",
@@ -221,7 +218,6 @@ function createFormData(visit: MedicalVisit | null | undefined): VisitFormData {
     department: "",
     symptoms: [],
     diagnosis: "",
-    assessment: "",
     treatment: "",
     totalCost: "",
     insurancePaid: "",
@@ -332,7 +328,6 @@ function VisitForm({
           department: formData.department || null,
           symptoms: formData.symptoms.length > 0 ? JSON.stringify(formData.symptoms) : null,
           diagnosis: formData.diagnosis || null,
-          assessment: formData.assessment || null,
           treatment: formData.treatment || null,
           totalCost,
           insurancePaid,
@@ -523,17 +518,6 @@ function VisitForm({
               placeholder="诊断结果"
               value={formData.diagnosis}
               onChange={(e) => handleChange("diagnosis", e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="assessment">评估</Label>
-            <Textarea
-              id="assessment"
-              placeholder="医生评估意见"
-              value={formData.assessment}
-              onChange={(e) => handleChange("assessment", e.target.value)}
               rows={2}
             />
           </div>

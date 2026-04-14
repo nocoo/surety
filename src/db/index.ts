@@ -397,7 +397,6 @@ export function initSchema(): void {
       department TEXT,
       symptoms TEXT,
       diagnosis TEXT,
-      assessment TEXT,
       treatment TEXT,
       total_cost REAL,
       insurance_paid REAL,

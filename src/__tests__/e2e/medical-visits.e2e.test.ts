@@ -17,7 +17,6 @@ interface MedicalVisit {
   department: string | null;
   symptoms?: string | null;
   diagnosis: string | null;
-  assessment?: string | null;
   treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
@@ -119,7 +118,6 @@ describe("Medical Visits API E2E", () => {
         department: "内科",
         symptoms: "发烧",
         diagnosis: "普通感冒",
-        assessment: "轻症",
         treatment: "多喝水",
         totalCost: 100,
         insurancePaid: 80,
@@ -168,7 +166,6 @@ describe("Medical Visits API E2E", () => {
           method: "PUT",
           body: JSON.stringify({
             diagnosis: "病毒性感冒",
-            assessment: "中症",
             totalCost: 150,
             insurancePaid: 120,
             selfPaid: 30,

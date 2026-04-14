@@ -67,7 +67,6 @@ interface MedicalVisit {
   department: string | null;
   symptoms?: string | null | undefined;
   diagnosis: string | null;
-  assessment?: string | null | undefined;
   treatment: string | null;
   totalCost: number | null;
   insurancePaid: number | null;
@@ -339,7 +338,6 @@ export default function MedicalVisitsPage() {
                   <TableHead>医生</TableHead>
                   <TableHead>症状</TableHead>
                   <TableHead>诊断</TableHead>
-                  <TableHead>评估</TableHead>
                   <TableHead>治疗方案</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
@@ -347,7 +345,7 @@ export default function MedicalVisitsPage() {
               <TableBody>
                 {filteredVisits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={13} className="h-24 text-center">
+                    <TableCell colSpan={12} className="h-24 text-center">
                       <div className="text-muted-foreground">
                         暂无就诊记录，点击上方按钮添加
                       </div>
@@ -440,15 +438,6 @@ export default function MedicalVisitsPage() {
                           {visit.diagnosis ? (
                             <span className="whitespace-normal">
                               {visit.diagnosis}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {visit.assessment ? (
-                            <span className="whitespace-normal text-sm">
-                              {visit.assessment}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">-</span>

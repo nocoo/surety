@@ -55,7 +55,6 @@ describe("medicalVisitsRepo", () => {
       expect(visit.department).toBeNull();
       expect(visit.symptoms).toBeNull();
       expect(visit.diagnosis).toBeNull();
-      expect(visit.assessment).toBeNull();
       expect(visit.treatment).toBeNull();
       expect(visit.totalCost).toBeNull();
       expect(visit.insurancePaid).toBeNull();
@@ -78,7 +77,6 @@ describe("medicalVisitsRepo", () => {
         department: "儿科",
         symptoms: JSON.stringify(["便血", "腹痛"]),
         diagnosis: "肠炎",
-        assessment: "轻度",
         treatment: "益生菌、休息",
         totalCost: 500.0,
         insurancePaid: 300.0,
@@ -93,7 +91,6 @@ describe("medicalVisitsRepo", () => {
       expect(visit.department).toBe("儿科");
       expect(visit.symptoms).toBe(JSON.stringify(["便血", "腹痛"]));
       expect(visit.diagnosis).toBe("肠炎");
-      expect(visit.assessment).toBe("轻度");
       expect(visit.treatment).toBe("益生菌、休息");
       expect(visit.totalCost).toBe(500.0);
       expect(visit.insurancePaid).toBe(300.0);
@@ -291,12 +288,10 @@ describe("medicalVisitsRepo", () => {
 
       const updated = await medicalVisitsRepo.update(visit.id, {
         diagnosis: "发育正常",
-        assessment: "良好",
         treatment: "继续观察",
       });
 
       expect(updated?.diagnosis).toBe("发育正常");
-      expect(updated?.assessment).toBe("良好");
       expect(updated?.treatment).toBe("继续观察");
       expect(updated?.updatedAt.getTime()).toBeGreaterThanOrEqual(
         visit.updatedAt.getTime()
