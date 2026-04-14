@@ -1,125 +1,132 @@
 /**
- * Tests the orphan insurer rollback in PUT /api/policies/:id
- * when a race condition causes the policy to be deleted between
- * the pre-check findById and the actual update.
+ * Regression test: PUT /api/policies/:id must roll back a newly-created
+ * insurer when the policy vanishes between findById pre-check and update.
  *
- * Uses real in-memory DB to exercise the exact code path.
+ * This test calls the real PUT route handler with mocked repos so it
+ * exercises the actual code path in route.ts, not a manual re-implementation.
  */
-import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb } from "@/db";
-import {
-  policiesRepo,
-  membersRepo,
-  insurersRepo,
-} from "@/db/repositories";
-import type { NewPolicy } from "@/db/schema";
+import { describe, expect, test, mock } from "bun:test";
 
-describe("PUT /api/policies/:id orphan insurer rollback", () => {
-  let testMemberId: number;
-  let testPolicyId: number;
+// --- Mock setup (must precede route import) ---
 
-  const createTestPolicy = (overrides: Partial<NewPolicy> = {}): NewPolicy => ({
-    applicantId: testMemberId,
-    insuredType: "Member",
-    insuredMemberId: testMemberId,
-    category: "Life",
-    insurerName: "旧保险公司",
-    productName: "旧产品",
-    policyNumber: `POL-${Date.now()}`,
-    sumAssured: 100000,
-    premium: 5000,
-    paymentFrequency: "Yearly",
-    effectiveDate: "2024-01-01",
-    ...overrides,
+const deleteFn = mock(() => Promise.resolve(true));
+
+const mockRepos = {
+  policies: {
+    findById: mock(() => Promise.resolve({ id: 1, status: "Active" })),
+    // Simulate race: update finds no row
+    update: mock(() => Promise.resolve(undefined)),
+  },
+  insurers: {
+    findOrCreate: mock(() =>
+      Promise.resolve({ id: 99, name: "新保险公司", created: true }),
+    ),
+    delete: deleteFn,
+  },
+};
+
+mock.module("@/lib/api-helpers", () => ({
+  getReposFromRequest: () =>
+    Promise.resolve({ repos: mockRepos, targetDb: "test" as const }),
+}));
+
+// Route handler is imported AFTER mock.module so the mock is in effect
+const { PUT } = await import("@/app/api/policies/[id]/route");
+
+// --- Tests ---
+
+describe("PUT /api/policies/:id route handler rollback", () => {
+  test("rolls back newly created insurer when update returns undefined (race condition)", async () => {
+    deleteFn.mockClear();
+
+    const request = new Request("http://localhost/api/policies/1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        insurerName: "新保险公司",
+        productName: "新产品",
+        category: "Life",
+      }),
+    });
+
+    const context = { params: Promise.resolve({ id: "1" }) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PUT(request as any, context);
+
+    // Handler should return 404 for the vanished policy
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body.error).toBe("Policy not found");
+
+    // Key assertion: the route handler itself called insurers.delete(99)
+    expect(deleteFn).toHaveBeenCalledTimes(1);
+    expect(deleteFn).toHaveBeenCalledWith(99);
   });
 
-  beforeEach(async () => {
-    resetTestDb();
-    const member = await membersRepo.create({
-      name: "测试人",
-      relation: "Self",
-      birthDate: "1985-01-01",
-    });
-    testMemberId = member.id;
+  test("does NOT roll back existing insurer when update returns undefined", async () => {
+    deleteFn.mockClear();
 
-    const policy = await policiesRepo.create(createTestPolicy());
-    testPolicyId = policy.id;
+    // Override findOrCreate to return created: false (existing insurer)
+    mockRepos.insurers.findOrCreate.mockImplementation(() =>
+      Promise.resolve({ id: 50, name: "已有保险公司", created: false }),
+    );
+
+    const request = new Request("http://localhost/api/policies/1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        insurerName: "已有保险公司",
+        productName: "新产品",
+        category: "Life",
+      }),
+    });
+
+    const context = { params: Promise.resolve({ id: "1" }) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PUT(request as any, context);
+
+    expect(response.status).toBe(404);
+
+    // delete must NOT be called — insurer already existed
+    expect(deleteFn).not.toHaveBeenCalled();
+
+    // Restore for other tests
+    mockRepos.insurers.findOrCreate.mockImplementation(() =>
+      Promise.resolve({ id: 99, name: "新保险公司", created: true }),
+    );
   });
 
-  test("update returns undefined when policy is deleted before update", async () => {
-    // Verify policy exists
-    const existing = await policiesRepo.findById(testPolicyId);
-    expect(existing).toBeDefined();
+  test("rolls back newly created insurer when update throws (catch branch)", async () => {
+    deleteFn.mockClear();
 
-    // Simulate concurrent delete (between findById pre-check and update)
-    await policiesRepo.delete(testPolicyId);
+    // Override update to throw instead of returning undefined
+    mockRepos.policies.update.mockImplementation(() =>
+      Promise.reject(new Error("DB connection lost")),
+    );
 
-    // update() on deleted row returns undefined
-    const updated = await policiesRepo.update(testPolicyId, {
-      productName: "新产品",
+    const request = new Request("http://localhost/api/policies/1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        insurerName: "新保险公司",
+        productName: "新产品",
+        category: "Life",
+      }),
     });
-    expect(updated).toBeUndefined();
-  });
 
-  test("newly created insurer is rolled back when policy vanishes before update", async () => {
-    // Verify policy exists (pre-check would pass)
-    const existing = await policiesRepo.findById(testPolicyId);
-    expect(existing).toBeDefined();
+    const context = { params: Promise.resolve({ id: "1" }) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await PUT(request as any, context);
 
-    // Create a new insurer via findOrCreate (simulates the PUT handler's insurer resolution)
-    const newInsurerName = "全新保险公司_不存在的";
-    const insurer = await insurersRepo.findOrCreate(newInsurerName);
-    expect(insurer.created).toBe(true);
+    expect(response.status).toBe(500);
 
-    // Simulate concurrent delete (race window)
-    await policiesRepo.delete(testPolicyId);
+    // catch branch should also roll back
+    expect(deleteFn).toHaveBeenCalledTimes(1);
+    expect(deleteFn).toHaveBeenCalledWith(99);
 
-    // update() returns undefined — policy gone
-    const updated = await policiesRepo.update(testPolicyId, {
-      insurerId: insurer.id,
-      insurerName: insurer.name,
-      productName: "新产品",
-    });
-    expect(updated).toBeUndefined();
-
-    // The fix: roll back the orphan insurer (mimics the patched route handler logic)
-    if (insurer.created) {
-      await insurersRepo.delete(insurer.id);
-    }
-
-    // Verify insurer is cleaned up — no orphan
-    const orphan = await insurersRepo.findById(insurer.id);
-    expect(orphan).toBeUndefined();
-  });
-
-  test("existing insurer is NOT deleted when policy vanishes (only newly created ones)", async () => {
-    // Pre-create an insurer that already exists
-    await insurersRepo.create({ name: "已有保险公司" });
-
-    const existing = await policiesRepo.findById(testPolicyId);
-    expect(existing).toBeDefined();
-
-    // findOrCreate returns created: false for existing insurer
-    const insurer = await insurersRepo.findOrCreate("已有保险公司");
-    expect(insurer.created).toBe(false);
-
-    // Simulate concurrent delete
-    await policiesRepo.delete(testPolicyId);
-
-    const updated = await policiesRepo.update(testPolicyId, {
-      insurerId: insurer.id,
-      insurerName: insurer.name,
-    });
-    expect(updated).toBeUndefined();
-
-    // Rollback guard: only delete if created === true
-    if (insurer.created) {
-      await insurersRepo.delete(insurer.id);
-    }
-
-    // Existing insurer should still be there
-    const stillExists = await insurersRepo.findById(insurer.id);
-    expect(stillExists).toBeDefined();
-    expect(stillExists?.name).toBe("已有保险公司");
+    // Restore for other tests
+    mockRepos.policies.update.mockImplementation(() =>
+      Promise.resolve(undefined),
+    );
   });
 });
