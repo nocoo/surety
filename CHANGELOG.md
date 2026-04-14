@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.5.9] - 2026-04-14
+
+### Added
+
+- **Medical visits module** — full CRUD for hospitals, doctors, and medical visit records with API routes, repositories, DB schema, MCP tools, and E2E tests
+- **Medical visits UI** — list page with filters, visit sheet (create/edit form), symptom tag input, cost validation, age-in-months display, and days-ago calculation
+- **Colored avatars** — hash-based avatar colors for members (medical visits table), doctors, and hospitals; hospital avatars skip common city prefixes for distinctive initials
+- **Visit type badge colors** — each visit type gets a semantic color: 门诊=primary, 急诊=destructive, 体检=teal, 复查=info, 预约=purple, 儿保=success
+- **MCP medical tools** — CRUD tools for hospitals, doctors, and medical visits with full validation
+- **CSV import** — medical visits CSV import script for data migration
+- **GitHub Actions CI** — added CI workflow for automated testing
+
+### Fixed
+
+- **Orphan insurer leak** — policy PUT route now rolls back newly-created insurers when the policy is concurrently deleted (race condition between pre-check and update)
+- **Insurer referential integrity** — validate applicant before findOrCreate insurer in POST, check policy exists before creating insurer in PUT
+- **Constraint match narrowed** — only catch UNIQUE + policy_number violations, not all constraint errors
+- **Backup integrity** — backfill all post-v1-baseline keys, narrow backfill scope to prevent partial backup wiping data, restore full-replace semantics with backward-compat
+- **Future date display** — `formatDaysAgo` now shows "X天后/周后/月后/年后" instead of negative numbers
+- **Table divider colors** — content row dividers use `border-border/50` per B-4 Basalt spec
+- **Table column truncation** — important columns (hospital names, addresses, diagnoses) no longer truncate with ellipsis
+- **Delete dialogs** — add try/catch and show backend error messages
+- **D1 transaction wrapper** — skip transaction wrapper for D1 sqlite-proxy in seedDatabase
+- **Lightweight delete** — revert to `returning().all()` pattern for D1 compatibility
+- **findOrCreate concurrency** — make concurrent-safe and move into try/catch
+- **TOTP decrypt** — wrap `decryptSecret()` calls in try/catch
+- **Coverage section** — fix sortOrder calculation and add error handling
+- **Donut chart** — add empty data state handling
+- **Payments section** — preserve Overdue status and add error handling
+- **Policy meta column** — handle Expired status and disable Asset option
+- **Hydration flash** — fix useSyncExternalStore in useMobile hook
+- **MCP timezone** — avoid UTC timezone shift in renewal-overview date parsing
+- **Renewal calendar** — unify window boundary inclusive/exclusive rules
+- **Sidebar mobile** — drawer ignores collapsed state
+- **Symptoms format** — JSON array format used consistently
+- **Chinese error messages** — consistent in medical visits API
+
+### Changed
+
+- **Assessment column removed** — dropped unused assessment field from DB schema, API routes, form, table, MCP tools, and all tests
+- **Settings decomposed** — refactored 1262-line page into sub-components
+- **MCP deduplication** — extracted shared utilities to `mcp/tools/shared.ts`
+- **Dashboard performance** — memoize inline data transforms
+- **DB performance** — add indexes on foreign key columns, optimize delete operations
+- **Race condition test** — rewrote to call real PUT handler via `mock.module` injection (not fake re-implementation)
+- **CI migration** — migrate to `base-ci@v2026`, disable L2 E2E
+- **Dependencies** — update hono, next, drizzle-orm to fix CVEs
+
 ## [v1.5.8] - 2026-04-04
 
 ### Changed
