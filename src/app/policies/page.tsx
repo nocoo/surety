@@ -755,7 +755,7 @@ export default function PoliciesPage() {
                       </TableCell>
                       <TableCell className="hidden xl:table-cell">
                         {policy.notes ? (
-                          <span className="text-sm text-muted-foreground line-clamp-1 max-w-[200px]">{policy.notes}</span>
+                          <span className="text-sm text-muted-foreground whitespace-normal">{policy.notes}</span>
                         ) : (
                           <span className="text-muted-foreground/40">—</span>
                         )}

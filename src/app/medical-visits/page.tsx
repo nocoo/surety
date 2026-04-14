@@ -393,14 +393,14 @@ export default function MedicalVisitsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="max-w-[120px] truncate block">
+                          <span className="whitespace-normal">
                             {visit.visitReason}
                           </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="max-w-[100px] truncate">
+                            <span className="whitespace-normal">
                               {visit.hospitalName}
                             </span>
                           </div>
@@ -417,7 +417,7 @@ export default function MedicalVisitsPage() {
                         </TableCell>
                         <TableCell>
                           {visit.symptoms ? (
-                            <div className="flex flex-wrap gap-1 max-w-[150px]">
+                            <div className="flex flex-wrap gap-1">
                               {parseSymptoms(visit.symptoms).slice(0, 3).map((symptom, idx) => (
                                 <span
                                   key={idx}
@@ -438,7 +438,7 @@ export default function MedicalVisitsPage() {
                         </TableCell>
                         <TableCell>
                           {visit.diagnosis ? (
-                            <span className="max-w-[100px] truncate block">
+                            <span className="whitespace-normal">
                               {visit.diagnosis}
                             </span>
                           ) : (
@@ -447,7 +447,7 @@ export default function MedicalVisitsPage() {
                         </TableCell>
                         <TableCell>
                           {visit.assessment ? (
-                            <span className="max-w-[100px] truncate block text-sm">
+                            <span className="whitespace-normal text-sm">
                               {visit.assessment}
                             </span>
                           ) : (
@@ -456,7 +456,7 @@ export default function MedicalVisitsPage() {
                         </TableCell>
                         <TableCell>
                           {visit.treatment ? (
-                            <span className="max-w-[100px] truncate block text-sm">
+                            <span className="whitespace-normal text-sm">
                               {visit.treatment}
                             </span>
                           ) : (

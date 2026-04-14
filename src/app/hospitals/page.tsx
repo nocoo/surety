@@ -252,7 +252,7 @@ export default function HospitalsPage() {
                       {hospital.address ? (
                         <div className="flex items-center gap-1.5">
                           <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="max-w-[200px] truncate">
+                          <span className="whitespace-normal">
                             {hospital.address}
                           </span>
                         </div>

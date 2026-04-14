@@ -247,7 +247,7 @@ export default function DoctorsPage() {
                       <TableCell>
                         <div className="flex items-center gap-1.5">
                           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="max-w-[150px] truncate">
+                          <span className="whitespace-normal">
                             {doctor.hospitalName}
                           </span>
                         </div>
@@ -268,7 +268,7 @@ export default function DoctorsPage() {
                       </TableCell>
                       <TableCell>
                         {doctor.specialty ? (
-                          <span className="max-w-[150px] truncate block">
+                          <span className="whitespace-normal">
                             {doctor.specialty}
                           </span>
                         ) : (
