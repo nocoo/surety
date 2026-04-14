@@ -21,10 +21,23 @@ export function createInsurersRepo(dbInstance: DbInstance) {
     },
 
     async findOrCreate(name: string): Promise<Insurer & { created: boolean }> {
+      // Try INSERT with ON CONFLICT DO NOTHING — concurrent-safe.
+      // If the name already exists, this is a no-op and returns no rows.
+      const inserted = await dbInstance
+        .insert(insurers)
+        .values({ name })
+        .onConflictDoNothing({ target: insurers.name })
+        .returning()
+        .all();
+
+      if (inserted.length > 0 && inserted[0]) {
+        return { ...inserted[0], created: true };
+      }
+
+      // Name already existed (conflict) — fetch the existing row
       const existing = await this.findByName(name);
-      if (existing) return { ...existing, created: false };
-      const created = await this.create({ name });
-      return { ...created, created: true };
+      if (!existing) throw new Error(`Insurer "${name}" not found after conflict`);
+      return { ...existing, created: false };
     },
 
     async update(id: number, data: Partial<NewInsurer>): Promise<Insurer | undefined> {

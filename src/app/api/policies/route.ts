@@ -85,10 +85,13 @@ export async function POST(request: NextRequest) {
     insuredMemberId = null;
   }
 
-  // Resolve insurer AFTER all validation passes — avoids orphan insurer on bad requests
-  const insurer = await repos.insurers.findOrCreate(body.insurerName);
-
+  // Resolve insurer and create policy inside try/catch so that:
+  // 1. findOrCreate errors (unexpected DB failures) are caught
+  // 2. Policy create failures trigger insurer rollback
+  let insurer: Awaited<ReturnType<typeof repos.insurers.findOrCreate>> | null = null;
   try {
+    insurer = await repos.insurers.findOrCreate(body.insurerName);
+
     const policy = await repos.policies.create({
       applicantId: body.applicantId,
       insuredType,
@@ -133,7 +136,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     // Roll back newly created insurer to avoid orphan records
-    if (insurer.created) {
+    if (insurer?.created) {
       await repos.insurers.delete(insurer.id).catch(() => {});
     }
     const message = err instanceof Error ? err.message : "";
