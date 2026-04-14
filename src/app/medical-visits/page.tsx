@@ -148,6 +148,15 @@ function formatAgeInMonths(months: number | null): string {
 function formatDaysAgo(days: number): string {
   if (days === 0) return "今天";
   if (days === 1) return "昨天";
+  if (days === -1) return "明天";
+  if (days < 0) {
+    // Future date
+    const abs = -days;
+    if (abs < 7) return `${abs}天后`;
+    if (abs < 30) return `${Math.floor(abs / 7)}周后`;
+    if (abs < 365) return `${Math.floor(abs / 30)}月后`;
+    return `${Math.floor(abs / 365)}年后`;
+  }
   if (days < 7) return `${days}天前`;
   if (days < 30) return `${Math.floor(days / 7)}周前`;
   if (days < 365) return `${Math.floor(days / 30)}月前`;
