@@ -67,7 +67,7 @@ function TagInput({
   }, [inputValue, addTag]);
 
   return (
-    <div className="flex flex-wrap gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[80px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+    <div className="flex flex-wrap gap-1.5 rounded-md border border-border hover:border-foreground/20 bg-secondary px-3 py-2 min-h-[80px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       {value.map((tag, index) => (
         <Badge
           key={index}
