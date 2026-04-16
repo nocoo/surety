@@ -130,3 +130,7 @@ id = "GHSA-f886-m6hf-6m8v"
 ignoreUntil = 2026-06-23
 reason = "Indirect: brace-expansion via minimatch (eslint, @typescript-eslint)"
 
+
+[[IgnoredVulns]]
+id = "GHSA-458j-xx4x-4375"
+reason = "hono 4.12.12 → 4.12.14 medium severity, indirect exposure only"
