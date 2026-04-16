@@ -1,59 +1,58 @@
 /**
- * GET /api/live — Worker + D1 liveness check.
+ * GET /api/live — Worker liveness check (surety standard).
  *
- * Requirements (from knowledge base):
- * - No auth, no cache
- * - Check core dependency (D1) connectivity
- * - Return status: "ok" | "error"; error responses must NOT contain "ok"
- * - Include version
- * - Lightweight — called frequently by monitors
+ * Response shape: { status, version, component, timestamp, uptime, database? }
+ * 200 = healthy, 503 = unhealthy. Cache-Control: no-store.
  */
 
 import { version } from "../../package.json";
 
-const NO_CACHE_HEADERS: HeadersInit = {
+const bootedAt = Date.now();
+
+const COMPONENT = "worker";
+
+const HEADERS: HeadersInit = {
   "Content-Type": "application/json",
-  "Cache-Control": "no-store, no-cache, must-revalidate",
-  Pragma: "no-cache",
-  Expires: "0",
+  "Cache-Control": "no-store",
 };
 
 export async function handleLive(db: D1Database): Promise<Response> {
-  try {
-    const result = await db.prepare("SELECT 1 AS ok").first<{ ok: number }>();
+  const base = {
+    version,
+    component: COMPONENT,
+    timestamp: new Date().toISOString(),
+    uptime: Math.round((Date.now() - bootedAt) / 1000),
+  };
 
-    if (result?.ok !== 1) {
-      return new Response(
-        JSON.stringify({
-          status: "error",
-          d1: "unexpected response",
-          version,
-          timestamp: new Date().toISOString(),
-        }),
-        { status: 503, headers: NO_CACHE_HEADERS },
-      );
+  try {
+    const row = await db
+      .prepare("SELECT 1 AS probe")
+      .first<{ probe: number }>();
+
+    if (row?.probe !== 1) {
+      return respond(503, {
+        status: "error",
+        ...base,
+        database: { connected: false, error: "unexpected probe result" },
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        status: "ok",
-        d1: "connected",
-        version,
-        timestamp: new Date().toISOString(),
-      }),
-      { status: 200, headers: NO_CACHE_HEADERS },
-    );
+    return respond(200, {
+      status: "ok",
+      ...base,
+      database: { connected: true },
+    });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown failure";
-    return new Response(
-      JSON.stringify({
-        status: "error",
-        d1: "disconnected",
-        error: message,
-        version,
-        timestamp: new Date().toISOString(),
-      }),
-      { status: 503, headers: NO_CACHE_HEADERS },
-    );
+    const raw = err instanceof Error ? err.message : "unknown failure";
+    const safe = raw.replace(/\bok\b/gi, "***");
+    return respond(503, {
+      status: "error",
+      ...base,
+      database: { connected: false, error: safe },
+    });
   }
+}
+
+function respond(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), { status, headers: HEADERS });
 }
