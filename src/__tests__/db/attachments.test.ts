@@ -181,4 +181,66 @@ describe("attachmentsRepo", () => {
       expect(await attachmentsRepo.countByPolicyId(9999)).toBe(0);
     });
   });
+
+  describe("countGroupedByPolicyIds", () => {
+    test("returns empty map when input is empty", async () => {
+      const result = await attachmentsRepo.countGroupedByPolicyIds([]);
+      expect(result).toBeInstanceOf(Map);
+      expect(result.size).toBe(0);
+    });
+
+    test("returns counts grouped by policy id", async () => {
+      // Create a second policy so we can group across multiple policies.
+      const member = await membersRepo.create({
+        name: "李四",
+        relation: "Spouse",
+        birthDate: "1987-05-05",
+      });
+      const policy2 = await policiesRepo.create({
+        applicantId: member.id,
+        insuredType: "Member",
+        insuredMemberId: member.id,
+        category: "Life",
+        insurerName: "平安人寿",
+        productName: "平安福",
+        policyNumber: `POL2-${Date.now()}`,
+        sumAssured: 300000,
+        premium: 8000,
+        paymentFrequency: "Yearly",
+        effectiveDate: "2024-02-01",
+      } satisfies NewPolicy);
+
+      await attachmentsRepo.create(
+        createTestAttachment({ filename: "p1-a.pdf" }),
+      );
+      await attachmentsRepo.create(
+        createTestAttachment({ filename: "p1-b.pdf" }),
+      );
+      await attachmentsRepo.create(
+        createTestAttachment({
+          policyId: policy2.id,
+          filename: "p2-a.pdf",
+          r2Key: `policies/${policy2.id}/${crypto.randomUUID()}.pdf`,
+        }),
+      );
+
+      const result = await attachmentsRepo.countGroupedByPolicyIds([
+        testPolicyId,
+        policy2.id,
+        9999, // nonexistent policy should not appear
+      ]);
+
+      expect(result.get(testPolicyId)).toBe(2);
+      expect(result.get(policy2.id)).toBe(1);
+      expect(result.has(9999)).toBe(false);
+      expect(result.size).toBe(2);
+    });
+
+    test("omits policies with zero attachments", async () => {
+      const result = await attachmentsRepo.countGroupedByPolicyIds([
+        testPolicyId,
+      ]);
+      expect(result.size).toBe(0);
+    });
+  });
 });
