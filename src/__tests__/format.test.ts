@@ -54,6 +54,7 @@ describe("formatCurrencyFull", () => {
 
   test("formats negative values", () => {
     const result = formatCurrencyFull(-100.5);
+    expect(result).toContain("-");
     expect(result).toContain("100.50");
   });
 });
