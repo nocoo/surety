@@ -83,6 +83,34 @@ describe("Other Repositories", () => {
       expect(await beneficiariesRepo.deleteByPolicyId(testPolicyId)).toBe(2);
       expect(await beneficiariesRepo.findByPolicyId(testPolicyId)).toHaveLength(0);
     });
+
+    test("findByMemberId returns beneficiaries linked to a member", async () => {
+      const beneficiaryMember = await membersRepo.create({
+        name: "王五",
+        relation: "Child",
+        birthDate: "2015-06-01",
+      });
+
+      await beneficiariesRepo.create({
+        policyId: testPolicyId,
+        memberId: beneficiaryMember.id,
+        sharePercent: 60,
+        rankOrder: 1,
+      });
+      await beneficiariesRepo.create({
+        policyId: testPolicyId,
+        externalName: "外部受益人",
+        sharePercent: 40,
+        rankOrder: 2,
+      });
+
+      const linked = await beneficiariesRepo.findByMemberId(beneficiaryMember.id);
+      expect(linked).toHaveLength(1);
+      expect(linked[0]?.memberId).toBe(beneficiaryMember.id);
+      expect(linked[0]?.sharePercent).toBe(60);
+
+      expect(await beneficiariesRepo.findByMemberId(9999)).toEqual([]);
+    });
   });
 
   describe("paymentsRepo", () => {
