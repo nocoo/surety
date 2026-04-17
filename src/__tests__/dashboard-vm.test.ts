@@ -3,7 +3,6 @@ import {
   createStatCards,
   fetchDashboardData,
   type DashboardStats,
-  type StatCardData,
 } from "@/lib/dashboard-vm";
 
 describe("dashboard-vm", () => {
@@ -15,80 +14,17 @@ describe("dashboard-vm", () => {
       totalSumAssured: 50650000,
     };
 
-    test("returns array of 4 stat cards", () => {
+    test("creates 4 cards with correct values and order", () => {
       const cards = createStatCards(mockStats);
       expect(cards).toHaveLength(4);
-    });
-
-    test("creates policy count card", () => {
-      const cards = createStatCards(mockStats);
-      const policyCard = cards.find((c) => c.label === "保单总数");
-      expect(policyCard).toBeDefined();
-      expect(policyCard?.value).toBe("28");
-      expect(policyCard?.iconName).toBe("FileText");
-    });
-
-    test("creates member count card", () => {
-      const cards = createStatCards(mockStats);
-      const memberCard = cards.find((c) => c.label === "家庭成员");
-      expect(memberCard).toBeDefined();
-      expect(memberCard?.value).toBe("5");
-      expect(memberCard?.iconName).toBe("Users");
-    });
-
-    test("creates premium card with formatted currency", () => {
-      const cards = createStatCards(mockStats);
-      const premiumCard = cards.find((c) => c.label === "年保费");
-      expect(premiumCard).toBeDefined();
-      expect(premiumCard?.value).toBe("¥17.5万");
-      expect(premiumCard?.iconName).toBe("TrendingUp");
-    });
-
-    test("creates sum assured card with formatted currency", () => {
-      const cards = createStatCards(mockStats);
-      const sumAssuredCard = cards.find((c) => c.label === "总保额");
-      expect(sumAssuredCard).toBeDefined();
-      expect(sumAssuredCard?.value).toBe("¥5065万");
-      expect(sumAssuredCard?.iconName).toBe("Shield");
-    });
-
-    test("all cards have required properties", () => {
-      const cards = createStatCards(mockStats);
-      for (const card of cards) {
-        expect(card.label).toBeDefined();
-        expect(card.value).toBeDefined();
-        expect(card.iconName).toBeDefined();
-      }
+      expect(cards.map(c => c.label)).toEqual(["保单总数", "家庭成员", "年保费", "总保额"]);
+      expect(cards.map(c => c.value)).toEqual(["28", "5", "¥17.5万", "¥5065万"]);
+      expect(cards.map(c => c.iconName)).toEqual(["FileText", "Users", "TrendingUp", "Shield"]);
     });
 
     test("handles zero values", () => {
-      const zeroStats: DashboardStats = {
-        policyCount: 0,
-        memberCount: 0,
-        totalPremium: 0,
-        totalSumAssured: 0,
-      };
-      const cards = createStatCards(zeroStats);
-      expect(cards[0]?.value).toBe("0");
-      expect(cards[1]?.value).toBe("0");
-      expect(cards[2]?.value).toBe("¥0");
-      expect(cards[3]?.value).toBe("¥0");
-    });
-
-    test("cards are in correct order", () => {
-      const cards = createStatCards(mockStats);
-      expect(cards[0]?.label).toBe("保单总数");
-      expect(cards[1]?.label).toBe("家庭成员");
-      expect(cards[2]?.label).toBe("年保费");
-      expect(cards[3]?.label).toBe("总保额");
-    });
-
-    test("icon names are valid", () => {
-      const validIcons: StatCardData["iconName"][] = ["FileText", "Users", "TrendingUp", "Shield"];
-      const cards = createStatCards(mockStats);
-      for (const card of cards) {
-        expect(validIcons).toContain(card.iconName);
-      }
+      const cards = createStatCards({ policyCount: 0, memberCount: 0, totalPremium: 0, totalSumAssured: 0 });
+      expect(cards.map(c => c.value)).toEqual(["0", "0", "¥0", "¥0"]);
     });
   });
 
@@ -101,9 +37,7 @@ describe("dashboard-vm", () => {
 
     test("fetches and returns dashboard data", async () => {
       const mockData = { policyCount: 10, memberCount: 3 };
-      const mockFn = mock(() =>
-        Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 }))
-      );
+      const mockFn = mock(() => Promise.resolve(new Response(JSON.stringify(mockData), { status: 200 })));
       globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
 
       const result = await fetchDashboardData();
@@ -112,9 +46,7 @@ describe("dashboard-vm", () => {
     });
 
     test("throws on non-ok response", async () => {
-      const mockFn = mock(() =>
-        Promise.resolve(new Response("Error", { status: 500 }))
-      );
+      const mockFn = mock(() => Promise.resolve(new Response("Error", { status: 500 })));
       globalThis.fetch = Object.assign(mockFn, { preconnect: originalFetch.preconnect });
 
       expect(fetchDashboardData()).rejects.toThrow("Failed to fetch dashboard data: 500");
