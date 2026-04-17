@@ -211,30 +211,26 @@ describe("db/index", () => {
   });
 
   describe("seed-remote script production guard", () => {
-    test("scripts/seed-remote.ts exits with error when SURETY_TARGET_DB is not set", async () => {
-      const proc = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
+    test("scripts/seed-remote.ts blocks when SURETY_TARGET_DB is unset or production", async () => {
+      // Test 1: SURETY_TARGET_DB not set
+      const proc1 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
         env: { ...process.env, SURETY_TARGET_DB: undefined },
         stdout: "pipe",
         stderr: "pipe",
       });
-      const exitCode = await proc.exited;
-      const stderr = await new Response(proc.stderr).text();
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain("BLOCKED");
-    });
+      expect(await proc1.exited).toBe(1);
+      expect(await new Response(proc1.stderr).text()).toContain("BLOCKED");
 
-    test("scripts/seed-remote.ts exits with error when SURETY_TARGET_DB=production", async () => {
-      const proc = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
+      // Test 2: SURETY_TARGET_DB=production
+      const proc2 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
         env: { ...process.env, SURETY_TARGET_DB: "production" },
         stdout: "pipe",
         stderr: "pipe",
       });
-      const exitCode = await proc.exited;
-      const stderr = await new Response(proc.stderr).text();
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain("BLOCKED");
+      expect(await proc2.exited).toBe(1);
+      expect(await new Response(proc2.stderr).text()).toContain("BLOCKED");
     });
   });
 
