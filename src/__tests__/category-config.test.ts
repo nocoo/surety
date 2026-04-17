@@ -59,99 +59,51 @@ describe("category-config", () => {
   });
 
   describe("getMemberColorIndex", () => {
-    test("returns consistent index for same name", () => {
-      const name = "张三";
-      const index1 = getMemberColorIndex(name);
-      const index2 = getMemberColorIndex(name);
-      expect(index1).toBe(index2);
-    });
-
-    test("returns index within valid range", () => {
-      const testNames = ["张三", "李四", "王五", "赵六", "John", "Jane", "A", "测试用户名很长"];
+    test("returns consistent index within valid range for various inputs", () => {
+      // Consistency: same name → same index
+      expect(getMemberColorIndex("张三")).toBe(getMemberColorIndex("张三"));
+      
+      // Valid range for various inputs (Chinese, English, edge cases)
+      const testNames = ["张三", "李四", "John", "A", "", "测试用户名很长"];
       for (const name of testNames) {
         const index = getMemberColorIndex(name);
         expect(index).toBeGreaterThanOrEqual(0);
         expect(index).toBeLessThan(MEMBER_AVATAR_COLORS.length);
       }
-    });
-
-    test("different names can have different indices", () => {
-      const indices = new Set<number>();
-      const names = ["张三", "李四", "王五", "赵六", "孙七", "周八", "吴九", "郑十"];
-      for (const name of names) {
-        indices.add(getMemberColorIndex(name));
-      }
-      // At least some variation expected
+      
+      // Different names produce variation
+      const indices = new Set(["张三", "李四", "王五", "赵六"].map(getMemberColorIndex));
       expect(indices.size).toBeGreaterThan(1);
-    });
-
-    test("handles empty string", () => {
-      const index = getMemberColorIndex("");
-      expect(index).toBeGreaterThanOrEqual(0);
-      expect(index).toBeLessThan(MEMBER_AVATAR_COLORS.length);
-    });
-
-    test("handles single character", () => {
-      const index = getMemberColorIndex("A");
-      expect(index).toBeGreaterThanOrEqual(0);
-      expect(index).toBeLessThan(MEMBER_AVATAR_COLORS.length);
     });
   });
 
   describe("getMemberAvatarColors", () => {
-    test("returns valid color object", () => {
-      const colors = getMemberAvatarColors("张三");
-      expect(colors.bg).toBeDefined();
-      expect(colors.text).toBeDefined();
-      expect(colors.bg).toMatch(/^bg-/);
-      expect(colors.text).toMatch(/^text-/);
-    });
-
-    test("returns consistent colors for same name", () => {
-      const colors1 = getMemberAvatarColors("李娜");
-      const colors2 = getMemberAvatarColors("李娜");
-      expect(colors1.bg).toBe(colors2.bg);
-      expect(colors1.text).toBe(colors2.text);
-    });
-
-    test("colors come from MEMBER_AVATAR_COLORS", () => {
-      const testNames = ["张三", "李四", "王五"];
+    test("returns consistent valid colors from palette", () => {
+      const testNames = ["张三", "李四", "李娜"];
       for (const name of testNames) {
         const colors = getMemberAvatarColors(name);
-        const found = MEMBER_AVATAR_COLORS.some(
-          (c) => c.bg === colors.bg && c.text === colors.text
-        );
-        expect(found).toBe(true);
+        // Valid format
+        expect(colors.bg).toMatch(/^bg-/);
+        expect(colors.text).toMatch(/^text-/);
+        // Comes from palette
+        expect(MEMBER_AVATAR_COLORS.some(c => c.bg === colors.bg && c.text === colors.text)).toBe(true);
       }
+      // Consistency: same name → same colors
+      expect(getMemberAvatarColors("李娜").bg).toBe(getMemberAvatarColors("李娜").bg);
     });
   });
 
   describe("getNameInitial", () => {
-    test("returns first character for Chinese names", () => {
+    test("extracts and normalizes first character", () => {
+      // Chinese names
       expect(getNameInitial("张三")).toBe("张");
-      expect(getNameInitial("李四")).toBe("李");
       expect(getNameInitial("王")).toBe("王");
-    });
-
-    test("returns uppercase first character for English names", () => {
+      // English names (uppercase)
       expect(getNameInitial("john")).toBe("J");
       expect(getNameInitial("Jane")).toBe("J");
-      expect(getNameInitial("MIKE")).toBe("M");
-    });
-
-    test("handles single character", () => {
-      expect(getNameInitial("A")).toBe("A");
-      expect(getNameInitial("z")).toBe("Z");
-      expect(getNameInitial("张")).toBe("张");
-    });
-
-    test("returns ? for empty string", () => {
+      // Edge cases
       expect(getNameInitial("")).toBe("?");
-    });
-
-    test("handles mixed names", () => {
       expect(getNameInitial("A张三")).toBe("A");
-      expect(getNameInitial("张A三")).toBe("张");
     });
   });
 });

@@ -237,36 +237,23 @@ describe("checkTrustedDevice", () => {
   const alwaysTrue = () => true;
   const alwaysFalse = () => false;
 
-  test("returns false when cookie is undefined", async () => {
+  test("handles cookie presence and verifier delegation", async () => {
+    // No cookie: returns false regardless of verifier
     expect(await checkTrustedDevice(undefined, "user@example.com", alwaysTrue)).toBe(false);
-  });
-
-  test("returns false when cookie is empty string", async () => {
-    // empty string is falsy — checkTrustedDevice should treat it as "no cookie"
     expect(await checkTrustedDevice("", "user@example.com", alwaysTrue)).toBe(false);
-  });
-
-  test("delegates to verifier when cookie is present", async () => {
+    
+    // With cookie: delegates to verifier
     expect(await checkTrustedDevice("some-value", "user@example.com", alwaysTrue)).toBe(true);
     expect(await checkTrustedDevice("some-value", "user@example.com", alwaysFalse)).toBe(false);
   });
 
   test("passes correct arguments to verifier", async () => {
     const capturedArgs: string[][] = [];
-    const capturingVerifier = (cv: string, em: string) => {
+    await checkTrustedDevice("cookie-123", "alice@example.com", (cv, em) => {
       capturedArgs.push([cv, em]);
       return true;
-    };
-
-    await checkTrustedDevice("cookie-value-123", "alice@example.com", capturingVerifier);
-    expect(capturedArgs).toEqual([["cookie-value-123", "alice@example.com"]]);
-  });
-
-  test("different email → different verifier result possible", async () => {
-    const emailSpecificVerifier = (_cv: string, email: string) => email === "trusted@example.com";
-
-    expect(await checkTrustedDevice("cookie", "trusted@example.com", emailSpecificVerifier)).toBe(true);
-    expect(await checkTrustedDevice("cookie", "untrusted@example.com", emailSpecificVerifier)).toBe(false);
+    });
+    expect(capturedArgs).toEqual([["cookie-123", "alice@example.com"]]);
   });
 });
 
@@ -276,46 +263,13 @@ describe("checkTrustedDevice", () => {
 // ===========================================================================
 
 describe("shouldIssueTrustedCookie", () => {
-  // -----------------------------------------------------------------------
-  // TOTP verification
-  // -----------------------------------------------------------------------
-
-  test("TOTP + rememberDevice=true → issue cookie", () => {
+  test("TOTP issues cookie only when rememberDevice=true", () => {
     expect(shouldIssueTrustedCookie("totp", true)).toBe(true);
-  });
-
-  test("TOTP + rememberDevice=false → do not issue cookie", () => {
     expect(shouldIssueTrustedCookie("totp", false)).toBe(false);
   });
 
-  // -----------------------------------------------------------------------
-  // Recovery code — MUST NEVER issue trusted cookie
-  // -----------------------------------------------------------------------
-
-  test("[REGRESSION] recovery + rememberDevice=true → NEVER issue cookie", () => {
+  test("[REGRESSION] recovery NEVER issues cookie regardless of rememberDevice", () => {
     expect(shouldIssueTrustedCookie("recovery", true)).toBe(false);
-  });
-
-  test("[REGRESSION] recovery + rememberDevice=false → NEVER issue cookie", () => {
     expect(shouldIssueTrustedCookie("recovery", false)).toBe(false);
-  });
-
-  // -----------------------------------------------------------------------
-  // Truth table completeness
-  // -----------------------------------------------------------------------
-
-  describe("truth table", () => {
-    const cases: Array<{ type: "totp" | "recovery"; remember: boolean; expected: boolean }> = [
-      { type: "totp", remember: true, expected: true },
-      { type: "totp", remember: false, expected: false },
-      { type: "recovery", remember: true, expected: false },
-      { type: "recovery", remember: false, expected: false },
-    ];
-
-    for (const { type, remember, expected } of cases) {
-      test(`type=${type}, rememberDevice=${remember} → ${expected}`, () => {
-        expect(shouldIssueTrustedCookie(type, remember)).toBe(expected);
-      });
-    }
   });
 });

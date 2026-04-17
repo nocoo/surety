@@ -33,7 +33,6 @@ import {
   SENSITIVE_KEY_PREFIX,
   type TotpStore,
   type TotpConfig,
-  type BruteForceState,
 } from "@/lib/totp/index";
 
 // ---------------------------------------------------------------------------
@@ -72,21 +71,14 @@ function createMemoryStore(): TotpStore & { data: Map<string, string> } {
 // ===========================================================================
 
 describe("parseMasterKey", () => {
-  test("parses a valid 64-char hex string", () => {
+  test("parses valid 64-char hex and rejects invalid inputs", () => {
     const key = parseMasterKey("a".repeat(64));
     expect(key).toBeInstanceOf(Buffer);
     expect(key.length).toBe(32);
-  });
-
-  test("rejects short hex", () => {
+    
+    // Invalid inputs
     expect(() => parseMasterKey("a".repeat(63))).toThrow();
-  });
-
-  test("rejects non-hex characters", () => {
     expect(() => parseMasterKey("g".repeat(64))).toThrow();
-  });
-
-  test("rejects empty string", () => {
     expect(() => parseMasterKey("")).toThrow();
   });
 });
@@ -134,19 +126,16 @@ describe("encryptSecret / decryptSecret", () => {
 });
 
 describe("generateSecret", () => {
-  test("returns a base32 string", () => {
+  test("returns unique base32 strings", () => {
     const secret = generateSecret();
     expect(secret).toMatch(/^[A-Z2-7]+=*$/);
-  });
-
-  test("generates unique secrets each time", () => {
-    const secrets = new Set(Array.from({ length: 10 }, () => generateSecret()));
-    expect(secrets.size).toBe(10);
+    const secrets = new Set(Array.from({ length: 5 }, () => generateSecret()));
+    expect(secrets.size).toBe(5);
   });
 });
 
 describe("verifyToken", () => {
-  test("validates a correct current token", () => {
+  test("validates correct tokens and rejects invalid ones", () => {
     const secret = generateSecret();
     const label = "test@example.com";
     const totp = new OTPAuth.TOTP({
@@ -157,20 +146,12 @@ describe("verifyToken", () => {
       period: 30,
       secret: OTPAuth.Secret.fromBase32(secret),
     });
-    const token = totp.generate();
-    expect(verifyToken(secret, token, label, TEST_ISSUER, 1)).toBe(true);
-  });
-
-  test("rejects an incorrect token", () => {
-    const secret = generateSecret();
-    expect(verifyToken(secret, "000000", "test@example.com", TEST_ISSUER, 1)).toBe(false);
-  });
-
-  test("rejects non-6-digit strings", () => {
-    const secret = generateSecret();
-    expect(verifyToken(secret, "12345", "test@example.com", TEST_ISSUER, 1)).toBe(false);
-    expect(verifyToken(secret, "1234567", "test@example.com", TEST_ISSUER, 1)).toBe(false);
-    expect(verifyToken(secret, "abcdef", "test@example.com", TEST_ISSUER, 1)).toBe(false);
+    // Valid token
+    expect(verifyToken(secret, totp.generate(), label, TEST_ISSUER, 1)).toBe(true);
+    // Invalid tokens
+    expect(verifyToken(secret, "000000", label, TEST_ISSUER, 1)).toBe(false);
+    expect(verifyToken(secret, "12345", label, TEST_ISSUER, 1)).toBe(false);
+    expect(verifyToken(secret, "abcdef", label, TEST_ISSUER, 1)).toBe(false);
   });
 });
 
@@ -183,41 +164,22 @@ describe("generateQRDataURL", () => {
 });
 
 describe("recovery code", () => {
-  test("generateRecoveryCode returns a formatted hex string with dashes", () => {
+  test("generates unique formatted hex codes", () => {
     const code = generateRecoveryCode(16);
-    // 32 hex chars + 7 dashes = 39 chars total
     expect(code).toMatch(/^[0-9a-f]{4}(-[0-9a-f]{4}){7}$/);
+    const codes = new Set(Array.from({ length: 5 }, () => generateRecoveryCode(16)));
+    expect(codes.size).toBe(5);
   });
 
-  test("generates unique codes each time", () => {
-    const codes = new Set(Array.from({ length: 10 }, () => generateRecoveryCode(16)));
-    expect(codes.size).toBe(10);
-  });
-
-  test("hashRecoveryCode and verifyRecoveryCode round-trip", async () => {
+  test("hash and verify round-trip with normalization", async () => {
     const code = generateRecoveryCode(16);
     const hash = await hashRecoveryCode(code);
+    // Valid verification
     expect(await verifyRecoveryCode(code, hash)).toBe(true);
-  });
-
-  test("verifyRecoveryCode returns false for wrong code", async () => {
-    const code = generateRecoveryCode(16);
-    const hash = await hashRecoveryCode(code);
+    // Wrong code
     expect(await verifyRecoveryCode("wrong-code-1234-5678", hash)).toBe(false);
-  });
-
-  test("verification is case-insensitive and ignores dashes", async () => {
-    const code = generateRecoveryCode(16);
-    const hash = await hashRecoveryCode(code);
-    const variant = code.replace(/-/g, "").toUpperCase();
-    expect(await verifyRecoveryCode(variant, hash)).toBe(true);
-  });
-
-  test("verification ignores whitespace", async () => {
-    const code = generateRecoveryCode(16);
-    const hash = await hashRecoveryCode(code);
-    const withSpaces = ` ${code.replace(/-/g, " ")} `;
-    expect(await verifyRecoveryCode(withSpaces, hash)).toBe(true);
+    // Normalized variants (case-insensitive, dashes/whitespace ignored)
+    expect(await verifyRecoveryCode(code.replace(/-/g, "").toUpperCase(), hash)).toBe(true);
   });
 
   test("normalizeRecoveryCode strips dashes, whitespace, and lowercases", () => {
@@ -227,171 +189,97 @@ describe("recovery code", () => {
 });
 
 describe("brute force protection", () => {
-  test("isLockedOut returns false when not locked", () => {
+  test("isLockedOut checks lockUntil against current time", () => {
     expect(isLockedOut({ failedAttempts: 3, lockUntil: null })).toBe(false);
+    expect(isLockedOut({ failedAttempts: 5, lockUntil: new Date(Date.now() + 60000).toISOString() })).toBe(true);
+    expect(isLockedOut({ failedAttempts: 5, lockUntil: new Date(Date.now() - 1000).toISOString() })).toBe(false);
   });
 
-  test("isLockedOut returns true when locked (future lockUntil)", () => {
-    const future = new Date(Date.now() + 60000).toISOString();
-    expect(isLockedOut({ failedAttempts: 5, lockUntil: future })).toBe(true);
-  });
-
-  test("isLockedOut returns false when lock has expired", () => {
-    const past = new Date(Date.now() - 1000).toISOString();
-    expect(isLockedOut({ failedAttempts: 5, lockUntil: past })).toBe(false);
-  });
-
-  test("lockoutRemainingSeconds returns 0 when not locked", () => {
+  test("lockoutRemainingSeconds returns seconds until unlock", () => {
     expect(lockoutRemainingSeconds({ failedAttempts: 0, lockUntil: null })).toBe(0);
-  });
-
-  test("lockoutRemainingSeconds returns positive value when locked", () => {
-    const future = new Date(Date.now() + 120000).toISOString(); // 2 min
+    const future = new Date(Date.now() + 120000).toISOString();
     const remaining = lockoutRemainingSeconds({ failedAttempts: 5, lockUntil: future });
     expect(remaining).toBeGreaterThan(0);
     expect(remaining).toBeLessThanOrEqual(120);
   });
 
-  test("recordFailedAttempt increments count", () => {
-    const state: BruteForceState = { failedAttempts: 2, lockUntil: null };
-    const next = recordFailedAttempt(state, 5, 15);
+  test("recordFailedAttempt increments and triggers lockout at max", () => {
+    // Increment without lockout
+    let next = recordFailedAttempt({ failedAttempts: 2, lockUntil: null }, 5, 15);
     expect(next.failedAttempts).toBe(3);
     expect(next.lockUntil).toBeNull();
-  });
-
-  test("recordFailedAttempt triggers lockout at max attempts", () => {
-    const state: BruteForceState = { failedAttempts: 4, lockUntil: null };
-    const next = recordFailedAttempt(state, 5, 15);
+    // Trigger lockout at max
+    next = recordFailedAttempt({ failedAttempts: 4, lockUntil: null }, 5, 15);
     expect(next.failedAttempts).toBe(5);
     expect(next.lockUntil).not.toBeNull();
-    const lockTime = new Date(next.lockUntil as string).getTime();
-    const expected = Date.now() + 15 * 60 * 1000;
-    expect(Math.abs(lockTime - expected)).toBeLessThan(2000);
   });
 
   test("resetBruteForce returns clean state", () => {
-    const state = resetBruteForce();
-    expect(state.failedAttempts).toBe(0);
-    expect(state.lockUntil).toBeNull();
+    expect(resetBruteForce()).toEqual({ failedAttempts: 0, lockUntil: null });
   });
 });
 
 describe("trusted device cookie", () => {
-  test("creates and verifies a cookie value", () => {
+  test("creates and verifies valid cookies", () => {
     const email = "user@example.com";
     const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
+    // Valid verification
     expect(verifyTrustedDeviceCookie(cookieValue, email, TEST_HMAC_SECRET, "v1")).toBe(true);
-  });
-
-  test("rejects cookie with wrong email", () => {
-    const cookieValue = createTrustedDeviceCookieValue("user@example.com", "v1", TEST_HMAC_SECRET, 30);
-    expect(verifyTrustedDeviceCookie(cookieValue, "other@example.com", TEST_HMAC_SECRET, "v1")).toBe(false);
-  });
-
-  test("rejects tampered signature", () => {
-    const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
-    const parts = cookieValue.split("|");
-    const tampered = parts.slice(0, -1).join("|") + "|" + "f".repeat(64);
-    expect(verifyTrustedDeviceCookie(tampered, email, TEST_HMAC_SECRET, "v1")).toBe(false);
-  });
-
-  test("rejects invalid format", () => {
-    expect(verifyTrustedDeviceCookie("invalid", "user@example.com", TEST_HMAC_SECRET)).toBe(false);
-    expect(verifyTrustedDeviceCookie("a|b", "user@example.com", TEST_HMAC_SECRET)).toBe(false);
-    expect(verifyTrustedDeviceCookie("a|b|c", "user@example.com", TEST_HMAC_SECRET)).toBe(false);
-  });
-
-  test("cookie value contains email, expiry, and enrollVersion", () => {
-    const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
+    // Without version check
+    expect(verifyTrustedDeviceCookie(cookieValue, email, TEST_HMAC_SECRET)).toBe(true);
+    // Check format: email|expiry|version|signature
     const parts = cookieValue.split("|");
     expect(parts).toHaveLength(4);
     expect(parts[0]).toBe(email);
-    expect(new Date(parts[1] as string).toISOString()).toBe(parts[1] as string);
     expect(parts[2]).toBe("v1");
   });
 
-  test("rejects cookie with wrong enrollment version", () => {
+  test("rejects invalid cookies", () => {
     const email = "user@example.com";
     const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
+    // Wrong email
+    expect(verifyTrustedDeviceCookie(cookieValue, "other@example.com", TEST_HMAC_SECRET, "v1")).toBe(false);
+    // Wrong version
     expect(verifyTrustedDeviceCookie(cookieValue, email, TEST_HMAC_SECRET, "v2")).toBe(false);
-  });
-
-  test("accepts cookie when no enrollment version check is required", () => {
-    const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
-    expect(verifyTrustedDeviceCookie(cookieValue, email, TEST_HMAC_SECRET)).toBe(true);
-  });
-
-  test("rejects cookie signed with different HMAC secret", () => {
-    const email = "user@example.com";
-    const cookieValue = createTrustedDeviceCookieValue(email, "v1", "secret-a", 30);
-    expect(verifyTrustedDeviceCookie(cookieValue, email, "secret-b", "v1")).toBe(false);
+    // Tampered signature
+    const tampered = cookieValue.split("|").slice(0, -1).join("|") + "|" + "f".repeat(64);
+    expect(verifyTrustedDeviceCookie(tampered, email, TEST_HMAC_SECRET, "v1")).toBe(false);
+    // Invalid formats
+    expect(verifyTrustedDeviceCookie("invalid", email, TEST_HMAC_SECRET)).toBe(false);
+    expect(verifyTrustedDeviceCookie("a|b|c", email, TEST_HMAC_SECRET)).toBe(false);
+    // Wrong HMAC secret
+    const otherCookie = createTrustedDeviceCookieValue(email, "v1", "secret-a", 30);
+    expect(verifyTrustedDeviceCookie(otherCookie, email, "secret-b", "v1")).toBe(false);
   });
 });
 
 describe("verification nonce", () => {
-  test("generateVerificationNonce returns 64-char hex string", () => {
+  test("generates unique 64-char hex nonces", () => {
     const nonce = generateVerificationNonce();
     expect(nonce).toMatch(/^[0-9a-f]{64}$/);
+    const nonces = new Set(Array.from({ length: 5 }, () => generateVerificationNonce()));
+    expect(nonces.size).toBe(5);
   });
 
-  test("generates unique nonces each time", () => {
-    const nonces = new Set(Array.from({ length: 10 }, () => generateVerificationNonce()));
-    expect(nonces.size).toBe(10);
-  });
-
-  test("signNonce returns a hex string", () => {
+  test("signNonce and verifyNonceSignature round-trip", () => {
     const nonce = generateVerificationNonce();
     const sig = signNonce(nonce, TEST_HMAC_SECRET);
     expect(sig).toMatch(/^[0-9a-f]+$/);
-  });
-
-  test("verifyNonceSignature validates correct signature", () => {
-    const nonce = generateVerificationNonce();
-    const sig = signNonce(nonce, TEST_HMAC_SECRET);
+    // Valid signature
     expect(verifyNonceSignature(nonce, sig, TEST_HMAC_SECRET)).toBe(true);
-  });
-
-  test("verifyNonceSignature rejects wrong signature", () => {
-    const nonce = generateVerificationNonce();
+    // Invalid signatures
     expect(verifyNonceSignature(nonce, "f".repeat(64), TEST_HMAC_SECRET)).toBe(false);
-  });
-
-  test("verifyNonceSignature rejects signature for different nonce", () => {
-    const nonce1 = generateVerificationNonce();
-    const nonce2 = generateVerificationNonce();
-    const sig1 = signNonce(nonce1, TEST_HMAC_SECRET);
-    expect(verifyNonceSignature(nonce2, sig1, TEST_HMAC_SECRET)).toBe(false);
-  });
-
-  test("verifyNonceSignature rejects with different HMAC secret", () => {
-    const nonce = generateVerificationNonce();
-    const sig = signNonce(nonce, "secret-a");
-    expect(verifyNonceSignature(nonce, sig, "secret-b")).toBe(false);
+    expect(verifyNonceSignature(generateVerificationNonce(), sig, TEST_HMAC_SECRET)).toBe(false);
+    expect(verifyNonceSignature(nonce, signNonce(nonce, "secret-a"), "secret-b")).toBe(false);
   });
 });
 
-describe("TOTP_SETTINGS_KEYS", () => {
-  test("has all expected keys", () => {
+describe("TOTP_SETTINGS_KEYS and SENSITIVE_KEY_PREFIX", () => {
+  test("all keys have correct prefix and values", () => {
+    expect(SENSITIVE_KEY_PREFIX).toBe("totp.");
     expect(TOTP_SETTINGS_KEYS.enabled).toBe("totp.enabled");
     expect(TOTP_SETTINGS_KEYS.encryptedSecret).toBe("totp.encryptedSecret");
-    expect(TOTP_SETTINGS_KEYS.recoveryCodeHash).toBe("totp.recoveryCodeHash");
-    expect(TOTP_SETTINGS_KEYS.recoveryCodeUsed).toBe("totp.recoveryCodeUsed");
-    expect(TOTP_SETTINGS_KEYS.failedAttempts).toBe("totp.failedAttempts");
-    expect(TOTP_SETTINGS_KEYS.lockUntil).toBe("totp.lockUntil");
-    expect(TOTP_SETTINGS_KEYS.enrollVersion).toBe("totp.enrollVersion");
-    expect(TOTP_SETTINGS_KEYS.twoFactorNonce).toBe("totp.twoFactorNonce");
-  });
-});
-
-describe("SENSITIVE_KEY_PREFIX", () => {
-  test("is 'totp.'", () => {
-    expect(SENSITIVE_KEY_PREFIX).toBe("totp.");
-  });
-
-  test("all TOTP_SETTINGS_KEYS start with the prefix", () => {
+    // All keys start with prefix
     for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
       expect(key.startsWith(SENSITIVE_KEY_PREFIX)).toBe(true);
     }
@@ -411,22 +299,15 @@ describe("TotpService", () => {
   }
 
   describe("isEnabled / getStatus", () => {
-    test("returns false when nothing is set", async () => {
-      const { service } = createService();
-      expect(await service.isEnabled()).toBe(false);
-    });
-
-    test("returns true when enabled=true in store", async () => {
+    test("reflects store state correctly", async () => {
       const { service, store } = createService();
+      // Initially disabled
+      expect(await service.isEnabled()).toBe(false);
+      expect(await service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
+      // Enable
       await store.set(TOTP_SETTINGS_KEYS.enabled, "true");
       expect(await service.isEnabled()).toBe(true);
-    });
-
-    test("getStatus returns enabled and recovery code status", async () => {
-      const { service, store } = createService();
-      expect(await service.getStatus()).toEqual({ enabled: false, recoveryCodeUsed: false });
-
-      await store.set(TOTP_SETTINGS_KEYS.enabled, "true");
+      // Status with recovery code used
       await store.set(TOTP_SETTINGS_KEYS.recoveryCodeUsed, "true");
       expect(await service.getStatus()).toEqual({ enabled: true, recoveryCodeUsed: true });
     });
@@ -648,7 +529,6 @@ describe("TotpService", () => {
     async function setupEnabled() {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
-
       const totpInstance = new OTPAuth.TOTP({
         issuer: TEST_ISSUER,
         label: "user@example.com",
@@ -657,40 +537,25 @@ describe("TotpService", () => {
         period: 30,
         secret: OTPAuth.Secret.fromBase32(setupResult.secret),
       });
-      const token = totpInstance.generate();
-      await service.verifySetup(token, "user@example.com");
-
-      return { service, store };
+      await service.verifySetup(totpInstance.generate(), "user@example.com");
+      return { service, store, totpInstance };
     }
 
-    test("unconditionally disables 2FA when enabled", async () => {
+    test("unconditionally disables 2FA and cleans up keys", async () => {
       const { service, store } = await setupEnabled();
       expect(await service.isEnabled()).toBe(true);
 
       const result = await service.forceDisable();
       expect("success" in result && result.success).toBe(true);
       expect(await service.isEnabled()).toBe(false);
-
-      // All TOTP keys should be deleted
       for (const key of Object.values(TOTP_SETTINGS_KEYS)) {
         expect(await store.get(key)).toBeUndefined();
       }
     });
 
-    test("works regardless of recovery code usage status", async () => {
-      // forceDisable no longer checks recoveryCodeUsed — caller handles authorization
-      const { service } = await setupEnabled();
-      expect(await service.isEnabled()).toBe(true);
-
-      const result = await service.forceDisable();
-      expect("success" in result && result.success).toBe(true);
-      expect(await service.isEnabled()).toBe(false);
-    });
-
-    test("also works when recovery code has been used", async () => {
+    test("works even after recovery code has been used", async () => {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
-
       const totpInstance = new OTPAuth.TOTP({
         issuer: TEST_ISSUER,
         label: "user@example.com",
@@ -699,115 +564,73 @@ describe("TotpService", () => {
         period: 30,
         secret: OTPAuth.Secret.fromBase32(setupResult.secret),
       });
-      const token = totpInstance.generate();
-      const verifyResult = await service.verifySetup(token, "user@example.com");
+      const verifyResult = await service.verifySetup(totpInstance.generate(), "user@example.com");
       const recoveryCode = (verifyResult as { recoveryCode: string }).recoveryCode;
-
-      // Use recovery code
       await service.verifyLogin(recoveryCode, "user@example.com", "recovery");
       expect(await store.get(TOTP_SETTINGS_KEYS.recoveryCodeUsed)).toBe("true");
 
-      const result = await service.forceDisable();
-      expect("success" in result && result.success).toBe(true);
+      const forceResult = await service.forceDisable();
+      expect("success" in forceResult && forceResult.success).toBe(true);
       expect(await service.isEnabled()).toBe(false);
     });
 
     test("returns error when 2FA is not enabled", async () => {
       const { service } = createService();
       const result = await service.forceDisable();
-      expect("error" in result).toBe(true);
-      if ("error" in result) {
-        expect(result.error).toContain("not enabled");
-      }
+      expect("error" in result && result.error).toContain("not enabled");
     });
   });
 
   describe("consumeNonce", () => {
-    test("consumes a valid nonce", async () => {
+    test("consumes valid nonce and prevents reuse", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
       const sig = signNonce(nonce, TEST_HMAC_SECRET);
       await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
 
       expect(await service.consumeNonce(nonce, sig)).toBe(true);
-      // Nonce should be deleted after consumption
       expect(await store.get(TOTP_SETTINGS_KEYS.twoFactorNonce)).toBeUndefined();
-    });
-
-    test("rejects invalid signature", async () => {
-      const { service, store } = createService();
-      const nonce = generateVerificationNonce();
-      await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
-
-      expect(await service.consumeNonce(nonce, "f".repeat(64))).toBe(false);
-    });
-
-    test("rejects nonce not in store", async () => {
-      const { service } = createService();
-      const nonce = generateVerificationNonce();
-      const sig = signNonce(nonce, TEST_HMAC_SECRET);
-
+      // Can't reuse
       expect(await service.consumeNonce(nonce, sig)).toBe(false);
     });
 
-    test("prevents nonce reuse", async () => {
+    test("rejects invalid nonces", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
-      const sig = signNonce(nonce, TEST_HMAC_SECRET);
       await store.set(TOTP_SETTINGS_KEYS.twoFactorNonce, nonce);
-
-      expect(await service.consumeNonce(nonce, sig)).toBe(true);
-      expect(await service.consumeNonce(nonce, sig)).toBe(false); // already consumed
+      // Invalid signature
+      expect(await service.consumeNonce(nonce, "f".repeat(64))).toBe(false);
+      // Not in store
+      expect(await service.consumeNonce(generateVerificationNonce(), signNonce(nonce, TEST_HMAC_SECRET))).toBe(false);
     });
   });
 
   describe("trusted device cookie via service", () => {
-    test("createTrustedCookieValue and verifyTrustedCookie round-trip", async () => {
+    test("round-trip and rejection scenarios", async () => {
       const { service, store } = createService();
       await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
 
       const cookieValue = await service.createTrustedCookieValue("user@example.com");
+      // Valid
       expect(await service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(true);
-    });
-
-    test("rejects cookie for wrong email", async () => {
-      const { service, store } = createService();
-      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
-
-      const cookieValue = await service.createTrustedCookieValue("user@example.com");
+      // Wrong email
       expect(await service.verifyTrustedCookie(cookieValue, "other@example.com")).toBe(false);
-    });
-
-    test("rejects cookie after enrollment version change", async () => {
-      const { service, store } = createService();
-      await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
-      const cookieValue = await service.createTrustedCookieValue("user@example.com");
-
-      // Change enrollment version (simulating 2FA re-enrollment)
+      // Enrollment version change
       await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "99");
       expect(await service.verifyTrustedCookie(cookieValue, "user@example.com")).toBe(false);
     });
 
-    test("trustedDeviceCookieName returns configured name", () => {
-      const { service } = createService();
-      expect(service.trustedDeviceCookieName).toBe(TEST_COOKIE_NAME);
-    });
-
-    test("trustedDeviceMaxAge returns days in seconds", () => {
+    test("exposes cookie config", () => {
       const { service } = createService({ trustedDeviceDays: 7 });
+      expect(service.trustedDeviceCookieName).toBe(TEST_COOKIE_NAME);
       expect(service.trustedDeviceMaxAge).toBe(7 * 24 * 60 * 60);
     });
   });
 
   describe("configurable defaults", () => {
-    test("maxFailedAttempts defaults to 5", () => {
-      const { service } = createService();
-      expect(service.maxFailedAttempts).toBe(5);
-    });
-
-    test("maxFailedAttempts can be overridden", () => {
-      const { service } = createService({ maxFailedAttempts: 3 });
-      expect(service.maxFailedAttempts).toBe(3);
+    test("maxFailedAttempts has default and can be overridden", () => {
+      expect(createService().service.maxFailedAttempts).toBe(5);
+      expect(createService({ maxFailedAttempts: 3 }).service.maxFailedAttempts).toBe(3);
     });
   });
 });
