@@ -200,6 +200,39 @@ describe("GET /api/policies/[id]", () => {
     expect(body.status).toBe("Active");
   });
 
+  test("populates insuredAssetName when insuredAssetId matches a known asset", async () => {
+    policiesFindById.mockImplementation(() =>
+      Promise.resolve({
+        id: 2,
+        policyNumber: "POL-ASSET",
+        productName: "财产险",
+        insurerName: "人保财险",
+        insuredMemberId: null,
+        insuredAssetId: 10, // Matches fixture asset { id: 10, name: "房产A" }
+        applicantId: 1,
+        insuredType: "Asset",
+        category: "Property",
+        subCategory: null,
+        channel: null,
+        sumAssured: 500000,
+        premium: 2000,
+        paymentFrequency: "Yearly",
+        effectiveDate: "2024-01-01",
+        expiryDate: null,
+        status: "Active",
+      }),
+    );
+
+    const req = new Request("http://localhost/api/policies/2");
+
+    const res = await GET(req as unknown as NextRequest, ctx("2"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.insuredAssetId).toBe(10);
+    expect(body.insuredAssetName).toBe("房产A");
+    expect(body.applicantName).toBe("张三");
+  });
+
   test("maps missing member/asset names to '未知'", async () => {
     policiesFindById.mockImplementation(() =>
       Promise.resolve({
