@@ -8,14 +8,13 @@
  *   actually used the recovery code can force-disable.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { getReposFromRequest } from "@/lib/api-helpers";
+import { getReposFromRequest, getSessionForApi } from "@/lib/api-helpers";
 import { getTotpService } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
+  const session = await getSessionForApi();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

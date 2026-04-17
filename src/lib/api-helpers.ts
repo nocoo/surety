@@ -4,6 +4,35 @@
 import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance, type TargetDb } from "@/db/index";
 import { createAllRepos, type AllRepos } from "@/db/repositories";
 import type { BatchExecuteFn } from "@/db/backup";
+import type { Session } from "next-auth";
+import { auth } from "@/auth";
+
+/** E2E test mode flag */
+const E2E_SKIP_AUTH = process.env.E2E_SKIP_AUTH === "true";
+
+/** Test email used in E2E mode */
+const E2E_TEST_EMAIL = "e2e-test@example.com";
+
+/**
+ * Get session for API routes, with E2E test mode support.
+ * In E2E mode (E2E_SKIP_AUTH=true), returns a mock session.
+ * In normal mode, delegates to NextAuth's auth().
+ */
+export async function getSessionForApi(): Promise<Session | null> {
+  if (E2E_SKIP_AUTH) {
+    // Return mock session for E2E tests
+    return {
+      user: {
+        email: E2E_TEST_EMAIL,
+        name: "E2E Test User",
+        twoFactorVerified: true,
+        recoverySession: false,
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+  return auth();
+}
 
 /**
  * Get request-scoped database and repos from cookie.
