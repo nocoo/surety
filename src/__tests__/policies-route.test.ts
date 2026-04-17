@@ -407,14 +407,26 @@ describe("DELETE /api/policies/[id]", () => {
     policiesFindById.mockImplementation(() => Promise.resolve({ id: 1 }));
 
     const req = new Request("http://localhost/api/policies/1", { method: "DELETE" });
-     
+
     const res = await DELETE(req as unknown as NextRequest, ctx("1"));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ success: true });
+
+    // Behavioral assertions: the batch path must atomically remove the
+    // policy and clean up every associated record type, regardless of how
+    // many statements the implementation decomposes that into.
     expect(batchExecute).toHaveBeenCalledTimes(1);
-    const call = batchExecute.mock.calls[0] as unknown as [Array<{ sql: string }>];
+    const call = batchExecute.mock.calls[0] as unknown as [Array<{ sql: string; params?: unknown[] }>];
     const statements = call[0];
-    expect(statements).toHaveLength(6);
+    const joined = statements.map((s) => s.sql).join("\n");
+    expect(joined).toContain("DELETE FROM policies");
+    expect(joined).toMatch(/attachments/);
+    expect(joined).toMatch(/beneficiaries/);
+    expect(joined).toMatch(/payments/);
+    expect(joined).toMatch(/cash_values/);
+    expect(joined).toMatch(/coverage_items/);
+    // The policy row itself must be removed last so FK-dependent rows are
+    // deleted first (D1 enforces foreign_keys=ON).
     expect(statements.at(-1)?.sql).toContain("DELETE FROM policies");
   });
 
