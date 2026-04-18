@@ -8,9 +8,19 @@ interface BackySettingsResponse {
   environment: "prod" | "dev";
 }
 
+/**
+ * Clean up backy settings before tests
+ */
+async function cleanupBackySettings(): Promise<void> {
+  await apiRequest("/api/settings/backy.webhookUrl", { method: "DELETE" }).catch(() => {});
+  await apiRequest("/api/settings/backy.apiKey", { method: "DELETE" }).catch(() => {});
+}
+
 describe("Backy API E2E", () => {
   beforeAll(async () => {
     await setupE2E();
+    // Clean up any existing backy settings from previous test runs
+    await cleanupBackySettings();
   }, 60000);
 
   afterAll(async () => {
