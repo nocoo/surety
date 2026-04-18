@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);
@@ -35,6 +38,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);
@@ -76,6 +81,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const memberId = parseInt(id, 10);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { getR2ClientFromEnv, R2Error } from "@/lib/r2-client";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ type RouteContext = {
  * - ?download=true: Content-Disposition: attachment (triggers download)
  */
 export async function GET(request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos, targetDb } = await getReposFromRequest();
   const { id, attachmentId } = await context.params;
   const policyId = parseInt(id, 10);

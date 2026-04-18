@@ -8,6 +8,7 @@ import {
   MAX_FILE_SIZE,
   MAX_ATTACHMENTS_PER_POLICY,
 } from "@/lib/attachment-validation";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * POST /api/policies/[id]/attachments — Upload a file attachment (PDF, JPG, PNG).
  */
 export async function POST(request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   // Pre-check Content-Length before buffering the body into memory.
   // This is a best-effort guard: Content-Length can be spoofed or absent,
   // but it rejects honest oversized uploads before allocating memory.
@@ -110,6 +113,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
  * GET /api/policies/[id]/attachments — List all attachments.
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);

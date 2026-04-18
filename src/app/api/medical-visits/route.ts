@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 const ALLOWED_VISIT_TYPES = ["儿保", "门诊", "急诊", "体检", "复查", "预约"];
 
 export async function GET(request: NextRequest) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get("memberId");
@@ -57,6 +60,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const body = await request.json();
 

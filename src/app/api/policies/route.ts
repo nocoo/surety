@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
 
   const policies = await repos.policies.findAll();
@@ -47,6 +50,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
 
   const body = await request.json();
