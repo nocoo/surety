@@ -163,7 +163,7 @@ describe("generateQRDataURL", () => {
   });
 });
 
-describe("recovery code", () => {
+describe.concurrent("recovery code", () => {
   test("generates unique formatted hex codes", () => {
     const code = generateRecoveryCode(16);
     expect(code).toMatch(/^[0-9a-f]{4}(-[0-9a-f]{4}){7}$/);
@@ -298,7 +298,9 @@ describe("TotpService", () => {
     return { service, store };
   }
 
-  describe("isEnabled / getStatus", () => {
+  // Each block creates its own store/service — fully isolated, so we mark
+  // the slow scrypt-bound blocks as concurrent to overlap their hash work.
+  describe.concurrent("isEnabled / getStatus", () => {
     test("reflects store state correctly", async () => {
       const { service, store } = createService();
       // Initially disabled
@@ -319,7 +321,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("setup", () => {
+  describe.concurrent("setup", () => {
     test("generates QR code and stores encrypted secret", async () => {
       const { service, store } = createService();
       const result = await service.setup("user@example.com");
@@ -331,7 +333,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("verifySetup", () => {
+  describe.concurrent("verifySetup", () => {
     test("enables 2FA on valid token and returns recovery code", async () => {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
@@ -403,7 +405,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("verifyLogin", () => {
+  describe.concurrent("verifyLogin", () => {
     async function setupEnabled() {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
@@ -486,7 +488,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("disable", () => {
+  describe.concurrent("disable", () => {
     test("disables 2FA on valid token", async () => {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
@@ -525,7 +527,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("forceDisable", () => {
+  describe.concurrent("forceDisable", () => {
     async function setupEnabled() {
       const { service, store } = createService();
       const setupResult = await service.setup("user@example.com");
