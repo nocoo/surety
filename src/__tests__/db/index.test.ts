@@ -212,25 +212,32 @@ describe("db/index", () => {
 
   describe("seed-remote script production guard", () => {
     test("scripts/seed-remote.ts blocks when SURETY_TARGET_DB is unset or production", async () => {
-      // Test 1: SURETY_TARGET_DB not set
+      // Both guard scenarios share the same subprocess startup cost (~50ms);
+      // run them concurrently so we only pay it once per file.
       const proc1 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
         env: { ...process.env, SURETY_TARGET_DB: undefined },
         stdout: "pipe",
         stderr: "pipe",
       });
-      expect(await proc1.exited).toBe(1);
-      expect(await new Response(proc1.stderr).text()).toContain("BLOCKED");
-
-      // Test 2: SURETY_TARGET_DB=production
       const proc2 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
         cwd: PROJECT_ROOT,
         env: { ...process.env, SURETY_TARGET_DB: "production" },
         stdout: "pipe",
         stderr: "pipe",
       });
-      expect(await proc2.exited).toBe(1);
-      expect(await new Response(proc2.stderr).text()).toContain("BLOCKED");
+
+      const [exit1, exit2, err1, err2] = await Promise.all([
+        proc1.exited,
+        proc2.exited,
+        new Response(proc1.stderr).text(),
+        new Response(proc2.stderr).text(),
+      ]);
+
+      expect(exit1).toBe(1);
+      expect(err1).toContain("BLOCKED");
+      expect(exit2).toBe(1);
+      expect(err2).toContain("BLOCKED");
     });
   });
 
