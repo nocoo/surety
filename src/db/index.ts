@@ -202,6 +202,7 @@ export function resetTestDb(): void {
   initSchema();
 
   testSqlite.exec(`
+    DELETE FROM api_tokens;
     DELETE FROM medical_visits;
     DELETE FROM doctors;
     DELETE FROM hospitals;
@@ -405,6 +406,19 @@ export function initSchema(): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS api_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL UNIQUE,
+      token_prefix TEXT NOT NULL,
+      email TEXT NOT NULL,
+      name TEXT DEFAULT 'CLI',
+      created_at TEXT NOT NULL,
+      last_used_at TEXT,
+      expires_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_tokens_email ON api_tokens(email);
 
     -- Performance indexes on foreign keys
     CREATE INDEX IF NOT EXISTS idx_policies_insurer_id ON policies(insurer_id);

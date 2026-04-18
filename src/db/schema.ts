@@ -391,3 +391,26 @@ export const medicalVisits = sqliteTable(
 
 export type MedicalVisit = typeof medicalVisits.$inferSelect;
 export type NewMedicalVisit = typeof medicalVisits.$inferInsert;
+
+// ============================================================================
+// 14. apiTokens - CLI / 程序化访问的 API tokens
+// ============================================================================
+export const apiTokens = sqliteTable(
+  "api_tokens",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    token: text("token").notNull().unique(), // SHA-256 hash of raw token
+    tokenPrefix: text("token_prefix").notNull(), // first 8 chars of raw token, for display
+    email: text("email").notNull(),
+    name: text("name").default("CLI"), // human-readable description
+    createdAt: text("created_at").notNull(),
+    lastUsedAt: text("last_used_at"),
+    expiresAt: text("expires_at"), // null = no expiry
+  },
+  (table) => ({
+    emailIdx: index("idx_api_tokens_email").on(table.email),
+  }),
+);
+
+export type ApiToken = typeof apiTokens.$inferSelect;
+export type NewApiToken = typeof apiTokens.$inferInsert;
