@@ -2,14 +2,13 @@
 /**
  * Benchmark pre-commit hook performance.
  *
- * Runs each step (test:coverage, lint, typecheck) sequentially as the real
- * pre-commit does (lint-staged invokes eslint on changed files; we use
- * `bun run lint` over the entire repo as a stable upper-bound proxy).
- *
- * Outputs METRIC lines for autoresearch parsing.
+ * Runs the full pre-commit pipeline (test:coverage + full lint + typecheck)
+ * to measure end-to-end wall time.  Uses `bun run lint` (full repo) instead
+ * of lint-staged for a stable, reproducible upper bound that does not depend
+ * on what is currently staged in the working tree.
  */
 
-import { spawnSync } from "bun";
+import { spawn } from "bun";
 
 interface Step {
   name: string;
@@ -22,59 +21,65 @@ const STEPS: Step[] = [
   { name: "typecheck", cmd: ["bun", "run", "typecheck"] },
 ];
 
-interface Result {
+interface Outcome {
   name: string;
+  ok: boolean;
   ms: number;
+}
+
+async function runStep(step: Step): Promise<Outcome> {
+  const start = performance.now();
+  const proc = spawn(step.cmd, { stdout: "pipe", stderr: "pipe" });
+  await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  const code = await proc.exited;
+  return { name: step.name, ok: code === 0, ms: performance.now() - start };
+}
+
+const mode = process.env.BENCH_MODE ?? "parallel";
+const trials = Number(process.env.BENCH_TRIALS ?? "3");
+
+interface Trial {
+  perStep: Record<string, number>;
+  wall: number;
   ok: boolean;
 }
 
-function runStep(step: Step): Result {
+async function trial(): Promise<Trial> {
   const start = performance.now();
-  const r = spawnSync(step.cmd, { stdout: "pipe", stderr: "pipe" });
-  const ms = performance.now() - start;
-  return { name: step.name, ms, ok: r.exitCode === 0 };
+  let outcomes: Outcome[];
+  if (mode === "sequential") {
+    outcomes = [];
+    for (const s of STEPS) outcomes.push(await runStep(s));
+  } else {
+    outcomes = await Promise.all(STEPS.map(runStep));
+  }
+  const wall = performance.now() - start;
+  const perStep: Record<string, number> = {};
+  let ok = true;
+  for (const o of outcomes) {
+    perStep[o.name] = o.ms;
+    if (!o.ok) ok = false;
+  }
+  return { perStep, wall, ok };
 }
 
-async function main() {
-  // Warm-up: make sure typescript incremental cache is fresh from a previous run
-  // We do NOT warm up — we want to measure realistic local-hook performance.
-  const trials = Number(process.env.BENCH_TRIALS ?? "3");
-  const allResults: Result[][] = [];
+const results: Trial[] = [];
+for (let i = 0; i < trials; i++) results.push(await trial());
 
-  for (let t = 0; t < trials; t++) {
-    const trial: Result[] = [];
-    for (const s of STEPS) trial.push(runStep(s));
-    allResults.push(trial);
-  }
-
-  // best-of-trials per step (min) for stability
-  const best: Record<string, number> = {};
-  const okAll: Record<string, boolean> = {};
-  for (const s of STEPS) {
-    let m = Infinity;
-    let ok = true;
-    for (const trial of allResults) {
-      const r = trial.find((x) => x.name === s.name);
-      if (!r) continue;
-      if (!r.ok) ok = false;
-      if (r.ms < m) m = r.ms;
-    }
-    best[s.name] = m;
-    okAll[s.name] = ok;
-  }
-
-  const total = Object.values(best).reduce((a, b) => a + b, 0);
-
-  for (const [name, ms] of Object.entries(best)) {
-    console.log(`METRIC ${name}_ms=${Math.round(ms)}`);
-  }
-  console.log(`METRIC total_ms=${Math.round(total)}`);
-  for (const [name, ok] of Object.entries(okAll)) {
-    if (!ok) {
-      console.error(`step ${name} FAILED`);
-      process.exit(1);
-    }
-  }
+// best-of-trials per step + best wall
+const bestStep: Record<string, number> = {};
+for (const s of STEPS) {
+  bestStep[s.name] = Math.min(...results.map((r) => r.perStep[s.name] ?? Infinity));
 }
+const bestWall = Math.min(...results.map((r) => r.wall));
 
-main();
+for (const [name, ms] of Object.entries(bestStep)) {
+  console.log(`METRIC ${name}_ms=${Math.round(ms)}`);
+}
+console.log(`METRIC wall_ms=${Math.round(bestWall)}`);
+console.log(`METRIC total_ms=${Math.round(bestWall)}`);
+
+if (results.some((r) => !r.ok)) process.exit(1);

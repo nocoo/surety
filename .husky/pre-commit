@@ -1,1 +1,1 @@
-bun run test:coverage && bunx lint-staged && bun run typecheck
+bun run scripts/pre-commit.ts
