@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 import { readBackySettings, writeBackySettings, maskApiKey, getEnvironment } from "@/services/backy";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
  * GET /api/settings/backy — read Backy webhook configuration.
  */
 export async function GET() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   await getReposFromRequest();
 
   const { webhookUrl, apiKey } = await readBackySettings();
@@ -24,6 +27,8 @@ export async function GET() {
  * PUT /api/settings/backy — update Backy webhook configuration.
  */
 export async function PUT(request: NextRequest) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   await getReposFromRequest();
 
   const body = await request.json();

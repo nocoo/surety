@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 import { SENSITIVE_KEY_PREFIX } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ const SENSITIVE_DENIED = NextResponse.json(
 );
 
 export async function GET(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
@@ -35,6 +38,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
@@ -59,6 +64,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { key } = await context.params;
 
