@@ -77,6 +77,14 @@ const authHandler = auth(async (req) => {
     return NextResponse.next();
   }
 
+  // Allow API requests with Bearer token — let route handler's requireAuth() validate the token.
+  // This enables CLI/programmatic access without NextAuth session.
+  // Security: proxy does NOT validate the token; invalid tokens will get 401 from requireAuth().
+  const authHeader = req.headers.get("authorization");
+  if (pathname.startsWith("/api/") && authHeader?.toLowerCase().startsWith("bearer ")) {
+    return NextResponse.next();
+  }
+
   const isLoggedIn = !!req.auth;
   const session = req.auth;
   const twoFactorVerified = session?.user?.twoFactorVerified;
