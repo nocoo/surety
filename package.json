@@ -6,7 +6,7 @@
     "dev": "next dev --port 7012",
     "build": "next build",
     "start": "next start --port 7012",
-    "lint": "eslint --max-warnings=0",
+    "lint": "eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -77,7 +77,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --max-warnings=0 --no-warn-ignored"
+      "eslint --max-warnings=0 --no-warn-ignored --cache --cache-location node_modules/.cache/eslint/"
     ]
   }
 }
