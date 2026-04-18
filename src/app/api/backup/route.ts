@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 import { buildBackup, buildBackupFilename, restoreBackup, validateBackup } from "@/db/backup";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
  * GET /api/backup — export all data as a downloadable JSON file.
  */
 export async function GET() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { db } = await getReposFromRequest();
   const backup = await buildBackup(db);
   const filename = buildBackupFilename();
@@ -25,6 +28,8 @@ export async function GET() {
  * Full destructive replace: clears all existing data, then imports.
  */
 export async function POST(request: NextRequest) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { db, batchExecute } = await getReposFromRequest();
   const body: unknown = await request.json();
 

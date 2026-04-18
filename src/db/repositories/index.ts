@@ -12,6 +12,7 @@ import { createAttachmentsRepo } from "./attachments";
 import { createHospitalsRepo } from "./hospitals";
 import { createDoctorsRepo } from "./doctors";
 import { createMedicalVisitsRepo } from "./medicalVisits";
+import { createApiTokensRepo } from "./apiTokens";
 
 // ---------- Factory: create all repos from a db instance ----------
 
@@ -30,6 +31,7 @@ export function createAllRepos(db: DbInstance) {
     hospitals: createHospitalsRepo(db),
     doctors: createDoctorsRepo(db),
     medicalVisits: createMedicalVisitsRepo(db),
+    apiTokens: createApiTokensRepo(db),
   };
 }
 
@@ -50,3 +52,4 @@ export { attachmentsRepo, createAttachmentsRepo, type AttachmentsRepo } from "./
 export { hospitalsRepo, createHospitalsRepo, type HospitalsRepo } from "./hospitals";
 export { doctorsRepo, createDoctorsRepo, type DoctorsRepo } from "./doctors";
 export { medicalVisitsRepo, createMedicalVisitsRepo, type MedicalVisitsRepo } from "./medicalVisits";
+export { apiTokensRepo, createApiTokensRepo, hashToken, type ApiTokensRepo } from "./apiTokens";

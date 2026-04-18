@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 import { readBackySettings, fetchBackyHistory } from "@/services/backy";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ export const dynamic = "force-dynamic";
  * count and recent backup entries.
  */
 export async function GET() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   await getReposFromRequest();
 
   const { webhookUrl, apiKey } = await readBackySettings();

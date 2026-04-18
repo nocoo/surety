@@ -72,8 +72,25 @@ const authHandler = auth(async (req) => {
 
   const pathname = req.nextUrl.pathname;
 
-  // Allow auth routes (OAuth flow + 2FA verification API) — pre-filter before decision logic
-  if (pathname.startsWith("/api/auth") || pathname === "/api/auth/verify-2fa") {
+  // Allow core auth routes (OAuth flow, NextAuth internals, 2FA verification, CLI login).
+  // /api/auth/tokens is NOT whitelisted — it requires 2FA verification like other protected routes.
+  const isAuthRoute = pathname.startsWith("/api/auth/") && !pathname.startsWith("/api/auth/tokens");
+  if (isAuthRoute) {
+    return NextResponse.next();
+  }
+
+  // Allow API requests with Bearer token — let route handler's requireAuth() validate the token.
+  // This enables CLI/programmatic access without NextAuth session.
+  // Security: proxy does NOT validate the token; invalid tokens will get 401 from requireAuth().
+  //
+  // EXCEPTION: Sensitive routes that should ONLY be accessed via browser session:
+  // - /api/settings/2fa/* — 2FA management must go through full session + 2FA verification
+  // - /api/auth/tokens/* — Token management requires session (already excluded from auth whitelist)
+  // These routes use auth() directly and would be bypassed if we let Bearer through.
+  const authHeader = req.headers.get("authorization");
+  const isBearerRequest = authHeader?.toLowerCase().startsWith("bearer ");
+  const isSensitiveRoute = pathname.startsWith("/api/settings/2fa") || pathname.startsWith("/api/auth/tokens");
+  if (pathname.startsWith("/api/") && isBearerRequest && !isSensitiveRoute) {
     return NextResponse.next();
   }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 import { readBackySettings } from "@/services/backy";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ export const dynamic = "force-dynamic";
  * Returns the HTTP status and whether the connection succeeded.
  */
 export async function POST() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   await getReposFromRequest();
 
   const { webhookUrl, apiKey } = await readBackySettings();

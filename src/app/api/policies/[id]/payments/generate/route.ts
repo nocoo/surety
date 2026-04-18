@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { generatePaymentRecords } from "@/lib/generate-payments";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ type RouteContext = { params: Promise<{ id: string }> };
  * Idempotent: skips already-existing period numbers.
  */
 export async function POST(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id } = await context.params;
   const policyId = parseInt(id, 10);

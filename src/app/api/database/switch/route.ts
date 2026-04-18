@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { requireAuth } from "@/lib/api-auth";
 import type { TargetDb } from "@/db/index";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,8 @@ const VALID_TARGETS: TargetDb[] = ["production", "test"];
  * accidentally operating on production data.
  */
 export async function POST(request: Request) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   try {
     const body = await request.json();
     const database = body.database as string;
@@ -61,6 +64,8 @@ export async function POST(request: Request) {
  * GET /api/database/switch — return the current database selection.
  */
 export async function GET() {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const cookieStore = await cookies();
   const database = cookieStore.get("surety-database")?.value || "production";
 

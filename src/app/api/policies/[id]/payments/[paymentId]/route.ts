@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
+import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,8 @@ type RouteContext = { params: Promise<{ id: string; paymentId: string }> };
  * Primary use case: mark as Paid with paidDate.
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id, paymentId } = await context.params;
   const policyId = parseInt(id, 10);
@@ -61,6 +64,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
  * DELETE /api/policies/[id]/payments/[paymentId] — Delete a payment record.
  */
 export async function DELETE(_request: NextRequest, context: RouteContext) {
+  const __auth = await requireAuth();
+  if (__auth instanceof Response) return __auth;
   const { repos } = await getReposFromRequest();
   const { id, paymentId } = await context.params;
   const policyId = parseInt(id, 10);
