@@ -70,7 +70,7 @@ function createMemoryStore(): TotpStore & { data: Map<string, string> } {
 // Pure crypto function tests
 // ===========================================================================
 
-describe("parseMasterKey", () => {
+describe.concurrent("parseMasterKey", () => {
   test("parses valid 64-char hex and rejects invalid inputs", () => {
     const key = parseMasterKey("a".repeat(64));
     expect(key).toBeInstanceOf(Buffer);
@@ -83,7 +83,7 @@ describe("parseMasterKey", () => {
   });
 });
 
-describe("encryptSecret / decryptSecret", () => {
+describe.concurrent("encryptSecret / decryptSecret", () => {
   test("round-trips a secret", () => {
     const original = "JBSWY3DPEHPK3PXP";
     const encrypted = encryptSecret(original, TEST_MASTER_KEY);
@@ -125,7 +125,7 @@ describe("encryptSecret / decryptSecret", () => {
   });
 });
 
-describe("generateSecret", () => {
+describe.concurrent("generateSecret", () => {
   test("returns unique base32 strings", () => {
     const secret = generateSecret();
     expect(secret).toMatch(/^[A-Z2-7]+=*$/);
@@ -134,7 +134,7 @@ describe("generateSecret", () => {
   });
 });
 
-describe("verifyToken", () => {
+describe.concurrent("verifyToken", () => {
   test("validates correct tokens and rejects invalid ones", () => {
     const secret = generateSecret();
     const label = "test@example.com";
@@ -155,7 +155,7 @@ describe("verifyToken", () => {
   });
 });
 
-describe("generateQRDataURL", () => {
+describe.concurrent("generateQRDataURL", () => {
   test("returns a data URL", async () => {
     const secret = generateSecret();
     const dataURL = await generateQRDataURL(secret, "user@example.com", TEST_ISSUER);
@@ -188,7 +188,7 @@ describe.concurrent("recovery code", () => {
   });
 });
 
-describe("brute force protection", () => {
+describe.concurrent("brute force protection", () => {
   test("isLockedOut checks lockUntil against current time", () => {
     expect(isLockedOut({ failedAttempts: 3, lockUntil: null })).toBe(false);
     expect(isLockedOut({ failedAttempts: 5, lockUntil: new Date(Date.now() + 60000).toISOString() })).toBe(true);
@@ -219,7 +219,7 @@ describe("brute force protection", () => {
   });
 });
 
-describe("trusted device cookie", () => {
+describe.concurrent("trusted device cookie", () => {
   test("creates and verifies valid cookies", () => {
     const email = "user@example.com";
     const cookieValue = createTrustedDeviceCookieValue(email, "v1", TEST_HMAC_SECRET, 30);
@@ -253,7 +253,7 @@ describe("trusted device cookie", () => {
   });
 });
 
-describe("verification nonce", () => {
+describe.concurrent("verification nonce", () => {
   test("generates unique 64-char hex nonces", () => {
     const nonce = generateVerificationNonce();
     expect(nonce).toMatch(/^[0-9a-f]{64}$/);
@@ -274,7 +274,7 @@ describe("verification nonce", () => {
   });
 });
 
-describe("TOTP_SETTINGS_KEYS and SENSITIVE_KEY_PREFIX", () => {
+describe.concurrent("TOTP_SETTINGS_KEYS and SENSITIVE_KEY_PREFIX", () => {
   test("all keys have correct prefix and values", () => {
     expect(SENSITIVE_KEY_PREFIX).toBe("totp.");
     expect(TOTP_SETTINGS_KEYS.enabled).toBe("totp.enabled");
@@ -290,7 +290,7 @@ describe("TOTP_SETTINGS_KEYS and SENSITIVE_KEY_PREFIX", () => {
 // TotpService integration tests (with in-memory store)
 // ===========================================================================
 
-describe("TotpService", () => {
+describe.concurrent("TotpService", () => {
   function createService(overrides?: Partial<TotpConfig>) {
     const store = createMemoryStore();
     const config = createTestConfig(overrides);
@@ -583,7 +583,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("consumeNonce", () => {
+  describe.concurrent("consumeNonce", () => {
     test("consumes valid nonce and prevents reuse", async () => {
       const { service, store } = createService();
       const nonce = generateVerificationNonce();
@@ -607,7 +607,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("trusted device cookie via service", () => {
+  describe.concurrent("trusted device cookie via service", () => {
     test("round-trip and rejection scenarios", async () => {
       const { service, store } = createService();
       await store.set(TOTP_SETTINGS_KEYS.enrollVersion, "42");
@@ -629,7 +629,7 @@ describe("TotpService", () => {
     });
   });
 
-  describe("configurable defaults", () => {
+  describe.concurrent("configurable defaults", () => {
     test("maxFailedAttempts has default and can be overridden", () => {
       expect(createService().service.maxFailedAttempts).toBe(5);
       expect(createService({ maxFailedAttempts: 3 }).service.maxFailedAttempts).toBe(3);
