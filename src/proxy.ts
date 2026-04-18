@@ -82,8 +82,15 @@ const authHandler = auth(async (req) => {
   // Allow API requests with Bearer token — let route handler's requireAuth() validate the token.
   // This enables CLI/programmatic access without NextAuth session.
   // Security: proxy does NOT validate the token; invalid tokens will get 401 from requireAuth().
+  //
+  // EXCEPTION: Sensitive routes that should ONLY be accessed via browser session:
+  // - /api/settings/2fa/* — 2FA management must go through full session + 2FA verification
+  // - /api/auth/tokens/* — Token management requires session (already excluded from auth whitelist)
+  // These routes use auth() directly and would be bypassed if we let Bearer through.
   const authHeader = req.headers.get("authorization");
-  if (pathname.startsWith("/api/") && authHeader?.toLowerCase().startsWith("bearer ")) {
+  const isBearerRequest = authHeader?.toLowerCase().startsWith("bearer ");
+  const isSensitiveRoute = pathname.startsWith("/api/settings/2fa") || pathname.startsWith("/api/auth/tokens");
+  if (pathname.startsWith("/api/") && isBearerRequest && !isSensitiveRoute) {
     return NextResponse.next();
   }
 
