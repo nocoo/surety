@@ -129,6 +129,30 @@ describe("apiTokens repository", () => {
     expect(await repo.revoke(99_999)).toBe(false);
   });
 
+  test("revokeAllByEmail deletes all tokens for an email", async () => {
+    const repo = freshRepo();
+    const { token: t1 } = await repo.create("alice@example.com", "first");
+    const { token: t2 } = await repo.create("alice@example.com", "second");
+    await repo.create("bob@example.com", "other");
+
+    const count = await repo.revokeAllByEmail("alice@example.com");
+    expect(count).toBe(2);
+
+    // Alice's tokens are now invalid
+    expect(await repo.verify(t1)).toBeNull();
+    expect(await repo.verify(t2)).toBeNull();
+
+    // Bob's token is unaffected
+    const bobTokens = await repo.listByEmail("bob@example.com");
+    expect(bobTokens).toHaveLength(1);
+  });
+
+  test("revokeAllByEmail returns 0 when no tokens exist", async () => {
+    const repo = freshRepo();
+    const count = await repo.revokeAllByEmail("nobody@example.com");
+    expect(count).toBe(0);
+  });
+
   test("token uniqueness is enforced", async () => {
     const repo = freshRepo();
     // Two creates produce two distinct random tokens; just sanity-check.

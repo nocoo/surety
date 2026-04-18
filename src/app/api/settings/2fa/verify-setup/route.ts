@@ -1,7 +1,7 @@
 /**
  * POST /api/settings/2fa/verify-setup
  * Verify the TOTP token to confirm 2FA setup.
- * On success: enables 2FA, returns recovery code + nonce for JWT promotion.
+ * On success: enables 2FA, revokes all existing API tokens, returns recovery code + nonce for JWT promotion.
  *
  * NOTE: No trusted-device cookie is issued here. The nonce-based JWT promotion
  * already exempts the current session. Trusted-device cookies should only be
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await getReposFromRequest();
+  const { repos } = await getReposFromRequest();
   const totp = await getTotpService();
 
   // Already enabled?
@@ -48,10 +48,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error }, { status });
   }
 
+  // Revoke all existing API tokens for this user.
+  // CLI/programmatic access is not allowed for 2FA-enabled accounts.
+  const revokedCount = await repos.apiTokens.revokeAllByEmail(session.user.email);
+
   return NextResponse.json({
     success: true,
     recoveryCode: result.recoveryCode,
     twoFactorNonce: result.nonce,
     twoFactorSig: result.nonceSig,
+    revokedTokens: revokedCount,
   });
 }

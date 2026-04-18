@@ -111,6 +111,20 @@ export function createApiTokensRepo(dbInstance: DbInstance) {
         .all();
       return rows.length > 0;
     },
+
+    /**
+     * Revoke ALL tokens for a given email.
+     * Called when 2FA is enabled to invalidate pre-existing CLI access.
+     * Returns the number of tokens revoked.
+     */
+    async revokeAllByEmail(email: string): Promise<number> {
+      const rows = await dbInstance
+        .delete(apiTokens)
+        .where(eq(apiTokens.email, email))
+        .returning()
+        .all();
+      return rows.length;
+    },
   };
 }
 
