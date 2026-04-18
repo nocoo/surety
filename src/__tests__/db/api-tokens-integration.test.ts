@@ -101,7 +101,7 @@ describe("API Token Lifecycle Integration", () => {
 
     const verified = await repo.verify(token);
     expect(verified).not.toBeNull();
-    expect(verified!.email).toBe("user@example.com");
+    expect(verified?.email).toBe("user@example.com");
   });
 
   test("invalid token returns null", async () => {
