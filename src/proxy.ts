@@ -77,6 +77,17 @@ const authHandler = auth(async (req) => {
     return NextResponse.next();
   }
 
+  // API requests carrying a Bearer token are authenticated at the route level
+  // by authenticateRequest(). The proxy should not reject them based on the
+  // absence of a NextAuth session cookie, and 2FA does not apply to programmatic
+  // CLI access — let the route handler verify the token.
+  if (pathname.startsWith("/api/")) {
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.toLowerCase().startsWith("bearer ")) {
+      return NextResponse.next();
+    }
+  }
+
   const isLoggedIn = !!req.auth;
   const session = req.auth;
   const twoFactorVerified = session?.user?.twoFactorVerified;
