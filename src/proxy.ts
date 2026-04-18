@@ -72,8 +72,10 @@ const authHandler = auth(async (req) => {
 
   const pathname = req.nextUrl.pathname;
 
-  // Allow auth routes (OAuth flow + 2FA verification API) — pre-filter before decision logic
-  if (pathname.startsWith("/api/auth") || pathname === "/api/auth/verify-2fa") {
+  // Allow core auth routes (OAuth flow, NextAuth internals, 2FA verification, CLI login).
+  // /api/auth/tokens is NOT whitelisted — it requires 2FA verification like other protected routes.
+  const isAuthRoute = pathname.startsWith("/api/auth/") && !pathname.startsWith("/api/auth/tokens");
+  if (isAuthRoute) {
     return NextResponse.next();
   }
 

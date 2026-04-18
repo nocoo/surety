@@ -49,6 +49,25 @@ export async function GET(request: NextRequest) {
     return signIn("google", { redirectTo: selfUrl.toString() });
   }
 
+  // 2FA users cannot use CLI authentication by design.
+  // CLI tokens bypass 2FA verification, so we reject token issuance entirely.
+  try {
+    const { getTotpService } = await import("@/lib/totp");
+    const totp = await getTotpService();
+    if (await totp.isEnabled()) {
+      return NextResponse.json(
+        { error: "CLI authentication is not available for accounts with 2FA enabled" },
+        { status: 403 },
+      );
+    }
+  } catch {
+    // DB unavailable — fail closed (reject token issuance)
+    return NextResponse.json(
+      { error: "Unable to verify 2FA status" },
+      { status: 503 },
+    );
+  }
+
   // Mint a new long-lived token for this CLI session.
   const { repos } = await getReposFromRequest();
   const { token } = await repos.apiTokens.create(email, "CLI");
