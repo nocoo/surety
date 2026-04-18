@@ -174,12 +174,16 @@ describe.concurrent("recovery code", () => {
   test("hash and verify round-trip with normalization", async () => {
     const code = generateRecoveryCode(16);
     const hash = await hashRecoveryCode(code);
-    // Valid verification
-    expect(await verifyRecoveryCode(code, hash)).toBe(true);
-    // Wrong code
-    expect(await verifyRecoveryCode("wrong-code-1234-5678", hash)).toBe(false);
-    // Normalized variants (case-insensitive, dashes/whitespace ignored)
-    expect(await verifyRecoveryCode(code.replace(/-/g, "").toUpperCase(), hash)).toBe(true);
+    // Run the three independent verifications concurrently — each scrypt
+    // call is ~17ms and they don't share state.
+    const [validResult, wrongResult, normalizedResult] = await Promise.all([
+      verifyRecoveryCode(code, hash),
+      verifyRecoveryCode("wrong-code-1234-5678", hash),
+      verifyRecoveryCode(code.replace(/-/g, "").toUpperCase(), hash),
+    ]);
+    expect(validResult).toBe(true);
+    expect(wrongResult).toBe(false);
+    expect(normalizedResult).toBe(true);
   });
 
   test("normalizeRecoveryCode strips dashes, whitespace, and lowercases", () => {
