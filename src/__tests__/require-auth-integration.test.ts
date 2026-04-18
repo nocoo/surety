@@ -22,8 +22,6 @@ const ORIGINAL_E2E_SKIP = process.env.E2E_SKIP_AUTH;
 let mockAuthHeader: string | null = null;
 let mockSessionEmail: string | null = null;
 let mockVerifyResult: { email: string; id: number } | null = null;
-let updateLastUsedCalled = false;
-
 // Mock next/headers
 mock.module("next/headers", () => ({
   headers: async () => ({
@@ -61,9 +59,8 @@ mock.module("@/lib/api-helpers", () => ({
   getReposFromRequest: async () => ({
     repos: {
       apiTokens: {
-        verify: async (rawToken: string) => mockVerifyResult,
+        verify: async (_rawToken: string) => mockVerifyResult,
         updateLastUsed: async () => {
-          updateLastUsedCalled = true;
         },
       },
     },
@@ -92,7 +89,6 @@ describe("requireAuth() integration", () => {
     mockAuthHeader = null;
     mockSessionEmail = null;
     mockVerifyResult = null;
-    updateLastUsedCalled = false;
   });
 
   afterEach(() => {

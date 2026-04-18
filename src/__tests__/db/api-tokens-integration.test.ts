@@ -17,9 +17,8 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import * as schema from "@/db/schema";
-import { createApiTokensRepo } from "@/db/repositories/apiTokens";
-import { hashToken } from "@/db/repositories/apiTokens";
+import * as schema from "../../db/schema";
+import { createApiTokensRepo, hashToken } from "../../db/repositories/apiTokens";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");
@@ -63,15 +62,15 @@ describe("API Token Lifecycle Integration", () => {
     // 2. Verify token
     const verified = await repo.verify(token);
     expect(verified).not.toBeNull();
-    expect(verified!.email).toBe("user@example.com");
-    expect(verified!.id).toBe(id);
+    expect(verified?.email).toBe("user@example.com");
+    expect(verified?.id).toBe(id);
 
     // 3. Update lastUsedAt
     await repo.updateLastUsed(id);
     const tokens = await repo.listByEmail("user@example.com");
     expect(tokens).toHaveLength(1);
-    expect(tokens[0].lastUsedAt).not.toBeNull();
-    expect(tokens[0].name).toBe("My CLI");
+    expect(tokens[0]?.lastUsedAt).not.toBeNull();
+    expect(tokens[0]?.name).toBe("My CLI");
 
     // 4. Revoke token
     const revoked = await repo.revoke(id);
