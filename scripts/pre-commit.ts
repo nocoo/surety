@@ -14,10 +14,10 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { name: "test", cmd: ["bun", "run", "test:coverage"] },
+  { name: "test", cmd: ["bun", "run", "scripts/run-l1.ts"] },
   // bunx adds ~150ms overhead; use the binary directly when present.
   { name: "lint-staged", cmd: ["./node_modules/.bin/lint-staged"] },
-  { name: "typecheck", cmd: ["bun", "run", "typecheck"] },
+  { name: "typecheck", cmd: ["bun", "run", "scripts/run-g1a.ts"] },
 ];
 
 interface Outcome {
