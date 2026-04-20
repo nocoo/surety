@@ -367,6 +367,9 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
     await r.settings.setNumber("emergencyFundMonths", 6);
     await r.settings.setJson("riskTolerance", { level: "moderate", description: "Balanced growth" });
 
+    // Legacy TOTP key for E2E testing — verifies Settings API filters these out
+    await r.settings.set("totp.legacyTestKey", "should_be_filtered");
+
     return {
       members: familyMembers.length,
       assets: familyAssets.length,

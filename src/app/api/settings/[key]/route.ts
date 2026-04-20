@@ -16,10 +16,13 @@ function isLegacySensitiveKey(key: string): boolean {
   return key.startsWith(LEGACY_SENSITIVE_PREFIX);
 }
 
-const LEGACY_SENSITIVE_DENIED = NextResponse.json(
-  { error: "Cannot access legacy sensitive settings" },
-  { status: 403 },
-);
+/** Factory: create fresh 403 response each time (Response body is single-use) */
+function legacySensitiveDenied(): NextResponse {
+  return NextResponse.json(
+    { error: "Cannot access legacy sensitive settings" },
+    { status: 403 },
+  );
+}
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const __auth = await requireAuth();
@@ -31,7 +34,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
 
-  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
+  if (isLegacySensitiveKey(key)) return legacySensitiveDenied();
 
   const value = await repos.settings.get(key);
 
@@ -51,7 +54,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
 
-  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
+  if (isLegacySensitiveKey(key)) return legacySensitiveDenied();
 
   const body = await request.json();
 
@@ -77,7 +80,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
 
-  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
+  if (isLegacySensitiveKey(key)) return legacySensitiveDenied();
 
   const deleted = await repos.settings.delete(key);
 

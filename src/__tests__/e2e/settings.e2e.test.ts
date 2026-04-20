@@ -243,13 +243,18 @@ describe("Settings API E2E", () => {
   });
 
   describe("Legacy totp.* key protection", () => {
-    test("GET /api/settings excludes totp.* keys from list", async () => {
+    test("GET /api/settings excludes seeded totp.* key from list", async () => {
+      // seed.ts inserts "totp.legacyTestKey" to simulate old database
       const { status, data } = await apiRequest<Setting[]>("/api/settings");
       expect(status).toBe(200);
 
-      // Verify no totp.* keys appear in the list
+      // Verify no totp.* keys appear in the list (including seeded one)
       const totpKeys = data.filter((s) => s.key.startsWith("totp."));
       expect(totpKeys).toHaveLength(0);
+
+      // Double-check that other settings ARE present (filter isn't broken)
+      const normalKeys = data.map((s) => s.key);
+      expect(normalKeys).toContain("annualIncome");
     });
 
     test("POST /api/settings rejects totp.* key creation", async () => {
