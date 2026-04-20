@@ -82,8 +82,8 @@ async function main() {
     console.log("🧪 E2E: inserting legacy totp.* test key...");
     await client.batch([
       {
-        sql: "INSERT INTO settings (key, value) VALUES (?, ?)",
-        params: ["totp.legacyTestKey", "should_be_filtered"],
+        sql: "INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
+        params: ["totp.legacyTestKey", "should_be_filtered", Date.now()],
       },
     ]);
   }

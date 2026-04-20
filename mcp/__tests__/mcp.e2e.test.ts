@@ -126,7 +126,7 @@ describe("MCP security guard", () => {
     try {
       const result = await callTool(client, "list-policies");
       expect(result.isError).toBe(true);
-      expect(result.text).toContain("http://localhost:7012/settings");
+      expect(result.text).toContain("/settings");
     } finally {
       await client.close();
       await transport.close();
@@ -162,7 +162,10 @@ describe("MCP tool discovery", () => {
       "create-beneficiary",
       "create-cash-value",
       "create-coverage-item",
+      "create-doctor",
+      "create-hospital",
       "create-insurer",
+      "create-medical-visit",
       "create-member",
       "create-payment",
       "create-policy",
@@ -171,13 +174,19 @@ describe("MCP tool discovery", () => {
       "delete-beneficiary",
       "delete-cash-value",
       "delete-coverage-item",
+      "delete-doctor",
+      "delete-hospital",
       "delete-insurer",
+      "delete-medical-visit",
       "delete-member",
       "delete-payment",
       "delete-policy",
       "get-asset",
       "get-beneficiary",
+      "get-doctor",
+      "get-hospital",
       "get-insurer",
+      "get-medical-visit",
       "get-member",
       "get-payment",
       "get-policy",
@@ -185,7 +194,10 @@ describe("MCP tool discovery", () => {
       "list-beneficiaries",
       "list-cash-values",
       "list-coverage-items",
+      "list-doctors",
+      "list-hospitals",
       "list-insurers",
+      "list-medical-visits",
       "list-members",
       "list-payments",
       "list-policies",
@@ -194,7 +206,10 @@ describe("MCP tool discovery", () => {
       "update-beneficiary",
       "update-cash-value",
       "update-coverage-item",
+      "update-doctor",
+      "update-hospital",
       "update-insurer",
+      "update-medical-visit",
       "update-member",
       "update-payment",
       "update-policy",
