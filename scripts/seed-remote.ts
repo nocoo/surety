@@ -76,6 +76,18 @@ async function main() {
   const repos = createAllRepos(db);
   const result = await seedDatabase(repos);
 
+  // E2E-only: insert legacy totp.* key to test Settings API filtering
+  // This simulates an old database with leftover 2FA data
+  if (targetDb === "test") {
+    console.log("🧪 E2E: inserting legacy totp.* test key...");
+    await client.batch([
+      {
+        sql: "INSERT INTO settings (key, value) VALUES (?, ?)",
+        params: ["totp.legacyTestKey", "should_be_filtered"],
+      },
+    ]);
+  }
+
   console.log("\n✅ Remote seed completed!");
   console.log(`   Members: ${result.members}`);
   console.log(`   Assets: ${result.assets}`);
