@@ -25,8 +25,6 @@ export async function getSessionForApi(): Promise<Session | null> {
       user: {
         email: E2E_TEST_EMAIL,
         name: "E2E Test User",
-        twoFactorVerified: true,
-        recoverySession: false,
       },
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     };

@@ -111,7 +111,7 @@ MCP 层当前为纯只读（8 个 query/analytics tools），Repo 层 9 个实�
 
 | Entity | Reason |
 |--------|--------|
-| Settings | 安全敏感（含 TOTP 密钥、MCP 开关等），通过 Web UI 管理 |
+| Settings | 安全敏感（含 MCP 开关等），通过 Web UI 管理 |
 
 ## 文件结构
 

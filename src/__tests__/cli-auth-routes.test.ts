@@ -11,7 +11,6 @@ import { describe, expect, test, beforeEach, mock } from "bun:test";
 import type { NextRequest } from "next/server";
 
 let sessionEmail: string | null = "alice@example.com";
-let twoFactorEnabled = false;
 
 const tokensCreate = mock(
   (_email: string, _name?: string) =>
@@ -44,12 +43,6 @@ mock.module("@/lib/api-helpers", () => ({
   }),
 }));
 
-mock.module("@/lib/totp", () => ({
-  getTotpService: async () => ({
-    isEnabled: async () => twoFactorEnabled,
-  }),
-}));
-
 const cli = await import("@/app/api/auth/cli/route");
 const tokensRoute = await import("@/app/api/auth/tokens/route");
 const tokenIdRoute = await import("@/app/api/auth/tokens/[id]/route");
@@ -64,7 +57,6 @@ function ctx(id: string) {
 
 beforeEach(() => {
   sessionEmail = "alice@example.com";
-  twoFactorEnabled = false;
   tokensCreate.mockReset();
   tokensListByEmail.mockReset();
   tokensFindById.mockReset();
@@ -157,21 +149,6 @@ describe("GET /api/auth/cli", () => {
     const loc = new URL(location);
     expect(loc.searchParams.has("state")).toBe(false);
     expect(loc.searchParams.get("api_key")).toBe("sk_freshly_minted");
-  });
-
-  test("403 when 2FA is enabled — CLI auth not available", async () => {
-    sessionEmail = "alice@example.com";
-    twoFactorEnabled = true;
-    const res = await cli.GET(
-      reqFor(
-        "https://surety.test/api/auth/cli?callback_url=http://127.0.0.1:1/cb&state=xyz",
-      ),
-    );
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({
-      error: "CLI authentication is not available for accounts with 2FA enabled",
-    });
-    expect(tokensCreate).not.toHaveBeenCalled();
   });
 });
 

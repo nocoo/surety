@@ -293,16 +293,12 @@ brew install osv-scanner gitleaks
 6. Update `CLAUDE.md` commands section (line 59):
    - Replace `bun test --coverage  # 测试覆盖率` with `bun run test:coverage  # 测试覆盖率 (≥90% 门禁)`
    - This is the actual gate command with the 90% threshold; `bun test --coverage` only prints coverage without enforcing it
-7. Update `docs/10-totp-implementation-details.md` section 9.3 "Pre-commit 集成":
-   - Replace stale `eslint` reference with `bunx lint-staged` + `bun run typecheck`
-   - The current text only lists `check-coverage.ts` + `eslint`, missing lint-staged and typecheck
 
 **Files modified**:
 - `docs/archive/06-testing-improvement-plan.md` (moved)
 - `CLAUDE.md` — update test framework table + section title + commands section
 - `README.md` — rewrite docs tree (add archive/, 12, README.md)
 - `CHANGELOG.md` — annotate archived doc path
-- `docs/10-totp-implementation-details.md` — update pre-commit hook description
 
 **Commit**: `docs: upgrade test framework docs to quality system model`
 
@@ -330,9 +326,6 @@ Create `docs/README.md`:
 | 04 | [MCP Setup](./04-mcp-setup.md) | MCP Server configuration and tools |
 | 05 | [Basalt UI Migration](./05-basalt-ui-migration.md) | UI framework migration record |
 | 07 | [Impeccable Audit Report](./07-impeccable-audit-report.md) | Security audit findings |
-| 08 | [Two-Factor Auth](./08-two-factor-auth.md) | 2FA feature documentation |
-| 09 | [TOTP Module](./09-totp-module.md) | TOTP module design |
-| 10 | [TOTP Implementation Details](./10-totp-implementation-details.md) | TOTP implementation internals |
 | 11 | [SQLite to D1 Migration](./11-sqlite-to-d1-migration.md) | Database migration record |
 | 12 | [Quality System Upgrade](./12-quality-system-upgrade.md) | Quality system (L1+L2+L3+G1+G2) upgrade plan |
 

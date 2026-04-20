@@ -19,7 +19,6 @@ import {
   DatabaseSettings,
   McpSettings,
   BackySettings,
-  TwoFactorSettings,
 } from "./components";
 
 interface SettingsData {
@@ -216,9 +215,6 @@ export default function SettingsPage() {
 
           {/* MCP Access Settings */}
           <McpSettings />
-
-          {/* Two-Factor Authentication */}
-          <TwoFactorSettings />
 
           {/* Backy Remote Backup */}
           <BackySettings />

@@ -1,5 +1,7 @@
 # SQLite → Cloudflare D1 Migration
 
+> **Note**: This document is a historical record of the D1 migration. References to 2FA/TOTP are outdated — the 2FA feature was removed in a later commit.
+
 ## Overview
 
 将 Surety 的数据库从本地 SQLite 文件迁移到 Cloudflare D1，通过 **Cloudflare Worker proxy** 访问 D1。部署架构（Railway）保持不变。
