@@ -384,3 +384,62 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Railway deployment support with Docker and SQLite volume mount
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
+
+## v1.5.10
+
+### Added
+- Remove two-factor authentication (2FA/TOTP) feature
+- Add bearer token auth to all API routes
+- Add CLI login endpoint and token management API
+- Add bearer token authentication middleware
+- Add api_tokens table and repository
+- Align /api/live to surety health standard
+- Add automated release script (#28)
+
+### Changed
+- Pre-commit/pre-push optimization session summary in autoresearch.ideas.md
+- Parallel scrypt verifies in recovery roundtrip: 963→900ms (-6.5%, cooled trials)
+- Full describe.concurrent in totp-module: 997→963ms (-3.4%)
+- Parallelize seed-remote subprocess guards: 1080→997ms (-7.7%, sub-1s!)
+- Describe.concurrent for TotpService scrypt-bound blocks: 1267→1080ms (-15%)
+- Re-baseline pre-commit: 1267ms (test 1267, lint 592, typecheck 925), wall=test
+- Baseline pre-push (sequential): osv-scanner 4114ms + gitleaks 89ms = 4216ms
+- Enable eslint --cache: lint 4139→646ms warm, total 4140→1393ms (-66%)
+- Parallelize pre-commit steps: 6087→4140ms (-32%), bottleneck is lint at ~4s
+- Pre-commit total 6087ms (test 1210, lint 3983, typecheck 894). Best-of-3 trials.
+- Add integration tests for token lifecycle and requireAuth
+- Add unit tests for API token auth
+- 添加 Attachments E2E 测试，L2 覆盖率达到 100% (74/74 端点)
+- 添加 2FA E2E 测试覆盖 (5 个端点: status, setup, verify-setup, disable, verify-2fa)
+- Consolidate dashboard-vm tests (864→857)
+- Consolidate redundant tests (920→865, 1171→993ms)
+- 920 tests, 1171ms, 93.31% coverage
+- Add coverageInclude to exclude React/UI components from coverage
+- Cover findByMemberId in beneficiaries repo
+- Cover findByMemberId in beneficiaries repo (others.test.ts)
+- Cover countGroupedByPolicyIds in attachments repo
+- Ignore GHSA-458j-xx4x-4375 hono medium CVE
+
+### Fixed
+- Update MCP E2E test expectations and seed-remote timestamp
+- Move legacy totp test key from shared seed to E2E-only
+- Avoid Response singleton reuse, strengthen legacy key test
+- Filter legacy totp.* keys from Settings API
+- Revoke all API tokens when 2FA is enabled
+- Exclude sensitive routes from Bearer passthrough
+- Block 2FA users from CLI token issuance
+- Allow Bearer token passthrough to route handlers
+- Fix last no-non-null-assertion lint error
+- Remove redundant requireAuth integration test (covered by api-auth.test.ts)
+- Fix TypeScript strict mode errors in integration tests
+- Close bearer-token bypass and require auth on settings/backup routes
+- Assert DELETE cascade behavior instead of statement count
+- Cover asset enrichment branch in policies GET handler
+- Assert minus sign in negative currency formatting
+- Upgrade hono to fix GHSA-458j-xx4x-4375
+- Remove bg-input/border-input anti-patterns from button, switch, toggle (#26)
+- Migrate TagInput to bg-secondary + border-border
+- Migrate L3 controls from bg-input to bg-secondary + border-border
+
+### Removed
+- Remove stale hono CVE ignores from osv-scanner.toml
