@@ -6,6 +6,21 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ key: string }> };
 
+/**
+ * Legacy TOTP keys that may exist in old databases.
+ * These are rejected on all operations.
+ */
+const LEGACY_SENSITIVE_PREFIX = "totp.";
+
+function isLegacySensitiveKey(key: string): boolean {
+  return key.startsWith(LEGACY_SENSITIVE_PREFIX);
+}
+
+const LEGACY_SENSITIVE_DENIED = NextResponse.json(
+  { error: "Cannot access legacy sensitive settings" },
+  { status: 403 },
+);
+
 export async function GET(_request: NextRequest, context: RouteContext) {
   const __auth = await requireAuth();
   if (__auth instanceof Response) return __auth;
@@ -15,6 +30,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
   if (!key) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
+
+  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
 
   const value = await repos.settings.get(key);
 
@@ -33,6 +50,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   if (!key) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
+
+  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
 
   const body = await request.json();
 
@@ -57,6 +76,8 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   if (!key) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
+
+  if (isLegacySensitiveKey(key)) return LEGACY_SENSITIVE_DENIED;
 
   const deleted = await repos.settings.delete(key);
 

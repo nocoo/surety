@@ -241,4 +241,63 @@ describe("Settings API E2E", () => {
       expect(currency.value).toBe("USD");
     });
   });
+
+  describe("Legacy totp.* key protection", () => {
+    test("GET /api/settings excludes totp.* keys from list", async () => {
+      const { status, data } = await apiRequest<Setting[]>("/api/settings");
+      expect(status).toBe(200);
+
+      // Verify no totp.* keys appear in the list
+      const totpKeys = data.filter((s) => s.key.startsWith("totp."));
+      expect(totpKeys).toHaveLength(0);
+    });
+
+    test("POST /api/settings rejects totp.* key creation", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/settings",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            key: "totp.encryptedSecret",
+            value: "malicious_value",
+          }),
+        }
+      );
+
+      expect(status).toBe(403);
+      expect(data.error).toContain("legacy sensitive");
+    });
+
+    test("GET /api/settings/:key rejects totp.* key read", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/settings/totp.enabled"
+      );
+
+      expect(status).toBe(403);
+      expect(data.error).toContain("legacy sensitive");
+    });
+
+    test("PUT /api/settings/:key rejects totp.* key update", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/settings/totp.enabled",
+        {
+          method: "PUT",
+          body: JSON.stringify({ value: "false" }),
+        }
+      );
+
+      expect(status).toBe(403);
+      expect(data.error).toContain("legacy sensitive");
+    });
+
+    test("DELETE /api/settings/:key rejects totp.* key deletion", async () => {
+      const { status, data } = await apiRequest<{ error: string }>(
+        "/api/settings/totp.recoveryCodeHash",
+        { method: "DELETE" }
+      );
+
+      expect(status).toBe(403);
+      expect(data.error).toContain("legacy sensitive");
+    });
+  });
 });
