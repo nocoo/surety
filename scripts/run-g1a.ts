@@ -108,7 +108,9 @@ if (cached && cached.hash === hash) {
 }
 
 console.log(`🔎 G1a cache miss — running typecheck (${files.length} files)`);
-const proc = spawnSync(TYPECHECK_CMD[0]!, TYPECHECK_CMD.slice(1), {
+const cmd = TYPECHECK_CMD[0];
+if (!cmd) throw new Error("TYPECHECK_CMD is empty");
+const proc = spawnSync(cmd, TYPECHECK_CMD.slice(1), {
   cwd: REPO_ROOT,
   stdio: "inherit",
 });
