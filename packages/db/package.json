@@ -1,0 +1,16 @@
+{
+  "name": "@surety/db",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./types": "./src/types.ts",
+    "./repositories": "./src/repositories/index.ts",
+    "./backup": "./src/backup.ts",
+    "./seed": "./src/seed.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  }
+}

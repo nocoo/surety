@@ -1,0 +1,9 @@
+{
+  "name": "@surety/web",
+  "version": "1.5.10",
+  "private": true,
+  "dependencies": {
+    "@surety/api": "workspace:*",
+    "@surety/db": "workspace:*"
+  }
+}

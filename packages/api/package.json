@@ -1,0 +1,11 @@
+{
+  "name": "@surety/api",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@surety/db": "workspace:*"
+  }
+}

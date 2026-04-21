@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@surety/api": ["../api/src/index.ts"],
+      "@surety/db": ["../db/src/index.ts"],
+      "@surety/db/*": ["../db/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "__tests__/**/*.ts"]
+}

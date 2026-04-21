@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@surety/db": ["../db/src/index.ts"],
+      "@surety/db/*": ["../db/src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
