@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.6.0] - 2026-04-21
+
+### Changed
+
+- **Monorepo restructure** — reorganized from single Next.js app to Bun workspace monorepo: `apps/web`, `packages/db`, `packages/api`, `packages/mcp`
+- Framework-agnostic business logic extracted to `@surety/api`, DB layer to `@surety/db`
+- ESLint config moved to repo root to cover all packages
+- CI upgraded to base-ci v2026.1
+
+### Fixed
+
+- Test coverage script aligned with test command globs
+- Version test reads root package.json to match APP_VERSION source
+- Dockerfile, L1 cache, E2E distDir, and package tsconfig monorepo integration issues
+
 ## [v1.5.9] - 2026-04-14
 
 ### Added
