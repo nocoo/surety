@@ -3,6 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+routes = [
+  { pattern = "surety.hexly.ai", custom_domain = true }
+]
+
 [assets]
 directory = "./static"
 binding = "ASSETS"
@@ -20,6 +24,12 @@ bucket_name = "surety"
 
 [env.test]
 name = "surety-test"
+routes = [
+  { pattern = "surety-test.hexly.ai", custom_domain = true }
+]
+
+[env.test.vars]
+E2E_SKIP_AUTH = "true"
 
 [env.test.assets]
 directory = "./static"
