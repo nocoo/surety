@@ -27,7 +27,7 @@ function StatCard({ label, value, subValue, icon: Icon, variant = "default" }: S
     <div className="rounded-card bg-secondary p-6">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <div className="rounded-md bg-card p-2">
+        <div className="rounded-md bg-background p-2">
           <Icon className={`h-4 w-4 ${iconColors[variant]}`} strokeWidth={1.5} />
         </div>
       </div>
