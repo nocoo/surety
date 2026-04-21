@@ -385,6 +385,23 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v1.6.0
+
+### Changed
+- Clean up root files and update README for monorepo
+- Finalize monorepo configuration
+- Move worker to apps/worker
+- Move Next.js app to apps/web
+- Extract packages/mcp
+- Extract packages/api as framework-agnostic business layer
+- Extract packages/db
+- Scaffold monorepo workspace structure
+
+### Fixed
+- Align test:coverage with test command globs, add services to coverage
+- Move eslint config to repo root to cover all packages
+- Address 4 monorepo integration issues
+
 ## v1.5.10
 
 ### Added
