@@ -4,14 +4,14 @@ import nextTs from "eslint-config-next/typescript";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
-  // Next.js rules scoped to apps/web only
+  // Next.js rules scoped to apps/web_legacy only
   ...nextVitals.map((config) => ({
     ...config,
-    files: ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+    files: ["apps/web_legacy/**/*.ts", "apps/web_legacy/**/*.tsx"],
   })),
   ...nextTs.map((config) => ({
     ...config,
-    files: ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+    files: ["apps/web_legacy/**/*.ts", "apps/web_legacy/**/*.tsx"],
   })),
   globalIgnores([
     "**/node_modules/**",
@@ -42,8 +42,8 @@ const eslintConfig = defineConfig([
   // no-console for application code (scripts use console legitimately)
   {
     files: [
-      "apps/web/src/**/*.ts",
-      "apps/web/src/**/*.tsx",
+      "apps/web_legacy/src/**/*.ts",
+      "apps/web_legacy/src/**/*.tsx",
       "packages/api/src/**/*.ts",
       "packages/db/src/**/*.ts",
       "packages/mcp/src/**/*.ts",

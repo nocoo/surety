@@ -45,7 +45,7 @@
         "typescript-eslint": "^8.35.1",
       },
     },
-    "apps/web": {
+    "apps/web_legacy": {
       "name": "@surety/web",
       "version": "1.5.10",
       "dependencies": {
@@ -491,7 +491,7 @@
 
     "@surety/mcp": ["@surety/mcp@workspace:packages/mcp"],
 
-    "@surety/web": ["@surety/web@workspace:apps/web"],
+    "@surety/web": ["@surety/web@workspace:apps/web_legacy"],
 
     "@surety/worker": ["@surety/worker@workspace:apps/worker"],
 

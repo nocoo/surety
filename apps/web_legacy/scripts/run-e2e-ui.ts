@@ -16,7 +16,7 @@ import { ensurePortFree, withE2eLock } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "7017";
 const E2E_DIST_DIR = ".next-e2e-ui";
-const E2E_DIST_DIR_ABS = "apps/web/.next-e2e-ui";
+const E2E_DIST_DIR_ABS = "apps/web_legacy/.next-e2e-ui";
 
 let serverProcess: Subprocess | null = null;
 
@@ -57,7 +57,7 @@ async function main() {
 
     // Step 1: Seed remote D1 test database
     console.log("📦 Seeding remote D1 test database...");
-    const seedResult = Bun.spawnSync(["bun", "run", "apps/web/scripts/seed-remote.ts"], {
+    const seedResult = Bun.spawnSync(["bun", "run", "apps/web_legacy/scripts/seed-remote.ts"], {
       stdout: "inherit",
       stderr: "inherit",
       env: {
@@ -74,7 +74,7 @@ async function main() {
     // Step 2: Start dev server pointing to remote D1 test
     console.log("\n🌐 Starting E2E UI server on port", E2E_UI_PORT, "...");
     serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_UI_PORT], {
-      cwd: "apps/web",
+      cwd: "apps/web_legacy",
       env: {
         ...process.env,
         SURETY_TARGET_DB: "test",
@@ -110,7 +110,7 @@ async function main() {
         "playwright",
         "test",
         "--config",
-        "apps/web/e2e/playwright.config.ts",
+        "apps/web_legacy/e2e/playwright.config.ts",
         ...process.argv.slice(2), // pass through CLI args (e.g. --headed, --grep)
       ],
       {

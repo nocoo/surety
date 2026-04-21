@@ -10,7 +10,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./apps/web/src/*"],
+      "@/*": ["./apps/web_legacy/src/*"],
       "@surety/db": ["./packages/db/src/index.ts"],
       "@surety/db/*": ["./packages/db/src/*"],
       "@surety/api": ["./packages/api/src/index.ts"],
@@ -23,12 +23,12 @@
     "apps/**/*.ts",
     "apps/**/*.tsx",
     "packages/**/*.ts",
-    "apps/web/.next/types/**/*.ts",
-    "apps/web/.next/dev/types/**/*.ts",
-    "apps/web/.next-e2e/dev/types/**/*.ts",
-    "apps/web/.next-e2e/types/**/*.ts",
-    "apps/web/.next-e2e-ui/types/**/*.ts",
-    "apps/web/.next-e2e-ui/dev/types/**/*.ts"
+    "apps/web_legacy/.next/types/**/*.ts",
+    "apps/web_legacy/.next/dev/types/**/*.ts",
+    "apps/web_legacy/.next-e2e/dev/types/**/*.ts",
+    "apps/web_legacy/.next-e2e/types/**/*.ts",
+    "apps/web_legacy/.next-e2e-ui/types/**/*.ts",
+    "apps/web_legacy/.next-e2e-ui/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

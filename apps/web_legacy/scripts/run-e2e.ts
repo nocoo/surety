@@ -16,7 +16,7 @@ import { ensurePortFree, withE2eLock } from "./e2e-utils";
 
 const E2E_PORT = process.env.E2E_PORT || "7016";
 const E2E_DIST_DIR = ".next-e2e";
-const E2E_DIST_DIR_ABS = "apps/web/.next-e2e";
+const E2E_DIST_DIR_ABS = "apps/web_legacy/.next-e2e";
 
 let serverProcess: Subprocess | null = null;
 
@@ -57,7 +57,7 @@ async function main() {
 
     // Step 1: Seed remote D1 test database
     console.log("📦 Seeding remote D1 test database...");
-    const seedResult = Bun.spawnSync(["bun", "run", "apps/web/scripts/seed-remote.ts"], {
+    const seedResult = Bun.spawnSync(["bun", "run", "apps/web_legacy/scripts/seed-remote.ts"], {
       stdout: "inherit",
       stderr: "inherit",
       env: {
@@ -74,7 +74,7 @@ async function main() {
     // Step 2: Start dev server pointing to remote D1 test
     console.log("\n🌐 Starting E2E server on port", E2E_PORT, "...");
     serverProcess = spawn(["bun", "run", "next", "dev", "-p", E2E_PORT], {
-      cwd: "apps/web",
+      cwd: "apps/web_legacy",
       env: {
         ...process.env,
         SURETY_TARGET_DB: "test",
@@ -105,7 +105,7 @@ async function main() {
     // Step 3: Run E2E tests (without setup/teardown)
     console.log("🧪 Running E2E tests...\n");
     const testResult = Bun.spawnSync(
-      ["bun", "test", "apps/web/src/__tests__/e2e", "--path-ignore-patterns", "__none__", "--timeout", "30000"],
+      ["bun", "test", "apps/web_legacy/src/__tests__/e2e", "--path-ignore-patterns", "__none__", "--timeout", "30000"],
       {
         stdout: "inherit",
         stderr: "inherit",

@@ -20,13 +20,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 
 import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const SOURCE_ROOTS = ["apps/web/src", "packages/mcp", "packages/api/src", "packages/db/src"].map((p) => join(REPO_ROOT, p));
+const SOURCE_ROOTS = ["apps/web_legacy/src", "packages/mcp", "packages/api/src", "packages/db/src"].map((p) => join(REPO_ROOT, p));
 const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
 // Test command — must mirror the "test" script in package.json but add coverage.
 // Globs are shell-expanded, so run via `sh -c`.
 const TEST_SHELL_CMD =
-  "cd apps/web && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage && cd ../.. && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts --coverage";
+  "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage && cd ../.. && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts --coverage";
 
 function gitCommonDir(): string {
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
