@@ -57,7 +57,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatBytes, isImageContentType } from "@/lib/attachment-validation";
-import type { Attachment } from "@/db/schema";
+import type { Attachment } from "@surety/db/schema";
 
 
 interface Policy {

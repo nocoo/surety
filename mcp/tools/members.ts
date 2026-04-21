@@ -12,7 +12,7 @@ import {
   beneficiariesRepo,
   assetsRepo,
   medicalVisitsRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 

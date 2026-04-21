@@ -1,5 +1,5 @@
-import type { NewPayment } from "@surety/db/schema";
-import { formatLocalDate } from "@/lib/date-utils";
+import type { NewPayment } from "../schema";
+import { formatLocalDate } from "./date-utils";
 
 export interface GeneratePaymentsInput {
   policyId: number;

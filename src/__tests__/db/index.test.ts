@@ -9,8 +9,8 @@ import {
   resolveTargetDb,
   getRawSqlite,
   db,
-} from "@/db";
-import { membersRepo, insurersRepo, createAllRepos } from "@/db/repositories";
+} from "@surety/db";
+import { membersRepo, insurersRepo, createAllRepos } from "@surety/db/repositories";
 
 /**
  * Tests for src/db/index.ts (D1 migration version)

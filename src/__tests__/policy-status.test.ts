@@ -3,7 +3,7 @@ import {
   deriveDisplayStatus,
   isEffectivelyActive,
   type PolicyDbStatus,
-} from "@/db/types";
+} from "@surety/db/types";
 
 describe("deriveDisplayStatus", () => {
   // Use explicit local-timezone Date construction for deterministic tests

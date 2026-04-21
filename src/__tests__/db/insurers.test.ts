@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb } from "@/db";
-import { insurersRepo } from "@/db/repositories";
+import { resetTestDb } from "@surety/db";
+import { insurersRepo } from "@surety/db/repositories";
 
 describe("insurersRepo", () => {
   beforeEach(() => {

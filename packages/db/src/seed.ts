@@ -1,6 +1,6 @@
 import type { NewMember, NewAsset, NewPolicy, NewBeneficiary } from "./schema";
 import type { AllRepos } from "./repositories";
-import { generatePaymentRecords } from "@/lib/generate-payments";
+import { generatePaymentRecords } from "./lib/generate-payments";
 import {
   membersRepo,
   assetsRepo,

@@ -1,9 +1,9 @@
 /**
  * API helper functions for request-scoped database access.
  */
-import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance, type TargetDb } from "@/db/index";
-import { createAllRepos, type AllRepos } from "@/db/repositories";
-import type { BatchExecuteFn } from "@/db/backup";
+import { getDbForRequest, createBatchExecutor, resolveTargetDb, type DbInstance, type TargetDb } from "@surety/db";
+import { createAllRepos, type AllRepos } from "@surety/db/repositories";
+import type { BatchExecuteFn } from "@surety/db/backup";
 import type { Session } from "next-auth";
 import { auth } from "@/auth";
 

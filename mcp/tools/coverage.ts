@@ -10,8 +10,8 @@ import {
   membersRepo,
   assetsRepo,
   policiesRepo,
-} from "@/db/repositories";
-import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
+} from "@surety/db/repositories";
+import { isEffectivelyActive, type PolicyDbStatus } from "@surety/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { parseLocalDate } from "./shared";
 

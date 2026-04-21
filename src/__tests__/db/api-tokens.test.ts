@@ -8,8 +8,8 @@
  */
 import { describe, expect, test, beforeEach } from "bun:test";
 import { createHash } from "node:crypto";
-import { createTestDb, resetTestDb } from "@/db";
-import { createApiTokensRepo, hashToken } from "@/db/repositories/apiTokens";
+import { createTestDb, resetTestDb } from "@surety/db";
+import { createApiTokensRepo, hashToken } from "@surety/db/repositories";
 
 function freshRepo() {
   const db = createTestDb();

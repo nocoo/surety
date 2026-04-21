@@ -11,7 +11,7 @@ import {
   membersRepo,
   hospitalsRepo,
   doctorsRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 
 /** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */

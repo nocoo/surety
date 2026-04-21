@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
-import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";

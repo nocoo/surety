@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { WorkerDbClient, WorkerDbError } from "../../db/worker-db-client";
+import { WorkerDbClient, WorkerDbError } from "@surety/db/worker-db-client";
 
 const WORKER_URL = "https://surety-db-proxy.example.workers.dev";
 const SECRET = "test-secret-123";

@@ -3,8 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { createTestDb, resetTestDb } from "@/db";
-import { settingsRepo } from "@/db/repositories";
+import { createTestDb, resetTestDb } from "@surety/db";
+import { settingsRepo } from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 
 // Initialize in-memory test database

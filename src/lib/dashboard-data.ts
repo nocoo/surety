@@ -1,6 +1,6 @@
-import { isEffectivelyActive, type PolicyDbStatus } from "@/db/types";
+import { isEffectivelyActive, type PolicyDbStatus } from "@surety/db/types";
 import { parseLocalDate } from "@/lib/date-utils";
-import type { AllRepos } from "@/db/repositories";
+import type { AllRepos } from "@surety/db/repositories";
 
 const categoryLabels: Record<string, string> = {
   Life: "寿险",

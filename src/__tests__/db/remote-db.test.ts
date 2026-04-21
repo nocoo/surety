@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
-import { createRemoteDbFromClient } from "@/db";
-import { WorkerDbClient } from "@/db/worker-db-client";
+import { createRemoteDbFromClient } from "@surety/db";
+import { WorkerDbClient } from "@surety/db/worker-db-client";
 
 /**
  * Tests for the remote database creation path (sqlite-proxy → Worker proxy).
@@ -95,7 +95,7 @@ describe("createRemoteDb", () => {
     process.env.SURETY_WORKER_SECRET = "secret";
 
     // Dynamic import to get fresh module behavior
-    const { createRemoteDb } = await import("@/db");
+    const { createRemoteDb } = await import("@surety/db");
     expect(() => createRemoteDb("production")).toThrow("SURETY_WORKER_URL is not set");
   });
 
@@ -105,7 +105,7 @@ describe("createRemoteDb", () => {
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = undefined;
 
-    const { createRemoteDb } = await import("@/db");
+    const { createRemoteDb } = await import("@surety/db");
     expect(() => createRemoteDb("production")).toThrow("SURETY_WORKER_SECRET is not set");
   });
 
@@ -115,7 +115,7 @@ describe("createRemoteDb", () => {
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
-    const { createRemoteDb } = await import("@/db");
+    const { createRemoteDb } = await import("@surety/db");
     const db = createRemoteDb("production");
     expect(db).toBeDefined();
   });
@@ -144,7 +144,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
-    const { getDbForRequest } = await import("@/db");
+    const { getDbForRequest } = await import("@surety/db");
     const db = getDbForRequest("test");
     expect(db).toBeDefined();
   });
@@ -156,7 +156,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
-    const { getDbForRequest } = await import("@/db");
+    const { getDbForRequest } = await import("@surety/db");
     const request = new Request("http://localhost", {
       headers: { cookie: "surety-database=test; other=value" },
     });
@@ -171,7 +171,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_URL = "https://example.workers.dev";
     process.env.SURETY_WORKER_SECRET = "secret";
 
-    const { getDbForRequest } = await import("@/db");
+    const { getDbForRequest } = await import("@surety/db");
     const db = getDbForRequest();
     expect(db).toBeDefined();
   });
@@ -182,7 +182,7 @@ describe("getDbForRequest (non-test env)", () => {
     process.env.SURETY_WORKER_URL = undefined;
     process.env.SURETY_WORKER_SECRET = undefined;
 
-    const { getDbForRequest } = await import("@/db");
+    const { getDbForRequest } = await import("@surety/db");
     expect(() => getDbForRequest()).toThrow("SURETY_WORKER_URL is not set");
   });
 });

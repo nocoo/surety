@@ -8,7 +8,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { paymentsRepo, policiesRepo } from "@/db/repositories";
+import { paymentsRepo, policiesRepo } from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 

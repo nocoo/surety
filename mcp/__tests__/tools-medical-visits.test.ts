@@ -3,14 +3,14 @@
  */
 
 import { describe, test, expect, beforeEach } from "bun:test";
-import { createTestDb, resetTestDb } from "@/db";
+import { createTestDb, resetTestDb } from "@surety/db";
 import {
   hospitalsRepo,
   doctorsRepo,
   medicalVisitsRepo,
   membersRepo,
   settingsRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 import { registerMedicalVisitTools } from "../tools/medical-visits";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 

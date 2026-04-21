@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Attachment } from "@/db/schema";
+import type { Attachment } from "@surety/db/schema";
 
 interface AttachmentSectionProps {
   policyId: number;

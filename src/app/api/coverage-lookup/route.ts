@@ -7,7 +7,7 @@ import {
   type PolicyForCoverage,
   type SelectionType,
 } from "@/lib/coverage-lookup-vm";
-import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/api-auth";
 

@@ -15,9 +15,9 @@ import {
   paymentsRepo,
   cashValuesRepo,
   coverageItemsRepo,
-} from "@/db/repositories";
-import { createBatchExecutor } from "@/db";
-import { deriveDisplayStatus, type PolicyDbStatus } from "@/db/types";
+} from "@surety/db/repositories";
+import { createBatchExecutor } from "@surety/db";
+import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 

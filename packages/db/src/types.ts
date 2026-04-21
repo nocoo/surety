@@ -1,4 +1,4 @@
-import { parseLocalDate } from "@/lib/date-utils";
+import { parseLocalDate } from "./lib/date-utils";
 
 export type PolicyCategory =
   | "Life"

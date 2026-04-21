@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb } from "@/db";
-import { doctorsRepo, hospitalsRepo } from "@/db/repositories";
+import { resetTestDb } from "@surety/db";
+import { doctorsRepo, hospitalsRepo } from "@surety/db/repositories";
 
 describe("doctorsRepo", () => {
   let hospitalId: number;

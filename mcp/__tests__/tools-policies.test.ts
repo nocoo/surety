@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from "bun:test";
-import { createTestDb, resetTestDb } from "@/db";
+import { createTestDb, resetTestDb } from "@surety/db";
 import {
   membersRepo,
   policiesRepo,
@@ -14,7 +14,7 @@ import {
   cashValuesRepo,
   coverageItemsRepo,
   settingsRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 import { registerPolicyTools } from "../tools/policies";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 

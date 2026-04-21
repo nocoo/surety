@@ -3,7 +3,7 @@
 import { FileText, ImageIcon, Download, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBytes, isImageContentType } from "@/lib/attachment-validation";
-import type { Attachment } from "@/db/schema";
+import type { Attachment } from "@surety/db/schema";
 
 interface AttachmentListProps {
   attachments: Attachment[];

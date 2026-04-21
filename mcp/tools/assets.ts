@@ -6,7 +6,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { assetsRepo, membersRepo, policiesRepo } from "@/db/repositories";
+import { assetsRepo, membersRepo, policiesRepo } from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined, tryParseJson, validateJson } from "./shared";
 

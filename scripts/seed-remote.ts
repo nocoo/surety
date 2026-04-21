@@ -13,10 +13,10 @@
  * Requires SURETY_WORKER_URL and SURETY_WORKER_SECRET in .env.
  */
 
-import { createRemoteDb, type TargetDb } from "../src/db/index";
-import { createAllRepos } from "../src/db/repositories";
-import { seedDatabase } from "../src/db/seed";
-import { WorkerDbClient } from "../src/db/worker-db-client";
+import { createRemoteDb, type TargetDb } from "@surety/db";
+import { createAllRepos } from "@surety/db/repositories";
+import { seedDatabase } from "@surety/db/seed";
+import { WorkerDbClient } from "@surety/db/worker-db-client";
 
 const BLOCKED_TARGETS = ["production"];
 

@@ -10,7 +10,7 @@
  * 2. Environment variable: SURETY_MCP_ENABLED = "true" (for testing)
  */
 
-import { settingsRepo } from "@/db/repositories";
+import { settingsRepo } from "@surety/db/repositories";
 
 const DISABLED_MESSAGE = [
   "MCP access is disabled.",

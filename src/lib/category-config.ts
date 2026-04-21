@@ -3,7 +3,7 @@
  * Provides unified labels, badge variants, and colors for policy categories
  */
 
-import type { PolicyCategory } from "@/db/types";
+import type { PolicyCategory } from "@surety/db/types";
 
 export interface CategoryConfig {
   label: string;

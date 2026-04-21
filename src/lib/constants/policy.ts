@@ -1,4 +1,4 @@
-import type { PolicyStatus } from "@/db/types";
+import type { PolicyStatus } from "@surety/db/types";
 
 export const statusConfig: Record<
   PolicyStatus,

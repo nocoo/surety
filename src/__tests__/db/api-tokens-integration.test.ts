@@ -17,8 +17,8 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import * as schema from "../../db/schema";
-import { createApiTokensRepo, hashToken } from "../../db/repositories/apiTokens";
+import * as schema from "@surety/db/schema";
+import { createApiTokensRepo, hashToken } from "@surety/db/repositories";
 
 function createTestDb() {
   const sqlite = new Database(":memory:");

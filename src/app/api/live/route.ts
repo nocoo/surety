@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkHealth, type HealthDeps } from "@/lib/health";
 import { APP_VERSION } from "@/lib/version";
-import { getDbForRequest } from "@/db/index";
+import { getDbForRequest } from "@surety/db";
 import { sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";

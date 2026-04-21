@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, mock } from "bun:test";
-import { resetTestDb, createTestDb, type DbInstance } from "@/db";
-import { settingsRepo } from "@/db/repositories";
+import { resetTestDb, createTestDb, type DbInstance } from "@surety/db";
+import { settingsRepo } from "@surety/db/repositories";
 import {
   maskApiKey,
   getEnvironment,

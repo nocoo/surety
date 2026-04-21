@@ -8,10 +8,10 @@
  * webhook API (POST to push, GET for history).
  */
 
-import { settingsRepo } from "@/db/repositories";
-import { buildBackup, buildBackupFilename, type BackupData } from "@/db/backup";
+import { settingsRepo } from "@surety/db/repositories";
+import { buildBackup, buildBackupFilename, type BackupData } from "@surety/db/backup";
 import { APP_VERSION } from "@/lib/version";
-import type { DbInstance } from "@/db/index";
+import type { DbInstance } from "@surety/db";
 
 // ── Types ──
 

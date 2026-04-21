@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { requireAuth } from "@/lib/api-auth";
-import type { TargetDb } from "@/db/index";
+import type { TargetDb } from "@surety/db";
 
 export const dynamic = "force-dynamic";
 

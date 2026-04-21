@@ -1,11 +1,11 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb } from "@/db";
+import { resetTestDb } from "@surety/db";
 import {
   medicalVisitsRepo,
   hospitalsRepo,
   doctorsRepo,
   membersRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 
 describe("medicalVisitsRepo", () => {
   let memberId: number;

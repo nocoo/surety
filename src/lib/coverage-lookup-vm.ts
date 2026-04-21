@@ -4,7 +4,7 @@
  * Supports both member coverage and asset coverage
  */
 
-import type { PolicyCategory } from "@/db/types";
+import type { PolicyCategory } from "@surety/db/types";
 import { CATEGORY_CONFIG, getCategoryConfig } from "./category-config";
 import { formatCurrency } from "./format";
 

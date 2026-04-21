@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb } from "@/db";
-import { policiesRepo, membersRepo } from "@/db/repositories";
-import type { NewPolicy } from "@/db/schema";
+import { resetTestDb } from "@surety/db";
+import { policiesRepo, membersRepo } from "@surety/db/repositories";
+import type { NewPolicy } from "@surety/db/schema";
 
 describe("policiesRepo", () => {
   let testMemberId: number;

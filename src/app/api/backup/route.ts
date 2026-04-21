@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/api-auth";
-import { buildBackup, buildBackupFilename, restoreBackup, validateBackup } from "@/db/backup";
+import { buildBackup, buildBackupFilename, restoreBackup, validateBackup } from "@surety/db/backup";
 
 export const dynamic = "force-dynamic";
 

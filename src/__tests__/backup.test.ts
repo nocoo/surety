@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "bun:test";
-import { resetTestDb, getRawSqlite, createTestDb } from "@/db";
+import { resetTestDb, getRawSqlite, createTestDb } from "@surety/db";
 import {
   membersRepo,
   insurersRepo,
@@ -9,7 +9,7 @@ import {
   assetsRepo,
   paymentsRepo,
   cashValuesRepo,
-} from "@/db/repositories";
+} from "@surety/db/repositories";
 import {
   buildBackup,
   buildBackupFilename,
@@ -19,8 +19,8 @@ import {
   type BackupData,
   type SqlStatement,
   type BatchExecuteFn,
-} from "@/db/backup";
-import type { DbInstance } from "@/db";
+} from "@surety/db/backup";
+import type { DbInstance } from "@surety/db";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
