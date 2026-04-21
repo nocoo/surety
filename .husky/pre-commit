@@ -1,1 +1,1 @@
-bun run scripts/pre-commit.ts
+bun run apps/web/scripts/pre-commit.ts

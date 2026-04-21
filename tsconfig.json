@@ -1,36 +1,16 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
     "jsx": "react-jsx",
-    "incremental": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
+      "@/*": ["./apps/web/src/*"],
       "@surety/db": ["./packages/db/src/index.ts"],
       "@surety/db/*": ["./packages/db/src/*"],
       "@surety/api": ["./packages/api/src/index.ts"],
@@ -40,20 +20,18 @@
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    ".next-e2e/dev/types/**/*.ts",
-    ".next-e2e/dev/dev/types/**/*.ts",
-    ".next-e2e/types/**/*.ts",
-    ".next-e2e-ui/types/**/*.ts",
-    ".next-e2e-ui/dev/types/**/*.ts"
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "apps/web/.next/types/**/*.ts",
+    "apps/web/.next/dev/types/**/*.ts",
+    "apps/web/.next-e2e/dev/types/**/*.ts",
+    "apps/web/.next-e2e/types/**/*.ts",
+    "apps/web/.next-e2e-ui/types/**/*.ts",
+    "apps/web/.next-e2e-ui/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "worker"
+    "**/node_modules"
   ]
 }

@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Playwright E2E tests (not React code):
     "e2e/**",
+    "**/e2e/**",
   ]),
   // tseslint strict — replaces manual rules
   ...tseslint.configs.strict.map((config) => ({
@@ -35,7 +36,7 @@ const eslintConfig = defineConfig([
   },
   // no-console for application code only (scripts use console legitimately)
   {
-    files: ["src/**/*.ts", "src/**/*.tsx", "packages/mcp/src/**/*.ts"],
+    files: ["src/**/*.ts", "src/**/*.tsx", "**/packages/mcp/src/**/*.ts"],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
     },

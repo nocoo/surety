@@ -10,7 +10,7 @@ const hasD1Credentials =
   process.env.CLOUDFLARE_D1_TOKEN;
 
 export default defineConfig({
-  schema: "./packages/db/src/schema.ts",
+  schema: "../../packages/db/src/schema.ts",
   out: "./drizzle",
   dialect: "sqlite",
   ...(hasD1Credentials

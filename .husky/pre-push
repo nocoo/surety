@@ -1,1 +1,1 @@
-bun run scripts/pre-push.ts
+bun run apps/web/scripts/pre-push.ts

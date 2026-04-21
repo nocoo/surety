@@ -11,15 +11,18 @@ async function main() {
   console.log("🧪 Running unit tests with coverage...\n");
 
   // Run tests with coverage (auto-discover, E2E excluded via bunfig.toml)
+  const repoRoot = import.meta.dir + "/../../..";
+
+  // Run web tests from apps/web (for @/* path resolution) then MCP tests
   const proc = Bun.spawn(
     [
-      "bun", "test",
-      "src/__tests__", "packages/mcp/__tests__",
-      "--coverage",
+      "bash", "-c",
+      `cd "${repoRoot}/apps/web" && bun test src/__tests__ --coverage && cd "${repoRoot}" && bun test packages/mcp/__tests__ --coverage`,
     ],
     {
       stdout: "pipe",
       stderr: "pipe",
+      cwd: repoRoot,
     }
   );
 

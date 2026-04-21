@@ -27,7 +27,7 @@ import { readFileSync, writeFileSync } from "fs";
 // Constants
 // ---------------------------------------------------------------------------
 
-const PROJECT_ROOT = pathResolve(import.meta.dirname as string, "..");
+const PROJECT_ROOT = pathResolve(import.meta.dirname as string, "../../..");
 const PACKAGE_JSON = pathResolve(PROJECT_ROOT, "package.json");
 const CHANGELOG_MD = pathResolve(PROJECT_ROOT, "CHANGELOG.md");
 

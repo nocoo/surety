@@ -4,27 +4,28 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "next dev --port 7012",
-    "build": "next build",
-    "start": "next start --port 7012",
-    "lint": "eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
+    "dev": "cd apps/web && next dev --port 7012",
+    "build": "cd apps/web && next build",
+    "start": "cd apps/web && next start --port 7012",
+    "lint": "cd apps/web && eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
     "typecheck": "tsc --noEmit",
-    "lint:typecheck:cached": "bun run scripts/run-g1a.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "db:seed": "bun run scripts/seed-remote.ts",
-    "test": "bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts",
-    "test:coverage": "bun run scripts/check-coverage.ts",
-    "test:coverage:cached": "bun run scripts/run-l1.ts",
+    "lint:typecheck:cached": "bun run apps/web/scripts/run-g1a.ts",
+    "db:generate": "cd apps/web && drizzle-kit generate",
+    "db:migrate": "cd apps/web && drizzle-kit migrate",
+    "db:push": "cd apps/web && drizzle-kit push",
+    "db:studio": "cd apps/web && drizzle-kit studio",
+    "db:seed": "bun run apps/web/scripts/seed-remote.ts",
+    "test:web": "cd apps/web && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts",
+    "test": "bun run test:web && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts",
+    "test:coverage": "bun run apps/web/scripts/check-coverage.ts",
+    "test:coverage:cached": "bun run apps/web/scripts/run-l1.ts",
     "test:mcp": "bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts",
     "test:mcp:e2e": "bun test packages/mcp/__tests__/mcp.e2e.test.ts --path-ignore-patterns __none__ --timeout 30000",
-    "test:e2e": "bun run scripts/run-e2e.ts",
-    "test:e2e:ui": "bun run scripts/run-e2e-ui.ts",
+    "test:e2e": "bun run apps/web/scripts/run-e2e.ts",
+    "test:e2e:ui": "bun run apps/web/scripts/run-e2e-ui.ts",
     "test:all": "bun run test:coverage && bun run test:e2e",
     "mcp": "bun run packages/mcp/src/index.ts",
-    "release": "bun run scripts/release.ts",
+    "release": "bun run apps/web/scripts/release.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -81,7 +82,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --max-warnings=0 --no-warn-ignored --cache --cache-location node_modules/.cache/eslint/"
+      "eslint --max-warnings=0 --no-warn-ignored --cache --cache-location node_modules/.cache/eslint/ --config apps/web/eslint.config.mjs"
     ]
   }
 }
