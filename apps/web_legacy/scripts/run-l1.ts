@@ -20,13 +20,25 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 
 import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const SOURCE_ROOTS = ["apps/web_legacy/src", "packages/mcp", "packages/api/src", "packages/db/src"].map((p) => join(REPO_ROOT, p));
+const SOURCE_ROOTS = [
+  "apps/web/src",
+  "apps/worker/src",
+  "apps/worker/__tests__",
+  "apps/web_legacy/src",
+  "packages/mcp",
+  "packages/api/src",
+  "packages/db/src",
+].map((p) => join(REPO_ROOT, p));
 const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
 // Test command — must mirror the "test" script in package.json but add coverage.
 // Globs are shell-expanded, so run via `sh -c`.
-const TEST_SHELL_CMD =
-  "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage";
+const TEST_SHELL_CMD = [
+  "bun test apps/web/src/__tests__/ --coverage",
+  "bun test apps/worker/__tests__/ --coverage",
+  "bun test packages/mcp/__tests__/api-client.test.ts packages/mcp/__tests__/guard.test.ts --coverage",
+  "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage",
+].join(" && ");
 
 function gitCommonDir(): string {
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
