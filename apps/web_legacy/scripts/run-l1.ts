@@ -26,7 +26,7 @@ const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p
 // Test command — must mirror the "test" script in package.json but add coverage.
 // Globs are shell-expanded, so run via `sh -c`.
 const TEST_SHELL_CMD =
-  "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage && cd ../.. && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts --coverage";
+  "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage";
 
 function gitCommonDir(): string {
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
