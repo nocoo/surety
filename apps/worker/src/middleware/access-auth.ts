@@ -32,11 +32,14 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
 
   try {
     const jwks = getJWKS(teamDomain);
-    await jwtVerify(jwt, jwks, {
+    const { payload } = await jwtVerify(jwt, jwks, {
       issuer: `https://${teamDomain}`,
       audience: aud,
     });
     c.set("accessAuthenticated", true);
+    if (typeof payload.email === "string") {
+      c.set("accessEmail", payload.email);
+    }
   } catch {
     // JWT invalid — fall through to apiKeyAuth
   }

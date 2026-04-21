@@ -10,6 +10,7 @@ export type Bindings = {
 
 export type Variables = {
   accessAuthenticated?: boolean;
+  accessEmail?: string;
   db: DbInstance;
   repos: AllRepos;
 };

@@ -16,6 +16,7 @@ import backupRoutes from "./routes/backup";
 import coverageLookupRoutes from "./routes/coverage-lookup";
 import renewalCalendarRoutes from "./routes/renewal-calendar";
 import authRoutes from "./routes/auth";
+import authCliRoutes from "./routes/auth-cli";
 import type { AppEnv } from "./lib/types";
 
 const app = new Hono<AppEnv>();
@@ -38,5 +39,6 @@ app.route("/", backupRoutes);
 app.route("/", coverageLookupRoutes);
 app.route("/", renewalCalendarRoutes);
 app.route("/", authRoutes);
+app.route("/", authCliRoutes);
 
 export default app;
