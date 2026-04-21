@@ -7,6 +7,9 @@ routes = [
   { pattern = "surety.hexly.ai", custom_domain = true }
 ]
 
+[alias]
+"bun:sqlite" = "./src/lib/bun-sqlite-stub.ts"
+
 [assets]
 directory = "./static"
 binding = "ASSETS"
