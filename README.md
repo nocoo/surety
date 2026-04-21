@@ -214,8 +214,8 @@ surety/
 4. 把 `api_key` 配到 `SURETY_API_TOKEN` / `SURETY_DEV_API_TOKEN` 或 MCP 配置
    里。Worker 的 `apiKeyAuth` 中间件负责校验并更新 `lastUsedAt`。
 
-> ℹ️ 吊销 token 走 `DELETE /api/auth/tokens/:id`（设置页目前仅有列表视图，
-> 手动管理 UI 未上线）。
+> ℹ️ 吊销 token 走 `DELETE /api/auth/tokens/:id`（设置页目前没有 token 管理
+> UI，只能用 API 直接管理）。
 
 ## 🤖 MCP Server
 
