@@ -1,12 +1,9 @@
 /**
- * Database module — request-scoped D1 access via Worker proxy.
+ * Database module — supports D1 binding (Worker), sqlite-proxy (legacy), and bun:sqlite (tests).
  *
- * Production / E2E: sqlite-proxy → Cloudflare Worker → D1 binding
+ * D1 binding: Worker calls createDbFromD1(d1) for direct D1 access
+ * sqlite-proxy: Legacy Next.js app calls getDbForRequest() via Worker proxy
  * Unit tests: bun:sqlite :memory: (no network, instant)
- *
- * The key design principle is request-scoped database access:
- * each API route calls getDbForRequest(request) to get a db instance
- * bound to the correct target database (production, test).
  */
 
 import * as schema from "./schema";
@@ -17,6 +14,22 @@ export type DbInstance = any;
 
 // Re-export TargetDb for consumers
 export type { TargetDb };
+
+// ---------- D1 binding driver (Cloudflare Worker) ----------
+
+/**
+ * Create a Drizzle instance backed by a D1 binding.
+ * Used by Hono Worker routes with direct D1 access.
+ *
+ * Accepts any object conforming to the D1Database interface
+ * (typed loosely to avoid requiring @cloudflare/workers-types here).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createDbFromD1(d1: any): DbInstance {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { drizzle } = require("drizzle-orm/d1");
+  return drizzle(d1, { schema });
+}
 
 // ---------- Environment helpers ----------
 
