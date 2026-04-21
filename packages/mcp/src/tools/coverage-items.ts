@@ -3,12 +3,11 @@
  *
  * Tools for managing policy coverage/benefit items.
  * Coverage items are always scoped to a specific policy.
- * No FK restrict needed on delete — coverage items have no child references.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { coverageItemsRepo, policiesRepo } from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
@@ -26,36 +25,17 @@ export function registerCoverageItemTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
+      try {
+        const items = await apiGet(`/api/policies/${policyId}/coverage-items`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(items) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const items = await coverageItemsRepo.findByPolicyId(policyId);
-      const result = items.map((ci) => ({
-        id: ci.id,
-        policyId: ci.policyId,
-        name: ci.name,
-        periodLimit: ci.periodLimit,
-        lifetimeLimit: ci.lifetimeLimit,
-        deductible: ci.deductible,
-        coveragePercent: ci.coveragePercent,
-        isOptional: ci.isOptional,
-        notes: ci.notes,
-        sortOrder: ci.sortOrder,
-      }));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -76,29 +56,24 @@ export function registerCoverageItemTools(server: McpServer): void {
       notes: z.string().optional().describe("Additional notes"),
       sortOrder: z.number().optional().describe("Display sort order (default: 0)"),
     },
-    async (args) => {
+    async ({ policyId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate policy exists
-      const policy = await policiesRepo.findById(args.policyId);
-      if (!policy) {
+      try {
+        const item = await apiPost(
+          `/api/policies/${policyId}/coverage-items`,
+          stripUndefined(data),
+        );
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(item) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${args.policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const coverageItem = await coverageItemsRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(coverageItem) }],
-      };
     },
   );
 
@@ -109,6 +84,7 @@ export function registerCoverageItemTools(server: McpServer): void {
     "update-coverage-item",
     "Update a coverage/benefit item",
     {
+      policyId: z.number().describe("The policy ID the coverage item belongs to"),
       coverageItemId: z.number().describe("The coverage item ID to update"),
       name: z.string().optional().describe("Coverage item name"),
       periodLimit: z.number().optional().describe("Coverage period limit amount"),
@@ -119,26 +95,24 @@ export function registerCoverageItemTools(server: McpServer): void {
       notes: z.string().optional().describe("Additional notes"),
       sortOrder: z.number().optional().describe("Display sort order"),
     },
-    async ({ coverageItemId, ...data }) => {
+    async ({ policyId, coverageItemId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await coverageItemsRepo.update(coverageItemId, stripUndefined(data));
-      if (!updated) {
+      try {
+        const updated = await apiPut(
+          `/api/policies/${policyId}/coverage-items/${coverageItemId}`,
+          stripUndefined(data),
+        );
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Coverage item with id ${coverageItemId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -149,35 +123,29 @@ export function registerCoverageItemTools(server: McpServer): void {
     "delete-coverage-item",
     "Remove a coverage/benefit item (no FK restrictions)",
     {
+      policyId: z.number().describe("The policy ID the coverage item belongs to"),
       coverageItemId: z.number().describe("The coverage item ID to delete"),
     },
-    async ({ coverageItemId }) => {
+    async ({ policyId, coverageItemId }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const coverageItem = await coverageItemsRepo.findById(coverageItemId);
-      if (!coverageItem) {
+      try {
+        await apiDelete(`/api/policies/${policyId}/coverage-items/${coverageItemId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Coverage item with id ${coverageItemId} not found`,
+              text: JSON.stringify({ deleted: true, id: coverageItemId }),
             },
           ],
         };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      await coverageItemsRepo.delete(coverageItemId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: coverageItemId }),
-          },
-        ],
-      };
     },
   );
 }

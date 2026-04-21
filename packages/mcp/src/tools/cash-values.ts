@@ -1,164 +1,90 @@
 /**
  * MCP Tools: Cash Values
  *
- * Tools for managing policy cash value records.
- * Cash values are always scoped to a specific policy.
- * No FK restrict needed on delete — cash values have no child references.
+ * Cash values are not exposed as a standalone API endpoint.
+ * They are managed as part of the policy detail view in the web UI.
+ * These MCP tools are retained as stubs to maintain backward compatibility
+ * with existing MCP clients, but they return informative messages directing
+ * users to manage cash values via the policy detail page.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { cashValuesRepo, policiesRepo } from "@surety/db/repositories";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-import { stripUndefined } from "./shared";
+
+const NOT_AVAILABLE =
+  "Cash value management is not available via MCP. " +
+  "Please use the Surety web UI policy detail page to view and manage cash values.";
 
 export function registerCashValueTools(server: McpServer): void {
-  // -------------------------------------------------------------------------
-  // list-cash-values
-  // -------------------------------------------------------------------------
   server.tool(
     "list-cash-values",
-    "List cash value records for a specific policy",
+    "List cash value records for a specific policy (not available via API — use web UI)",
     {
       policyId: z.number().describe("The policy ID to list cash values for"),
     },
-    async ({ policyId }) => {
+    async () => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
-        };
-      }
-
-      const items = await cashValuesRepo.findByPolicyId(policyId);
-      const result = items.map((cv) => ({
-        id: cv.id,
-        policyId: cv.policyId,
-        policyYear: cv.policyYear,
-        value: cv.value,
-      }));
-
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
+        isError: true,
+        content: [{ type: "text" as const, text: NOT_AVAILABLE }],
       };
     },
   );
 
-  // -------------------------------------------------------------------------
-  // create-cash-value
-  // -------------------------------------------------------------------------
   server.tool(
     "create-cash-value",
-    "Add a cash value record to a policy",
+    "Add a cash value record to a policy (not available via API — use web UI)",
     {
       policyId: z.number().describe("The policy ID to add a cash value to"),
       policyYear: z.number().describe("Policy year (e.g. 1, 2, 3...)"),
       value: z.number().describe("Cash value amount at that policy year"),
     },
-    async (args) => {
+    async () => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate policy exists
-      const policy = await policiesRepo.findById(args.policyId);
-      if (!policy) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${args.policyId} not found`,
-            },
-          ],
-        };
-      }
-
-      const cashValue = await cashValuesRepo.create(args);
-
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(cashValue) }],
+        isError: true,
+        content: [{ type: "text" as const, text: NOT_AVAILABLE }],
       };
     },
   );
 
-  // -------------------------------------------------------------------------
-  // update-cash-value
-  // -------------------------------------------------------------------------
   server.tool(
     "update-cash-value",
-    "Update a cash value record",
+    "Update a cash value record (not available via API — use web UI)",
     {
       cashValueId: z.number().describe("The cash value ID to update"),
       policyYear: z.number().optional().describe("Policy year"),
       value: z.number().optional().describe("Cash value amount"),
     },
-    async ({ cashValueId, ...data }) => {
+    async () => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await cashValuesRepo.update(cashValueId, stripUndefined(data));
-      if (!updated) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Cash value with id ${cashValueId} not found`,
-            },
-          ],
-        };
-      }
-
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        isError: true,
+        content: [{ type: "text" as const, text: NOT_AVAILABLE }],
       };
     },
   );
 
-  // -------------------------------------------------------------------------
-  // delete-cash-value
-  // -------------------------------------------------------------------------
   server.tool(
     "delete-cash-value",
-    "Remove a cash value record (no FK restrictions)",
+    "Remove a cash value record (not available via API — use web UI)",
     {
       cashValueId: z.number().describe("The cash value ID to delete"),
     },
-    async ({ cashValueId }) => {
+    async () => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const cashValue = await cashValuesRepo.findById(cashValueId);
-      if (!cashValue) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Cash value with id ${cashValueId} not found`,
-            },
-          ],
-        };
-      }
-
-      await cashValuesRepo.delete(cashValueId);
-
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: cashValueId }),
-          },
-        ],
+        isError: true,
+        content: [{ type: "text" as const, text: NOT_AVAILABLE }],
       };
     },
   );

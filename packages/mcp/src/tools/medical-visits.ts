@@ -2,27 +2,14 @@
  * MCP Tools: Medical Visits
  *
  * Tools for managing medical visit records.
+ * The Worker API handles FK validation and enrichment.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  medicalVisitsRepo,
-  membersRepo,
-  hospitalsRepo,
-  doctorsRepo,
-} from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-
-/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripUndefined(obj: Record<string, unknown>): any {
-  const result: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) result[k] = v;
-  }
-  return result;
-}
+import { stripUndefined } from "./shared";
 
 const VISIT_TYPES = [
   "儿保",
@@ -49,51 +36,23 @@ export function registerMedicalVisitTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      let visits;
-      if (memberId !== undefined) {
-        visits = await medicalVisitsRepo.findByMemberId(memberId);
-      } else if (hospitalId !== undefined) {
-        visits = await medicalVisitsRepo.findByHospitalId(hospitalId);
-      } else if (doctorId !== undefined) {
-        visits = await medicalVisitsRepo.findByDoctorId(doctorId);
-      } else {
-        visits = await medicalVisitsRepo.findAll();
-      }
-
-      // Get lookup maps
-      const members = await membersRepo.findAll();
-      const memberMap = new Map(members.map((m) => [m.id, m]));
-
-      const hospitals = await hospitalsRepo.findAll();
-      const hospitalMap = new Map(hospitals.map((h) => [h.id, h.name]));
-
-      const doctors = await doctorsRepo.findAll();
-      const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
-
-      const result = visits.map((v) => {
-        const member = memberMap.get(v.memberId);
+      try {
+        const params = new URLSearchParams();
+        if (memberId !== undefined) params.set("memberId", String(memberId));
+        if (hospitalId !== undefined) params.set("hospitalId", String(hospitalId));
+        if (doctorId !== undefined) params.set("doctorId", String(doctorId));
+        const qs = params.toString();
+        const path = qs ? `/api/medical-visits?${qs}` : "/api/medical-visits";
+        const visits = await apiGet(path);
         return {
-          id: v.id,
-          memberId: v.memberId,
-          memberName: member?.name ?? null,
-          hospitalId: v.hospitalId,
-          hospitalName: hospitalMap.get(v.hospitalId) ?? null,
-          doctorId: v.doctorId,
-          doctorName: v.doctorId ? doctorMap.get(v.doctorId) ?? null : null,
-          visitDate: v.visitDate,
-          visitType: v.visitType,
-          visitReason: v.visitReason,
-          department: v.department,
-          diagnosis: v.diagnosis,
-          totalCost: v.totalCost,
-          insurancePaid: v.insurancePaid,
-          selfPaid: v.selfPaid,
+          content: [{ type: "text" as const, text: JSON.stringify(visits) }],
         };
-      });
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -108,39 +67,17 @@ export function registerMedicalVisitTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const visit = await medicalVisitsRepo.findById(visitId);
-      if (!visit) {
+      try {
+        const visit = await apiGet(`/api/medical-visits/${visitId}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(visit) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Medical visit with id ${visitId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const member = await membersRepo.findById(visit.memberId);
-      const hospital = await hospitalsRepo.findById(visit.hospitalId);
-      const doctor = visit.doctorId
-        ? await doctorsRepo.findById(visit.doctorId)
-        : null;
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              ...visit,
-              memberName: member?.name ?? null,
-              memberBirthDate: member?.birthDate ?? null,
-              hospitalName: hospital?.name ?? null,
-              doctorName: doctor?.name ?? null,
-            }),
-          },
-        ],
-      };
     },
   );
 
@@ -172,97 +109,17 @@ export function registerMedicalVisitTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Verify member exists
-      const member = await membersRepo.findById(args.memberId);
-      if (!member) {
+      try {
+        const visit = await apiPost("/api/medical-visits", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(visit) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Member with id ${args.memberId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Verify hospital exists
-      const hospital = await hospitalsRepo.findById(args.hospitalId);
-      if (!hospital) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Hospital with id ${args.hospitalId} not found`,
-            },
-          ],
-        };
-      }
-
-      // Verify doctor exists and belongs to hospital if provided
-      let doctor = null;
-      if (args.doctorId !== undefined) {
-        doctor = await doctorsRepo.findById(args.doctorId);
-        if (!doctor) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: `Doctor with id ${args.doctorId} not found`,
-              },
-            ],
-          };
-        }
-        if (doctor.hospitalId !== args.hospitalId) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "Doctor does not belong to the specified hospital",
-              },
-            ],
-          };
-        }
-      }
-
-      // Validate cost consistency
-      if (
-        args.totalCost !== undefined &&
-        args.insurancePaid !== undefined &&
-        args.selfPaid !== undefined
-      ) {
-        const expected = args.insurancePaid + args.selfPaid;
-        if (Math.abs(args.totalCost - expected) > 0.01) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "Cost inconsistency: totalCost ≠ insurancePaid + selfPaid",
-              },
-            ],
-          };
-        }
-      }
-
-      const visit = await medicalVisitsRepo.create(stripUndefined(args));
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              ...visit,
-              memberName: member.name,
-              hospitalName: hospital.name,
-              doctorName: doctor?.name ?? null,
-            }),
-          },
-        ],
-      };
     },
   );
 
@@ -295,140 +152,17 @@ export function registerMedicalVisitTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const existing = await medicalVisitsRepo.findById(visitId);
-      if (!existing) {
+      try {
+        const updated = await apiPut(`/api/medical-visits/${visitId}`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Medical visit with id ${visitId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Verify member exists if being updated
-      if (data.memberId !== undefined && data.memberId !== existing.memberId) {
-        const member = await membersRepo.findById(data.memberId);
-        if (!member) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: `Member with id ${data.memberId} not found`,
-              },
-            ],
-          };
-        }
-      }
-
-      // Determine effective hospitalId
-      const hospitalId = data.hospitalId ?? existing.hospitalId;
-
-      // Verify hospital exists if being updated
-      if (data.hospitalId !== undefined) {
-        const hospital = await hospitalsRepo.findById(data.hospitalId);
-        if (!hospital) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: `Hospital with id ${data.hospitalId} not found`,
-              },
-            ],
-          };
-        }
-      }
-
-      // Determine effective doctorId
-      const effectiveDoctorId =
-        data.doctorId === null
-          ? null
-          : data.doctorId !== undefined
-            ? data.doctorId
-            : existing.doctorId;
-
-      // Verify doctor exists and belongs to hospital
-      if (effectiveDoctorId) {
-        const doctor = await doctorsRepo.findById(effectiveDoctorId);
-        if (!doctor) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: `Doctor with id ${effectiveDoctorId} not found`,
-              },
-            ],
-          };
-        }
-        if (doctor.hospitalId !== hospitalId) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "Doctor does not belong to the specified hospital",
-              },
-            ],
-          };
-        }
-      }
-
-      // Validate cost consistency
-      const totalCost = data.totalCost ?? existing.totalCost;
-      const insurancePaid = data.insurancePaid ?? existing.insurancePaid;
-      const selfPaid = data.selfPaid ?? existing.selfPaid;
-      if (totalCost != null && insurancePaid != null && selfPaid != null) {
-        const expected = insurancePaid + selfPaid;
-        if (Math.abs(totalCost - expected) > 0.01) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "Cost inconsistency: totalCost ≠ insurancePaid + selfPaid",
-              },
-            ],
-          };
-        }
-      }
-
-      const updated = await medicalVisitsRepo.update(visitId, stripUndefined(data));
-      if (!updated) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Medical visit with id ${visitId} not found`,
-            },
-          ],
-        };
-      }
-
-      const member = await membersRepo.findById(updated.memberId);
-      const hospital = await hospitalsRepo.findById(updated.hospitalId);
-      const doctor = updated.doctorId
-        ? await doctorsRepo.findById(updated.doctorId)
-        : null;
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              ...updated,
-              memberName: member?.name ?? null,
-              hospitalName: hospital?.name ?? null,
-              doctorName: doctor?.name ?? null,
-            }),
-          },
-        ],
-      };
     },
   );
 
@@ -445,29 +179,22 @@ export function registerMedicalVisitTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const visit = await medicalVisitsRepo.findById(visitId);
-      if (!visit) {
+      try {
+        await apiDelete(`/api/medical-visits/${visitId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Medical visit with id ${visitId} not found`,
+              text: JSON.stringify({ deleted: true, id: visitId }),
             },
           ],
         };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      await medicalVisitsRepo.delete(visitId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: visitId }),
-          },
-        ],
-      };
     },
   );
 }

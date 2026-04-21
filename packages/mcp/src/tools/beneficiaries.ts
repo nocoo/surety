@@ -3,12 +3,12 @@
  *
  * Tools for managing policy beneficiaries.
  * Beneficiaries are always scoped to a specific policy.
- * No FK restrict needed on delete — beneficiaries have no child references.
+ * The Worker API handles validation and enrichment.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { beneficiariesRepo, policiesRepo, membersRepo } from "@surety/db/repositories";
+import { apiGet, apiPost } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
@@ -26,41 +26,17 @@ export function registerBeneficiaryTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
+      try {
+        const items = await apiGet(`/api/policies/${policyId}/beneficiaries`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(items) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const items = await beneficiariesRepo.findByPolicyId(policyId);
-      const result = await Promise.all(
-        items.map(async (b) => {
-          const member = b.memberId
-            ? await membersRepo.findById(b.memberId)
-            : undefined;
-          return {
-            id: b.id,
-            policyId: b.policyId,
-            memberId: b.memberId,
-            memberName: member?.name,
-            externalName: b.externalName,
-            externalIdCard: b.externalIdCard,
-            sharePercent: b.sharePercent,
-            rankOrder: b.rankOrder,
-          };
-        }),
-      );
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -69,39 +45,38 @@ export function registerBeneficiaryTools(server: McpServer): void {
   // -------------------------------------------------------------------------
   server.tool(
     "get-beneficiary",
-    "Get detailed information about a beneficiary",
+    "Get detailed information about a beneficiary (via the policy's beneficiary list)",
     {
+      policyId: z.number().describe("The policy ID the beneficiary belongs to"),
       beneficiaryId: z.number().describe("The beneficiary ID to look up"),
     },
-    async ({ beneficiaryId }) => {
+    async ({ policyId, beneficiaryId }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const beneficiary = await beneficiariesRepo.findById(beneficiaryId);
-      if (!beneficiary) {
+      try {
+        const items = await apiGet<Array<{ id: number }>>(`/api/policies/${policyId}/beneficiaries`);
+        const beneficiary = items.find((b) => b.id === beneficiaryId);
+        if (!beneficiary) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Beneficiary with id ${beneficiaryId} not found in policy ${policyId}`,
+              },
+            ],
+          };
+        }
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(beneficiary) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Beneficiary with id ${beneficiaryId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const member = beneficiary.memberId
-        ? await membersRepo.findById(beneficiary.memberId)
-        : undefined;
-
-      const result = {
-        ...beneficiary,
-        memberName: member?.name,
-      };
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -119,26 +94,12 @@ export function registerBeneficiaryTools(server: McpServer): void {
       externalName: z.string().optional().describe("External beneficiary name (if not a family member)"),
       externalIdCard: z.string().optional().describe("External beneficiary ID card number"),
     },
-    async (args) => {
+    async ({ policyId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate policy exists
-      const policy = await policiesRepo.findById(args.policyId);
-      if (!policy) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${args.policyId} not found`,
-            },
-          ],
-        };
-      }
-
-      // Validate identity constraint: memberId XOR externalName (exactly one required)
-      if (args.memberId && args.externalName) {
+      // Validate identity constraint locally for better error messages
+      if (data.memberId && data.externalName) {
         return {
           isError: true,
           content: [
@@ -149,7 +110,7 @@ export function registerBeneficiaryTools(server: McpServer): void {
           ],
         };
       }
-      if (!args.memberId && !args.externalName) {
+      if (!data.memberId && !data.externalName) {
         return {
           isError: true,
           content: [
@@ -161,27 +122,18 @@ export function registerBeneficiaryTools(server: McpServer): void {
         };
       }
 
-      // Validate member exists if memberId provided
-      if (args.memberId) {
-        const member = await membersRepo.findById(args.memberId);
-        if (!member) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: `Member with id ${args.memberId} not found`,
-              },
-            ],
-          };
-        }
+      try {
+        // API expects an array of beneficiaries
+        const result = await apiPost(`/api/policies/${policyId}/beneficiaries`, [stripUndefined(data)]);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      const beneficiary = await beneficiariesRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(beneficiary) }],
-      };
     },
   );
 
@@ -192,6 +144,7 @@ export function registerBeneficiaryTools(server: McpServer): void {
     "update-beneficiary",
     "Update a beneficiary record. To switch identity type, pass the new identity and set the old one to null (e.g. memberId: 5, externalName: null).",
     {
+      policyId: z.number().describe("The policy ID the beneficiary belongs to"),
       beneficiaryId: z.number().describe("The beneficiary ID to update"),
       sharePercent: z.number().optional().describe("Benefit share percentage"),
       rankOrder: z.number().optional().describe("Beneficiary rank order"),
@@ -199,82 +152,45 @@ export function registerBeneficiaryTools(server: McpServer): void {
       externalName: z.string().nullable().optional().describe("External beneficiary name (null to clear)"),
       externalIdCard: z.string().nullable().optional().describe("External beneficiary ID card number (null to clear)"),
     },
-    async ({ beneficiaryId, ...data }) => {
+    async ({ policyId, beneficiaryId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate beneficiary exists first (needed for identity constraint check)
-      const existing = await beneficiariesRepo.findById(beneficiaryId);
-      if (!existing) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Beneficiary with id ${beneficiaryId} not found`,
-            },
-          ],
-        };
-      }
-
-      // Validate member exists if memberId provided
-      if (data.memberId) {
-        const member = await membersRepo.findById(data.memberId);
-        if (!member) {
+      try {
+        // Replace all beneficiaries: fetch current list, modify the target, and POST the full set
+        const items = await apiGet<Array<Record<string, unknown>>>(`/api/policies/${policyId}/beneficiaries`);
+        const idx = items.findIndex((b) => b.id === beneficiaryId);
+        if (idx === -1) {
           return {
             isError: true,
             content: [
               {
                 type: "text" as const,
-                text: `Member with id ${data.memberId} not found`,
+                text: `Beneficiary with id ${beneficiaryId} not found in policy ${policyId}`,
               },
             ],
           };
         }
-      }
 
-      // Compute effective identity after update to enforce XOR constraint
-      const effectiveMemberId = data.memberId !== undefined ? data.memberId : existing.memberId;
-      const effectiveExternalName = data.externalName !== undefined ? data.externalName : existing.externalName;
-      if (effectiveMemberId && effectiveExternalName) {
+        // Merge updates into the existing record
+        const updated = { ...items[idx], ...stripUndefined(data) };
+        // Handle explicit nulls
+        if (data.memberId === null) updated.memberId = null;
+        if (data.externalName === null) updated.externalName = null;
+        if (data.externalIdCard === null) updated.externalIdCard = null;
+
+        items[idx] = updated;
+
+        const result = await apiPost(`/api/policies/${policyId}/beneficiaries`, items);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: "Cannot set both memberId and externalName — use one or the other",
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-      if (!effectiveMemberId && !effectiveExternalName) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: "Either memberId or externalName is required to identify the beneficiary",
-            },
-          ],
-        };
-      }
-
-      const updated = await beneficiariesRepo.update(beneficiaryId, stripUndefined(data));
-      if (!updated) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Beneficiary with id ${beneficiaryId} not found`,
-            },
-          ],
-        };
-      }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -285,35 +201,44 @@ export function registerBeneficiaryTools(server: McpServer): void {
     "delete-beneficiary",
     "Remove a beneficiary record (no FK restrictions)",
     {
+      policyId: z.number().describe("The policy ID the beneficiary belongs to"),
       beneficiaryId: z.number().describe("The beneficiary ID to delete"),
     },
-    async ({ beneficiaryId }) => {
+    async ({ policyId, beneficiaryId }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const beneficiary = await beneficiariesRepo.findById(beneficiaryId);
-      if (!beneficiary) {
+      try {
+        // Fetch current list, remove the target, and POST the remaining set
+        const items = await apiGet<Array<{ id: number }>>(`/api/policies/${policyId}/beneficiaries`);
+        const filtered = items.filter((b) => b.id !== beneficiaryId);
+        if (filtered.length === items.length) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Beneficiary with id ${beneficiaryId} not found in policy ${policyId}`,
+              },
+            ],
+          };
+        }
+
+        await apiPost(`/api/policies/${policyId}/beneficiaries`, filtered);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Beneficiary with id ${beneficiaryId} not found`,
+              text: JSON.stringify({ deleted: true, id: beneficiaryId }),
             },
           ],
         };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      await beneficiariesRepo.delete(beneficiaryId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: beneficiaryId }),
-          },
-        ],
-      };
     },
   );
 }

@@ -2,27 +2,14 @@
  * MCP Tools: Hospitals
  *
  * Tools for managing hospitals.
- * delete-hospital restricts if referenced by doctors or medical visits.
+ * The Worker API handles FK restriction on delete.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  hospitalsRepo,
-  doctorsRepo,
-  medicalVisitsRepo,
-} from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-
-/** Strip keys with undefined values (for exactOptionalPropertyTypes compat) */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function stripUndefined(obj: Record<string, unknown>): any {
-  const result: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v !== undefined) result[k] = v;
-  }
-  return result;
-}
+import { stripUndefined } from "./shared";
 
 const HOSPITAL_LEVELS = [
   "三甲",
@@ -47,28 +34,17 @@ export function registerHospitalTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const hospitals = await hospitalsRepo.findAll();
-      const doctors = await doctorsRepo.findAll();
-
-      // Count doctors per hospital
-      const doctorCountMap = new Map<number, number>();
-      for (const d of doctors) {
-        doctorCountMap.set(d.hospitalId, (doctorCountMap.get(d.hospitalId) ?? 0) + 1);
+      try {
+        const hospitals = await apiGet("/api/hospitals");
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(hospitals) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      const result = hospitals.map((h) => ({
-        id: h.id,
-        name: h.name,
-        level: h.level,
-        isPublic: h.isPublic,
-        address: h.address,
-        phone: h.phone,
-        doctorCount: doctorCountMap.get(h.id) ?? 0,
-      }));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -83,38 +59,17 @@ export function registerHospitalTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const hospital = await hospitalsRepo.findById(hospitalId);
-      if (!hospital) {
+      try {
+        const hospital = await apiGet(`/api/hospitals/${hospitalId}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(hospital) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Hospital with id ${hospitalId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Get doctors at this hospital
-      const doctors = await doctorsRepo.findByHospitalId(hospitalId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({
-              ...hospital,
-              doctors: doctors.map((d) => ({
-                id: d.id,
-                name: d.name,
-                department: d.department,
-                title: d.title,
-              })),
-            }),
-          },
-        ],
-      };
     },
   );
 
@@ -139,11 +94,17 @@ export function registerHospitalTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const hospital = await hospitalsRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(hospital) }],
-      };
+      try {
+        const hospital = await apiPost("/api/hospitals", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(hospital) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -170,22 +131,17 @@ export function registerHospitalTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await hospitalsRepo.update(hospitalId, stripUndefined(data));
-      if (!updated) {
+      try {
+        const updated = await apiPut(`/api/hospitals/${hospitalId}`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Hospital with id ${hospitalId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -202,67 +158,22 @@ export function registerHospitalTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const hospital = await hospitalsRepo.findById(hospitalId);
-      if (!hospital) {
+      try {
+        await apiDelete(`/api/hospitals/${hospitalId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Hospital with id ${hospitalId} not found`,
+              text: JSON.stringify({ deleted: true, id: hospitalId }),
             },
           ],
         };
-      }
-
-      // Check referencing doctors
-      const doctors = await doctorsRepo.findByHospitalId(hospitalId);
-      if (doctors.length > 0) {
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                error: "Cannot delete hospital: still referenced by doctors",
-                doctorCount: doctors.length,
-                doctors: doctors.slice(0, 5).map((d) => ({
-                  id: d.id,
-                  name: d.name,
-                })),
-              }),
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Check referencing medical visits
-      const visits = await medicalVisitsRepo.findByHospitalId(hospitalId);
-      if (visits.length > 0) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                error: "Cannot delete hospital: still referenced by medical visits",
-                visitCount: visits.length,
-              }),
-            },
-          ],
-        };
-      }
-
-      await hospitalsRepo.delete(hospitalId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: hospitalId }),
-          },
-        ],
-      };
     },
   );
 }

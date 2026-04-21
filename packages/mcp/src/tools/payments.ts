@@ -3,40 +3,15 @@
  *
  * Tools for managing policy payment records.
  * Payments are always scoped to a specific policy.
- * No FK restrict needed on delete — payments have no child references.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { paymentsRepo, policiesRepo } from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
 export function registerPaymentTools(server: McpServer): void {
-  /**
-   * Validate payment status consistency.
-   * - status=Paid requires paidDate and paidAmount
-   * - status=Pending/Overdue must not have paidDate/paidAmount
-   * Returns error message string if invalid, undefined if ok.
-   */
-  function validatePaymentStatus(
-    status: string | undefined,
-    paidDate: string | null | undefined,
-    paidAmount: number | null | undefined,
-  ): string | undefined {
-    const effectiveStatus = status ?? "Pending";
-    if (effectiveStatus === "Paid") {
-      if (!paidDate || paidAmount == null) {
-        return "status 'Paid' requires both paidDate and paidAmount";
-      }
-    } else {
-      // Pending or Overdue
-      if (paidDate || paidAmount != null) {
-        return `status '${effectiveStatus}' must not have paidDate or paidAmount`;
-      }
-    }
-    return undefined;
-  }
   // -------------------------------------------------------------------------
   // list-payments
   // -------------------------------------------------------------------------
@@ -50,34 +25,17 @@ export function registerPaymentTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
+      try {
+        const items = await apiGet(`/api/policies/${policyId}/payments`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(items) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const items = await paymentsRepo.findByPolicyId(policyId);
-      const result = items.map((p) => ({
-        id: p.id,
-        policyId: p.policyId,
-        periodNumber: p.periodNumber,
-        dueDate: p.dueDate,
-        amount: p.amount,
-        status: p.status,
-        paidDate: p.paidDate,
-        paidAmount: p.paidAmount,
-      }));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -88,28 +46,36 @@ export function registerPaymentTools(server: McpServer): void {
     "get-payment",
     "Get detailed information about a payment record",
     {
+      policyId: z.number().describe("The policy ID the payment belongs to"),
       paymentId: z.number().describe("The payment ID to look up"),
     },
-    async ({ paymentId }) => {
+    async ({ policyId, paymentId }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const payment = await paymentsRepo.findById(paymentId);
-      if (!payment) {
+      try {
+        const items = await apiGet<Array<{ id: number }>>(`/api/policies/${policyId}/payments`);
+        const payment = items.find((p) => p.id === paymentId);
+        if (!payment) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text" as const,
+                text: `Payment with id ${paymentId} not found`,
+              },
+            ],
+          };
+        }
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(payment) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Payment with id ${paymentId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(payment) }],
-      };
     },
   );
 
@@ -131,38 +97,21 @@ export function registerPaymentTools(server: McpServer): void {
       paidDate: z.string().optional().describe("Actual payment date (YYYY-MM-DD)"),
       paidAmount: z.number().optional().describe("Actual amount paid"),
     },
-    async (args) => {
+    async ({ policyId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate policy exists
-      const policy = await policiesRepo.findById(args.policyId);
-      if (!policy) {
+      try {
+        const payment = await apiPost(`/api/policies/${policyId}/payments`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(payment) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${args.policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Validate payment status consistency
-      const statusError = validatePaymentStatus(args.status, args.paidDate, args.paidAmount);
-      if (statusError) {
-        return {
-          isError: true,
-          content: [{ type: "text" as const, text: statusError }],
-        };
-      }
-
-      const payment = await paymentsRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(payment) }],
-      };
     },
   );
 
@@ -173,6 +122,7 @@ export function registerPaymentTools(server: McpServer): void {
     "update-payment",
     "Update a payment record. To revert a paid record, set status and pass paidDate: null, paidAmount: null.",
     {
+      policyId: z.number().describe("The policy ID the payment belongs to"),
       paymentId: z.number().describe("The payment ID to update"),
       periodNumber: z.number().optional().describe("Payment period number"),
       dueDate: z.string().optional().describe("Payment due date (YYYY-MM-DD)"),
@@ -181,42 +131,24 @@ export function registerPaymentTools(server: McpServer): void {
       paidDate: z.string().nullable().optional().describe("Actual payment date (null to clear)"),
       paidAmount: z.number().nullable().optional().describe("Actual amount paid (null to clear)"),
     },
-    async ({ paymentId, ...data }) => {
+    async ({ policyId, paymentId, ...data }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Fetch existing to compute effective state for validation
-      const existing = await paymentsRepo.findById(paymentId);
-      if (!existing) {
+      try {
+        const updated = await apiPut(
+          `/api/policies/${policyId}/payments/${paymentId}`,
+          stripUndefined(data),
+        );
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Payment with id ${paymentId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Compute effective state after update
-      const effectiveStatus = data.status ?? existing.status;
-      const effectivePaidDate = data.paidDate !== undefined ? data.paidDate : existing.paidDate;
-      const effectivePaidAmount = data.paidAmount !== undefined ? data.paidAmount : existing.paidAmount;
-
-      const statusError = validatePaymentStatus(effectiveStatus, effectivePaidDate, effectivePaidAmount);
-      if (statusError) {
-        return {
-          isError: true,
-          content: [{ type: "text" as const, text: statusError }],
-        };
-      }
-
-      const updated = await paymentsRepo.update(paymentId, stripUndefined(data));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -227,35 +159,29 @@ export function registerPaymentTools(server: McpServer): void {
     "delete-payment",
     "Remove a payment record (no FK restrictions)",
     {
+      policyId: z.number().describe("The policy ID the payment belongs to"),
       paymentId: z.number().describe("The payment ID to delete"),
     },
-    async ({ paymentId }) => {
+    async ({ policyId, paymentId }) => {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const payment = await paymentsRepo.findById(paymentId);
-      if (!payment) {
+      try {
+        await apiDelete(`/api/policies/${policyId}/payments/${paymentId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Payment with id ${paymentId} not found`,
+              text: JSON.stringify({ deleted: true, id: paymentId }),
             },
           ],
         };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      await paymentsRepo.delete(paymentId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: paymentId }),
-          },
-        ],
-      };
     },
   );
 }

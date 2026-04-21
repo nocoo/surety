@@ -6,18 +6,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  policiesRepo,
-  membersRepo,
-  assetsRepo,
-  beneficiariesRepo,
-  insurersRepo,
-  paymentsRepo,
-  cashValuesRepo,
-  coverageItemsRepo,
-} from "@surety/db/repositories";
-import { createBatchExecutor } from "@surety/db";
-import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
@@ -62,62 +51,33 @@ export function registerPolicyTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policies = await policiesRepo.findAll();
+      try {
+        // The API returns enriched policies with displayStatus, applicantName, etc.
+        const policies = await apiGet<Record<string, unknown>[]>("/api/policies");
 
-      // Derive display status for each policy
-      const withDisplayStatus = policies.map((p) => ({
-        ...p,
-        displayStatus: deriveDisplayStatus(p.status as PolicyDbStatus, p.expiryDate),
-      }));
+        let filtered = policies;
+        if (status) {
+          filtered = filtered.filter((p) => p.status === status);
+        }
+        if (category) {
+          filtered = filtered.filter((p) => p.category === category);
+        }
+        if (memberId) {
+          filtered = filtered.filter(
+            (p) =>
+              p.insuredMemberId === memberId || p.applicantId === memberId,
+          );
+        }
 
-      let filtered = withDisplayStatus;
-
-      if (status) {
-        filtered = filtered.filter((p) => p.displayStatus === status);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(filtered) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-      if (category) {
-        filtered = filtered.filter((p) => p.category === category);
-      }
-      if (memberId) {
-        filtered = filtered.filter(
-          (p) =>
-            p.insuredMemberId === memberId || p.applicantId === memberId,
-        );
-      }
-
-      // Enrich with member/asset names
-      const result = await Promise.all(
-        filtered.map(async (p) => {
-          const applicant = await membersRepo.findById(p.applicantId);
-          const insuredMember = p.insuredMemberId
-            ? await membersRepo.findById(p.insuredMemberId)
-            : undefined;
-          const insuredAsset = p.insuredAssetId
-            ? await assetsRepo.findById(p.insuredAssetId)
-            : undefined;
-
-          return {
-            id: p.id,
-            productName: p.productName,
-            policyNumber: p.policyNumber,
-            category: p.category,
-            subCategory: p.subCategory,
-            insurerName: p.insurerName,
-            status: p.displayStatus,
-            premium: p.premium,
-            sumAssured: p.sumAssured,
-            effectiveDate: p.effectiveDate,
-            expiryDate: p.expiryDate,
-            applicantName: applicant?.name,
-            insuredName: insuredMember?.name,
-            insuredAssetName: insuredAsset?.name,
-          };
-        }),
-      );
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -129,68 +89,20 @@ export function registerPolicyTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
+      try {
+        const policy = await apiGet(`/api/policies/${policyId}`);
+        // Also fetch beneficiaries for this policy
+        const beneficiaries = await apiGet(`/api/policies/${policyId}/beneficiaries`);
+        const result = { ...policy as Record<string, unknown>, beneficiaries };
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const applicant = await membersRepo.findById(policy.applicantId);
-      const insuredMember = policy.insuredMemberId
-        ? await membersRepo.findById(policy.insuredMemberId)
-        : undefined;
-      const insuredAsset = policy.insuredAssetId
-        ? await assetsRepo.findById(policy.insuredAssetId)
-        : undefined;
-
-      // Get beneficiaries with member names
-      const beneficiaryRecords = await beneficiariesRepo.findByPolicyId(policyId);
-      const beneficiaries = await Promise.all(
-        beneficiaryRecords.map(async (b) => {
-          const member = b.memberId
-            ? await membersRepo.findById(b.memberId)
-            : undefined;
-          return {
-            name: member?.name ?? b.externalName,
-            sharePercent: b.sharePercent,
-            rankOrder: b.rankOrder,
-          };
-        }),
-      );
-
-      const result = {
-        id: policy.id,
-        productName: policy.productName,
-        policyNumber: policy.policyNumber,
-        category: policy.category,
-        subCategory: policy.subCategory,
-        insurerName: policy.insurerName,
-        insuredType: policy.insuredType,
-        status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
-        premium: policy.premium,
-        sumAssured: policy.sumAssured,
-        paymentFrequency: policy.paymentFrequency,
-        paymentYears: policy.paymentYears,
-        effectiveDate: policy.effectiveDate,
-        expiryDate: policy.expiryDate,
-        nextDueDate: policy.nextDueDate,
-        notes: policy.notes,
-        applicantName: applicant?.name,
-        insuredName: insuredMember?.name,
-        insuredAssetName: insuredAsset?.name,
-        beneficiaries,
-      };
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -236,52 +148,17 @@ export function registerPolicyTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Validate insuredType discriminated constraint
-      if (args.insuredType === "Member") {
-        if (!args.insuredMemberId) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "insuredMemberId is required when insuredType is Member",
-              },
-            ],
-          };
-        }
-      } else {
-        if (!args.insuredAssetId) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: "text" as const,
-                text: "insuredAssetId is required when insuredType is Asset",
-              },
-            ],
-          };
-        }
+      try {
+        const policy = await apiPost("/api/policies", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(policy) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      // Auto-create insurer if needed
-      const insurer = await insurersRepo.findOrCreate(args.insurerName);
-
-      const { insuredMemberId, insuredAssetId, ...rest } = args;
-      const createData = stripUndefined({
-        ...rest,
-        insurerId: insurer.id,
-        insuredMemberId:
-          args.insuredType === "Member" ? insuredMemberId : undefined,
-        insuredAssetId:
-          args.insuredType === "Asset" ? insuredAssetId : undefined,
-        status: args.status ?? "Active",
-      });
-
-      const policy = await policiesRepo.create(createData);
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(policy) }],
-      };
     },
   );
 
@@ -337,66 +214,17 @@ export function registerPolicyTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const existing = await policiesRepo.findById(policyId);
-      if (!existing) {
+      try {
+        const updated = await apiPut(`/api/policies/${policyId}`, stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const updateData: Record<string, unknown> = { ...args };
-
-      // Handle insuredType switch: validate FK and clear opposing side
-      if (args.insuredType) {
-        if (args.insuredType === "Member") {
-          if (!args.insuredMemberId) {
-            return {
-              isError: true,
-              content: [
-                {
-                  type: "text" as const,
-                  text: "insuredMemberId is required when insuredType is Member",
-                },
-              ],
-            };
-          }
-          updateData.insuredAssetId = null;
-        } else {
-          if (!args.insuredAssetId) {
-            return {
-              isError: true,
-              content: [
-                {
-                  type: "text" as const,
-                  text: "insuredAssetId is required when insuredType is Asset",
-                },
-              ],
-            };
-          }
-          updateData.insuredMemberId = null;
-        }
-      }
-
-      // Sync insurerId when insurerName changes
-      if (args.insurerName) {
-        const insurer = await insurersRepo.findOrCreate(args.insurerName);
-        updateData.insurerId = insurer.id;
-      }
-
-      const updated = await policiesRepo.update(
-        policyId,
-        stripUndefined(updateData),
-      );
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -413,58 +241,22 @@ export function registerPolicyTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const policy = await policiesRepo.findById(policyId);
-      if (!policy) {
+      try {
+        await apiDelete(`/api/policies/${policyId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Policy with id ${policyId} not found`,
+              text: JSON.stringify({ deleted: true, id: policyId }),
             },
           ],
         };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
       }
-
-      // Atomic cascade delete via D1 batch API
-      const batchExecutor = createBatchExecutor();
-      if (batchExecutor) {
-        await batchExecutor([
-          {
-            sql: "DELETE FROM beneficiaries WHERE policy_id = ?",
-            params: [policyId],
-          },
-          {
-            sql: "DELETE FROM payments WHERE policy_id = ?",
-            params: [policyId],
-          },
-          {
-            sql: "DELETE FROM cash_values WHERE policy_id = ?",
-            params: [policyId],
-          },
-          {
-            sql: "DELETE FROM coverage_items WHERE policy_id = ?",
-            params: [policyId],
-          },
-          { sql: "DELETE FROM policies WHERE id = ?", params: [policyId] },
-        ]);
-      } else {
-        // Test env (bun:sqlite): sequential delete via repos
-        await beneficiariesRepo.deleteByPolicyId(policyId);
-        await paymentsRepo.deleteByPolicyId(policyId);
-        await cashValuesRepo.deleteByPolicyId(policyId);
-        await coverageItemsRepo.deleteByPolicyId(policyId);
-        await policiesRepo.delete(policyId);
-      }
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: policyId }),
-          },
-        ],
-      };
     },
   );
 }

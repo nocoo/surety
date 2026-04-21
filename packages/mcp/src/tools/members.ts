@@ -6,13 +6,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import {
-  membersRepo,
-  policiesRepo,
-  beneficiariesRepo,
-  assetsRepo,
-  medicalVisitsRepo,
-} from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
@@ -25,19 +19,17 @@ export function registerMemberTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const members = await membersRepo.findAll();
-      const result = members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        relation: m.relation,
-        gender: m.gender,
-        birthDate: m.birthDate,
-        phone: m.phone,
-      }));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
+      try {
+        const members = await apiGet("/api/members");
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(members) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -49,58 +41,17 @@ export function registerMemberTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const member = await membersRepo.findById(memberId);
-      if (!member) {
+      try {
+        const member = await apiGet(`/api/members/${memberId}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(member) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Member with id ${memberId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Find policies where this member is insured
-      const insuredPolicies = await policiesRepo.findByInsuredMemberId(memberId);
-      // Find policies where this member is applicant
-      const applicantPolicies = await policiesRepo.findByApplicantId(memberId);
-
-      // Merge and deduplicate
-      const allPolicyIds = new Set<number>();
-      const allPolicies = [];
-      for (const p of [...insuredPolicies, ...applicantPolicies]) {
-        if (!allPolicyIds.has(p.id)) {
-          allPolicyIds.add(p.id);
-          allPolicies.push({
-            id: p.id,
-            productName: p.productName,
-            policyNumber: p.policyNumber,
-            category: p.category,
-            status: p.status,
-            premium: p.premium,
-            sumAssured: p.sumAssured,
-            role: insuredPolicies.some((ip) => ip.id === p.id)
-              ? "insured"
-              : "applicant",
-          });
-        }
-      }
-
-      const result = {
-        id: member.id,
-        name: member.name,
-        relation: member.relation,
-        gender: member.gender,
-        birthDate: member.birthDate,
-        phone: member.phone,
-        policies: allPolicies,
-      };
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -133,11 +84,17 @@ export function registerMemberTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const member = await membersRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(member) }],
-      };
+      try {
+        const member = await apiPost("/api/members", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(member) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -172,22 +129,17 @@ export function registerMemberTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await membersRepo.update(memberId, stripUndefined(data));
-      if (!updated) {
+      try {
+        const updated = await apiPut(`/api/members/${memberId}`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Member with id ${memberId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -204,87 +156,22 @@ export function registerMemberTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      // Check if member exists
-      const member = await membersRepo.findById(memberId);
-      if (!member) {
+      try {
+        await apiDelete(`/api/members/${memberId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Member with id ${memberId} not found`,
+              text: JSON.stringify({ deleted: true, id: memberId }),
             },
           ],
         };
-      }
-
-      // Check referencing policies
-      const asApplicant = await policiesRepo.findByApplicantId(memberId);
-      const asInsured = await policiesRepo.findByInsuredMemberId(memberId);
-
-      // Check referencing beneficiaries
-      const allBeneficiaries = await beneficiariesRepo.findAll();
-      const asBeneficiary = allBeneficiaries.filter(
-        (b) => b.memberId === memberId,
-      );
-
-      // Check referencing assets (assets.ownerId → members.id)
-      const ownedAssets = await assetsRepo.findByOwnerId(memberId);
-
-      // Check referencing medical visits
-      const medicalVisits = await medicalVisitsRepo.findByMemberId(memberId);
-
-      if (
-        asApplicant.length ||
-        asInsured.length ||
-        asBeneficiary.length ||
-        ownedAssets.length ||
-        medicalVisits.length
-      ) {
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                error: "Cannot delete member: still referenced",
-                asApplicant: asApplicant.map((p) => ({
-                  id: p.id,
-                  policyNumber: p.policyNumber,
-                })),
-                asInsured: asInsured.map((p) => ({
-                  id: p.id,
-                  policyNumber: p.policyNumber,
-                })),
-                asBeneficiary: asBeneficiary.map((b) => ({
-                  id: b.id,
-                  policyId: b.policyId,
-                })),
-                ownedAssets: ownedAssets.map((a) => ({
-                  id: a.id,
-                  name: a.name,
-                })),
-                medicalVisits: medicalVisits.slice(0, 5).map((v) => ({
-                  id: v.id,
-                  visitDate: v.visitDate,
-                })),
-                medicalVisitCount: medicalVisits.length,
-              }),
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      await membersRepo.delete(memberId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: memberId }),
-          },
-        ],
-      };
     },
   );
 }

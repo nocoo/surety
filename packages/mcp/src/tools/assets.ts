@@ -6,9 +6,9 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { assetsRepo, membersRepo, policiesRepo } from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
-import { stripUndefined, tryParseJson, validateJson } from "./shared";
+import { stripUndefined, validateJson } from "./shared";
 
 export function registerAssetTools(server: McpServer): void {
   server.tool(
@@ -19,24 +19,17 @@ export function registerAssetTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const assets = await assetsRepo.findAll();
-      const result = await Promise.all(
-        assets.map(async (a) => {
-          const owner = a.ownerId ? await membersRepo.findById(a.ownerId) : undefined;
-          return {
-            id: a.id,
-            name: a.name,
-            type: a.type,
-            identifier: a.identifier,
-            ownerName: owner?.name,
-            details: a.details ? tryParseJson(a.details) : undefined,
-          };
-        }),
-      );
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
+      try {
+        const assets = await apiGet("/api/assets");
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(assets) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -51,32 +44,17 @@ export function registerAssetTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const asset = await assetsRepo.findById(assetId);
-      if (!asset) {
+      try {
+        const asset = await apiGet(`/api/assets/${assetId}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(asset) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Asset with id ${assetId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      const owner = asset.ownerId
-        ? await membersRepo.findById(asset.ownerId)
-        : undefined;
-
-      const result = {
-        ...asset,
-        ownerName: owner?.name,
-        details: asset.details ? tryParseJson(asset.details) : undefined,
-      };
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
     },
   );
 
@@ -120,11 +98,17 @@ export function registerAssetTools(server: McpServer): void {
         }
       }
 
-      const asset = await assetsRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(asset) }],
-      };
+      try {
+        const asset = await apiPost("/api/assets", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(asset) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -162,22 +146,17 @@ export function registerAssetTools(server: McpServer): void {
         }
       }
 
-      const updated = await assetsRepo.update(assetId, stripUndefined(data));
-      if (!updated) {
+      try {
+        const updated = await apiPut(`/api/assets/${assetId}`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Asset with id ${assetId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -194,53 +173,22 @@ export function registerAssetTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const asset = await assetsRepo.findById(assetId);
-      if (!asset) {
+      try {
+        await apiDelete(`/api/assets/${assetId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Asset with id ${assetId} not found`,
+              text: JSON.stringify({ deleted: true, id: assetId }),
             },
           ],
         };
-      }
-
-      // Check referencing policies (policies.insuredAssetId → assets.id)
-      const allPolicies = await policiesRepo.findAll();
-      const referencingPolicies = allPolicies.filter(
-        (p) => p.insuredAssetId === assetId,
-      );
-
-      if (referencingPolicies.length) {
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                error: "Cannot delete asset: still referenced by policies",
-                policies: referencingPolicies.map((p) => ({
-                  id: p.id,
-                  policyNumber: p.policyNumber,
-                })),
-              }),
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      await assetsRepo.delete(assetId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: assetId }),
-          },
-        ],
-      };
     },
   );
 }

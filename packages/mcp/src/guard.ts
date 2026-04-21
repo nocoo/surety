@@ -1,16 +1,4 @@
-/**
- * MCP Security Guard
- *
- * Checks whether MCP access is enabled before executing any tool.
- * MCP is disabled by default. Users must explicitly enable it
- * in the Surety settings page.
- *
- * Two ways to enable:
- * 1. Database setting: settings.mcp.enabled = "true"
- * 2. Environment variable: SURETY_MCP_ENABLED = "true" (for testing)
- */
-
-import { settingsRepo } from "@surety/db/repositories";
+import { apiGet } from "./api-client";
 
 const DISABLED_MESSAGE = [
   "MCP access is disabled.",
@@ -18,27 +6,21 @@ const DISABLED_MESSAGE = [
   "and turn on the MCP Access toggle.",
 ].join(" ");
 
-/**
- * Check if MCP access is enabled.
- * Returns undefined if enabled, or an error message string if disabled.
- */
 export async function checkMcpEnabled(): Promise<string | undefined> {
-  // Environment override (for testing)
   if (process.env.SURETY_MCP_ENABLED === "true") {
     return undefined;
   }
 
-  const enabled = await settingsRepo.get("mcp.enabled");
-  if (enabled === "true") {
-    return undefined;
+  try {
+    const result = await apiGet<{ key: string; value: string | null }>("/api/settings/mcp.enabled");
+    if (result.value === "true") return undefined;
+  } catch {
+    // If we can't reach the API, consider MCP disabled
   }
 
   return DISABLED_MESSAGE;
 }
 
-/**
- * Create a tool error result for when MCP is disabled.
- */
 export function mcpDisabledResult() {
   return {
     isError: true,

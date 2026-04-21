@@ -2,13 +2,12 @@
  * MCP Tools: Insurers
  *
  * Tools for managing insurance companies.
- * update-insurer syncs insurerName to related policies when name changes.
- * delete-insurer restricts if referenced by policies.
+ * The Worker API handles name-sync to policies and FK restriction on delete.
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { insurersRepo, policiesRepo } from "@surety/db/repositories";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api-client";
 import { checkMcpEnabled, mcpDisabledResult } from "../guard";
 import { stripUndefined } from "./shared";
 
@@ -24,17 +23,17 @@ export function registerInsurerTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const insurers = await insurersRepo.findAll();
-      const result = insurers.map((i) => ({
-        id: i.id,
-        name: i.name,
-        phone: i.phone,
-        website: i.website,
-      }));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(result) }],
-      };
+      try {
+        const insurers = await apiGet("/api/insurers");
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(insurers) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -49,22 +48,17 @@ export function registerInsurerTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const insurer = await insurersRepo.findById(insurerId);
-      if (!insurer) {
+      try {
+        const insurer = await apiGet(`/api/insurers/${insurerId}`);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(insurer) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Insurer with id ${insurerId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(insurer) }],
-      };
     },
   );
 
@@ -83,11 +77,17 @@ export function registerInsurerTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const insurer = await insurersRepo.create(stripUndefined(args));
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(insurer) }],
-      };
+      try {
+        const insurer = await apiPost("/api/insurers", stripUndefined(args));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(insurer) }],
+        };
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text" as const, text: String(e) }],
+        };
+      }
     },
   );
 
@@ -107,33 +107,17 @@ export function registerInsurerTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const updated = await insurersRepo.update(insurerId, stripUndefined(data));
-      if (!updated) {
+      try {
+        const updated = await apiPut(`/api/insurers/${insurerId}`, stripUndefined(data));
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(updated) }],
+        };
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: `Insurer with id ${insurerId} not found`,
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      // Sync insurerName to related policies when name changes
-      if (data.name) {
-        const allPolicies = await policiesRepo.findAll();
-        const affectedPolicies = allPolicies.filter(
-          (p) => p.insurerId === insurerId,
-        );
-        for (const p of affectedPolicies) {
-          await policiesRepo.update(p.id, { insurerName: data.name });
-        }
-      }
-
-      return {
-        content: [{ type: "text" as const, text: JSON.stringify(updated) }],
-      };
     },
   );
 
@@ -150,53 +134,22 @@ export function registerInsurerTools(server: McpServer): void {
       const error = await checkMcpEnabled();
       if (error) return mcpDisabledResult();
 
-      const insurer = await insurersRepo.findById(insurerId);
-      if (!insurer) {
+      try {
+        await apiDelete(`/api/insurers/${insurerId}`);
         return {
-          isError: true,
           content: [
             {
               type: "text" as const,
-              text: `Insurer with id ${insurerId} not found`,
+              text: JSON.stringify({ deleted: true, id: insurerId }),
             },
           ],
         };
-      }
-
-      // Check referencing policies (policies.insurerId → insurers.id)
-      const allPolicies = await policiesRepo.findAll();
-      const referencingPolicies = allPolicies.filter(
-        (p) => p.insurerId === insurerId,
-      );
-
-      if (referencingPolicies.length) {
+      } catch (e) {
         return {
           isError: true,
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify({
-                error: "Cannot delete insurer: still referenced by policies",
-                policies: referencingPolicies.map((p) => ({
-                  id: p.id,
-                  policyNumber: p.policyNumber,
-                })),
-              }),
-            },
-          ],
+          content: [{ type: "text" as const, text: String(e) }],
         };
       }
-
-      await insurersRepo.delete(insurerId);
-
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: JSON.stringify({ deleted: true, id: insurerId }),
-          },
-        ],
-      };
     },
   );
 }
