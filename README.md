@@ -86,129 +86,51 @@ bun dev
 
 ## 📁 项目结构
 
+Bun workspace monorepo。依赖图：`apps/web → @surety/api → @surety/db`，`packages/mcp → @surety/api → @surety/db`。
+
 ```
 surety/
-├── 📂 docs/                      # 项目文档
-│   ├── 01-design-overview.md     # 整体设计研究报告
-│   ├── 02-database-design.md     # 数据库设计
-│   ├── 03-google-oauth-setup.md  # Google OAuth 配置
-│   ├── 04-mcp-setup.md           # MCP Server 配置
-│   ├── 05-basalt-ui-migration.md # Basalt UI 迁移方案
-│   ├── 06-testing-improvement-plan.md # 四层测试改进计划
-│   ├── 07-impeccable-audit-report.md # 安全审计报告
-│   └── 11-sqlite-to-d1-migration.md # SQLite → Cloudflare D1 迁移
-├── 📂 drizzle/                   # 数据库迁移文件
-├── 📂 e2e/                       # Playwright 浏览器 E2E 测试
-│   ├── 📂 fixtures/              # 测试 fixture 与自定义 helpers
-│   │   └── base.ts               # navigateTo helper, 通用 selectors
-│   ├── 📂 pages/                 # Page Object Model
-│   │   ├── dashboard.page.ts     # 仪表盘
-│   │   ├── members.page.ts       # 成员 CRUD
-│   │   ├── policies.page.ts      # 保单 CRUD (筛选/排序/视图切换)
-│   │   ├── assets.page.ts        # 资产 CRUD
-│   │   ├── insurers.page.ts      # 保险公司 CRUD
-│   │   ├── coverage-lookup.page.ts # 保障速查
-│   │   ├── renewal-calendar.page.ts # 续保日历
-│   │   └── settings.page.ts      # 设置
-│   ├── 📂 tests/                 # 测试用例 (58 tests)
-│   │   ├── dashboard.spec.ts     # 仪表盘统计卡片与图表
-│   │   ├── members.spec.ts       # 成员增删改查
-│   │   ├── policies.spec.ts      # 保单增删改查 + 筛选/视图
-│   │   ├── assets.spec.ts        # 资产增删改查
-│   │   ├── insurers.spec.ts      # 保险公司增删改查
-│   │   ├── coverage-lookup.spec.ts # 保障速查 + 类别切换
-│   │   ├── renewal-calendar.spec.ts # 续保日历
-│   │   ├── settings.spec.ts      # 设置页面
-│   │   └── navigation.spec.ts    # 侧边栏导航 + 页面跳转
-│   └── playwright.config.ts      # Playwright 配置 (Chromium, 单线程, zh-CN)
-├── 📂 public/                    # 静态资源
-├── 📂 scripts/                   # 工具脚本
-│   ├── seed-remote.ts            # 远程 D1 数据库种子
-│   ├── run-e2e.ts                # API E2E 运行器 (port 7016)
-│   ├── run-e2e-ui.ts             # Playwright E2E 运行器 (port 7017)
-│   ├── e2e-utils.ts              # E2E 共享工具 (端口检查等)
-│   ├── check-coverage.ts         # 测试覆盖率检查
-│   └── resize-logos.py           # Logo 处理脚本
-├── 📂 src/
-│   ├── 📂 __tests__/             # 单元测试 + API E2E 测试
-│   │   ├── 📂 db/                # Repository 单元测试
-│   │   ├── 📂 e2e/               # API 端到端测试 (14 specs)
-│   │   ├── backy-service.test.ts # Backy 远程备份服务
-│   │   ├── backup.test.ts        # 数据库备份
-│   │   ├── category-config.test.ts # 保险类别配置
-│   │   ├── chart-config.test.ts  # 图表配置
-│   │   ├── coverage-lookup-vm.test.ts # 保障速查 ViewModel
-│   │   ├── dashboard-vm.test.ts  # 仪表盘 ViewModel
-│   │   ├── health.test.ts        # 健康检查
-│   │   ├── policy-status.test.ts # 保单状态推导
-│   │   ├── renewal-calendar-vm.test.ts # 续保日历 ViewModel
-│   │   ├── utils.test.ts         # 工具函数
-│   │   └── version.test.ts       # 版本号一致性
-│   ├── 📂 app/                   # Next.js App Router
-│   │   ├── 📂 api/               # API 路由
-│   │   ├── 📂 assets/            # 资产页面
-│   │   ├── 📂 coverage-lookup/   # 保障速查页面
-│   │   ├── 📂 insurers/          # 保险公司页面
-│   │   ├── 📂 login/             # 登录页面
-│   │   ├── 📂 members/           # 成员页面
-│   │   ├── 📂 policies/          # 保单页面
-│   │   ├── 📂 renewal-calendar/  # 续保日历页面
-│   │   ├── 📂 settings/          # 设置页面
-│   │   ├── layout.tsx            # 根布局
-│   │   └── page.tsx              # 仪表盘 (首页)
-│   ├── 📂 components/            # UI 组件
-│   │   ├── 📂 charts/            # 图表组件
-│   │   ├── 📂 coverage-lookup/   # 保障速查组件
-│   │   ├── 📂 layout/            # 布局组件 (Sidebar 等)
-│   │   ├── 📂 renewal/           # 续保相关组件
-│   │   ├── 📂 ui/                # shadcn/ui 基础组件
-│   │   ├── auth-provider.tsx     # 认证 Provider
-│   │   └── loading-screen.tsx    # 加载画面
-│   ├── 📂 db/                    # 数据库层
-│   │   ├── 📂 repositories/      # CRUD 操作
-│   │   ├── backup.ts             # 数据库备份/还原
-│   │   ├── index.ts              # 连接管理 (D1 remote + bun:sqlite test)
-│   │   ├── schema.ts             # Drizzle schema
-│   │   ├── seed.ts               # 种子数据函数
-│   │   └── types.ts              # 类型定义, deriveDisplayStatus()
-│   ├── 📂 hooks/                 # React Hooks
-│   │   ├── use-mobile.tsx        # 移动端检测
-│   │   └── use-persisted-state.ts # localStorage 持久化状态
-│   ├── 📂 lib/                   # 工具函数 & ViewModel
-│   │   ├── api-helpers.ts        # API 请求辅助
-│   │   ├── category-config.ts    # 保险类别配置
-│   │   ├── chart-config.ts       # 图表颜色配置
-│   │   ├── coverage-lookup-vm.ts # 保障速查 ViewModel
-│   │   ├── dashboard-vm.ts       # 仪表盘 ViewModel
-│   │   ├── health.ts             # 健康检查
-│   │   ├── palette.ts            # 调色板
-│   │   ├── renewal-calendar-vm.ts # 续保日历 ViewModel
-│   │   ├── utils.ts              # 通用工具
-│   │   └── version.ts            # 版本号管理 (APP_VERSION)
-│   ├── 📂 services/              # 业务服务
-│   │   └── backy.ts              # Backy 远程备份服务
-│   ├── auth.ts                   # NextAuth 配置
-│   └── proxy.ts                  # 代理中间件
-├── 📂 mcp/                       # MCP Server
-│   ├── index.ts                  # Entry point (stdio transport)
-│   ├── server.ts                 # Tool registration
-│   ├── guard.ts                  # Security enable check
-│   ├── 📂 tools/                 # Tool implementations
-│   │   ├── members.ts            # list-members, get-member
-│   │   ├── policies.ts           # list-policies, get-policy
-│   │   ├── assets.ts             # list-assets
-│   │   └── coverage.ts           # coverage-analysis, renewal-overview, dashboard-summary
-│   └── 📂 __tests__/             # MCP tests
-│       ├── mcp.e2e.test.ts       # E2E tests (agent perspective)
-│       ├── guard.test.ts         # Guard unit tests
-│       ├── tools-members.test.ts # Member tools unit tests
-│       ├── tools-policies.test.ts # Policy tools unit tests
-│       ├── tools-assets.test.ts  # Asset tools unit tests
-│       └── tools-coverage.test.ts # Coverage tools unit tests
-├── .env.example                  # 环境变量示例
-├── drizzle.config.ts             # Drizzle ORM 配置
-├── Dockerfile                    # Docker 容器化
-└── package.json
+├── 📂 apps/
+│   ├── 📂 web/                       # Next.js 薄壳（路由、auth、SSR、UI）
+│   │   ├── 📂 src/
+│   │   │   ├── 📂 app/               # App Router pages + API routes
+│   │   │   ├── 📂 components/        # React UI 组件
+│   │   │   ├── 📂 hooks/             # React hooks
+│   │   │   ├── 📂 lib/               # Next.js 相关胶水
+│   │   │   ├── 📂 services/          # 业务服务 (backy)
+│   │   │   ├── 📂 __tests__/         # 单元测试 + E2E 测试
+│   │   │   └── auth.ts               # NextAuth 配置
+│   │   ├── 📂 e2e/                   # Playwright 浏览器 E2E
+│   │   ├── 📂 scripts/               # 工具脚本
+│   │   ├── 📂 drizzle/               # Migration 文件
+│   │   ├── Dockerfile
+│   │   └── next.config.ts
+│   └── 📂 worker/                    # Cloudflare Worker D1 proxy（独立）
+│       ├── 📂 src/
+│       └── wrangler.toml
+├── 📂 packages/
+│   ├── 📂 db/                        # @surety/db — Schema + Repositories
+│   │   └── 📂 src/
+│   │       ├── schema.ts             # Drizzle schema
+│   │       ├── types.ts              # 类型 + deriveDisplayStatus
+│   │       ├── index.ts              # DB 连接管理
+│   │       └── 📂 repositories/      # CRUD 操作
+│   ├── 📂 api/                       # @surety/api — 业务逻辑（framework-agnostic）
+│   │   └── 📂 src/
+│   │       ├── dashboard.ts          # 仪表盘数据
+│   │       ├── coverage-lookup.ts    # 保障速查
+│   │       ├── renewal-calendar.ts   # 续保日历
+│   │       ├── health.ts             # 健康检查
+│   │       └── 📂 lib/               # 纯工具函数
+│   └── 📂 mcp/                       # @surety/mcp — MCP Server
+│       └── 📂 src/
+│           ├── index.ts              # Entry point (stdio)
+│           ├── server.ts             # Tool registration
+│           ├── guard.ts              # Security check
+│           └── 📂 tools/             # Tool implementations
+├── package.json                      # Workspace root
+├── tsconfig.base.json                # 共享 TS strict 配置
+└── bunfig.toml
 ```
 
 ## 🛠️ 技术栈
@@ -272,7 +194,7 @@ Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) �
   "mcpServers": {
     "surety": {
       "command": "bun",
-      "args": ["run", "mcp/index.ts"],
+      "args": ["run", "packages/mcp/src/index.ts"],
       "cwd": "/path/to/surety"
     }
   }
