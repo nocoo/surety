@@ -1,5 +1,5 @@
 {
-  "name": "@surety/web",
+  "name": "@surety/web-legacy",
   "version": "1.5.10",
   "private": true,
   "dependencies": {
