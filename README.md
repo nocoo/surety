@@ -72,7 +72,7 @@ cp .env.example .env
 # 线上 Worker 地址 (默认 https://surety.hexly.ai)
 SURETY_API_URL=https://surety.hexly.ai
 
-# 在 Surety 设置页里申请一个 CLI token，粘贴到这里
+# 拿一个 CLI token（详见下面的"CLI / MCP — Bearer token"）
 SURETY_DEV_API_TOKEN=sk_xxx
 ```
 
@@ -197,13 +197,25 @@ surety/
 
 ### CLI / MCP — Bearer token
 
-1. 在设置页 `Settings → API Tokens` 里手动创建 token，或者走 loopback 流程：
+目前**只有** `/api/auth/cli` loopback 流程可以铸 token（设置页暂时没有手动创建入口）：
+
+1. 在本地起一个监听 `http://127.0.0.1:PORT/cb` 的小脚本（接收回调），例如：
    ```bash
-   # 浏览器中访问：
-   https://surety.hexly.ai/api/auth/cli?callback_url=http://127.0.0.1:PORT/cb&state=NONCE
+   # 一次性 netcat 接收
+   nc -l 7777
    ```
-   `/api/auth/cli` 要求已通过 CF Access，铸造一个绑定到当前用户邮箱的 token，302 重定向回 `callback_url`（带 `api_key`、`state`、`email` 查询参数）。`callback_url` 必须是 `http://127.0.0.1:*` 或 `http://localhost:*`。
-2. 把 token 配到 `SURETY_API_TOKEN` 或 MCP 配置里。Worker 的 `apiKeyAuth` 中间件负责校验 + 更新 `lastUsedAt`。
+2. 浏览器打开（会先走 CF Access 登录）：
+   ```
+   https://surety.hexly.ai/api/auth/cli?callback_url=http://127.0.0.1:7777/cb&state=NONCE
+   ```
+3. Worker 通过 CF Access 鉴权后铸造一个绑定当前邮箱的 token，302 重定向回
+   `callback_url`，查询参数里带上 `api_key`、`state`、`email`。`callback_url`
+   必须是 `http://127.0.0.1:*` 或 `http://localhost:*`。
+4. 把 `api_key` 配到 `SURETY_API_TOKEN` / `SURETY_DEV_API_TOKEN` 或 MCP 配置
+   里。Worker 的 `apiKeyAuth` 中间件负责校验并更新 `lastUsedAt`。
+
+> ℹ️ 吊销 token 走 `DELETE /api/auth/tokens/:id`（设置页目前仅有列表视图，
+> 手动管理 UI 未上线）。
 
 ## 🤖 MCP Server
 
@@ -212,7 +224,7 @@ Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) �
 ### 启用 MCP
 
 1. 在 Surety 设置页开启 **MCP Access**（写入 `settings.mcp.enabled`，guard 会读这个开关）。
-2. 在设置页生成一个 API token。
+2. 按上一节的 `/api/auth/cli` loopback 流程拿一个 Bearer token。
 3. 在 AI 助手配置中添加：
 
 ```json
