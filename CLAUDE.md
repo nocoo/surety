@@ -17,6 +17,26 @@
 | UI | Tailwind CSS + shadcn/ui |
 | Deployment | Railway (Next.js) + Cloudflare Workers (D1 proxy) |
 
+### Monorepo 结构
+
+Bun workspace monorepo，依赖图：`apps/web → packages/api → packages/db`，`packages/mcp → packages/api → packages/db`。
+
+```
+surety/
+├── apps/
+│   ├── web/           # Next.js 薄壳（路由、auth、SSR、UI 组件）
+│   └── worker/        # Cloudflare Worker D1 proxy（独立，无内部依赖）
+├── packages/
+│   ├── db/            # @surety/db — Schema + DB 连接 + Repositories
+│   ├── api/           # @surety/api — Framework-agnostic 业务逻辑
+│   └── mcp/           # @surety/mcp — MCP Server（调用 @surety/api）
+├── package.json       # Workspace root
+├── tsconfig.base.json # 共享 TS strict 配置
+└── bunfig.toml
+```
+
+**关键原则**：`apps/web` 和 `packages/mcp` 不直接操作数据库，只通过 `@surety/api` 访问数据。
+
 ### 数据库架构
 
 - **运行时（生产/E2E）**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
@@ -69,7 +89,7 @@ bun run mcp          # 启动 MCP Server (stdio)
 
 ## Worker Deployment (D1 Proxy)
 
-Worker 源码在 `worker/` 目录，部署到 Cloudflare Workers，作为 Next.js → D1 的中间代理。
+Worker 源码在 `apps/worker/` 目录，部署到 Cloudflare Workers，作为 Next.js → D1 的中间代理。
 
 ### 基础信息
 
@@ -84,8 +104,8 @@ Worker 源码在 `worker/` 目录，部署到 Cloudflare Workers，作为 Next.j
 ### 部署命令
 
 ```bash
-cd worker && bun install          # 安装依赖
-cd worker && bunx wrangler deploy # 部署 Worker
+cd apps/worker && bun install          # 安装依赖
+cd apps/worker && bunx wrangler deploy # 部署 Worker
 ```
 
 ### Schema 推送 (D1)
@@ -101,7 +121,7 @@ bunx drizzle-kit push
 
 验证表结构：
 ```bash
-cd worker && bunx wrangler d1 execute surety-db --remote \
+cd apps/worker && bunx wrangler d1 execute surety-db --remote \
   --command "SELECT name FROM sqlite_master WHERE type='table'"
 ```
 
@@ -112,14 +132,14 @@ cd worker && bunx wrangler d1 execute surety-db --remote \
 ```bash
 # 生成带列名的 INSERT（用 python3 脚本，不能直接用 sqlite3 .dump）
 # 执行到 D1
-cd worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
+cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 ```
 
 ### Secret 管理
 
 ```bash
 # 设置 Worker 共享密钥
-echo "<secret>" | cd worker && bunx wrangler secret put WORKER_SHARED_SECRET
+echo "<secret>" | cd apps/worker && bunx wrangler secret put WORKER_SHARED_SECRET
 ```
 
 ### 环境变量 (Next.js 侧)
@@ -130,7 +150,7 @@ SURETY_WORKER_URL=<your-worker-url>
 SURETY_WORKER_SECRET=<worker_shared_secret>
 ```
 
-`src/db/index.ts` 在非测试环境下必须配置这两个变量，否则 `getDbForRequest()` 会抛出错误。所有非测试路径都走远程 D1，无本地 SQLite 运行时 fallback。
+`packages/db/src/index.ts` 在非测试环境下必须配置这两个变量，否则 `getDbForRequest()` 会抛出错误。所有非测试路径都走远程 D1，无本地 SQLite 运行时 fallback。
 
 E2E 测试额外需要：
 ```
@@ -148,10 +168,10 @@ E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
    | File | What to update |
    |------|---------------|
    | `package.json` | `"version"` field |
-   | `src/app/api/live/route.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
-   | `src/services/backy.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
-   | `mcp/index.ts` | MCP server version via `APP_VERSION` (auto, no manual change needed) |
-   | `src/__tests__/version.test.ts` | reads from package.json (auto, no manual change needed) |
+   | `apps/web/src/app/api/live/route.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
+   | `apps/web/src/services/backy.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
+   | `packages/mcp/src/index.ts` | MCP server version via `APP_VERSION` (auto, no manual change needed) |
+   | `apps/web/src/__tests__/version.test.ts` | reads from package.json (auto, no manual change needed) |
 
 3. Commit: `chore: bump version to x.y.z`
 4. Push (triggers deployment)
