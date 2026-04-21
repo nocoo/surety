@@ -1,5 +1,11 @@
 # Basalt UI Migration Plan
 
+> **历史文档 — 描述的是迁移当时（Next.js + NextAuth）的状态。** Surety 之后又
+> 做了一次大重写：Next.js → Vite SPA、NextAuth → Cloudflare Access、
+> Next.js API routes → Hono Worker、本文提到的 BadgeLogin 登录页已经整个删掉
+> （CF Access 在边缘完成登录，应用内不再渲染登录页）。本文仅作过程记录保留，
+> 不代表当前架构。最新架构请看根目录 README.md 和 CLAUDE.md。
+
 Migrate Surety's visual design language to the Basalt template while preserving the Next.js framework, all business logic, data layer, API routes, auth, MCP server, and three-tier test suite.
 
 ## Source Template
