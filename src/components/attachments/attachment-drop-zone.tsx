@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MAX_FILE_SIZE, ALLOWED_CONTENT_TYPES } from "@/lib/attachment-validation";
+import { MAX_FILE_SIZE, ALLOWED_CONTENT_TYPES } from "@surety/api/lib/attachment-validation";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
 
 interface AttachmentDropZoneProps {

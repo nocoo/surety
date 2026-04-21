@@ -12,7 +12,7 @@ import {
   type MemberForCoverage,
   type AssetForCoverage,
   type PolicyForCoverage,
-} from "@/lib/coverage-lookup-vm";
+} from "@surety/api/coverage-lookup";
 
 describe("coverage-lookup-vm", () => {
   describe("formatSumAssured", () => {

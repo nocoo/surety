@@ -1,5 +1,5 @@
 import { isEffectivelyActive, type PolicyDbStatus } from "@surety/db/types";
-import { parseLocalDate } from "@/lib/date-utils";
+import { parseLocalDate } from "@surety/db/lib/date-utils";
 import type { AllRepos } from "@surety/db/repositories";
 
 const categoryLabels: Record<string, string> = {

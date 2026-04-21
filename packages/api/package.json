@@ -3,7 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./dashboard": "./src/dashboard.ts",
+    "./coverage-lookup": "./src/coverage-lookup.ts",
+    "./renewal-calendar": "./src/renewal-calendar.ts",
+    "./health": "./src/health.ts",
+    "./lib/format": "./src/lib/format.ts",
+    "./lib/category-config": "./src/lib/category-config.ts",
+    "./lib/attachment-validation": "./src/lib/attachment-validation.ts",
+    "./lib/version": "./src/lib/version.ts"
   },
   "dependencies": {
     "@surety/db": "workspace:*"

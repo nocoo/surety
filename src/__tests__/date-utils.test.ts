@@ -6,7 +6,7 @@ import {
   getDaysFromToday,
   formatDaysFromToday,
   formatDateWithDays,
-} from "@/lib/date-utils";
+} from "@surety/db/lib/date-utils";
 
 describe("date-utils", () => {
   describe("parseLocalDate", () => {

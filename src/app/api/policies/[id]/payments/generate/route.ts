@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
-import { generatePaymentRecords } from "@/lib/generate-payments";
+import { generatePaymentRecords } from "@surety/db/lib/generate-payments";
 import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";

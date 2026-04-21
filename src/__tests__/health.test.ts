@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { checkHealth, type HealthDeps } from "@/lib/health";
-import { APP_VERSION } from "@/lib/version";
+import { checkHealth, type HealthDeps } from "@surety/api/health";
+import { APP_VERSION } from "@surety/api/lib/version";
 
 /** Build a default deps object where the database is healthy. */
 function healthyDeps(overrides: Partial<HealthDeps> = {}): HealthDeps {

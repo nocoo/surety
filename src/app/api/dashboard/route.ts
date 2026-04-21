@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getReposFromRequest } from "@/lib/api-helpers";
-import { getDashboardData } from "@/lib/dashboard-data";
+import { getDashboardData } from "@surety/api/dashboard";
 import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";

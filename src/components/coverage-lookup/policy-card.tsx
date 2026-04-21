@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Phone, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { PolicyCoverageCard } from "@/lib/coverage-lookup-vm";
+import type { PolicyCoverageCard } from "@surety/api/coverage-lookup";
 
 interface PolicyCardProps {
   policy: PolicyCoverageCard;

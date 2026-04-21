@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { todayStr } from "@/lib/date-utils";
+import { todayStr } from "@surety/db/lib/date-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { formatCurrencyFull } from "@/lib/format";
+import { formatCurrencyFull } from "@surety/api/lib/format";
 import type { Payment } from "@/lib/types/policy";
 
 interface PaymentsSectionProps {

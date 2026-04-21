@@ -19,7 +19,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION } from "@surety/api/lib/version";
 import { registerTools } from "./server";
 
 const server = new McpServer({

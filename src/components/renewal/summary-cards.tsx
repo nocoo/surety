@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, Wallet, PiggyBank, Shield } from "lucide-react";
-import type { RenewalSummary } from "@/lib/renewal-calendar-vm";
+import type { RenewalSummary } from "@surety/api/renewal-calendar";
 import { formatCurrency } from "@/lib/chart-config";
 
 interface SummaryCardsProps {

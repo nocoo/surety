@@ -6,7 +6,7 @@ import {
   type AssetForCoverage,
   type PolicyForCoverage,
   type SelectionType,
-} from "@/lib/coverage-lookup-vm";
+} from "@surety/api/coverage-lookup";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { requireAuth } from "@/lib/api-auth";

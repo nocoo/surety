@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   generatePaymentRecords,
   type GeneratePaymentsInput,
-} from "@/lib/generate-payments";
+} from "@surety/db/lib/generate-payments";
 
 const baseInput: GeneratePaymentsInput = {
   policyId: 1,

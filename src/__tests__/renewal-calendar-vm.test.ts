@@ -14,7 +14,7 @@ import {
   getUniquePolicyNames,
   fetchRenewalCalendarData,
   type PolicyForRenewal,
-} from "@/lib/renewal-calendar-vm";
+} from "@surety/api/renewal-calendar";
 
 describe("renewal-calendar-vm", () => {
   describe("daysBetween", () => {

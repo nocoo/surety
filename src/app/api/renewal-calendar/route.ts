@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   buildRenewalCalendarData,
   type PolicyForRenewal,
-} from "@/lib/renewal-calendar-vm";
+} from "@surety/api/renewal-calendar";
 import { getReposFromRequest } from "@/lib/api-helpers";
 import { isEffectivelyActive, type PolicyDbStatus } from "@surety/db/types";
 import { requireAuth } from "@/lib/api-auth";

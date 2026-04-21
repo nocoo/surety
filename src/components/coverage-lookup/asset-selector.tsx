@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Home, Car } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { formatSumAssured, type AssetCoverageCard } from "@/lib/coverage-lookup-vm";
+import { formatSumAssured, type AssetCoverageCard } from "@surety/api/coverage-lookup";
 
 interface AssetSelectorProps {
   assets: AssetCoverageCard[];

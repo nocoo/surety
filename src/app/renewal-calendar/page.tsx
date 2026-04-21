@@ -11,7 +11,7 @@ import {
 import {
   fetchRenewalCalendarData,
   type RenewalCalendarData,
-} from "@/lib/renewal-calendar-vm";
+} from "@surety/api/renewal-calendar";
 
 const breadcrumbs = [{ label: "续保日历" }];
 

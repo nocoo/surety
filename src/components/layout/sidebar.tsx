@@ -22,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION } from "@surety/api/lib/version";
 import {
   NAV_GROUPS as NAV_GROUPS_DEF,
   ALL_NAV_ITEMS as ALL_NAV_ITEMS_DEF,

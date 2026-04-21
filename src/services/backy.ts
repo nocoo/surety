@@ -10,7 +10,7 @@
 
 import { settingsRepo } from "@surety/db/repositories";
 import { buildBackup, buildBackupFilename, type BackupData } from "@surety/db/backup";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION } from "@surety/api/lib/version";
 import type { DbInstance } from "@surety/db";
 
 // ── Types ──

@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
-import { getCategoryConfig } from "@/lib/category-config";
-import { formatCurrency } from "@/lib/format";
-import { getDaysFromToday, formatDaysFromToday } from "@/lib/date-utils";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
+import { formatCurrency } from "@surety/api/lib/format";
+import { getDaysFromToday, formatDaysFromToday } from "@surety/db/lib/date-utils";
 import { statusConfig, categoryLabels } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import {
@@ -56,7 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatBytes, isImageContentType } from "@/lib/attachment-validation";
+import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
 
 

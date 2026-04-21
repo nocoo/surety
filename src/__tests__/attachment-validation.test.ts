@@ -10,7 +10,7 @@ import {
   MAX_FILE_SIZE,
   ALLOWED_CONTENT_TYPES,
   MAX_ATTACHMENTS_PER_POLICY,
-} from "@/lib/attachment-validation";
+} from "@surety/api/lib/attachment-validation";
 
 describe("attachment-validation", () => {
   describe("validateFile", () => {

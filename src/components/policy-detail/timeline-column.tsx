@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { CircleCheck, Circle, CalendarDays, ArrowDown, Clock } from "lucide-react";
-import { getDaysFromToday, formatDaysFromToday, parseLocalDate, formatLocalDate } from "@/lib/date-utils";
+import { getDaysFromToday, formatDaysFromToday, parseLocalDate, formatLocalDate } from "@surety/db/lib/date-utils";
 import type { PolicyDetail } from "@/lib/types/policy";
 
 interface TimelineEvent {

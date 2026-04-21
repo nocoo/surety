@@ -13,7 +13,7 @@ import {
   type CoverageLookupData,
   type SelectionType,
   type CategoryGroup,
-} from "@/lib/coverage-lookup-vm";
+} from "@surety/api/coverage-lookup";
 import { cn } from "@/lib/utils";
 
 const breadcrumbs = [{ label: "保障速查" }];

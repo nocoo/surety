@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getMemberAvatarColors, getNameInitial } from "@/lib/category-config";
-import { formatSumAssured, type MemberCoverageCard } from "@/lib/coverage-lookup-vm";
+import { getMemberAvatarColors, getNameInitial } from "@surety/api/lib/category-config";
+import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
 
 interface MemberSelectorProps {
   members: MemberCoverageCard[];

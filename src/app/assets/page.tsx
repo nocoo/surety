@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { getCategoryConfig } from "@/lib/category-config";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { AssetSheet } from "./asset-sheet";
 
 type AssetType = "RealEstate" | "Vehicle";

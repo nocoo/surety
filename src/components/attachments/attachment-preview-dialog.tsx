@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { isImageContentType } from "@/lib/attachment-validation";
+import { isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
 
 interface AttachmentPreviewDialogProps {

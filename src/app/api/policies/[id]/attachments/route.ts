@@ -7,7 +7,7 @@ import {
   generateR2Key,
   MAX_FILE_SIZE,
   MAX_ATTACHMENTS_PER_POLICY,
-} from "@/lib/attachment-validation";
+} from "@surety/api/lib/attachment-validation";
 import { requireAuth } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";

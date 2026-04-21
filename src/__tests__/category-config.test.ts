@@ -6,7 +6,7 @@ import {
   getMemberColorIndex,
   getMemberAvatarColors,
   getNameInitial,
-} from "@/lib/category-config";
+} from "@surety/api/lib/category-config";
 
 describe("category-config", () => {
   describe("CATEGORY_CONFIG", () => {

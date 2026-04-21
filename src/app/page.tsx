@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/layout";
 import { getReposFromRequest } from "@/lib/api-helpers";
-import { getDashboardData } from "@/lib/dashboard-data";
+import { getDashboardData } from "@surety/api/dashboard";
 import { DashboardContent } from "./dashboard-content";
 
 export const dynamic = "force-dynamic";

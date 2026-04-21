@@ -3,7 +3,7 @@
  * Pure functions for calculating renewal data - testable without API calls
  */
 
-import { parseLocalDate, formatLocalDate } from "@/lib/date-utils";
+import { parseLocalDate, formatLocalDate } from "@surety/db/lib/date-utils";
 
 // Category labels
 export const CATEGORY_LABELS: Record<string, string> = {

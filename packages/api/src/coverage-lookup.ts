@@ -5,8 +5,8 @@
  */
 
 import type { PolicyCategory } from "@surety/db/types";
-import { CATEGORY_CONFIG, getCategoryConfig } from "./category-config";
-import { formatCurrency } from "./format";
+import { CATEGORY_CONFIG, getCategoryConfig } from "./lib/category-config";
+import { formatCurrency } from "./lib/format";
 
 // ============================================================================
 // Types

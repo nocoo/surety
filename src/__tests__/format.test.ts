@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatCurrency, formatCurrencyFull } from "@/lib/format";
+import { formatCurrency, formatCurrencyFull } from "@surety/api/lib/format";
 
 describe("formatCurrency", () => {
   test("formats values >= 10000 as 万 without decimals when exact", () => {

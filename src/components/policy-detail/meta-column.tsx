@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
 import { cn, getAvatarColor } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency } from "@surety/api/lib/format";
 import {
   statusConfig,
   categoryLabels,
@@ -17,7 +17,7 @@ import {
   renewalTypeLabels,
 } from "@/lib/constants/policy";
 import type { PolicyDetail, Beneficiary, PolicyStatus } from "@/lib/types/policy";
-import { formatDateWithDays } from "@/lib/date-utils";
+import { formatDateWithDays } from "@surety/db/lib/date-utils";
 import { EditableInfoRow } from "./editable-info-row";
 
 interface MetaColumnProps {

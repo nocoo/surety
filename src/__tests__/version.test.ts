@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION } from "@surety/api/lib/version";
 import pkg from "../../package.json";
 
 describe("APP_VERSION", () => {

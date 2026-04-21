@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { ShieldCheck, Github } from "lucide-react";
 import { ThemeToggle, SiteFooter } from "@/components/layout";
-import { todayStr } from "@/lib/date-utils";
+import { todayStr } from "@surety/db/lib/date-utils";
 import LoadingScreen from "@/components/loading-screen";
 
 function Barcode() {

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import type { MonthlyRenewal, RenewalItem } from "@/lib/renewal-calendar-vm";
+import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { formatCurrency } from "@/lib/chart-config";
 import {
   getCategoryConfig,
   getMemberAvatarColors,
   getNameInitial,
-} from "@/lib/category-config";
+} from "@surety/api/lib/category-config";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 

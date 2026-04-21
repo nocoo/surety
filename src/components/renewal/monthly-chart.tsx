@@ -19,7 +19,7 @@ import {
   getChartColor,
   RESPONSIVE_CONTAINER_PROPS,
 } from "@/lib/chart-config";
-import type { MonthlyRenewal } from "@/lib/renewal-calendar-vm";
+import type { MonthlyRenewal } from "@surety/api/renewal-calendar";
 
 interface MonthlyChartProps {
   data: MonthlyRenewal[];

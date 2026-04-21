@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency } from "@surety/api/lib/format";
 import type { CoverageItem } from "@/lib/types/policy";
 
 interface CoverageSectionProps {
