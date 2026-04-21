@@ -39,6 +39,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# vite build output (Worker static assets)
+apps/worker/static/assets/
+apps/worker/static/index.html
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
