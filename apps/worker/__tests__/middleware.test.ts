@@ -151,4 +151,14 @@ describe("apiKeyAuth middleware", () => {
     await new Promise((r) => setTimeout(r, 10));
     expect(lastUsedId).toBe(42);
   });
+
+  test("E2E_SKIP_AUTH=true bypasses auth even on prod host", async () => {
+    const app = makeApp(apiKeyAuth);
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety-test.hexly.ai" } },
+      { E2E_SKIP_AUTH: "true" },
+    );
+    expect(res.status).toBe(200);
+  });
 });

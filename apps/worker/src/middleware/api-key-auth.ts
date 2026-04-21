@@ -14,6 +14,8 @@ function extractBearerToken(header: string | undefined): string | null {
 export async function apiKeyAuth(c: Context<AppEnv>, next: Next) {
   if (PUBLIC_ROUTES.includes(c.req.path)) return next();
 
+  if (c.env?.E2E_SKIP_AUTH === "true") return next();
+
   const host = c.req.header("host") || "";
   if (isLocalhost(host)) return next();
 

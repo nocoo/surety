@@ -6,6 +6,7 @@ export type Bindings = {
   ATTACHMENTS: R2Bucket;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
+  E2E_SKIP_AUTH?: string;
 };
 
 export type Variables = {
