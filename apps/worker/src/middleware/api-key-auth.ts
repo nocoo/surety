@@ -1,5 +1,6 @@
 import type { Context, Next } from "hono";
 import type { AppEnv } from "../lib/types";
+import { isLocalhost } from "./is-localhost";
 
 const PUBLIC_ROUTES = ["/api/live"];
 
@@ -12,6 +13,9 @@ function extractBearerToken(header: string | undefined): string | null {
 
 export async function apiKeyAuth(c: Context<AppEnv>, next: Next) {
   if (PUBLIC_ROUTES.includes(c.req.path)) return next();
+
+  const host = c.req.header("host") || "";
+  if (isLocalhost(host)) return next();
 
   if (c.get("accessAuthenticated")) return next();
 

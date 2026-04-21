@@ -1,6 +1,7 @@
 import type { Context, Next } from "hono";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import type { AppEnv } from "../lib/types";
+import { isLocalhost } from "./is-localhost";
 
 let jwksCache: ReturnType<typeof createRemoteJWKSet> | null = null;
 let jwksCacheTeamDomain: string | null = null;
@@ -14,6 +15,12 @@ function getJWKS(teamDomain: string) {
 
 export async function accessAuth(c: Context<AppEnv>, next: Next) {
   if (c.req.path === "/api/live") return next();
+
+  const host = c.req.header("host") || "";
+  if (isLocalhost(host)) {
+    c.set("accessAuthenticated", true);
+    return next();
+  }
 
   const teamDomain = c.env.CF_ACCESS_TEAM_DOMAIN;
   const aud = c.env.CF_ACCESS_AUD;
