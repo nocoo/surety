@@ -7,7 +7,7 @@
     "dev": "cd apps/web && next dev --port 7012",
     "build": "cd apps/web && next build",
     "start": "cd apps/web && next start --port 7012",
-    "lint": "cd apps/web && eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
+    "lint": "eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
     "typecheck": "tsc --noEmit",
     "lint:typecheck:cached": "bun run apps/web/scripts/run-g1a.ts",
     "db:generate": "cd apps/web && drizzle-kit generate",
@@ -82,7 +82,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --max-warnings=0 --no-warn-ignored --cache --cache-location node_modules/.cache/eslint/ --config apps/web/eslint.config.mjs"
+      "eslint --max-warnings=0 --no-warn-ignored --cache --cache-location node_modules/.cache/eslint/"
     ]
   }
 }

@@ -4,22 +4,27 @@ import nextTs from "eslint-config-next/typescript";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
+  // Next.js rules scoped to apps/web only
+  ...nextVitals.map((config) => ({
+    ...config,
+    files: ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+  })),
+  ...nextTs.map((config) => ({
+    ...config,
+    files: ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+  })),
   globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    ".next-e2e/**",
-    ".next-e2e-ui/**",
-    "out/**",
-    "build/**",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/.next-e2e/**",
+    "**/.next-e2e-ui/**",
+    "**/out/**",
+    "**/build/**",
     "next-env.d.ts",
-    // Playwright E2E tests (not React code):
-    "e2e/**",
     "**/e2e/**",
+    "apps/worker/**",
   ]),
-  // tseslint strict — replaces manual rules
+  // tseslint strict for all TS files
   ...tseslint.configs.strict.map((config) => ({
     ...config,
     files: ["**/*.ts", "**/*.tsx"],
@@ -34,9 +39,15 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  // no-console for application code only (scripts use console legitimately)
+  // no-console for application code (scripts use console legitimately)
   {
-    files: ["src/**/*.ts", "src/**/*.tsx", "**/packages/mcp/src/**/*.ts"],
+    files: [
+      "apps/web/src/**/*.ts",
+      "apps/web/src/**/*.tsx",
+      "packages/api/src/**/*.ts",
+      "packages/db/src/**/*.ts",
+      "packages/mcp/src/**/*.ts",
+    ],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
     },
