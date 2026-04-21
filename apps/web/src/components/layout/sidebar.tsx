@@ -18,6 +18,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
+import { getDisplayName } from "@/lib/user";
+import { useMe } from "@/hooks/use-me";
 import { APP_VERSION } from "@surety/api/lib/version";
 import {
   NAV_GROUPS as NAV_GROUPS_DEF,
@@ -166,8 +168,8 @@ export function Sidebar({ mobile = false }: SidebarProps) {
   const { pathname } = useLocation();
   const { collapsed, toggle, setMobileOpen } = useSidebar();
 
-  const userName = "用户";
-  const userInitial = "U";
+  const { data: user } = useMe();
+  const { name: userName, initial: userInitial, email: userEmail } = getDisplayName(user);
 
   const handleNavigate = () => setMobileOpen(false);
 
@@ -305,6 +307,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                  {userEmail ? (
+                    <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                  ) : null}
                 </div>
               </div>
             </div>
