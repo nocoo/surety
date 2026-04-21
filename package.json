@@ -4,10 +4,10 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "cd apps/web && vite --port 7012",
+    "dev": "cd apps/web && bun run dev",
     "dev:worker": "cd apps/worker && npx wrangler dev --port 7016",
     "dev:legacy": "cd apps/web_legacy && next dev --port 7012",
-    "build": "cd apps/web && vite build",
+    "build": "cd apps/web && bun run build",
     "build:legacy": "cd apps/web_legacy && next build",
     "lint": "eslint --max-warnings=0 --cache --cache-location node_modules/.cache/eslint/",
     "typecheck": "tsc --noEmit && cd apps/web && tsc --noEmit",
