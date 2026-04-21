@@ -3,8 +3,10 @@ FROM oven/bun:1 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/
+COPY apps/worker/package.json ./apps/worker/
 COPY packages/db/package.json ./packages/db/
 COPY packages/api/package.json ./packages/api/
+COPY packages/mcp/package.json ./packages/mcp/
 RUN bun install --frozen-lockfile
 
 # --- Stage 2: Build ---
@@ -14,6 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+COPY --from=deps /app/packages/mcp/node_modules ./packages/mcp/node_modules
 COPY . .
 RUN cd apps/web && bun run ../../node_modules/.bin/next build
 

@@ -15,7 +15,8 @@ import { existsSync, rmSync } from "fs";
 import { ensurePortFree, withE2eLock } from "./e2e-utils";
 
 const E2E_UI_PORT = process.env.E2E_UI_PORT || "7017";
-const E2E_DIST_DIR = "apps/web/.next-e2e-ui";
+const E2E_DIST_DIR = ".next-e2e-ui";
+const E2E_DIST_DIR_ABS = "apps/web/.next-e2e-ui";
 
 let serverProcess: Subprocess | null = null;
 
@@ -41,9 +42,9 @@ async function cleanup() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  if (existsSync(E2E_DIST_DIR)) {
-    rmSync(E2E_DIST_DIR, { recursive: true, force: true });
-    console.log(`   Removed ${E2E_DIST_DIR}`);
+  if (existsSync(E2E_DIST_DIR_ABS)) {
+    rmSync(E2E_DIST_DIR_ABS, { recursive: true, force: true });
+    console.log(`   Removed ${E2E_DIST_DIR_ABS}`);
   }
 }
 

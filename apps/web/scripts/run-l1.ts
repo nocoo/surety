@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 
 import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "../../..");
-const SOURCE_ROOTS = ["apps/web/src", "packages/mcp"].map((p) => join(REPO_ROOT, p));
+const SOURCE_ROOTS = ["apps/web/src", "packages/mcp", "packages/api/src", "packages/db/src"].map((p) => join(REPO_ROOT, p));
 const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
 // Test command — must mirror the "test" script in package.json but add coverage.

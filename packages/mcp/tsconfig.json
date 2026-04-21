@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["esnext", "dom"],
     "paths": {
       "@surety/api": ["../api/src/index.ts"],
       "@surety/db": ["../db/src/index.ts"],
