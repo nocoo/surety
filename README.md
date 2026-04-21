@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo-light-80.png" alt="Surety Logo" width="80" height="80">
+  <img src="apps/worker/static/logo-80.png" alt="Surety Logo" width="80" height="80">
 </p>
 
 <h1 align="center">Surety</h1>
@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js">
+  <img src="https://img.shields.io/badge/Vite-6-646cff" alt="Vite">
+  <img src="https://img.shields.io/badge/Hono-Worker-ff6600" alt="Hono">
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript">
   <img src="https://img.shields.io/badge/Cloudflare_D1-database-orange" alt="Cloudflare D1">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
@@ -29,6 +30,27 @@
 - 🔒 **隐私优先** — 数据存储在自己的 Cloudflare D1 数据库
 - 🤖 **MCP 接入** — 支持 AI 助手通过 MCP 协议查询保单数据
 
+## 🏗️ 架构
+
+Surety 是一个全栈 Cloudflare 应用：
+
+```
+Browser ──► Cloudflare Access (Google OAuth)
+        └─► Hono Worker (surety) ──► @surety/api ──► @surety/db ──► D1 binding
+                    │
+                    └─► Static assets (Vite SPA build)
+
+CLI/MCP ──► Bearer token ──► Hono Worker ──► @surety/api ──► @surety/db ──► D1
+```
+
+- **前端**：Vite + React Router SPA，构建产物直接写到 Worker 的 `static/` 目录，由 Worker `ASSETS` binding 托管（SPA fallback）。
+- **API**：Hono Worker，路由全部位于 `/api/*`，业务逻辑委托给 `@surety/api`。
+- **Auth**：
+  - 浏览器走 Cloudflare Access（Google OAuth），Worker 中 `accessAuth` 中间件校验 `Cf-Access-Jwt-Assertion`。
+  - CLI / MCP / 脚本走 Bearer token（`api_tokens` 表），`apiKeyAuth` 中间件校验。
+  - `/api/live` 公开无需鉴权；本地 localhost host 直通以便本地调试。
+- **MCP**：不再直连 DB，改为通过 Bearer token 调 Worker HTTP API。
+
 ## 🚀 快速开始
 
 ### 1️⃣ 安装依赖
@@ -41,40 +63,32 @@ bun install
 ### 2️⃣ 配置环境变量
 
 ```bash
-# 复制示例配置文件
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，配置以下内容：
+本地开发不需要跑自己的 Worker — Vite dev server 会代理 `/api/*` 到线上 Worker，同时自动注入 Bearer token，让你直接在浏览器里看到 prod 数据：
 
 ```bash
-# Google OAuth 配置 (从 Google Cloud Console 获取)
-# https://console.cloud.google.com/apis/credentials
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=GOCSPX-your-client-secret
+# 线上 Worker 地址 (默认 https://surety.hexly.ai)
+SURETY_API_URL=https://surety.hexly.ai
 
-# NextAuth 密钥 (生成命令: openssl rand -base64 32)
-NEXTAUTH_SECRET=your-generated-secret-here
-
-# 允许登录的邮箱列表 (逗号分隔)
-ALLOWED_EMAILS=your-email@gmail.com
+# 在 Surety 设置页里申请一个 CLI token，粘贴到这里
+SURETY_DEV_API_TOKEN=sk_xxx
 ```
 
-> 💡 **提示**: Google OAuth 回调地址设置为 `http://localhost:7012/api/auth/callback/google`
+> 💡 想跑本地 Worker 也可以：`bun run dev:worker` 启动 `wrangler dev`，然后把 `SURETY_API_URL` 指向 `http://localhost:7016`。
 
-### 3️⃣ 初始化数据库
-
-数据存储在 Cloudflare D1，通过 Worker proxy 访问：
+### 3️⃣ 初始化数据库（只在新部署时需要）
 
 ```bash
 # 推送 schema 到 D1
 bun run db:push
 
-# (可选) 填充测试数据到 D1 dev 数据库
+# (可选) 填充测试数据
 SURETY_TARGET_DB=dev bun run db:seed
 ```
 
-> 💡 **提示**: 需要先部署 Worker proxy，详见 [CLAUDE.md](CLAUDE.md) 中的 Worker Deployment 章节。
+> 💡 详见 [CLAUDE.md](CLAUDE.md) 中的 Worker Deployment 章节。
 
 ### 4️⃣ 启动开发服务器
 
@@ -86,50 +100,53 @@ bun dev
 
 ## 📁 项目结构
 
-Bun workspace monorepo。依赖图：`apps/web → @surety/api → @surety/db`，`packages/mcp → @surety/api → @surety/db`。
+Bun workspace monorepo。依赖图：`apps/web → apps/worker`（运行时）+ `apps/worker → @surety/api → @surety/db`，`packages/mcp → Worker HTTP API`。
 
 ```
 surety/
 ├── 📂 apps/
-│   ├── 📂 web/                       # Next.js 薄壳（路由、auth、SSR、UI）
+│   ├── 📂 web/                       # Vite React SPA
 │   │   ├── 📂 src/
-│   │   │   ├── 📂 app/               # App Router pages + API routes
-│   │   │   ├── 📂 components/        # React UI 组件
+│   │   │   ├── 📂 app/               # 路由页面 (React Router)
+│   │   │   ├── 📂 components/        # React UI 组件 (shadcn/ui)
 │   │   │   ├── 📂 hooks/             # React hooks
-│   │   │   ├── 📂 lib/               # Next.js 相关胶水
-│   │   │   ├── 📂 services/          # 业务服务 (backy)
-│   │   │   ├── 📂 __tests__/         # 单元测试 + E2E 测试
-│   │   │   └── auth.ts               # NextAuth 配置
-│   │   ├── 📂 e2e/                   # Playwright 浏览器 E2E
-│   │   ├── 📂 scripts/               # 工具脚本
-│   │   ├── 📂 drizzle/               # Migration 文件
-│   │   ├── Dockerfile
-│   │   └── next.config.ts
-│   └── 📂 worker/                    # Cloudflare Worker D1 proxy（独立）
-│       ├── 📂 src/
-│       └── wrangler.toml
+│   │   │   ├── 📂 lib/               # 客户端工具
+│   │   │   ├── 📂 __tests__/         # fetchAPI 等单元测试
+│   │   │   ├── api.ts                # fetch wrapper (credentials include)
+│   │   │   ├── App.tsx               # 根路由
+│   │   │   └── main.tsx              # 入口
+│   │   ├── index.html
+│   │   └── vite.config.ts            # dev proxy → prod Worker
+│   ├── 📂 worker/                    # Hono API + 静态资源
+│   │   ├── 📂 src/
+│   │   │   ├── index.ts              # Hono app, 路由注册
+│   │   │   ├── 📂 middleware/        # access-auth, api-key-auth, is-localhost
+│   │   │   ├── 📂 routes/            # members, policies, …, auth-cli
+│   │   │   └── 📂 lib/               # context/types helpers
+│   │   ├── 📂 __tests__/             # Worker 单元测试
+│   │   ├── 📂 static/                # Vite 构建产物 (git-ignored) + logos
+│   │   └── wrangler.toml
+│   └── 📂 web_legacy/                # 旧 Next.js 应用（过渡保留）
 ├── 📂 packages/
 │   ├── 📂 db/                        # @surety/db — Schema + Repositories
 │   │   └── 📂 src/
-│   │       ├── schema.ts             # Drizzle schema
-│   │       ├── types.ts              # 类型 + deriveDisplayStatus
-│   │       ├── index.ts              # DB 连接管理
-│   │       └── 📂 repositories/      # CRUD 操作
+│   │       ├── schema.ts
+│   │       ├── index.ts              # sqlite-proxy + D1 binding driver
+│   │       └── 📂 repositories/
 │   ├── 📂 api/                       # @surety/api — 业务逻辑（framework-agnostic）
 │   │   └── 📂 src/
-│   │       ├── dashboard.ts          # 仪表盘数据
-│   │       ├── coverage-lookup.ts    # 保障速查
-│   │       ├── renewal-calendar.ts   # 续保日历
-│   │       ├── health.ts             # 健康检查
-│   │       └── 📂 lib/               # 纯工具函数
-│   └── 📂 mcp/                       # @surety/mcp — MCP Server
+│   │       ├── dashboard.ts
+│   │       ├── coverage-lookup.ts
+│   │       ├── renewal-calendar.ts
+│   │       └── …
+│   └── 📂 mcp/                       # @surety/mcp — MCP Server（通过 HTTP API）
 │       └── 📂 src/
-│           ├── index.ts              # Entry point (stdio)
-│           ├── server.ts             # Tool registration
-│           ├── guard.ts              # Security check
-│           └── 📂 tools/             # Tool implementations
+│           ├── index.ts              # stdio entry
+│           ├── api-client.ts         # Bearer-token HTTP client
+│           ├── guard.ts              # mcp.enabled gate
+│           └── 📂 tools/
 ├── package.json                      # Workspace root
-├── tsconfig.base.json                # 共享 TS strict 配置
+├── tsconfig.base.json
 └── bunfig.toml
 ```
 
@@ -138,56 +155,65 @@ surety/
 | 组件 | 选型 |
 |------|------|
 | ⚡ Runtime | [Bun](https://bun.sh) |
-| 🖥️ Framework | [Next.js 16](https://nextjs.org) (App Router) |
+| 🖥️ 前端 | [Vite 6](https://vitejs.dev) + [React 19](https://react.dev) + [React Router 7](https://reactrouter.com) + [SWR](https://swr.vercel.app) |
+| ☁️ 后端 | [Hono](https://hono.dev) on [Cloudflare Workers](https://workers.cloudflare.com) |
 | 📝 Language | TypeScript (strict mode) |
-| 🗄️ Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team) |
-| 🎨 UI | [Tailwind CSS](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
-| 🔐 Auth | [NextAuth.js](https://next-auth.js.org) (Google OAuth) |
+| 🗄️ Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team)（D1 binding 直连） |
+| 🎨 UI | [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
+| 🔐 Auth | [Cloudflare Access](https://www.cloudflare.com/zero-trust/) (Google OAuth) + Bearer token（CLI/MCP） |
 
 ## 📋 常用命令
 
 | 命令 | 说明 |
 |------|------|
-| `bun dev` | 启动开发服务器 (端口 7012) |
-| `bun run build` | 生产构建 |
-| `bun start` | 启动生产服务器 |
-| `bun test` | 运行单元测试 |
+| `bun dev` | 启动 Vite dev server (端口 7012)，代理到线上 Worker |
+| `bun run dev:worker` | 启动本地 Hono Worker (`wrangler dev --port 7016`) |
+| `bun run build` | Vite 构建到 `apps/worker/static/` |
+| `bun test` | 运行所有单元测试（web + worker + mcp + legacy） |
+| `bun run test:web` | 仅 web SPA 单测 |
+| `bun run test:worker` | 仅 Worker 中间件/路由单测 |
+| `bun run test:mcp` | 仅 MCP HTTP client + guard 单测 |
+| `bun run test:legacy` | 仅 legacy 测试（暂时保留） |
 | `bun run test:coverage` | 测试覆盖率报告 |
-| `bun run test:e2e` | 运行 API 端到端测试 (port 7016) |
-| `bun run test:e2e:ui` | 运行 Playwright 浏览器 E2E 测试 (port 7017) |
-| `bun run test:mcp` | 运行 MCP 单元测试 |
-| `bun run test:mcp:e2e` | 运行 MCP E2E 测试 |
-| `bun run lint` | ESLint 检查 |
-| `bun run db:push` | 推送 schema 到数据库 |
+| `bun run test:coverage:cached` | L1 文件哈希缓存：只在输入变化时跑测试 |
+| `bun run test:e2e` | API E2E（port 7016） |
+| `bun run test:e2e:ui` | Playwright 浏览器 E2E（port 7017） |
+| `bun run test:mcp:e2e` | MCP E2E |
+| `bun run lint` | ESLint（零警告） |
+| `bun run typecheck` | tsc --noEmit |
+| `bun run db:push` | 推送 schema 到 D1 |
 | `bun run db:studio` | 打开 Drizzle Studio |
 | `bun run db:seed` | 填充测试数据 |
+| `bun run mcp` | 启动 MCP Server (stdio) |
 
-## 🔧 数据库管理
+## 🔐 鉴权流程
 
-### Cloudflare D1 架构
+### 浏览器 — Cloudflare Access
 
-所有运行时数据存储在 Cloudflare D1，通过 Worker proxy 访问：
+1. 浏览器访问 `https://surety.hexly.ai`
+2. Cloudflare Access 拦截 → Google OAuth 登录
+3. CF 回发 `Cf-Access-Jwt-Assertion` header，Worker 的 `accessAuth` 用 CF JWKS 校验并提取 `email`。
+4. 本地开发时 host 以 `localhost` / `127.0.0.1` / `.dev.hexly.ai` 开头 → 直接放行，用于脱机调试。
 
-- **生产环境** — `surety-db`，Worker binding `DB_PROD`
-- **开发/E2E** — `surety-db-dev`，Worker binding `DB_DEV`（`SURETY_TARGET_DB=dev`）
-- **单元测试** — `bun:sqlite mem`（无网络依赖）
+### CLI / MCP — Bearer token
 
-### 使用 Drizzle Studio
-
-```bash
-bun run db:studio
-```
-
-打开 [https://local.drizzle.studio](https://local.drizzle.studio) 可视化管理数据库。
+1. 在设置页 `Settings → API Tokens` 里手动创建 token，或者走 loopback 流程：
+   ```bash
+   # 浏览器中访问：
+   https://surety.hexly.ai/api/auth/cli?callback_url=http://127.0.0.1:PORT/cb&state=NONCE
+   ```
+   `/api/auth/cli` 要求已通过 CF Access，铸造一个绑定到当前用户邮箱的 token，302 重定向回 `callback_url`（带 `api_key`、`state`、`email` 查询参数）。`callback_url` 必须是 `http://127.0.0.1:*` 或 `http://localhost:*`。
+2. 把 token 配到 `SURETY_API_TOKEN` 或 MCP 配置里。Worker 的 `apiKeyAuth` 中间件负责校验 + 更新 `lastUsedAt`。
 
 ## 🤖 MCP Server
 
-Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接口，允许 AI 助手（Claude Code、Cursor 等）通过 stdio 传输协议查询保单数据。
+Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接口，允许 AI 助手（Claude Code、Cursor 等）通过 stdio 传输协议查询保单数据。底层走 HTTP API — 需要在环境里配 Bearer token。
 
 ### 启用 MCP
 
-1. 在 Surety 设置页面中开启 **MCP Access** 开关
-2. 在 AI 助手配置中添加：
+1. 在 Surety 设置页开启 **MCP Access**（写入 `settings.mcp.enabled`，guard 会读这个开关）。
+2. 在设置页生成一个 API token。
+3. 在 AI 助手配置中添加：
 
 ```json
 {
@@ -195,7 +221,11 @@ Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) �
     "surety": {
       "command": "bun",
       "args": ["run", "packages/mcp/src/index.ts"],
-      "cwd": "/path/to/surety"
+      "cwd": "/path/to/surety",
+      "env": {
+        "SURETY_API_URL": "https://surety.hexly.ai",
+        "SURETY_API_TOKEN": "sk_xxx"
+      }
     }
   }
 }
