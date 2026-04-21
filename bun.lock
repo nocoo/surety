@@ -56,6 +56,12 @@
     "apps/worker": {
       "name": "@surety/worker",
       "version": "0.0.0",
+      "dependencies": {
+        "@surety/api": "workspace:*",
+        "@surety/db": "workspace:*",
+        "hono": "^4.12.14",
+        "jose": "^6.0.11",
+      },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250620.0",
         "wrangler": "^4.21.2",

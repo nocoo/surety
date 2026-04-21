@@ -3,20 +3,35 @@ main = "src/index.ts"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
+[assets]
+directory = "./static"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"
+
 [[d1_databases]]
-binding = "DB_PROD"
+binding = "DB"
 database_name = "surety-db"
 database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 
-[[d1_databases]]
-binding = "DB_TEST"
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "surety"
+
+[env.test]
+name = "surety-test"
+
+[env.test.assets]
+directory = "./static"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"
+
+[[env.test.d1_databases]]
+binding = "DB"
 database_name = "surety-db-test"
 database_id = "8650f8a3-72ce-4029-ac54-ec13ebb0c5b0"
 
-[[r2_buckets]]
-binding = "R2_PROD"
-bucket_name = "surety"
-
-[[r2_buckets]]
-binding = "R2_TEST"
+[[env.test.r2_buckets]]
+binding = "ATTACHMENTS"
 bucket_name = "surety-test"

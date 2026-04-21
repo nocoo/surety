@@ -95,6 +95,14 @@ export function createApiTokensRepo(dbInstance: DbInstance) {
         .all();
     },
 
+    async listAll(): Promise<ApiToken[]> {
+      return await dbInstance
+        .select()
+        .from(apiTokens)
+        .orderBy(sql`${apiTokens.createdAt} desc`)
+        .all();
+    },
+
     async findById(id: number): Promise<ApiToken | undefined> {
       return await dbInstance
         .select()
