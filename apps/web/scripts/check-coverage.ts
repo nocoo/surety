@@ -14,10 +14,11 @@ async function main() {
   const repoRoot = import.meta.dir + "/../../..";
 
   // Run web tests from apps/web (for @/* path resolution) then MCP tests
+  // Use explicit globs matching the "test" script to avoid E2E test discovery
   const proc = Bun.spawn(
     [
       "bash", "-c",
-      `cd "${repoRoot}/apps/web" && bun test src/__tests__ --coverage && cd "${repoRoot}" && bun test packages/mcp/__tests__ --coverage`,
+      `cd "${repoRoot}/apps/web" && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage && cd "${repoRoot}" && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts --coverage`,
     ],
     {
       stdout: "pipe",
