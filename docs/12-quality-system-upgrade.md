@@ -322,7 +322,6 @@ Create `docs/README.md`:
 |---|----------|-------------|
 | 01 | [Design Overview](./01-design-overview.md) | System architecture and design decisions |
 | 02 | [Database Design](./02-database-design.md) | Database schema and D1 proxy architecture |
-| 03 | [Google OAuth Setup](./03-google-oauth-setup.md) | OAuth provider configuration |
 | 04 | [MCP Setup](./04-mcp-setup.md) | MCP Server configuration and tools |
 | 05 | [Basalt UI Migration](./05-basalt-ui-migration.md) | UI framework migration record |
 | 07 | [Impeccable Audit Report](./07-impeccable-audit-report.md) | Security audit findings |

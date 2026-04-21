@@ -148,7 +148,7 @@ Replace the current simple Card login with basalt's BadgeLoginPage design:
 - Vermilion header strip with barcode pattern + logo
 - Avatar placeholder area
 - "Welcome" / "Sign in to get your badge" text
-- Google sign-in button (retains real NextAuth `signIn()`)
+- (Historical) Google sign-in button via NextAuth `signIn()`. Current architecture delegates login entirely to Cloudflare Access, so there is no in-app login page anymore.
 - Error message display (retains current logic)
 - Footer strip with "Secure authentication" indicator
 - Radial glow background effect
