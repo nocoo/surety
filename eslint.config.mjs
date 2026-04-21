@@ -35,7 +35,7 @@ const eslintConfig = defineConfig([
   },
   // no-console for application code only (scripts use console legitimately)
   {
-    files: ["src/**/*.ts", "src/**/*.tsx", "mcp/**/*.ts"],
+    files: ["src/**/*.ts", "src/**/*.tsx", "packages/mcp/src/**/*.ts"],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
     },

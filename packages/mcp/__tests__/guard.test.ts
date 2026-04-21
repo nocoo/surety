@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { createTestDb, resetTestDb } from "@surety/db";
 import { settingsRepo } from "@surety/db/repositories";
-import { checkMcpEnabled, mcpDisabledResult } from "../guard";
+import { checkMcpEnabled, mcpDisabledResult } from "../src/guard";
 
 // Initialize in-memory test database
 createTestDb();

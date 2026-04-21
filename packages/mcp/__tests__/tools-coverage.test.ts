@@ -10,7 +10,7 @@ import {
   assetsRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerCoverageTools } from "../tools/coverage";
+import { registerCoverageTools } from "../src/tools/coverage";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

@@ -11,7 +11,7 @@ import {
   insurersRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerCoverageItemTools } from "../tools/coverage-items";
+import { registerCoverageItemTools } from "../src/tools/coverage-items";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

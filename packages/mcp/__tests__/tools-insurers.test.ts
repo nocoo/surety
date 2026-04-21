@@ -10,7 +10,7 @@ import {
   membersRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerInsurerTools } from "../tools/insurers";
+import { registerInsurerTools } from "../src/tools/insurers";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

@@ -11,7 +11,7 @@ import {
   insurersRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerCashValueTools } from "../tools/cash-values";
+import { registerCashValueTools } from "../src/tools/cash-values";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

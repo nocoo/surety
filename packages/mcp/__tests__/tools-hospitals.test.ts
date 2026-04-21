@@ -11,7 +11,7 @@ import {
   membersRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerHospitalTools } from "../tools/hospitals";
+import { registerHospitalTools } from "../src/tools/hospitals";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

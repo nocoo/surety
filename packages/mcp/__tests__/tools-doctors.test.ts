@@ -11,7 +11,7 @@ import {
   membersRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerDoctorTools } from "../tools/doctors";
+import { registerDoctorTools } from "../src/tools/doctors";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

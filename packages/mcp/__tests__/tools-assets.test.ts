@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { createTestDb, resetTestDb } from "@surety/db";
 import { membersRepo, assetsRepo, policiesRepo, settingsRepo } from "@surety/db/repositories";
-import { registerAssetTools } from "../tools/assets";
+import { registerAssetTools } from "../src/tools/assets";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

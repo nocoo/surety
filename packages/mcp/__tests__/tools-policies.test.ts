@@ -15,7 +15,7 @@ import {
   coverageItemsRepo,
   settingsRepo,
 } from "@surety/db/repositories";
-import { registerPolicyTools } from "../tools/policies";
+import { registerPolicyTools } from "../src/tools/policies";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

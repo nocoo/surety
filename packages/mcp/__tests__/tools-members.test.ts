@@ -13,7 +13,7 @@ import {
   hospitalsRepo,
   medicalVisitsRepo,
 } from "@surety/db/repositories";
-import { registerMemberTools } from "../tools/members";
+import { registerMemberTools } from "../src/tools/members";
 import { createMockServer, getHandler, parseResult } from "./helpers";
 
 createTestDb();

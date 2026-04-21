@@ -4,7 +4,7 @@ import {
   tryParseJson,
   validateJson,
   parseLocalDate,
-} from "../tools/shared";
+} from "../src/tools/shared";
 
 describe("stripUndefined", () => {
   test("removes keys with undefined values", () => {

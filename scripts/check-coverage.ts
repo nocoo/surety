@@ -14,7 +14,7 @@ async function main() {
   const proc = Bun.spawn(
     [
       "bun", "test",
-      "src/__tests__", "mcp/__tests__",
+      "src/__tests__", "packages/mcp/__tests__",
       "--coverage",
     ],
     {

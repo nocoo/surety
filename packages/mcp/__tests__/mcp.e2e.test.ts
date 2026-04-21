@@ -18,9 +18,9 @@ import { describe, test, expect, beforeAll, afterAll } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { resolve } from "path";
-import { acquireE2eLock, releaseE2eLock } from "../../scripts/e2e-utils";
+import { acquireE2eLock, releaseE2eLock } from "../../../scripts/e2e-utils";
 
-const MCP_ENTRY = resolve(import.meta.dir, "../index.ts");
+const MCP_ENTRY = resolve(import.meta.dir, "../src/index.ts");
 
 // ---------------------------------------------------------------------------
 // Helper: create a fresh MCP client connected via stdio
