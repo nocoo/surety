@@ -17,7 +17,7 @@ import {
 const main = defineCommand({
   meta: {
     name: "surety",
-    version: "0.1.0",
+    version: "2.0.0",
     description: "Surety CLI — AI-facing interface for household policies",
   },
   subCommands: {
