@@ -43,11 +43,20 @@ Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapp
 - Wall is 62-66ms steady (Bun startup ~12ms + parallel max ≈ 50ms cli pole).
 - All 3 groups now 100/100 (web, worker, cli).
 - **Long pole**: cli at ~50ms because policies-coverage.test.ts (36ms) + policies.test.ts (38ms) load + run inside one bun proc.
-- **Tried, no win**:
-  - `--concurrent` flag on cli tests (no diff — tests already <1ms each)
+- **Tried, no win** (all within ±3ms noise band — none reproducible above floor):
+  - `--concurrent` flag on cli tests
   - unified single-proc test (85ms vs 53ms parallel — slower)
-  - cwd inside apps/cli (same)
-- **Promising but complex**:
-  - Shard cli into 2 parallel procs and parse "All files" per-shard with a narrowed include glob per shard. Could drop wall to ~46ms (worker pole). Requires per-shard bunfig or env override of `coverageInclude`.
-  - Refactor policies-coverage.test.ts stdout capture to be per-test (returned from helper, not module-level) so describe.concurrent is safe. Then run all 5 describe blocks concurrently. Could shave ~15ms off cli.
-  - Cache coverage gate by hashing src+test mtimes; skip when unchanged. Real-world warm wins, no first-run benefit.
+  - cwd inside apps/cli
+  - `describe.concurrent` on middleware.test.ts
+  - merge policies.test.ts → policies-coverage.test.ts (8 cli files vs 9)
+  - `Bun.readableStreamToText` + parallel drain
+  - `process.execPath` instead of "bun" string for spawn
+  - `Bun.spawn` with `stdout: Bun.file(tmpPath)` (file IO instead of stream drain)
+  - bash wrapper instead of bun script (same wall)
+  - `bun build --compile` standalone binary (PATH lookup fails for spawn)
+  - cli sharding by file (max(shard A, shard B) ≈ 48ms ≈ same)
+- **Untried, but unlikely worth it** (every refactor needs to clear ≥3ms noise floor):
+  - Per-test stdout capture in policies-coverage.test.ts → describe.concurrent (tests already <0.5ms each, concurrency overhead > savings — same lesson as middleware experiment)
+  - mtime-cache the gate (real warm wins, but "skipping tests" is explicitly banned by autoresearch.md)
+  - long-lived bun test --watch daemon (significant infra)
+- **Conclusion**: 62ms is the hardware floor for this 3-shard parallel coverage gate on this Mac. Bun startup (~5-7ms × 3 shards in parallel) + module load + test execution + parent script (~12ms) = current wall.
