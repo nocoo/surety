@@ -77,7 +77,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   if (insurer.status !== 201) {
     throw new Error(`seed insurer failed: ${insurer.status} ${JSON.stringify(insurer.body)}`);
   }
-  process.env.L3_SEED_INSURER_ID = String((insurer.body as { id: number }).id);
 
   const asset = await fetchJson("POST", "/api/assets", {
     type: "RealEstate",
@@ -89,10 +88,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     throw new Error(`seed asset failed: ${asset.status} ${JSON.stringify(asset.body)}`);
   }
 
-  process.env.L3_SEED_MEMBER_ID = String(memberId);
-  process.env.L3_SEED_POLICY_ID = String((policy.body as { id: number }).id);
-  process.env.L3_SEED_ASSET_ID = String((asset.body as { id: number }).id);
-
   const hospital = await fetchJson("POST", "/api/hospitals", {
     name: "L3测试医院",
     level: "三甲",
@@ -102,7 +97,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     throw new Error(`seed hospital failed: ${hospital.status} ${JSON.stringify(hospital.body)}`);
   }
   const hospitalId = (hospital.body as { id: number }).id;
-  process.env.L3_SEED_HOSPITAL_ID = String(hospitalId);
 
   const doctor = await fetchJson("POST", "/api/doctors", {
     name: "L3测试医生",
@@ -112,5 +106,24 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   if (doctor.status !== 201) {
     throw new Error(`seed doctor failed: ${doctor.status} ${JSON.stringify(doctor.body)}`);
   }
+
+  const visit = await fetchJson("POST", "/api/medical-visits", {
+    memberId,
+    hospitalId,
+    visitDate: "2026-01-15",
+    visitType: "门诊",
+    visitReason: "L3种子就诊",
+    department: "内科",
+  });
+  if (visit.status !== 201) {
+    throw new Error(`seed visit failed: ${visit.status} ${JSON.stringify(visit.body)}`);
+  }
+
+  process.env.L3_SEED_MEMBER_ID = String(memberId);
+  process.env.L3_SEED_POLICY_ID = String((policy.body as { id: number }).id);
+  process.env.L3_SEED_INSURER_ID = String((insurer.body as { id: number }).id);
+  process.env.L3_SEED_ASSET_ID = String((asset.body as { id: number }).id);
+  process.env.L3_SEED_HOSPITAL_ID = String(hospitalId);
   process.env.L3_SEED_DOCTOR_ID = String((doctor.body as { id: number }).id);
+  process.env.L3_SEED_VISIT_ID = String((visit.body as { id: number }).id);
 }
