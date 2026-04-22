@@ -1,5 +1,10 @@
 # Quality System Upgrade: L1+L2+L3+G1+G2
 
+> **历史文档 — 已被 [docs/17-quality-to-S.md](./17-quality-to-S.md) 取代。**
+> 本文记录的是 v1 五维质量体系升级，2026-04 的 S 级升级把它扩展为六维
+> （新增 Worker 单测维度，L2 通过 Hono test client 重建）。当前最新设计请直接
+> 看 docs/17 和 CLAUDE.md。
+
 Upgrade from legacy "Four-Layer Testing" to the new quality system (3 test layers + 2 quality gates).
 
 ## Background

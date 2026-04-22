@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Architecture rewrite** — replaced Next.js 16 (Railway) + Worker D1-proxy with a single Cloudflare Worker stack: Vite + React 19 + React Router 7 SPA served by a Hono Worker (`apps/worker`) talking directly to D1 via binding. Old Next.js app moved to `apps/web_legacy/` for transition reference.
+- **MCP → CLI migration complete** — `packages/mcp` removed; `@nocoo/surety` CLI (`apps/cli`) is the sole AI/script surface, authenticating with Bearer tokens against `surety-api.hexly.ai`.
+- **Quality system upgraded to S** — six-tier pyramid (L1/L2/L3/G1/G2/Worker). L2 rebuilt as Hono test client + in-memory D1 (`apps/worker/__tests__/e2e/`, 23 tests). gitleaks moved to pre-commit. ESLint strict + `*.skip`/`*.only` ban. See [docs/17-quality-to-S.md](docs/17-quality-to-S.md).
+
+### Removed
+
+- `packages/mcp/` (all MCP server code, tools, and tests)
+- `apps/web_legacy/src/app/settings/components/mcp-settings.tsx` (settings page MCP toggle)
+- `@modelcontextprotocol/sdk` and pinned hono@4.11 transitive ignores from `osv-scanner.toml`
+- `packages/mcp/src/**` from `bunfig.toml` `coverageInclude`
+
 ## [v1.6.0] - 2026-04-21
 
 ### Changed

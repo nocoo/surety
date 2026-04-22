@@ -1,6 +1,13 @@
 # SQLite → Cloudflare D1 Migration
 
-> **Note**: This document is a historical record of the D1 migration. References to 2FA/TOTP are outdated — the 2FA feature was removed in a later commit.
+> **Note**: This document is a historical record of the original D1 migration
+> (Next.js → Worker proxy → D1). The architecture has since been rewritten:
+> Next.js was replaced by a Vite SPA + Hono Worker, and the Worker now talks
+> to D1 via direct binding (no more sqlite-proxy). MCP server references are
+> also outdated — `packages/mcp` was removed and replaced by the
+> `@nocoo/surety` CLI. References to 2FA/TOTP are likewise outdated. See
+> CLAUDE.md and [docs/16-cli-replace-mcp.md](./16-cli-replace-mcp.md) for the
+> current state.
 
 ## Overview
 

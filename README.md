@@ -210,7 +210,7 @@ surety/
 
 ## 🖥️ CLI
 
-`@nocoo/surety` 是 AI 和脚本访问 Surety 数据的入口，通过 Bearer token 调用 Worker HTTP API，已取代原 MCP Server。
+`@nocoo/surety` 是 AI 和脚本访问 Surety 数据的入口，通过 Bearer token 调用 Worker HTTP API（`surety-api.hexly.ai`），完整替代了早期的 MCP server。
 
 ```bash
 bun add -g @nocoo/surety
@@ -219,7 +219,7 @@ surety members ls
 surety policies get 3 --full
 ```
 
-完整命令、配置和输出契约见 [apps/cli/README.md](apps/cli/README.md)。设计与演进记录见 [docs/16-cli-replace-mcp.md](docs/16-cli-replace-mcp.md)。
+完整命令、配置和输出契约见 [apps/cli/README.md](apps/cli/README.md)。从 MCP 迁移到 CLI 的设计与演进记录见 [docs/16-cli-replace-mcp.md](docs/16-cli-replace-mcp.md)。
 
 ## 📄 License
 

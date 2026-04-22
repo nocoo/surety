@@ -2,14 +2,15 @@
 
 ## 概述
 
-基于 Cloudflare D1 + Drizzle ORM 的数据存储方案。运行时通过 Cloudflare Worker proxy 访问 D1，单元测试使用本地 `:memory:` SQLite。
+基于 Cloudflare D1 + Drizzle ORM 的数据存储方案。运行时（Hono Worker）通过 D1 binding 直连 D1；单元测试使用本地 `:memory:` SQLite。
 
 ### 架构
 
 ```
-Production:  Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
+Production:  Hono Worker → @surety/db (D1 binding driver) → D1
 Unit Test:   bun:sqlite :memory: (无网络)
-E2E Test:    远程 D1 dev 数据库 (surety-db-dev)
+L2 E2E:      Hono test client + bun:sqlite :memory: (apps/worker/__tests__/e2e/)
+L3 UI E2E:   远程 D1 test 数据库 (surety-db-test)
 Management:  drizzle-kit + d1-http driver (开发时 schema push)
 ```
 
@@ -229,7 +230,7 @@ settings (全局设置，KV存储)
 | `annualIncome` | 家庭年收入（用于缺口分析） | `{"amount": 500000}` |
 | `site` | 站点设置 | `{"theme": "light", "currency": "CNY"}` |
 | `notifications` | 提醒设置 | `{"renewalDays": 30, "enabled": true}` |
-| `mcpEnabled` | MCP 访问开关 | `"true"` |
+| `mcpEnabled` | （遗留）MCP 访问开关，CLI 时代起不再读取 | `"true"` |
 | `backyCredentials` | Backy 远程备份配置 | `{"webhookUrl": "...", "apiKey": "..."}` |
 
 ---

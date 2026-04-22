@@ -11,39 +11,43 @@
 | 组件 | 选型 |
 |------|------|
 | Runtime | Bun |
-| Framework | Next.js 16 (App Router) |
+| 前端 | Vite 6 + React 19 + React Router 7 + SWR |
+| 后端 | Hono on Cloudflare Workers |
 | Language | TypeScript (严格模式) |
-| Database | Cloudflare D1 (via Worker proxy) + Drizzle ORM |
-| UI | Tailwind CSS + shadcn/ui |
-| Deployment | Railway (Next.js) + Cloudflare Workers (D1 proxy) |
+| Database | Cloudflare D1 (D1 binding 直连) + Drizzle ORM |
+| UI | Tailwind CSS v4 + shadcn/ui |
+| Auth | Cloudflare Access (Google OAuth) + Bearer token (CLI) |
+| Deployment | Cloudflare Workers (单一 Worker，托管 API + 静态资源) |
 
 ### Monorepo 结构
 
-Bun workspace monorepo，依赖图：`apps/web → packages/api → packages/db`。
+Bun workspace monorepo，运行时依赖图：`apps/web (Vite SPA) → apps/worker (Hono) → packages/api → packages/db → D1 binding`。CLI 经 Bearer token 直接走 Worker HTTP API。
 
 ```
 surety/
 ├── apps/
-│   ├── web/           # Next.js 薄壳（路由、auth、SSR、UI 组件）
-│   └── worker/        # Cloudflare Worker D1 proxy（独立，无内部依赖）
+│   ├── web/           # Vite + React SPA（构建产物 → apps/worker/static/）
+│   ├── worker/        # Hono Worker：/api/* + 静态资源（D1 binding 直连）
+│   ├── cli/           # @nocoo/surety — Bun-only CLI（Bearer token）
+│   └── web_legacy/    # 旧 Next.js 应用（过渡保留，不再运行时）
 ├── packages/
-│   ├── db/            # @surety/db — Schema + DB 连接 + Repositories
+│   ├── db/            # @surety/db — Schema + D1/sqlite-proxy 双驱动 + Repositories
 │   └── api/           # @surety/api — Framework-agnostic 业务逻辑
 ├── package.json       # Workspace root
 ├── tsconfig.base.json # 共享 TS strict 配置
 └── bunfig.toml
 ```
 
-**关键原则**：`apps/web` 不直接操作数据库，只通过 `@surety/api` 访问数据。
+**关键原则**：`apps/worker` 路由是薄壳，所有业务逻辑都在 `@surety/api`；UI/CLI 只通过 HTTP API 接触数据。
 
 ### 数据库架构
 
-- **运行时（生产/E2E）**：Next.js → sqlite-proxy → Cloudflare Worker → D1 binding
-- **单元测试**：bun:sqlite `:memory:` (无网络)
-- **E2E 测试**：远程 D1 test 数据库 (`surety-db-test`，Worker binding `DB_TEST`，`SURETY_TARGET_DB=test`)
+- **运行时（生产）**：Hono Worker → `@surety/db` (D1 binding driver) → D1
+- **L1 单元测试**：bun:sqlite `:memory:` (零网络)
+- **L2 API E2E**：Hono test client + bun:sqlite `:memory:`（`apps/worker/__tests__/e2e/setup.ts`）
+- **L3 UI E2E (legacy)**：远程 D1 test 数据库 (`surety-db-test`，`SURETY_TARGET_DB=test`)
 - **管理面**：drizzle-kit + d1-http driver (开发时 schema push)
 - **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
-- **无本地 SQLite 运行时**：所有非测试路径都走远程 D1
 
 ## 六维质量金字塔
 
@@ -75,20 +79,22 @@ surety/
 ## 常用命令
 
 ```bash
-bun dev              # 开发服务器 (7012)
-bun run build        # 生产构建
-bun test             # 单元测试
-bun test --coverage  # 测试覆盖率
-bun run test:e2e     # API E2E 测试 (port 7016)
-bun run test:e2e:ui  # Playwright 浏览器 E2E 测试 (port 7017)
-bun run lint         # ESLint
-bun run db:push      # 推送 schema
-bun run db:studio    # 数据库可视化
+bun dev                  # Vite dev server (7012)，代理 /api → 线上 Worker
+bun run dev:worker       # 本地 Hono Worker (wrangler dev --port 7016)
+bun run build            # Vite 构建 → apps/worker/static/
+bun test                 # 全部单元测试 (web + worker + cli + legacy)
+bun run test:coverage    # 测试覆盖率
+bun run test:e2e         # API E2E (legacy, port 7016)
+bun run test:e2e:ui      # Playwright 浏览器 E2E (port 7017)
+bun run lint             # ESLint
+bun run typecheck        # tsc --noEmit (root + web + cli)
+bun run db:push          # 推送 schema 到 D1
+bun run db:studio        # 数据库可视化
 ```
 
-## Worker Deployment (D1 Proxy)
+## Worker Deployment
 
-Worker 源码在 `apps/worker/` 目录，部署到 Cloudflare Workers，作为 Next.js → D1 的中间代理。
+Worker 源码在 `apps/worker/`，部署到 Cloudflare Workers。单 Worker 同时托管 Hono API (`/api/*`) 和 Vite 构建出来的 SPA 静态资源（`ASSETS` binding，SPA fallback）。
 
 ### 基础信息
 
@@ -96,14 +102,15 @@ Worker 源码在 `apps/worker/` 目录，部署到 Cloudflare Workers，作为 N
 |------|------|
 | Worker 名称 | `surety` |
 | Worker URL | `https://surety.<your-account>.workers.dev` |
-| Custom Domain | `<your-custom-domain>` |
+| Custom Domain (UI) | `https://surety.hexly.ai` (CF Access 保护) |
+| Custom Domain (API) | `https://surety-api.hexly.ai` (Bearer token) |
 | D1 Database | `surety-db` (`<your-database-id>`) |
 | Liveness | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
 
 ### 部署命令
 
 ```bash
-cd apps/worker && bun install          # 安装依赖
+cd apps/web && bun run build           # 构建 SPA 到 apps/worker/static/
 cd apps/worker && bunx wrangler deploy # 部署 Worker
 ```
 
@@ -134,24 +141,21 @@ cd apps/worker && bunx wrangler d1 execute surety-db --remote \
 cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 ```
 
-### Secret 管理
+### Auth 配置
 
-```bash
-# 设置 Worker 共享密钥
-echo "<secret>" | cd apps/worker && bunx wrangler secret put WORKER_SHARED_SECRET
+- 浏览器走 CF Access（在 CF Dashboard 配置 Google OAuth → 绑定到 surety domain）。Worker 中 `accessAuth` 中间件用 CF JWKS 校验 `Cf-Access-Jwt-Assertion`。
+- CLI / 脚本走 Bearer token（`api_tokens` 表），`apiKeyAuth` 中间件校验。
+- `/api/live` 公开；本地 localhost host 直通便于本地调试。
+
+### 本地开发环境变量
+
+`.env`（用于 Vite dev proxy）：
+```
+SURETY_API_URL=https://surety-api.hexly.ai   # 或 http://localhost:7016
+SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 ```
 
-### 环境变量 (Next.js 侧)
-
-`.env` 中需要配置：
-```
-SURETY_WORKER_URL=<your-worker-url>
-SURETY_WORKER_SECRET=<worker_shared_secret>
-```
-
-`packages/db/src/index.ts` 在非测试环境下必须配置这两个变量，否则 `getDbForRequest()` 会抛出错误。所有非测试路径都走远程 D1，无本地 SQLite 运行时 fallback。
-
-E2E 测试额外需要：
+E2E (legacy UI) 额外需要：
 ```
 SURETY_TARGET_DB=test       # 指向 D1 test 数据库 (surety-db-test)
 E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
