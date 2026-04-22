@@ -215,13 +215,13 @@ describe("db/index", () => {
       // Both guard scenarios share the same subprocess startup cost (~50ms);
       // run them concurrently so we only pay it once per file.
       const proc1 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
-        cwd: PROJECT_ROOT,
+        cwd: resolve(PROJECT_ROOT, "../.."),
         env: { ...process.env, SURETY_TARGET_DB: undefined },
         stdout: "pipe",
         stderr: "pipe",
       });
       const proc2 = Bun.spawn(["bun", "scripts/seed-remote.ts"], {
-        cwd: PROJECT_ROOT,
+        cwd: resolve(PROJECT_ROOT, "../.."),
         env: { ...process.env, SURETY_TARGET_DB: "production" },
         stdout: "pipe",
         stderr: "pipe",

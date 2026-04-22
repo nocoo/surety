@@ -18,7 +18,7 @@ interface Group {
   cmd: string;
 }
 
-const repoRoot = import.meta.dir + "/../../..";
+const repoRoot = import.meta.dir + "/..";
 
 const GROUPS: Group[] = [
   {

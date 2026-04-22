@@ -15,7 +15,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-const REPO_ROOT = resolve(import.meta.dir, "../../..");
+const REPO_ROOT = resolve(import.meta.dir, "..");
 const SOURCE_ROOTS = ["apps/web_legacy/src", "packages"].map((p) => join(REPO_ROOT, p));
 
 const TYPECHECK_CMD = ["bun", "run", "typecheck"];
