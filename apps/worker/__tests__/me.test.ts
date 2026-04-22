@@ -75,4 +75,14 @@ describe("GET /api/me", () => {
     expect(body.email).toBe("bob@example.com");
     expect(body.name).toBe("Bob");
   });
+
+  test("returns authenticated:false when JWT header decodes to null", async () => {
+    const app = makeApp();
+    const res = await app.request("/api/me", {
+      headers: { "Cf-Access-Jwt-Assertion": "aaa.aGVsbG8gd29ybGQ.ccc" },
+    });
+    const body = (await res.json()) as { email: string | null; authenticated: boolean };
+    expect(body.authenticated).toBe(false);
+    expect(body.email).toBeNull();
+  });
 });
