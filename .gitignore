@@ -64,3 +64,6 @@ e2e/playwright-report/
 # wrangler local emulator state + temp files
 **/.wrangler/
 apps/worker/.l2-http-schema.sql
+apps/worker/.l3-schema.sql
+apps/web/test-results/
+apps/web/playwright-report/
