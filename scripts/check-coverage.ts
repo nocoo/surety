@@ -23,17 +23,17 @@ const repoRoot = import.meta.dir + "/..";
 const GROUPS: Group[] = [
   {
     name: "web",
-    cwd: repoRoot,
+    cwd: "apps/web/src/__tests__/",
     cmd: "bun test apps/web/src/__tests__/ --coverage",
   },
   {
     name: "worker",
-    cwd: repoRoot,
+    cwd: "apps/worker/__tests__/",
     cmd: "bun test apps/worker/__tests__/ --coverage",
   },
   {
     name: "cli",
-    cwd: repoRoot,
+    cwd: "apps/cli/__tests__/",
     cmd: "bun test apps/cli/__tests__/ --coverage",
   },
 ];
@@ -47,7 +47,7 @@ interface Result {
 }
 
 async function runGroup(g: Group): Promise<Result> {
-  const proc = Bun.spawn(["bash", "-c", `cd "${g.cwd}" && ${g.cmd}`], {
+  const proc = Bun.spawn(["bun", "test", g.cwd, "--coverage"], {
     stdout: "pipe",
     stderr: "pipe",
     cwd: repoRoot,
