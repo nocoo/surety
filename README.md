@@ -28,7 +28,6 @@
 - 🏢 **保险公司** — 管理保险公司和代理人联系方式
 - 🏠 **资产管理** — 房产、车辆等财产保险关联
 - 🔒 **隐私优先** — 数据存储在自己的 Cloudflare D1 数据库
-- 🤖 **MCP 接入** — 支持 AI 助手通过 MCP 协议查询保单数据
 
 ## 🏗️ 架构
 
@@ -40,16 +39,16 @@ Browser ──► Cloudflare Access (Google OAuth)
                     │
                     └─► Static assets (Vite SPA build)
 
-CLI/MCP ──► Bearer token ──► Hono Worker ──► @surety/api ──► @surety/db ──► D1
+CLI ──► Bearer token ──► Hono Worker ──► @surety/api ──► @surety/db ──► D1
 ```
 
 - **前端**：Vite + React Router SPA，构建产物直接写到 Worker 的 `static/` 目录，由 Worker `ASSETS` binding 托管（SPA fallback）。
 - **API**：Hono Worker，路由全部位于 `/api/*`，业务逻辑委托给 `@surety/api`。
 - **Auth**：
   - 浏览器走 Cloudflare Access（Google OAuth），Worker 中 `accessAuth` 中间件校验 `Cf-Access-Jwt-Assertion`。
-  - CLI / MCP / 脚本走 Bearer token（`api_tokens` 表），`apiKeyAuth` 中间件校验。
+  - CLI / 脚本走 Bearer token（`api_tokens` 表），`apiKeyAuth` 中间件校验。
   - `/api/live` 公开无需鉴权；本地 localhost host 直通以便本地调试。
-- **MCP**：不再直连 DB，改为通过 Bearer token 调 Worker HTTP API。
+- **CLI**：`@nocoo/surety`（规划中，见 [docs/16](docs/16-cli-replace-mcp.md)），通过 Bearer token 调 Worker HTTP API，替换原 MCP Server。
 
 ## 🚀 快速开始
 
@@ -72,7 +71,7 @@ cp .env.example .env
 # 线上 Worker API 地址 (默认 https://surety-api.hexly.ai)
 SURETY_API_URL=https://surety-api.hexly.ai
 
-# 拿一个 CLI token（详见下面的"CLI / MCP — Bearer token"）
+# 拿一个 CLI token（详见下面的"CLI — Bearer token"）
 SURETY_DEV_API_TOKEN=sk_xxx
 ```
 
@@ -100,7 +99,7 @@ bun dev
 
 ## 📁 项目结构
 
-Bun workspace monorepo。依赖图：`apps/web → apps/worker`（运行时）+ `apps/worker → @surety/api → @surety/db`，`packages/mcp → Worker HTTP API`。
+Bun workspace monorepo。依赖图：`apps/web → apps/worker`（运行时）+ `apps/worker → @surety/api → @surety/db`。
 
 ```
 surety/
@@ -139,12 +138,6 @@ surety/
 │   │       ├── coverage-lookup.ts
 │   │       ├── renewal-calendar.ts
 │   │       └── …
-│   └── 📂 mcp/                       # @surety/mcp — MCP Server（通过 HTTP API）
-│       └── 📂 src/
-│           ├── index.ts              # stdio entry
-│           ├── api-client.ts         # Bearer-token HTTP client
-│           ├── guard.ts              # mcp.enabled gate
-│           └── 📂 tools/
 ├── package.json                      # Workspace root
 ├── tsconfig.base.json
 └── bunfig.toml
@@ -160,7 +153,7 @@ surety/
 | 📝 Language | TypeScript (strict mode) |
 | 🗄️ Database | [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team)（D1 binding 直连） |
 | 🎨 UI | [Tailwind CSS v4](https://tailwindcss.com) + [shadcn/ui](https://ui.shadcn.com) |
-| 🔐 Auth | [Cloudflare Access](https://www.cloudflare.com/zero-trust/) (Google OAuth) + Bearer token（CLI/MCP） |
+| 🔐 Auth | [Cloudflare Access](https://www.cloudflare.com/zero-trust/) (Google OAuth) + Bearer token（CLI） |
 
 ## 📋 常用命令
 
@@ -169,22 +162,19 @@ surety/
 | `bun dev` | 启动 Vite dev server (端口 7012)，代理到线上 Worker |
 | `bun run dev:worker` | 启动本地 Hono Worker (`wrangler dev --port 7016`) |
 | `bun run build` | Vite 构建到 `apps/worker/static/` |
-| `bun test` | 运行所有单元测试（web + worker + mcp + legacy） |
+| `bun test` | 运行所有单元测试（web + worker + legacy） |
 | `bun run test:web` | 仅 web SPA 单测 |
 | `bun run test:worker` | 仅 Worker 中间件/路由单测 |
-| `bun run test:mcp` | 仅 MCP HTTP client + guard 单测 |
 | `bun run test:legacy` | 仅 legacy 测试（暂时保留） |
 | `bun run test:coverage` | 测试覆盖率报告 |
 | `bun run test:coverage:cached` | L1 文件哈希缓存：只在输入变化时跑测试 |
 | `bun run test:e2e` | API E2E（port 7016） |
 | `bun run test:e2e:ui` | Playwright 浏览器 E2E（port 7017） |
-| `bun run test:mcp:e2e` | MCP E2E |
 | `bun run lint` | ESLint（零警告） |
 | `bun run typecheck` | tsc --noEmit |
 | `bun run db:push` | 推送 schema 到 D1 |
 | `bun run db:studio` | 打开 Drizzle Studio |
 | `bun run db:seed` | 填充测试数据 |
-| `bun run mcp` | 启动 MCP Server (stdio) |
 
 ## 🔐 鉴权流程
 
@@ -195,7 +185,7 @@ surety/
 3. CF 回发 `Cf-Access-Jwt-Assertion` header，Worker 的 `accessAuth` 用 CF JWKS 校验并提取 `email`。
 4. 本地开发时 host 以 `localhost` / `127.0.0.1` / `.dev.hexly.ai` 开头 → 直接放行，用于脱机调试。
 
-### CLI / MCP — Bearer token
+### CLI — Bearer token
 
 目前**只有** `/api/auth/cli` loopback 流程可以铸 token（设置页暂时没有手动创建入口）：
 
@@ -208,55 +198,19 @@ surety/
    ```
    https://surety.hexly.ai/api/auth/cli?callback_url=http://127.0.0.1:7777/cb&state=NONCE
    ```
+   （`?callback=` 亦可作为 `?callback_url=` 的别名，兼容 `@nocoo/cli-base`。）
 3. Worker 通过 CF Access 鉴权后铸造一个绑定当前邮箱的 token，302 重定向回
    `callback_url`，查询参数里带上 `api_key`、`state`、`email`。`callback_url`
    必须是 `http://127.0.0.1:*` 或 `http://localhost:*`。
-4. 把 `api_key` 配到 `SURETY_API_TOKEN` / `SURETY_DEV_API_TOKEN` 或 MCP 配置
-   里。Worker 的 `apiKeyAuth` 中间件负责校验并更新 `lastUsedAt`。
+4. 把 `api_key` 配到 `SURETY_DEV_API_TOKEN`（Vite dev proxy）或 CLI 配置里。
+   Worker 的 `apiKeyAuth` 中间件负责校验并更新 `lastUsedAt`。
 
 > ℹ️ 吊销 token 走 `DELETE /api/auth/tokens/:id`（设置页目前没有 token 管理
 > UI，只能用 API 直接管理）。
 
-## 🤖 MCP Server
+## 🖥️ CLI（规划中）
 
-Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接口，允许 AI 助手（Claude Code、Cursor 等）通过 stdio 传输协议查询保单数据。底层走 HTTP API — 需要在环境里配 Bearer token。
-
-### 启用 MCP
-
-1. 在 Surety 设置页开启 **MCP Access**（写入 `settings.mcp.enabled`，guard 会读这个开关）。
-2. 按上一节的 `/api/auth/cli` loopback 流程拿一个 Bearer token。
-3. 在 AI 助手配置中添加：
-
-```json
-{
-  "mcpServers": {
-    "surety": {
-      "command": "bun",
-      "args": ["run", "packages/mcp/src/index.ts"],
-      "cwd": "/path/to/surety",
-      "env": {
-        "SURETY_API_URL": "https://surety-api.hexly.ai",
-        "SURETY_API_TOKEN": "sk_xxx"
-      }
-    }
-  }
-}
-```
-
-### 可用工具
-
-| 工具 | 说明 |
-|------|------|
-| `list-members` | 查看所有家庭成员 |
-| `get-member` | 查看成员详情及关联保单 |
-| `list-policies` | 查看保单列表（支持状态/类别/成员筛选） |
-| `get-policy` | 查看保单详情及受益人 |
-| `list-assets` | 查看资产列表 |
-| `coverage-analysis` | 分析成员或资产的保障覆盖 |
-| `renewal-overview` | 查看即将到期的保单 |
-| `dashboard-summary` | 获取整体保障概览 |
-
-> ⚠️ **安全提示**: MCP 默认关闭，所有工具均为只读操作。
+计划中的 `@nocoo/surety` CLI 将替代原 MCP Server，作为 AI/脚本访问 Surety 数据的入口。详见 [docs/16-cli-replace-mcp.md](docs/16-cli-replace-mcp.md)。
 
 ## 📄 License
 
