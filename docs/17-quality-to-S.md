@@ -86,3 +86,24 @@ CLI 上线 + 生产 smoke 验证后做了一轮 MCP 残留清理（独立于 6 �
 | `chore: drop MCP residue from infra config` | bunfig.toml coverageInclude + osv-scanner.toml unused ignores |
 | `chore(web_legacy): remove MCP access settings UI and e2e` | mcp-settings.tsx + settings page/spec/page-object |
 | `docs: refresh architecture docs to reflect Vite + Hono + CLI stack` | CLAUDE.md / README.md / CHANGELOG.md / docs 02/11/12 |
+
+## 删除 web_legacy 整目录 (2026-04-22)
+
+继 MCP 清理之后做的第二轮：把 `apps/web_legacy/` 名义上的"过渡保留"彻底拆掉，并把它持有的工程化基础设施提到 repo root。
+
+| Commit | 主题 |
+|--------|------|
+| `chore: hoist build scripts and drizzle config to repo root` | `apps/web_legacy/scripts/*` → `scripts/`；`drizzle.config.ts` + `drizzle/` 提到 root；husky / `db:push` / `db:studio` 路径同步 |
+| `chore: drop legacy Next.js E2E (Playwright) suite` | 删除 `apps/web_legacy/e2e/`、`run-e2e*.ts`、`*.e2e.test.ts`；`test:e2e*` / `test:all` script 一并清理 |
+| `chore: delete apps/web_legacy/` | 整目录 + Next.js 全家桶依赖 (`next` / `next-auth` / `eslint-config-next` / `@playwright/test`) 卸掉；root tsconfig `@/*` alias 移除；coverage / L1 / G1a 缓存脚本去掉 web_legacy 源根；ESLint 去 Next 插件链 |
+| `docs: prune web_legacy from architecture docs and quality matrix` | README / CLAUDE.md / 本文 / CHANGELOG 同步 |
+
+L3 UI E2E 决定**直接删除而非迁移**：跑的是即将下线的 Next.js 应用，重写到 Vite + Playwright 等同于另一个项目；当前 pre-push 实跑的硬门禁是 worker+cli unit + worker e2e (23 tests) ，L3 不在其中。Vite SPA 端的浏览器验证按需重建。
+
+### 覆盖率快照（清理后）
+
+```
+✅ web    funcs=100.00% lines=100.00%
+✅ worker funcs=95.83%  lines=98.89%
+✅ cli    funcs=96.88%  lines=98.14%
+```

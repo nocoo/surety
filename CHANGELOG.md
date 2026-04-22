@@ -16,6 +16,11 @@ All notable changes to this project will be documented in this file.
 - `apps/web_legacy/src/app/settings/components/mcp-settings.tsx` (settings page MCP toggle)
 - `@modelcontextprotocol/sdk` and pinned hono@4.11 transitive ignores from `osv-scanner.toml`
 - `packages/mcp/src/**` from `bunfig.toml` `coverageInclude`
+- `apps/web_legacy/` — the entire transitional Next.js app, including its tests, drizzle config (hoisted to repo root), and build scripts (hoisted to `scripts/`)
+- Root `@/*` tsconfig path alias (only consumed by web_legacy; `apps/web` defines its own)
+- `next`, `next-auth`, `eslint-config-next`, `@playwright/test` dependencies
+- L3 Playwright UI E2E suite (`apps/web_legacy/e2e/`) and the `*.e2e.test.ts` API harness that targeted the Next.js Worker proxy
+- `test:e2e`, `test:e2e:ui`, `test:all`, `dev:legacy`, `build:legacy`, `test:legacy` npm scripts
 
 ## [v1.6.0] - 2026-04-21
 

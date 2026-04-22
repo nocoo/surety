@@ -116,16 +116,15 @@ surety/
 │   │   │   └── main.tsx              # 入口
 │   │   ├── index.html
 │   │   └── vite.config.ts            # dev proxy → prod Worker
-│   ├── 📂 worker/                    # Hono API + 静态资源
-│   │   ├── 📂 src/
-│   │   │   ├── index.ts              # Hono app, 路由注册
-│   │   │   ├── 📂 middleware/        # access-auth, api-key-auth, is-localhost
-│   │   │   ├── 📂 routes/            # members, policies, …, auth-cli
-│   │   │   └── 📂 lib/               # context/types helpers
-│   │   ├── 📂 __tests__/             # Worker 单元测试
-│   │   ├── 📂 static/                # Vite 构建产物 (git-ignored) + logos
-│   │   └── wrangler.toml
-│   └── 📂 web_legacy/                # 旧 Next.js 应用（过渡保留）
+│   └── 📂 worker/                    # Hono API + 静态资源
+│       ├── 📂 src/
+│       │   ├── index.ts              # Hono app, 路由注册
+│       │   ├── 📂 middleware/        # access-auth, api-key-auth, is-localhost
+│       │   ├── 📂 routes/            # members, policies, …, auth-cli
+│       │   └── 📂 lib/               # context/types helpers
+│       ├── 📂 __tests__/             # Worker 单元测试
+│       ├── 📂 static/                # Vite 构建产物 (git-ignored) + logos
+│       └── wrangler.toml
 ├── 📂 packages/
 │   ├── 📂 db/                        # @surety/db — Schema + Repositories
 │   │   └── 📂 src/
@@ -162,14 +161,11 @@ surety/
 | `bun dev` | 启动 Vite dev server (端口 7012)，代理到线上 Worker |
 | `bun run dev:worker` | 启动本地 Hono Worker (`wrangler dev --port 7016`) |
 | `bun run build` | Vite 构建到 `apps/worker/static/` |
-| `bun test` | 运行所有单元测试（web + worker + legacy） |
+| `bun test` | 运行所有单元测试（web + worker + cli） |
 | `bun run test:web` | 仅 web SPA 单测 |
 | `bun run test:worker` | 仅 Worker 中间件/路由单测 |
-| `bun run test:legacy` | 仅 legacy 测试（暂时保留） |
 | `bun run test:coverage` | 测试覆盖率报告 |
 | `bun run test:coverage:cached` | L1 文件哈希缓存：只在输入变化时跑测试 |
-| `bun run test:e2e` | API E2E（port 7016） |
-| `bun run test:e2e:ui` | Playwright 浏览器 E2E（port 7017） |
 | `bun run lint` | ESLint（零警告） |
 | `bun run typecheck` | tsc --noEmit |
 | `bun run db:push` | 推送 schema 到 D1 |

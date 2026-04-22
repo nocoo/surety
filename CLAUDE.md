@@ -28,8 +28,7 @@ surety/
 ├── apps/
 │   ├── web/           # Vite + React SPA（构建产物 → apps/worker/static/）
 │   ├── worker/        # Hono Worker：/api/* + 静态资源（D1 binding 直连）
-│   ├── cli/           # @nocoo/surety — Bun-only CLI（Bearer token）
-│   └── web_legacy/    # 旧 Next.js 应用（过渡保留，不再运行时）
+│   └── cli/           # @nocoo/surety — Bun-only CLI（Bearer token）
 ├── packages/
 │   ├── db/            # @surety/db — Schema + D1/sqlite-proxy 双驱动 + Repositories
 │   └── api/           # @surety/api — Framework-agnostic 业务逻辑
@@ -45,7 +44,6 @@ surety/
 - **运行时（生产）**：Hono Worker → `@surety/db` (D1 binding driver) → D1
 - **L1 单元测试**：bun:sqlite `:memory:` (零网络)
 - **L2 API E2E**：Hono test client + bun:sqlite `:memory:`（`apps/worker/__tests__/e2e/setup.ts`）
-- **L3 UI E2E (legacy)**：远程 D1 test 数据库 (`surety-db-test`，`SURETY_TARGET_DB=test`)
 - **管理面**：drizzle-kit + d1-http driver (开发时 schema push)
 - **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
 
@@ -53,18 +51,14 @@ surety/
 
 | 维度 | 工具 | 触发时机 | 要求 |
 |------|------|----------|------|
-| L1 单测 | bun test | pre-commit | 行 ≥ 90%、函数 ≥ 85%（web/web_legacy/cli/worker 全覆盖） |
+| L1 单测 | bun test | pre-commit | 行 ≥ 90%、函数 ≥ 85%（web/cli/worker 全覆盖） |
 | L2 API E2E | `bun test apps/worker/__tests__/e2e` | pre-push | 通过 Hono test client + in-memory D1 跑全链路 |
-| L3 UI E2E | `bun run test:e2e:ui` | 按需执行 | Playwright + Chromium (port 7017) |
+| L3 UI E2E | — | 按需重建 | Vite SPA 暂未接入；旧 Next.js Playwright suite 已删除 |
 | G1 静态 | tsc --noEmit + eslint strict | pre-commit | 零类型错误、零 lint 警告、`*.skip`/`*.only` 禁用 |
 | G2 安全 | gitleaks + osv-scanner | pre-commit (gitleaks) + pre-push (双保险) | 零泄漏、无已知漏洞 |
 | Worker 单测 | bun test apps/worker/__tests__ | pre-push | 中间件、路由、auth 边界 |
 
 升级历程见 `docs/17-quality-to-S.md`。
-
-### E2E 隔离约束
-
-所有 E2E suite（API、UI）共用一个远程 D1 test 数据库 (`surety-db-test`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
 
 ### 测试文件自动发现
 
@@ -82,10 +76,8 @@ surety/
 bun dev                  # Vite dev server (7012)，代理 /api → 线上 Worker
 bun run dev:worker       # 本地 Hono Worker (wrangler dev --port 7016)
 bun run build            # Vite 构建 → apps/worker/static/
-bun test                 # 全部单元测试 (web + worker + cli + legacy)
+bun test                 # 全部单元测试 (web + worker + cli)
 bun run test:coverage    # 测试覆盖率
-bun run test:e2e         # API E2E (legacy, port 7016)
-bun run test:e2e:ui      # Playwright 浏览器 E2E (port 7017)
 bun run lint             # ESLint
 bun run typecheck        # tsc --noEmit (root + web + cli)
 bun run db:push          # 推送 schema 到 D1
@@ -154,14 +146,6 @@ cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 SURETY_API_URL=https://surety-api.hexly.ai   # 或 http://localhost:7016
 SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 ```
-
-E2E (legacy UI) 额外需要：
-```
-SURETY_TARGET_DB=test       # 指向 D1 test 数据库 (surety-db-test)
-E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
-```
-
-安全机制：当 `E2E_SKIP_AUTH=true` 时，`resolveTargetDb()` 强制要求设置 `SURETY_TARGET_DB`，防止 E2E 意外连接 production D1。
 
 ## Version Release Checklist
 
