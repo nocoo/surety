@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { accessAuth } from "./middleware/access-auth";
 import { apiKeyAuth } from "./middleware/api-key-auth";
 import { dbMiddleware } from "./middleware/db";
+import { createRateLimiter } from "./middleware/rate-limit";
 import liveRoutes from "./routes/live";
 import membersRoutes from "./routes/members";
 import policiesRoutes from "./routes/policies";
@@ -21,6 +22,13 @@ import meRoutes from "./routes/me";
 import type { AppEnv } from "./lib/types";
 
 const app = new Hono<AppEnv>();
+
+const authRateLimiter = createRateLimiter({ max: 10, windowMs: 60_000 });
+const apiRateLimiter = createRateLimiter({ max: 100, windowMs: 60_000 });
+
+app.use("/api/auth/*", authRateLimiter);
+app.use("/api/tokens/*", authRateLimiter);
+app.use("/api/*", apiRateLimiter);
 
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", accessAuth);
