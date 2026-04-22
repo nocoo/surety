@@ -1,4 +1,5 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test";
+import * as fs from "node:fs";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -98,6 +99,55 @@ describe("readJsonInput", () => {
       expect(parsed.error).toContain(file);
     } finally {
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("stdin paths", () => {
+  test("--data-file - reads from stdin via fd 0", () => {
+    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+      if (fd === 0) return '{"piped":true}';
+      throw new Error("unexpected fs read");
+    }) as typeof fs.readFileSync);
+    try {
+      const out = readJsonInput({ "data-file": "-" });
+      expect(out).toEqual({ piped: true });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test("reads from piped stdin when not a TTY", () => {
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: false,
+      configurable: true,
+    });
+    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+      if (fd === 0) return '{"via":"stdin"}';
+      throw new Error("unexpected fs read");
+    }) as typeof fs.readFileSync);
+    try {
+      const out = readJsonInput({});
+      expect(out).toEqual({ via: "stdin" });
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  test("readStdin swallows fd 0 read errors and returns empty", () => {
+    Object.defineProperty(process.stdin, "isTTY", {
+      value: false,
+      configurable: true,
+    });
+    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+      if (fd === 0) throw new Error("EBADF");
+      throw new Error("unexpected fs read");
+    }) as typeof fs.readFileSync);
+    try {
+      const out = readJsonInput({});
+      expect(out).toBeUndefined();
+    } finally {
+      spy.mockRestore();
     }
   });
 });
