@@ -22,9 +22,6 @@
     "test": "bun run test:web && bun run test:worker && bun run test:cli && bun run test:legacy",
     "test:coverage": "bun run scripts/check-coverage.ts",
     "test:coverage:cached": "bun run scripts/run-l1.ts",
-    "test:e2e": "bun run scripts/run-e2e.ts",
-    "test:e2e:ui": "bun run scripts/run-e2e-ui.ts",
-    "test:all": "bun run test:coverage && bun run test:e2e",
     "release": "bun run scripts/release.ts",
     "prepare": "husky"
   },
