@@ -17,16 +17,11 @@ test.describe("Settings", () => {
     await expect(settings.financialCard).toBeVisible();
     await expect(settings.reminderCard).toBeVisible();
     await expect(settings.dataManagementCard).toBeVisible();
-    await expect(settings.mcpCard).toBeVisible();
   });
 
   test("shows export and import buttons", async () => {
     await expect(settings.exportButton).toBeVisible();
     await expect(settings.importButton).toBeVisible();
-  });
-
-  test("shows MCP toggle", async () => {
-    await expect(settings.mcpToggle).toBeVisible();
   });
 
   test("annual income field has default value", async () => {

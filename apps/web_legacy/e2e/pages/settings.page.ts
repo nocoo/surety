@@ -28,11 +28,6 @@ export class SettingsPage {
     return this.page.getByRole("button", { name: "导入 JSON 备份" });
   }
 
-  /** MCP toggle switch */
-  get mcpToggle() {
-    return this.page.getByRole("switch", { name: "Toggle MCP access" });
-  }
-
   /** Card headings (use getByRole to avoid matching description text) */
   get financialCard() {
     return this.page.getByRole("heading", { name: "家庭财务" });
@@ -44,9 +39,5 @@ export class SettingsPage {
 
   get dataManagementCard() {
     return this.page.getByRole("heading", { name: "数据管理" });
-  }
-
-  get mcpCard() {
-    return this.page.getByRole("heading", { name: "MCP 访问" });
   }
 }
