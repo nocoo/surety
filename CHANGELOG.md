@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Quality system 第二轮升级 (2026-04-22)** — see [docs/17-quality-to-S.md](docs/17-quality-to-S.md):
+  - L1 coverage thresholds raised from 90/85 to **95/95** (line/function)
+  - **L2 HTTP suite** (`apps/worker/__tests__/l2-http/`) — wrangler dev `--local` on port 7017 + real D1/R2 bindings; 3 specs covering live, members/policies CRUD, and R2 attachment round-trips. Wired into pre-push gate.
+  - **L3 Playwright suite** (`apps/web/tests/playwright/`) — chromium-only on port 27012; 10 specs covering auth contract, navigation, dashboard, members, policies, coverage-lookup, and SPA fallback. On-demand via `bun run test:e2e:browser`.
+  - Existing 23 Hono-test-client tests retained as **L2-integration** alongside the new L2-HTTP layer.
+
 ### Changed
 
 - **Architecture rewrite** — replaced Next.js 16 (Railway) + Worker D1-proxy with a single Cloudflare Worker stack: Vite + React 19 + React Router 7 SPA served by a Hono Worker (`apps/worker`) talking directly to D1 via binding. Old Next.js app moved to `apps/web_legacy/` for transition reference.

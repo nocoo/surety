@@ -164,8 +164,10 @@ surety/
 | `bun test` | 运行所有单元测试（web + worker + cli） |
 | `bun run test:web` | 仅 web SPA 单测 |
 | `bun run test:worker` | 仅 Worker 中间件/路由单测 |
-| `bun run test:coverage` | 测试覆盖率报告 |
+| `bun run test:coverage` | 测试覆盖率报告（行/函数门槛 ≥ 95） |
 | `bun run test:coverage:cached` | L1 文件哈希缓存：只在输入变化时跑测试 |
+| `bun run test:l2:http` | L2 HTTP 套件：`wrangler dev --local` (port 7017) + 真 D1/R2 |
+| `bun run test:e2e:browser` | L3 Playwright 浏览器回归（port 27012，chromium-only） |
 | `bun run lint` | ESLint（零警告） |
 | `bun run typecheck` | tsc --noEmit |
 | `bun run db:push` | 推送 schema 到 D1 |

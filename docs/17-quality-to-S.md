@@ -107,3 +107,66 @@ L3 UI E2E 决定**直接删除而非迁移**：跑的是即将下线的 Next.js 
 ✅ worker funcs=95.83%  lines=98.89%
 ✅ cli    funcs=96.88%  lines=98.14%
 ```
+
+## 质量体系第二轮升级 (2026-04-22)
+
+第一轮升到 S 后留了三块短板：L1 阈值偏低（90/85，实际 96+）、L2 不是真 E2E（Hono test client + in-memory D1，不验 D1/R2 binding）、L3 完全空白。本轮 9 个原子 commit 一次补齐。
+
+### Commit 列表
+
+| # | Commit | 主题 |
+|---|--------|------|
+| 1 | `feat(quality): raise L1 coverage thresholds to 95/95` | `scripts/check-coverage.ts` LINE/FUNC 90/85 → 95/95 |
+| 2 | `feat(worker): scaffold wrangler-based L2 HTTP runner + smoke test` | `scripts/run-l2-http.ts` + `apps/worker/__tests__/l2-http/{setup,live.http.test}.ts` + 抽出 `INIT_SQL` 常量 |
+| 3 | `feat(worker): add L2 HTTP CRUD tests for members + policies` | `crud.http.test.ts`：真 D1 上跑 members/policies CRUD，断言 `id` 是标量（守 sqlite-proxy 行映射陷阱） |
+| 4 | `feat(worker): cover R2 attachments via wrangler local R2 emulator` | `attachments.http.test.ts`：multipart 上传 → metadata → 字节 round-trip → DELETE，并验证非 PDF magic 拒绝 |
+| 5 | `chore(hooks): add L2 HTTP suite to pre-push gate` | `scripts/pre-push.ts` 追加 `l2 http` 步骤 |
+| 6 | `feat(web): scaffold Playwright config for L3 browser regression` | `apps/web/playwright.config.ts` + `scripts/run-l3-server.ts`（vite build → wrangler dev :27012）+ global setup/teardown |
+| 7 | `feat(web): add L3 specs for auth contract + core navigation` | `auth-redirect.spec.ts` / `navigation.spec.ts` / `dashboard.spec.ts` |
+| 8 | `feat(web): add L3 specs for members/policies/coverage/404` | `members.spec.ts` / `policies.spec.ts` / `coverage.spec.ts` / `not-found.spec.ts` |
+| 9 | `docs(quality): document L1 threshold uplift + L2 HTTP + L3 Playwright` | CLAUDE.md / README.md / CHANGELOG.md / 本文同步 |
+
+### 端口分配
+
+| 端口 | 用途 |
+|------|------|
+| 7012 | Vite dev server |
+| 7016 | 本地 wrangler dev (`bun run dev:worker`) |
+| 7017 | L2 HTTP 测试 wrangler dev（新） |
+| 27012 | L3 Playwright wrangler dev（新） |
+
+### L2 HTTP suite
+
+`apps/worker/__tests__/l2-http/`，runner 通过 `bun run scripts/run-l2-http.ts` 启 wrangler dev `--env test --local --persist` 后 fetch 127.0.0.1:7017：
+
+- `live.http.test.ts` — `/api/live` 返回 `version` + D1 状态 + `Cache-Control: no-store`
+- `crud.http.test.ts` — members + policies CRUD（POST/GET/PUT/DELETE），守 `typeof id === "number"`
+- `attachments.http.test.ts` — R2 真 binding：multipart upload → list → metadata → file download → DELETE；并验证非 PDF magic bytes 在 application/pdf content-type 下被拒绝
+
+Schema 用 `packages/db` 抽出的 `INIT_SQL` 常量（不再依赖可能漂移的 drizzle migrations），通过 `bunx wrangler d1 execute --local` 注入。runner 启停约 5s + 测试 ~10s。
+
+### L3 Playwright suite
+
+`apps/web/tests/playwright/`，10 个 spec / chromium 单 worker / port 27012 / 总时长 ~42s。webServer 由 `scripts/run-l3-server.ts` 起：先 `bun run build` 把 SPA 产物吐到 `apps/worker/static/`，再启 wrangler dev `--env test --local`（同 process 既托管 `/api/*` 又托管 ASSETS binding）。
+
+| Spec | 内容 |
+|------|------|
+| `auth-redirect.spec.ts` | `/api/live` 公开 + `E2E_SKIP_AUTH=true` 下 protected route 200 baseline |
+| `navigation.spec.ts` | 11 条主路由的 H1 文本 |
+| `dashboard.spec.ts` | `/` SWR 加载后渲染"家庭保障概览" |
+| `members.spec.ts` | 列表显示 seed 成员 + "添加成员" 打开 sheet + 表单可见 |
+| `policies.spec.ts` | 列表显示 seed 产品 + 详情页正常加载 |
+| `coverage.spec.ts` | `/coverage-lookup` 渲染选择器 + seed 成员可见 |
+| `not-found.spec.ts` | 未知路由返回 200 SPA fallback（worker ASSETS binding `not_found_handling = single-page-application`） |
+
+不进硬门禁，按需 `bun run test:e2e:browser`。
+
+### 覆盖率快照（升级后）
+
+```
+✅ web    funcs=100.00% lines=100.00%
+✅ worker funcs=95.83%  lines=98.89%
+✅ cli    funcs=96.88%  lines=98.14%
+```
+
+阈值从 90/85 拉到 95/95 后，所有三组仍达标但裕度变窄（worker funcs 95.83 离 95 阈值仅 0.83 个百分点）。后续路由新增需补对应测试，否则会触发 pre-commit 阻断。
