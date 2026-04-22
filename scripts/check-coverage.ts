@@ -19,7 +19,7 @@ const spawned = [
   ["cli", "apps/cli/__tests__/"],
 ].map(([name, path]) => ({
   name: name as string,
-  proc: Bun.spawn(["bun", "test", path as string, "--coverage"], {
+  proc: Bun.spawn(["bun", "--bun", "test", path as string, "--coverage"], {
     stdout: "pipe",
     stderr: "pipe",
     cwd: repoRoot,
