@@ -92,4 +92,25 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   process.env.L3_SEED_MEMBER_ID = String(memberId);
   process.env.L3_SEED_POLICY_ID = String((policy.body as { id: number }).id);
   process.env.L3_SEED_ASSET_ID = String((asset.body as { id: number }).id);
+
+  const hospital = await fetchJson("POST", "/api/hospitals", {
+    name: "L3测试医院",
+    level: "三甲",
+    isPublic: true,
+  });
+  if (hospital.status !== 201) {
+    throw new Error(`seed hospital failed: ${hospital.status} ${JSON.stringify(hospital.body)}`);
+  }
+  const hospitalId = (hospital.body as { id: number }).id;
+  process.env.L3_SEED_HOSPITAL_ID = String(hospitalId);
+
+  const doctor = await fetchJson("POST", "/api/doctors", {
+    name: "L3测试医生",
+    hospitalId,
+    department: "内科",
+  });
+  if (doctor.status !== 201) {
+    throw new Error(`seed doctor failed: ${doctor.status} ${JSON.stringify(doctor.body)}`);
+  }
+  process.env.L3_SEED_DOCTOR_ID = String((doctor.body as { id: number }).id);
 }
