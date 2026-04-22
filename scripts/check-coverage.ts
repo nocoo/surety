@@ -39,8 +39,8 @@ interface Result {
 
 async function collect(s: { name: string; proc: ReturnType<typeof Bun.spawn> }): Promise<Result> {
   const [out, err] = await Promise.all([
-    new Response(s.proc.stdout).text(),
-    new Response(s.proc.stderr).text(),
+    new Response(s.proc.stdout as ReadableStream).text(),
+    new Response(s.proc.stderr as ReadableStream).text(),
   ]);
   await s.proc.exited;
   const full = out + err;
