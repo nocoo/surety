@@ -19,7 +19,7 @@
 
 ### Monorepo 结构
 
-Bun workspace monorepo，依赖图：`apps/web → packages/api → packages/db`，`packages/mcp → packages/api → packages/db`。
+Bun workspace monorepo，依赖图：`apps/web → packages/api → packages/db`。
 
 ```
 surety/
@@ -28,14 +28,13 @@ surety/
 │   └── worker/        # Cloudflare Worker D1 proxy（独立，无内部依赖）
 ├── packages/
 │   ├── db/            # @surety/db — Schema + DB 连接 + Repositories
-│   ├── api/           # @surety/api — Framework-agnostic 业务逻辑
-│   └── mcp/           # @surety/mcp — MCP Server（调用 @surety/api）
+│   └── api/           # @surety/api — Framework-agnostic 业务逻辑
 ├── package.json       # Workspace root
 ├── tsconfig.base.json # 共享 TS strict 配置
 └── bunfig.toml
 ```
 
-**关键原则**：`apps/web` 和 `packages/mcp` 不直接操作数据库，只通过 `@surety/api` 访问数据。
+**关键原则**：`apps/web` 不直接操作数据库，只通过 `@surety/api` 访问数据。
 
 ### 数据库架构
 
@@ -58,7 +57,7 @@ surety/
 
 ### E2E 隔离约束
 
-所有 E2E suite（API、UI、MCP）共用一个远程 D1 test 数据库 (`surety-db-test`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
+所有 E2E suite（API、UI）共用一个远程 D1 test 数据库 (`surety-db-test`)。每个 runner 启动时执行 `seed-remote.ts` 清空并重新 seed，因此 **E2E suite 不可并行运行**。串行执行即可保证数据隔离。
 
 ### 测试文件自动发现
 
@@ -75,16 +74,13 @@ surety/
 ```bash
 bun dev              # 开发服务器 (7012)
 bun run build        # 生产构建
-bun test             # 单元测试 (含 MCP)
+bun test             # 单元测试
 bun test --coverage  # 测试覆盖率
-bun run test:mcp     # MCP 单元测试
-bun run test:mcp:e2e # MCP E2E 测试
 bun run test:e2e     # API E2E 测试 (port 7016)
 bun run test:e2e:ui  # Playwright 浏览器 E2E 测试 (port 7017)
 bun run lint         # ESLint
 bun run db:push      # 推送 schema
 bun run db:studio    # 数据库可视化
-bun run mcp          # 启动 MCP Server (stdio)
 ```
 
 ## Worker Deployment (D1 Proxy)
@@ -170,7 +166,6 @@ E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
    | `package.json` | `"version"` field |
    | `apps/web/src/app/api/live/route.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
    | `apps/web/src/services/backy.ts` | fallback via `APP_VERSION` (auto, no manual change needed) |
-   | `packages/mcp/src/index.ts` | MCP server version via `APP_VERSION` (auto, no manual change needed) |
    | `apps/web/src/__tests__/version.test.ts` | reads from package.json (auto, no manual change needed) |
 
 3. Commit: `chore: bump version to x.y.z`
