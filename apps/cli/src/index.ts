@@ -7,6 +7,7 @@ import { assetsCommand } from "./commands/assets.js";
 import { hospitalsCommand } from "./commands/hospitals.js";
 import { doctorsCommand } from "./commands/doctors.js";
 import { medicalVisitsCommand } from "./commands/medical-visits.js";
+import { policiesCommand } from "./commands/policies.js";
 
 const main = defineCommand({
   meta: {
@@ -24,6 +25,7 @@ const main = defineCommand({
     hospitals: hospitalsCommand,
     doctors: doctorsCommand,
     "medical-visits": medicalVisitsCommand,
+    policies: policiesCommand,
   },
 });
 
