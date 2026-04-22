@@ -22,7 +22,6 @@ const eslintConfig = defineConfig([
     "**/build/**",
     "next-env.d.ts",
     "**/e2e/**",
-    "apps/worker/**",
   ]),
   // tseslint strict for all TS files
   ...tseslint.configs.strict.map((config) => ({
@@ -49,6 +48,25 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
+    },
+  },
+  // Forbid focused/skipped tests — every test must run
+  {
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name=/^(describe|it|test)$/][callee.property.name='skip']",
+          message: "*.skip is not allowed — every test must run.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name=/^(describe|it|test)$/][callee.property.name='only']",
+          message: "*.only is not allowed — it silently skips other tests.",
+        },
+      ],
     },
   },
 ]);

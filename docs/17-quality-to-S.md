@@ -52,5 +52,5 @@
 - [x] Step 2 — 覆盖率门槛扩到 web/cli/worker
 - [x] Step 3 — 低覆盖代码补测试
 - [x] Step 4 — Hono test client 重建 L2 (`apps/worker/__tests__/e2e/`，23 tests)
-- [ ] Step 5
+- [x] Step 5 — ESLint: 取消 `apps/worker/**` 排除 + 新增 `*.skip`/`*.only` 禁用
 - [ ] Step 6

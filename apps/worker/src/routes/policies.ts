@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { generatePaymentRecords } from "@surety/db/lib/generate-payments";
-import { validateFile, validateMagicBytes, generateR2Key, MAX_FILE_SIZE, MAX_ATTACHMENTS_PER_POLICY } from "@surety/api/lib/attachment-validation";
+import { validateFile, validateMagicBytes, generateR2Key, MAX_ATTACHMENTS_PER_POLICY } from "@surety/api/lib/attachment-validation";
 import type { AppEnv } from "../lib/types";
 
 const app = new Hono<AppEnv>();

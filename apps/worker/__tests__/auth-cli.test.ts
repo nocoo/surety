@@ -111,7 +111,7 @@ describe("GET /api/auth/cli", () => {
     expect(res.status).toBe(302);
     const loc = res.headers.get("location");
     expect(loc).toBeTruthy();
-    const url = new URL(loc!);
+    const url = new URL(loc ?? "");
     expect(url.origin + url.pathname).toBe("http://127.0.0.1:5173/cb");
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("state")).toBe("xyz");
@@ -130,7 +130,7 @@ describe("GET /api/auth/cli", () => {
         encodeURIComponent("http://localhost:9999/done"),
     );
     expect(res.status).toBe(302);
-    const url = new URL(res.headers.get("location")!);
+    const url = new URL(res.headers.get("location") ?? "");
     expect(url.searchParams.has("state")).toBe(false);
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("email")).toBe("alice@example.com");
@@ -148,7 +148,7 @@ describe("GET /api/auth/cli", () => {
         "&state=abc",
     );
     expect(res.status).toBe(302);
-    const url = new URL(res.headers.get("location")!);
+    const url = new URL(res.headers.get("location") ?? "");
     expect(url.origin + url.pathname).toBe("http://127.0.0.1:5173/cb");
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("state")).toBe("abc");

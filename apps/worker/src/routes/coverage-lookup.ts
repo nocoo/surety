@@ -29,7 +29,6 @@ app.get("/api/coverage-lookup", async (c) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const policiesByAsset = new Map<number, any[]>();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const policy of allPolicies) {
     const pd = {
       id: policy.id, productName: policy.productName, category: policy.category,

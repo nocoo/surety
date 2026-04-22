@@ -97,7 +97,6 @@ describe("GET /api/auth/tokens", () => {
 
   test("interactive session sees only its own tokens", async () => {
     const repos = buildRepos(null);
-    const app = buildApp(repos);
     // localhost dev bypass with no bearer → sessionAuthenticated=true,
     // accessEmail unset (no scoping), but we need an email to test scoping
     // — emulate a CF-Access session by injecting accessEmail upstream.
