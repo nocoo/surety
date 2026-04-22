@@ -40,7 +40,7 @@ function StatCard({ label, value, iconName, index }: StatCardData & { index: num
     >
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
-        <div className="rounded-md bg-card p-2">
+        <div className="rounded-md bg-background p-2">
           <Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
         </div>
       </div>
