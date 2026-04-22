@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const target = env.SURETY_API_URL ?? "https://surety.hexly.ai";
+  const target = env.SURETY_API_URL ?? "https://surety-api.hexly.ai";
   const devToken = env.SURETY_DEV_API_TOKEN ?? "";
 
   return {

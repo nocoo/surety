@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = "https://surety.hexly.ai";
+const DEFAULT_BASE_URL = "https://surety-api.hexly.ai";
 
 function getConfig() {
   const baseUrl = (process.env.SURETY_API_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");

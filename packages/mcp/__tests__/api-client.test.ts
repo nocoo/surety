@@ -71,7 +71,7 @@ describe("apiGet", () => {
     delete process.env.SURETY_API_URL;
     mockFetch({ status: 200, json: [] });
     await apiGet("/api/members");
-    expect(calls[0]?.url).toBe("https://surety.hexly.ai/api/members");
+    expect(calls[0]?.url).toBe("https://surety-api.hexly.ai/api/members");
   });
 
   test("surfaces server error.message on non-2xx", async () => {

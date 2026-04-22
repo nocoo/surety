@@ -4,7 +4,8 @@ compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
 
 routes = [
-  { pattern = "surety.hexly.ai", custom_domain = true }
+  { pattern = "surety.hexly.ai", custom_domain = true },
+  { pattern = "surety-api.hexly.ai", custom_domain = true }
 ]
 
 [alias]
@@ -28,7 +29,8 @@ bucket_name = "surety"
 [env.test]
 name = "surety-test"
 routes = [
-  { pattern = "surety-test.hexly.ai", custom_domain = true }
+  { pattern = "surety-test.hexly.ai", custom_domain = true },
+  { pattern = "surety-api-test.hexly.ai", custom_domain = true }
 ]
 
 [env.test.vars]

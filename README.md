@@ -69,8 +69,8 @@ cp .env.example .env
 本地开发不需要跑自己的 Worker — Vite dev server 会代理 `/api/*` 到线上 Worker，同时自动注入 Bearer token，让你直接在浏览器里看到 prod 数据：
 
 ```bash
-# 线上 Worker 地址 (默认 https://surety.hexly.ai)
-SURETY_API_URL=https://surety.hexly.ai
+# 线上 Worker API 地址 (默认 https://surety-api.hexly.ai)
+SURETY_API_URL=https://surety-api.hexly.ai
 
 # 拿一个 CLI token（详见下面的"CLI / MCP — Bearer token"）
 SURETY_DEV_API_TOKEN=sk_xxx
@@ -235,7 +235,7 @@ Surety 提供 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) �
       "args": ["run", "packages/mcp/src/index.ts"],
       "cwd": "/path/to/surety",
       "env": {
-        "SURETY_API_URL": "https://surety.hexly.ai",
+        "SURETY_API_URL": "https://surety-api.hexly.ai",
         "SURETY_API_TOKEN": "sk_xxx"
       }
     }
