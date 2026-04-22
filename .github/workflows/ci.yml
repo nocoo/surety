@@ -16,3 +16,15 @@ jobs:
       typecheck-command: "bun run typecheck"
       enable-l2: "false"
     secrets: inherit
+
+  browser-e2e:
+    name: "L3 Browser E2E"
+    needs: [quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e:browser
