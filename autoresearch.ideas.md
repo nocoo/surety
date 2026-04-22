@@ -40,23 +40,29 @@ Wall is now bound by `max(test, typecheck) ≈ 0.95s`:
 Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapping the osv-scanner network call with the long e2e run.
 
 ## UT coverage gate (segment 6 — 2026-04)
-- Wall is 62-66ms steady (Bun startup ~12ms + parallel max ≈ 50ms cli pole).
+- Wall is **57-62ms steady** (down from 98ms baseline; -42%). Bun startup ~10ms + parallel max ≈ 50ms cli pole.
 - All 3 groups now 100/100 (web, worker, cli).
 - **Long pole**: cli at ~50ms because policies-coverage.test.ts (36ms) + policies.test.ts (38ms) load + run inside one bun proc.
-- **Tried, no win** (all within ±3ms noise band — none reproducible above floor):
-  - `--concurrent` flag on cli tests
+- **Latest win** (run #48): Hoisted Bun.spawn calls to top-level of check-coverage.ts — the 3 child procs start before the rest of the script parses. Saves ~3-5ms by overlapping spawn syscall with script JIT.
+- **Tried, no win** (all within ±3-5ms noise band):
+  - `--concurrent` flag on cli tests, `describe.concurrent` on middleware
   - unified single-proc test (85ms vs 53ms parallel — slower)
-  - cwd inside apps/cli
-  - `describe.concurrent` on middleware.test.ts
-  - merge policies.test.ts → policies-coverage.test.ts (8 cli files vs 9)
   - `Bun.readableStreamToText` + parallel drain
   - `process.execPath` instead of "bun" string for spawn
   - `Bun.spawn` with `stdout: Bun.file(tmpPath)` (file IO instead of stream drain)
-  - bash wrapper instead of bun script (same wall)
+  - bash wrapper instead of bun script
+  - merge cli files (8 vs 9), merge web+worker into one shard
   - `bun build --compile` standalone binary (PATH lookup fails for spawn)
   - cli sharding by file (max(shard A, shard B) ≈ 48ms ≈ same)
-- **Untried, but unlikely worth it** (every refactor needs to clear ≥3ms noise floor):
-  - Per-test stdout capture in policies-coverage.test.ts → describe.concurrent (tests already <0.5ms each, concurrency overhead > savings — same lesson as middleware experiment)
-  - mtime-cache the gate (real warm wins, but "skipping tests" is explicitly banned by autoresearch.md)
+  - shebang exec (env lookup adds overhead)
+  - 3 explicit Bun.spawn statements vs .map (cli-first ordering didn't help)
+  - `--max-concurrency=1` / `=64` (no diff)
+  - skipping `bun run` wrapper in test:coverage script (1-2ms saved, lost in noise)
+  - dropping `cwd: repoRoot` from spawn options (no diff)
+  - `--smol`, `BUN_RUNTIME_TRANSPILER_CACHE_PATH`, `NODE_NO_WARNINGS` (no effect)
+  - `coverageThreshold` in bunfig (Bun 1.3.11 doesn't gate exit code)
+- **Untried, but unlikely worth it**:
+  - Per-test stdout capture in policies-coverage.test.ts → describe.concurrent (tests <0.5ms each, concurrency overhead > savings)
+  - mtime-cache the gate (banned: "不能跳过测试")
   - long-lived bun test --watch daemon (significant infra)
-- **Conclusion**: 62ms is the hardware floor for this 3-shard parallel coverage gate on this Mac. Bun startup (~5-7ms × 3 shards in parallel) + module load + test execution + parent script (~12ms) = current wall.
+- **Conclusion**: ~57ms is the hardware floor. The 50ms cli pole = ~10ms bun startup + ~40ms test/module work. To break 50ms wall would need to either (a) cache test runs by hash (banned), or (b) eliminate parent script entirely so wall == cli proc (52ms).
