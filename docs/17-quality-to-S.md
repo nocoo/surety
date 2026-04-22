@@ -76,3 +76,13 @@
 ```
 
 E2E 共 23 tests（members/policies sub-resources/dashboard/coverage-lookup/auth-cli/auth-tokens），通过 Hono test client + bun:sqlite `:memory:` 驱动真实路由。
+
+## 后续清理 (2026-04-22)
+
+CLI 上线 + 生产 smoke 验证后做了一轮 MCP 残留清理（独立于 6 步主线）：
+
+| Commit | 主题 |
+|--------|------|
+| `chore: drop MCP residue from infra config` | bunfig.toml coverageInclude + osv-scanner.toml unused ignores |
+| `chore(web_legacy): remove MCP access settings UI and e2e` | mcp-settings.tsx + settings page/spec/page-object |
+| `docs: refresh architecture docs to reflect Vite + Hono + CLI stack` | CLAUDE.md / README.md / CHANGELOG.md / docs 02/11/12 |
