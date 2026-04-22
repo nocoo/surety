@@ -4,12 +4,21 @@ import { ConfigManager } from "@nocoo/cli-base";
 
 export interface SuretyConfig {
   apiUrl?: string;
+  loginUrl?: string;
   token?: string;
   email?: string;
   [k: string]: unknown;
 }
 
+/**
+ * Two domains are intentionally separate:
+ *   - loginUrl: CF-Access-protected origin that mints CLI tokens via the
+ *     browser loopback flow (/api/auth/cli). Required for `surety login`.
+ *   - apiUrl: data-plane origin that accepts Bearer tokens. Used for
+ *     every other command.
+ */
 export const DEFAULT_API_URL = "https://surety-api.hexly.ai";
+export const DEFAULT_LOGIN_URL = "https://surety.hexly.ai";
 
 export function getConfigDir(): string {
   return join(homedir(), ".config", "surety");
@@ -30,6 +39,13 @@ export function resolveApiUrl(
   env: NodeJS.ProcessEnv = process.env,
 ): string {
   return env.SURETY_API_URL ?? config.get("apiUrl") ?? DEFAULT_API_URL;
+}
+
+export function resolveLoginUrl(
+  config: ConfigManager<SuretyConfig>,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  return env.SURETY_LOGIN_URL ?? config.get("loginUrl") ?? DEFAULT_LOGIN_URL;
 }
 
 export function resolveToken(

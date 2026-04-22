@@ -170,12 +170,22 @@ surety dashboard
 
 ### `surety login` 流程
 
-1. `performLogin({ apiUrl, loginPath: "/api/auth/cli", tokenParam: "api_key" })`
-2. loopback `/callback?api_key=...&state=...&email=...`
-3. 写 `~/.config/surety/config.json`：`apiUrl`, `token`, `email`
-4. stdout `{"ok": true, "email": "..."}`
+Surety 有**两个独立域**：
+- `loginUrl`（默认 `https://surety.hexly.ai`）：CF Access 保护，承载 `/api/auth/cli` 铸 token 入口
+- `apiUrl`（默认 `https://surety-api.hexly.ai`）：数据平面，纯 Bearer token
 
-支持 `SURETY_CLI_DEV=1` → `config.dev.json`。
+`surety login` 走 `loginUrl`，完成后把 token 和两个 URL 都落到 config；之后所有业务命令走 `apiUrl`。
+
+1. `performLogin({ apiUrl: loginUrl, loginPath: "/api/auth/cli", tokenParam: "api_key" })`
+   （cli-base 的参数名叫 `apiUrl`，但这里传的是"铸 token 入口"的 origin，即 loginUrl）
+2. 浏览器走 CF Access（Google OAuth）→ Worker 用 `accessEmail` 铸 token → 302 到 loopback `/callback?api_key=...&state=...&email=...`
+3. 写 `~/.config/surety/config.json`：`apiUrl`、`loginUrl`、`token`、`email`
+4. stdout `{"ok": true, "apiUrl": "...", "loginUrl": "...", "email": "..."}`
+
+覆盖方式（dev / self-host）：
+- 命令行：`surety login --login-url=... --api-url=...`
+- 环境变量：`SURETY_LOGIN_URL` / `SURETY_API_URL` / `SURETY_API_TOKEN`
+- `SURETY_CLI_DEV=1` → 使用 `config.dev.json`
 
 ## 分阶段执行（原子提交）
 
@@ -192,6 +202,7 @@ surety dashboard
 
 - [x] 删除 `packages/mcp/` 整个目录
 - [x] 根 `package.json` workspaces + scripts 清理（`test:mcp`、`test:mcp:e2e`、`mcp` 已删除；`typecheck` 已把 `apps/cli` 接入）
+- [x] 根 `tsconfig.json` paths 清理（`@surety/mcp` / `@surety/mcp/*` 别名已移除，2026-04-22）
 - [x] `apps/web/src/app/settings/components/mcp-settings.tsx` 删除
 - [x] `apps/web_legacy/scripts/check-coverage.ts`、`apps/web_legacy/Dockerfile` MCP 相关行清理
 - [x] `docs/04-mcp-setup.md` / `docs/13-mcp-crud-tools.md` 删除
@@ -202,6 +213,7 @@ surety dashboard
 - [x] `apps/cli/` 目录 + package.json + tsconfig
 - [x] `src/config.ts` / `src/api.ts` / `src/output.ts`
 - [x] `src/commands/auth.ts`: `login` / `logout` / `whoami`
+- [x] **2026-04-22 修正**：分离 `loginUrl`（CF-Access 保护，铸 token）与 `apiUrl`（数据平面，Bearer）。之前 login 把 `apiUrl=surety-api.hexly.ai` 传给 `performLogin`，会打到一个不受 CF Access 保护的数据平面 host，`accessEmail` 为空直接 400。现在默认 `loginUrl=https://surety.hexly.ai`，可用 `--login-url` 或 `SURETY_LOGIN_URL` 覆盖。
 
 ### Phase 4: 业务命令 ✅
 

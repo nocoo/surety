@@ -14,9 +14,7 @@
       "@surety/db": ["./packages/db/src/index.ts"],
       "@surety/db/*": ["./packages/db/src/*"],
       "@surety/api": ["./packages/api/src/index.ts"],
-      "@surety/api/*": ["./packages/api/src/*"],
-      "@surety/mcp": ["./packages/mcp/src/index.ts"],
-      "@surety/mcp/*": ["./packages/mcp/src/*"]
+      "@surety/api/*": ["./packages/api/src/*"]
     }
   },
   "include": [

@@ -1,14 +1,28 @@
 import { defineCommand, openBrowser, performLogin } from "@nocoo/cli-base";
 import { ApiClient, ApiError } from "../api.js";
-import { createConfig, resolveApiUrl, resolveToken } from "../config.js";
+import {
+  createConfig,
+  resolveApiUrl,
+  resolveLoginUrl,
+  resolveToken,
+} from "../config.js";
 import { emit, emitError } from "../output.js";
 
 const login = defineCommand({
-  meta: { name: "login", description: "Sign in via browser and save API token" },
+  meta: {
+    name: "login",
+    description: "Sign in via browser (CF Access) and save the API token",
+  },
   args: {
+    "login-url": {
+      type: "string",
+      description:
+        "Override login origin (CF-Access-protected host that mints tokens, default https://surety.hexly.ai)",
+    },
     "api-url": {
       type: "string",
-      description: "Override API base URL (e.g. https://surety-api.hexly.ai)",
+      description:
+        "Override data-plane API URL saved to config (default https://surety-api.hexly.ai)",
     },
     timeout: {
       type: "string",
@@ -17,7 +31,10 @@ const login = defineCommand({
   },
   async run({ args }) {
     const config = createConfig();
-    const apiUrl = (args["api-url"] as string | undefined) ?? resolveApiUrl(config);
+    const loginUrl =
+      (args["login-url"] as string | undefined) ?? resolveLoginUrl(config);
+    const apiUrl =
+      (args["api-url"] as string | undefined) ?? resolveApiUrl(config);
     const timeoutSec = args.timeout
       ? Number.parseInt(String(args.timeout), 10)
       : 180;
@@ -27,10 +44,10 @@ const login = defineCommand({
 
     const result = await performLogin({
       openBrowser,
-      apiUrl,
+      apiUrl: loginUrl,
       timeoutMs: timeoutSec * 1000,
       onSaveToken: (token: string) => {
-        config.write({ ...config.read(), apiUrl, token });
+        config.write({ ...config.read(), apiUrl, loginUrl, token });
       },
     });
 
@@ -40,7 +57,7 @@ const login = defineCommand({
 
     const email = result.email ?? result.params?.email;
     if (email) config.write({ ...config.read(), email });
-    emit({ ok: true, apiUrl, email: email ?? null });
+    emit({ ok: true, apiUrl, loginUrl, email: email ?? null });
   },
 });
 
