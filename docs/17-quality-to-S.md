@@ -53,4 +53,26 @@
 - [x] Step 3 — 低覆盖代码补测试
 - [x] Step 4 — Hono test client 重建 L2 (`apps/worker/__tests__/e2e/`，23 tests)
 - [x] Step 5 — ESLint: 取消 `apps/worker/**` 排除 + 新增 `*.skip`/`*.only` 禁用
-- [ ] Step 6
+- [x] Step 6 — CLAUDE.md 测试矩阵从「四层」升级为「六维」
+
+## 本轮原子化提交
+
+| Commit | 主题 |
+|--------|------|
+| `chore(hooks): run gitleaks at pre-commit for early secret detection` | Step 1 |
+| `feat(quality): extend coverage gate to web/cli/worker with 2-dim threshold` | Step 2 |
+| `test(cli,worker): backfill coverage for policies/json-input/client and access-auth jwt branch` | Step 3 |
+| `feat(worker): add L2 hono e2e suite covering crud + auth boundary` | Step 4 |
+| `chore(lint): apply strict eslint to apps/worker + ban .skip/.only` | Step 5 |
+| `docs(quality): document upgraded six-tier quality system` | Step 6 |
+
+## 最终覆盖率快照
+
+```
+✅ web_legacy   funcs=89.18%  lines=91.61%
+✅ web          funcs=100.00% lines=100.00%
+✅ worker       funcs=95.83%  lines=98.89%
+✅ cli          funcs=96.88%  lines=98.14%
+```
+
+E2E 共 23 tests（members/policies sub-resources/dashboard/coverage-lookup/auth-cli/auth-tokens），通过 Hono test client + bun:sqlite `:memory:` 驱动真实路由。

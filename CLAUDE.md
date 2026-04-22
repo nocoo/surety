@@ -45,15 +45,18 @@ surety/
 - **Repo 模式**：Factory pattern `createMembersRepo(db)` — request-scoped DB 注入
 - **无本地 SQLite 运行时**：所有非测试路径都走远程 D1
 
-## 四层测试框架
+## 六维质量金字塔
 
-| 层级 | 工具 | 触发时机 | 要求 |
+| 维度 | 工具 | 触发时机 | 要求 |
 |------|------|----------|------|
-| UT | bun test | pre-commit | 覆盖率 90%+ |
-| Lint | eslint | pre-commit | 零错误零警告 |
-| Typecheck | tsc --noEmit | pre-commit | 零类型错误 |
-| API E2E | bun run test:e2e | pre-push | 100% API 覆盖 (port 7016) |
-| UI E2E | bun run test:e2e:ui | 按需执行 | Playwright + Chromium (port 7017) |
+| L1 单测 | bun test | pre-commit | 行 ≥ 90%、函数 ≥ 85%（web/web_legacy/cli/worker 全覆盖） |
+| L2 API E2E | `bun test apps/worker/__tests__/e2e` | pre-push | 通过 Hono test client + in-memory D1 跑全链路 |
+| L3 UI E2E | `bun run test:e2e:ui` | 按需执行 | Playwright + Chromium (port 7017) |
+| G1 静态 | tsc --noEmit + eslint strict | pre-commit | 零类型错误、零 lint 警告、`*.skip`/`*.only` 禁用 |
+| G2 安全 | gitleaks + osv-scanner | pre-commit (gitleaks) + pre-push (双保险) | 零泄漏、无已知漏洞 |
+| Worker 单测 | bun test apps/worker/__tests__ | pre-push | 中间件、路由、auth 边界 |
+
+升级历程见 `docs/17-quality-to-S.md`。
 
 ### E2E 隔离约束
 
