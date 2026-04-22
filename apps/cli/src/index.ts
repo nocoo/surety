@@ -8,6 +8,11 @@ import { hospitalsCommand } from "./commands/hospitals.js";
 import { doctorsCommand } from "./commands/doctors.js";
 import { medicalVisitsCommand } from "./commands/medical-visits.js";
 import { policiesCommand } from "./commands/policies.js";
+import {
+  coverageCommand,
+  renewalsCommand,
+  dashboardCommand,
+} from "./commands/readonly.js";
 
 const main = defineCommand({
   meta: {
@@ -26,6 +31,9 @@ const main = defineCommand({
     doctors: doctorsCommand,
     "medical-visits": medicalVisitsCommand,
     policies: policiesCommand,
+    coverage: coverageCommand,
+    renewals: renewalsCommand,
+    dashboard: dashboardCommand,
   },
 });
 

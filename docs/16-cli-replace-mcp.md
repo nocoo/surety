@@ -264,7 +264,7 @@ Commit: `feat(cli): scaffold @nocoo/surety with login/logout/whoami`
 - [x] Phase 4a：shared CRUD infrastructure (`lib/client.ts` / `lib/json-input.ts` / `lib/crud.ts`)
 - [x] `members` + `insurers` + `assets` + `hospitals` + `doctors` + `medical-visits`（通过 `defineCrudCommand` 工厂统一，一次性 commit + 工厂测试）
 - [x] `policies` 主 CRUD + `payments` (ls/add/update/rm/generate) + `beneficiaries` (ls) + `coverage-items` (CRUD) + `attachments` (ls/get/rm) — 合并一次 commit + 专项测试
-- [ ] `coverage` + `renewals` + `dashboard` 合并 commit（都是只读小命令）
+- [x] `coverage` + `renewals` + `dashboard` 合并 commit（都是只读小命令）
 
 每个 commit: `feat(cli): add <scope> commands`
 
