@@ -16,8 +16,7 @@ function getJWKS(teamDomain: string) {
 export async function accessAuth(c: Context<AppEnv>, next: Next) {
   if (c.req.path === "/api/live") return next();
 
-  const host = c.req.header("host") || "";
-  if (isLocalhost(host)) {
+  if (isLocalhost(c)) {
     // Don't short-circuit when the caller sent a bearer token — let
     // apiKeyAuth verify it so `accessEmail` gets populated for /api/me.
     const hasBearer = (c.req.header("Authorization") ?? "").startsWith(
