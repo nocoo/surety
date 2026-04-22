@@ -208,6 +208,26 @@ describe("apiKeyAuth middleware", () => {
     expect(lastUsedId).toBe(42);
   });
 
+  test("updateLastUsed rejection is swallowed (fire-and-forget)", async () => {
+    const app = makeApp(apiKeyAuth, {
+      apiTokens: {
+        verify: async () => ({ id: 7, email: "bob@example.com" }),
+        updateLastUsed: async () => {
+          throw new Error("db unavailable");
+        },
+      },
+    });
+    const res = await app.request("/api/probe", {
+      headers: {
+        host: "surety.hexly.ai",
+        authorization: "Bearer sk_good",
+      },
+    });
+    expect(res.status).toBe(200);
+    // give the .catch arrow a tick to execute (covers the catch handler)
+    for (let i = 0; i < 3; i++) await Promise.resolve();
+  });
+
   test("E2E_SKIP_AUTH=true bypasses auth even on prod host", async () => {
     const app = makeApp(apiKeyAuth);
     const res = await app.request(

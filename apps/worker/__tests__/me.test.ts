@@ -38,6 +38,12 @@ describe("decodeJwtPayload", () => {
     expect(decodeJwtPayload("not.a.jwt.extra")).toBeNull();
     expect(decodeJwtPayload("only-one-part")).toBeNull();
   });
+
+  test("returns null when middle segment is not valid base64-JSON", () => {
+    // 3 parts so length check passes, but middle decodes to non-JSON text
+    // base64('hello world') = 'aGVsbG8gd29ybGQ' (URL-safe friendly)
+    expect(decodeJwtPayload("aaa.aGVsbG8gd29ybGQ.ccc")).toBeNull();
+  });
 });
 
 describe("GET /api/me", () => {
