@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { secureHeaders } from "hono/secure-headers";
 import { accessAuth } from "./middleware/access-auth";
 import { apiKeyAuth } from "./middleware/api-key-auth";
 import { dbMiddleware } from "./middleware/db";
@@ -21,6 +22,8 @@ import meRoutes from "./routes/me";
 import type { AppEnv } from "./lib/types";
 
 const app = new Hono<AppEnv>();
+
+app.use("*", secureHeaders());
 
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", accessAuth);
