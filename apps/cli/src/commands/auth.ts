@@ -1,5 +1,5 @@
 import { defineCommand, openBrowser, performLogin } from "@nocoo/cli-base";
-import { ApiClient, ApiError } from "../api.js";
+import { ApiClient } from "../api.js";
 import {
   createConfig,
   resolveApiUrl,
@@ -83,17 +83,10 @@ const whoami = defineCommand({
       emitError("not logged in — run `surety login`");
     }
     const client = new ApiClient({ apiUrl, token });
-    try {
-      const me = await client.get<{ email: string; authenticated: boolean }>(
-        "/api/me",
-      );
-      emit({ ok: true, apiUrl, ...me });
-    } catch (err) {
-      if (err instanceof ApiError) {
-        emitError(`api error: ${err.status}`, err.body);
-      }
-      throw err;
-    }
+    const me = await client.get<{ email: string; authenticated: boolean }>(
+      "/api/me",
+    );
+    emit({ ok: true, apiUrl, ...me });
   },
 });
 

@@ -1,7 +1,15 @@
+import { emitError } from "./output.js";
+
 export interface ApiClientOptions {
   apiUrl: string;
   token?: string | undefined;
   fetchImpl?: typeof fetch;
+  /**
+   * When true (the default), non-2xx responses terminate the process with a
+   * JSON error envelope on stderr — matching the CLI's public output
+   * contract. Tests set this to false to observe the thrown `ApiError`.
+   */
+  exitOnError?: boolean;
 }
 
 export class ApiError extends Error {
@@ -20,11 +28,13 @@ export class ApiClient {
   private readonly apiUrl: string;
   private readonly token: string | undefined;
   private readonly fetchImpl: typeof fetch;
+  private readonly exitOnError: boolean;
 
   constructor(opts: ApiClientOptions) {
     this.apiUrl = opts.apiUrl.replace(/\/+$/, "");
     this.token = opts.token;
     this.fetchImpl = opts.fetchImpl ?? fetch;
+    this.exitOnError = opts.exitOnError !== false;
   }
 
   async request<T = unknown>(
@@ -42,7 +52,18 @@ export class ApiClient {
       headers["content-type"] = "application/json";
       init.body = JSON.stringify(body);
     }
-    const res = await this.fetchImpl(url, init);
+    let res: Response;
+    try {
+      res = await this.fetchImpl(url, init);
+    } catch (err) {
+      if (this.exitOnError) {
+        emitError(
+          `network error: ${method} ${path}`,
+          (err as Error).message,
+        );
+      }
+      throw err;
+    }
     const text = await res.text();
     let parsed: unknown = text;
     if (text.length > 0) {
@@ -53,6 +74,9 @@ export class ApiClient {
       }
     }
     if (!res.ok) {
+      if (this.exitOnError) {
+        emitError(`api error: ${res.status} ${method} ${path}`, parsed);
+      }
       throw new ApiError(res.status, method, path, parsed);
     }
     return parsed as T;

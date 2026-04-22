@@ -70,9 +70,10 @@ describe("ApiClient", () => {
     expect(sentBody).toBe(JSON.stringify({ name: "Zhang" }));
   });
 
-  test("throws ApiError on non-2xx with parsed body", async () => {
+  test("throws ApiError on non-2xx when exitOnError=false", async () => {
     const client = new ApiClient({
       apiUrl: "https://api.test",
+      exitOnError: false,
       fetchImpl: mockFetch(() => ({
         status: 401,
         body: JSON.stringify({ error: "unauth" }),
@@ -90,6 +91,47 @@ describe("ApiClient", () => {
         expect(err.body).toEqual({ error: "unauth" });
       }
     }
+  });
+
+  test("non-2xx with default exitOnError calls process.exit via emitError", async () => {
+    const origStderr = process.stderr.write;
+    const origExit = process.exit;
+    let stderrOut = "";
+    let exitCode: number | undefined;
+    class ExitCalled extends Error {}
+    process.stderr.write = ((chunk: string) => {
+      stderrOut += chunk;
+      return true;
+    }) as typeof process.stderr.write;
+    process.exit = ((code?: number) => {
+      exitCode = code;
+      throw new ExitCalled();
+    }) as typeof process.exit;
+    const client = new ApiClient({
+      apiUrl: "https://api.test",
+      fetchImpl: mockFetch(() => ({
+        status: 500,
+        body: JSON.stringify({ error: "boom" }),
+      })),
+    });
+    try {
+      await client.get("/api/members");
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toBeInstanceOf(ExitCalled);
+    } finally {
+      process.stderr.write = origStderr;
+      process.exit = origExit;
+    }
+    expect(exitCode).toBe(1);
+    const parsed = JSON.parse(stderrOut) as {
+      ok: boolean;
+      error: string;
+      detail: unknown;
+    };
+    expect(parsed.ok).toBe(false);
+    expect(parsed.error).toContain("500");
+    expect(parsed.detail).toEqual({ error: "boom" });
   });
 
   test("handles non-JSON response bodies", async () => {
