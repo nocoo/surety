@@ -16,7 +16,6 @@ import { Separator } from "@/components/ui/separator";
 
 import {
   DatabaseSettings,
-  McpSettings,
   BackySettings,
 } from "./components";
 
@@ -211,9 +210,6 @@ export default function SettingsPage() {
 
           {/* Database Settings (backup/restore) */}
           <DatabaseSettings />
-
-          {/* MCP Access Settings */}
-          <McpSettings />
 
           {/* Backy Remote Backup */}
           <BackySettings />
