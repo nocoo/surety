@@ -70,6 +70,15 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     throw new Error(`seed policy failed: ${policy.status} ${JSON.stringify(policy.body)}`);
   }
 
+  const insurer = await fetchJson("POST", "/api/insurers", {
+    name: "L3测试保险公司",
+    phone: "400-123-4567",
+  });
+  if (insurer.status !== 201) {
+    throw new Error(`seed insurer failed: ${insurer.status} ${JSON.stringify(insurer.body)}`);
+  }
+  process.env.L3_SEED_INSURER_ID = String((insurer.body as { id: number }).id);
+
   process.env.L3_SEED_MEMBER_ID = String(memberId);
   process.env.L3_SEED_POLICY_ID = String((policy.body as { id: number }).id);
 }
