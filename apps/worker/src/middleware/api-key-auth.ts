@@ -31,6 +31,8 @@ export async function apiKeyAuth(c: Context<AppEnv>, next: Next) {
     return c.json({ error: "Invalid API key" }, 403);
   }
 
+  c.set("accessEmail", result.email);
+  c.set("accessAuthenticated", true);
   c.get("repos").apiTokens.updateLastUsed(result.id).catch(() => {});
   return next();
 }

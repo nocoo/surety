@@ -147,6 +147,12 @@ describe("apiKeyAuth middleware", () => {
       },
     });
     expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      accessAuthenticated: boolean;
+      accessEmail: string | null;
+    };
+    expect(body.accessAuthenticated).toBe(true);
+    expect(body.accessEmail).toBe("alice@example.com");
     // updateLastUsed is fire-and-forget; give it a tick to run
     await new Promise((r) => setTimeout(r, 10));
     expect(lastUsedId).toBe(42);
