@@ -11,7 +11,8 @@ export default defineConfig({
   globalTeardown: "./tests/playwright/global-teardown.ts",
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  retries: process.env.CI ? 2 : 0,
+  forbidOnly: !!process.env.CI,
   timeout: 30_000,
   reporter: process.env.CI ? "github" : "list",
 
