@@ -234,13 +234,14 @@ export function resetTestDb(): void {
 }
 
 /**
- * Initialize schema on the current test SQLite connection.
- * All CREATE TABLE IF NOT EXISTS — idempotent.
+ * Canonical schema DDL — the single source of truth for environments
+ * provisioned outside of drizzle-kit (in-memory unit tests, the L2-HTTP
+ * wrangler-local D1 runner, ad-hoc seed scripts).
+ *
+ * Production schema lives in `drizzle/*.sql` and is kept in sync with this
+ * block; whenever a schema change lands, both must move together.
  */
-export function initSchema(): void {
-  if (!testSqlite) throw new Error("No test database connection");
-
-  testSqlite.exec(`
+export const INIT_SQL = `
     CREATE TABLE IF NOT EXISTS members (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -332,7 +333,6 @@ export function initSchema(): void {
       paid_amount REAL
     );
 
-    -- Unique constraint: no duplicate period numbers per policy
     CREATE UNIQUE INDEX IF NOT EXISTS unique_policy_period ON payments(policy_id, period_number);
 
     CREATE TABLE IF NOT EXISTS cash_values (
@@ -433,7 +433,6 @@ export function initSchema(): void {
 
     CREATE INDEX IF NOT EXISTS idx_api_tokens_email ON api_tokens(email);
 
-    -- Performance indexes on foreign keys
     CREATE INDEX IF NOT EXISTS idx_policies_insurer_id ON policies(insurer_id);
     CREATE INDEX IF NOT EXISTS idx_policies_insured_member_id ON policies(insured_member_id);
     CREATE INDEX IF NOT EXISTS idx_policies_insured_asset_id ON policies(insured_asset_id);
@@ -443,7 +442,15 @@ export function initSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_medical_visits_member_id ON medical_visits(member_id);
     CREATE INDEX IF NOT EXISTS idx_medical_visits_hospital_id ON medical_visits(hospital_id);
     CREATE INDEX IF NOT EXISTS idx_medical_visits_doctor_id ON medical_visits(doctor_id);
-  `);
+`;
+
+/**
+ * Initialize schema on the current test SQLite connection.
+ * All CREATE TABLE IF NOT EXISTS — idempotent.
+ */
+export function initSchema(): void {
+  if (!testSqlite) throw new Error("No test database connection");
+  testSqlite.exec(INIT_SQL);
 }
 
 /**

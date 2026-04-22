@@ -9,13 +9,13 @@
  */
 
 import { spawn, type Subprocess } from "bun";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
+import { INIT_SQL } from "@surety/db";
 
 const PORT = 7017;
 const BASE = `http://127.0.0.1:${PORT}`;
 const WORKER_DIR = `${import.meta.dir}/../apps/worker`;
-const MIGRATIONS_DIR = `${import.meta.dir}/../drizzle`;
+const PERSIST_DIR = `${WORKER_DIR}/.wrangler/state-l2-http`;
 const HEALTH_TIMEOUT_MS = 30_000;
 const SHUTDOWN_GRACE_MS = 5_000;
 
@@ -46,23 +46,15 @@ async function waitForHealth(): Promise<void> {
 }
 
 function applySchema(): void {
-  const files = readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith(".sql"))
-    .sort();
-  if (files.length === 0) {
-    throw new Error(`no migrations found in ${MIGRATIONS_DIR}`);
+  // Start from a clean slate so re-runs don't hit "table already exists".
+  try {
+    rmSync(PERSIST_DIR, { recursive: true, force: true });
+  } catch {
+    // ignore
   }
-  const combined = files
-    .map((f) => readFileSync(join(MIGRATIONS_DIR, f), "utf8"))
-    .join("\n")
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .join("\n");
-  // Write to a temp file because `--command` chokes on multi-statement input.
   const tmp = `${WORKER_DIR}/.l2-http-schema.sql`;
-  Bun.write(tmp, combined);
-  log(`applying schema (${files.length} migration files)`);
+  Bun.write(tmp, INIT_SQL);
+  log(`applying canonical INIT_SQL to local D1`);
   const proc = Bun.spawnSync(
     [
       "bunx",
@@ -113,18 +105,20 @@ async function startWrangler(): Promise<void> {
     },
   );
   // Drain stdout/stderr so the pipe buffer never fills.
-  void (async () => {
-    if (!wrangler) return;
-    for await (const chunk of wrangler.stdout as ReadableStream) {
-      process.stderr.write(`[wrangler] ${new TextDecoder().decode(chunk)}`);
+  const drain = async (
+    stream: ReadableStream<Uint8Array>,
+    label: string,
+  ): Promise<void> => {
+    const reader = stream.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) process.stderr.write(`[${label}] ${dec.decode(value)}`);
     }
-  })();
-  void (async () => {
-    if (!wrangler) return;
-    for await (const chunk of wrangler.stderr as ReadableStream) {
-      process.stderr.write(`[wrangler!] ${new TextDecoder().decode(chunk)}`);
-    }
-  })();
+  };
+  void drain(wrangler.stdout as ReadableStream<Uint8Array>, "wrangler");
+  void drain(wrangler.stderr as ReadableStream<Uint8Array>, "wrangler!");
 }
 
 async function stopWrangler(): Promise<void> {
