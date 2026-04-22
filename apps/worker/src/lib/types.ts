@@ -7,6 +7,7 @@ export type Bindings = {
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
   E2E_SKIP_AUTH?: string;
+  ENVIRONMENT?: string;
 };
 
 export type Variables = {
