@@ -1,82 +1,8 @@
 # OSV-Scanner configuration — suppress known indirect dependency vulnerabilities.
-# These are transitive deps pulled by @modelcontextprotocol/sdk, eslint, and
-# other indirect dependencies. Direct upgrades are not possible; waiting on upstream.
+# These are transitive deps pulled by eslint and other indirect dependencies.
+# Direct upgrades are not possible; waiting on upstream.
 #
 # Review and re-evaluate on the ignoreUntil date.
-
-# --- @modelcontextprotocol/sdk transitive deps ---
-# MCP SDK pins hono@4.11.8 and @hono/node-server@1.19.9 as overridden deps.
-# Direct hono is ^4.12.14 but the SDK's transitive copies remain vulnerable.
-
-[[IgnoredVulns]]
-id = "GHSA-wc8c-qw6v-h7f6"
-ignoreUntil = 2026-06-23
-reason = "Indirect: @hono/node-server@1.19.9 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-92pp-h63x-v22m"
-ignoreUntil = 2026-06-23
-reason = "Indirect: @hono/node-server@1.19.9 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-gq3j-xvxp-8hrf"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-5pq2-9x2x-5p6w"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-p6xx-57qc-3wxr"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-q5qw-h33p-qvwr"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-v8w9-8mx6-g223"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-26pp-8wgv-hjvm"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-r5rp-j6wh-rvv4"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-wmmm-f939-6g9c"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-xf4j-xp2r-rqqx"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-xpcf-pg52-r92g"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-458j-xx4x-4375"
-ignoreUntil = 2026-06-23
-reason = "Indirect: hono@4.11.8 pinned by @modelcontextprotocol/sdk"
-
-[[IgnoredVulns]]
-id = "GHSA-46wh-pxpv-q5gq"
-ignoreUntil = 2026-06-23
-reason = "Indirect: express-rate-limit via @modelcontextprotocol/sdk"
 
 # --- eslint / @typescript-eslint transitive deps ---
 
@@ -116,11 +42,6 @@ reason = "Indirect: ajv via eslint, @eslint/config-helpers"
 id = "GHSA-2g4f-4pwh-qvx6"
 ignoreUntil = 2026-06-23
 reason = "Indirect: esbuild via drizzle-kit (devDependency)"
-
-[[IgnoredVulns]]
-id = "GHSA-w7fw-mjwx-w883"
-ignoreUntil = 2026-06-23
-reason = "Indirect: qs via express (devDependency chain)"
 
 [[IgnoredVulns]]
 id = "GHSA-3v7f-55p6-f55p"
