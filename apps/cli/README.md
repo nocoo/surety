@@ -51,18 +51,32 @@ Environment overrides (highest priority):
 
 ## Output contract
 
-- Every command emits **one JSON object** on stdout.
-- Summary mode (default): compact record with `id` + salient fields.
-- Full mode (`--full`): complete upstream payload.
-- On error: exit code 1, stderr `{ ok: false, error, details? }`.
+- Every command emits **one JSON value** on stdout (object or array, depending on command).
+- Summary mode (default): compact projection of each record.
+- Full mode (`--full`): the complete upstream payload.
+- On error: exit code 1, stderr one-line `{ ok: false, error, detail? }`.
 
 ```bash
 surety members ls
-# {"ok":true,"items":[{"id":1,"name":"张伟","relation":"self"}, ...]}
+# [{"id":1,"name":"张伟","relation":"self"}, ...]
 
 surety members get 1 --full
-# {"ok":true,"item":{"id":1,"name":"张伟","relation":"self","birthDate":"...", ...}}
+# {"id":1,"name":"张伟","relation":"self","birthDate":"...", ...}
+
+surety members rm 999
+# stderr: {"ok":false,"error":"api error: 404 DELETE /api/members/999","detail":{"error":"not found"}}
+# exit 1
 ```
+
+## JSON input for `add` / `update`
+
+Mutating commands take the payload via one of (in priority order):
+
+1. `--data '<inline json>'`
+2. `--data-file <path>` (use `-` to read from stdin)
+3. piped stdin (when not a TTY)
+
+Positional JSON arguments are **not** accepted.
 
 ## Commands
 
@@ -75,7 +89,13 @@ surety members get 1 --full
 
 ### Flat entities (CRUD)
 
-All follow the same shape: `ls`, `get <id>`, `add <json>`, `update <id> <json>`, `rm <id>`.
+All follow the same shape:
+
+- `ls` — list all
+- `get <id>` — fetch one
+- `add --data '<json>'` — create (also `--data-file <path>` / stdin)
+- `update <id> --data '<json>'` — replace
+- `rm <id>` — delete
 
 | Command | Path |
 |---------|------|
@@ -91,14 +111,14 @@ All follow the same shape: `ls`, `get <id>`, `add <json>`, `update <id> <json>`,
 ```bash
 surety policies ls
 surety policies get <id> [--full]
-surety policies add '<json>'
-surety policies update <id> '<json>'
+surety policies add --data '<json>'
+surety policies update <id> --data '<json>'
 surety policies rm <id>
 
 # Payments
 surety policies payments ls <policyId>
-surety policies payments add <policyId> '<json>'
-surety policies payments update <policyId> <paymentId> '<json>'
+surety policies payments add <policyId> --data '<json>'
+surety policies payments update <policyId> <paymentId> --data '<json>'
 surety policies payments rm <policyId> <paymentId>
 surety policies payments generate <policyId>
 
@@ -107,8 +127,8 @@ surety policies beneficiaries ls <policyId>
 
 # Coverage items (full CRUD)
 surety policies coverage-items ls <policyId>
-surety policies coverage-items add <policyId> '<json>'
-surety policies coverage-items update <policyId> <itemId> '<json>'
+surety policies coverage-items add <policyId> --data '<json>'
+surety policies coverage-items update <policyId> <itemId> --data '<json>'
 surety policies coverage-items rm <policyId> <itemId>
 
 # Attachments (metadata only; upload not yet exposed in Worker)
@@ -142,7 +162,7 @@ surety coverage --type member --id 1                                # list polic
 surety policies get 3 --full                                        # inspect one
 
 # Record a new out-of-pocket payment
-surety policies payments add 3 '{"amount":1200,"paidAt":"2026-04-01","note":"annual premium"}'
+surety policies payments add 3 --data '{"amount":1200,"paidAt":"2026-04-01","note":"annual premium"}'
 
 # Regenerate upcoming payment schedule after policy change
 surety policies payments generate 3
