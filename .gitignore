@@ -60,3 +60,7 @@ e2e/playwright-report/
 
 # source logo files (large, in root only)
 /logo-*.png
+
+# wrangler local emulator state + temp files
+**/.wrangler/
+apps/worker/.l2-http-schema.sql

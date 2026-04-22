@@ -17,6 +17,7 @@
     "test:worker": "bun test apps/worker/__tests__/",
     "test:cli": "bun test apps/cli/__tests__/",
     "test": "bun run test:web && bun run test:worker && bun run test:cli",
+    "test:l2:http": "bun run scripts/run-l2-http.ts",
     "test:coverage": "bun run scripts/check-coverage.ts",
     "test:coverage:cached": "bun run scripts/run-l1.ts",
     "release": "bun run scripts/release.ts",
