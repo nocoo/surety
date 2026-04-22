@@ -175,6 +175,24 @@ E2E_SKIP_AUTH=true          # 跳过认证（E2E runner 自动设置）
 
 Verification: `rg '旧版本号' --glob '*.ts' --glob '*.tsx'` to catch stragglers.
 
+## CLI (`@nocoo/surety`)
+
+AI/脚本入口，通过 Bearer token 访问 Worker HTTP API，已替代原 MCP Server。源码 `apps/cli/`，Bun-only（`bin` 指向 `src/index.ts`，无 build 步骤）。
+
+| 任务 | 命令 |
+|------|------|
+| 本地调试 | `cd apps/cli && bun src/index.ts <cmd>` |
+| 跑测试 | `cd apps/cli && bun test` |
+| 类型检查 | `cd apps/cli && bun run typecheck` |
+| 全局安装 | `bun add -g @nocoo/surety` |
+
+认证域名模型（易错点）：
+- `loginUrl`（默认 `https://surety.hexly.ai`）= CF Access 保护的铸 token 入口，`surety login` 必须打在这个域。
+- `apiUrl`（默认 `https://surety-api.hexly.ai`）= 数据面，纯 Bearer token。
+- 两者配置/env 完全独立（`SURETY_LOGIN_URL` vs `SURETY_API_URL`）。改动 login 流时务必保持分离。
+
+完整命令清单和输出契约见 [apps/cli/README.md](apps/cli/README.md)。
+
 ## Retrospective
 
 - **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。

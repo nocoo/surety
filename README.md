@@ -48,7 +48,7 @@ CLI ──► Bearer token ──► Hono Worker ──► @surety/api ──►
   - 浏览器走 Cloudflare Access（Google OAuth），Worker 中 `accessAuth` 中间件校验 `Cf-Access-Jwt-Assertion`。
   - CLI / 脚本走 Bearer token（`api_tokens` 表），`apiKeyAuth` 中间件校验。
   - `/api/live` 公开无需鉴权；本地 localhost host 直通以便本地调试。
-- **CLI**：`@nocoo/surety`（规划中，见 [docs/16](docs/16-cli-replace-mcp.md)），通过 Bearer token 调 Worker HTTP API，替换原 MCP Server。
+- **CLI**：[`@nocoo/surety`](apps/cli/README.md) — AI/脚本通过 Bearer token 调 Worker HTTP API，已取代原 MCP Server。
 
 ## 🚀 快速开始
 
@@ -208,9 +208,18 @@ surety/
 > ℹ️ 吊销 token 走 `DELETE /api/auth/tokens/:id`（设置页目前没有 token 管理
 > UI，只能用 API 直接管理）。
 
-## 🖥️ CLI（规划中）
+## 🖥️ CLI
 
-计划中的 `@nocoo/surety` CLI 将替代原 MCP Server，作为 AI/脚本访问 Surety 数据的入口。详见 [docs/16-cli-replace-mcp.md](docs/16-cli-replace-mcp.md)。
+`@nocoo/surety` 是 AI 和脚本访问 Surety 数据的入口，通过 Bearer token 调用 Worker HTTP API，已取代原 MCP Server。
+
+```bash
+bun add -g @nocoo/surety
+surety login
+surety members ls
+surety policies get 3 --full
+```
+
+完整命令、配置和输出契约见 [apps/cli/README.md](apps/cli/README.md)。设计与演进记录见 [docs/16-cli-replace-mcp.md](docs/16-cli-replace-mcp.md)。
 
 ## 📄 License
 

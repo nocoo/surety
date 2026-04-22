@@ -1,6 +1,6 @@
 # 16. CLI 替换 MCP（@nocoo/surety）
 
-Status: **Phase 1–4 完成**，Phase 5（README + 发布）待办 (2026-04-22, revised again)
+Status: **Phase 1–5 文档部分完成**，剩余 `npm publish` + git tag 由哥手动执行 (2026-04-22)
 
 ## 背景
 
@@ -222,18 +222,16 @@ Surety 有**两个独立域**：
 - [x] 4c: `policies` 主 CRUD + `payments` (ls/add/update/rm/generate) + `beneficiaries` (ls) + `coverage-items` (CRUD) + `attachments` (ls/get/rm)
 - [x] 4d: `coverage` + `renewals` + `dashboard`
 
-### Phase 5: 文档 + 发布（待办）
+### Phase 5: 文档 + 发布
 
-决策点：当前 bin 指向 `src/index.ts` 依赖 Bun。要上 npm 有两条路：
-- A: 保持现状，README 明示"需要 Bun"，不跨运行时
-- B: 加 `tsc` build 产出 `dist/index.js`（shebang `#!/usr/bin/env node`），并确保 cli-base 在 Node 下可运行
+打包形态：**选 A（Bun-only）**。`bin` 直接指向 `src/index.ts`，shebang `#!/usr/bin/env bun`，无 build 步骤，README 明示需要 Bun。
 
-- [ ] 选择 A 或 B（决定后更新 package.json 的 bin/files/scripts）
-- [ ] `apps/cli/README.md`：安装、登录、完整命令清单、AI 使用示例
-- [ ] 根 `README.md`：CLI 章节
-- [ ] `CLAUDE.md`：同步 CLI 工作流
-- [ ] `npm publish --access public`（`@nocoo/surety@0.1.0`）
-- [ ] Git tag `cli-v0.1.0`
+- [x] 选 A（Bun-only，保持 `src/index.ts` 为 bin）
+- [x] `apps/cli/README.md`：安装、配置、完整命令清单、AI 示例
+- [x] 根 `README.md`：CLI 章节改为实际状态（含命令示例，去掉"规划中"）
+- [x] `CLAUDE.md`：追加 CLI 工作流 + loginUrl/apiUrl 域名模型备忘
+- [ ] `npm publish --access public`（`@nocoo/surety@0.1.0`）— 哥手动执行
+- [ ] Git tag `cli-v0.1.0` — 发布后打
 
 ## 验证清单（每 Phase）
 
