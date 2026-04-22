@@ -1,71 +1,109 @@
 #!/usr/bin/env bun
 /**
- * Coverage Check Script
- * 
- * Runs unit tests with coverage and fails if coverage falls below threshold.
+ * Coverage gate across the whole monorepo.
+ *
+ * Runs each app's unit tests with coverage and enforces line ≥ LINE_THRESHOLD
+ * and function ≥ FUNC_THRESHOLD on the aggregate "All files" line per group.
+ *
+ * Bun's text reporter emits two columns (% Funcs | % Lines), so those are the
+ * two dimensions we can gate on.
  */
 
-const THRESHOLD = 90; // Minimum line coverage percentage
+const LINE_THRESHOLD = 90;
+const FUNC_THRESHOLD = 85;
+
+interface Group {
+  name: string;
+  cwd: string;
+  cmd: string;
+}
+
+const repoRoot = import.meta.dir + "/../../..";
+
+const GROUPS: Group[] = [
+  {
+    name: "web_legacy",
+    cwd: `${repoRoot}/apps/web_legacy`,
+    cmd: "bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage",
+  },
+  {
+    name: "web",
+    cwd: repoRoot,
+    cmd: "bun test apps/web/src/__tests__/ --coverage",
+  },
+  {
+    name: "worker",
+    cwd: repoRoot,
+    cmd: "bun test apps/worker/__tests__/ --coverage",
+  },
+  {
+    name: "cli",
+    cwd: repoRoot,
+    cmd: "bun test apps/cli/__tests__/ --coverage",
+  },
+];
+
+interface Result {
+  name: string;
+  funcs: number;
+  lines: number;
+  output: string;
+  ok: boolean;
+}
+
+async function runGroup(g: Group): Promise<Result> {
+  const proc = Bun.spawn(["bash", "-c", `cd "${g.cwd}" && ${g.cmd}`], {
+    stdout: "pipe",
+    stderr: "pipe",
+    cwd: repoRoot,
+  });
+  const out = await new Response(proc.stdout).text();
+  const err = await new Response(proc.stderr).text();
+  await proc.exited;
+  const full = out + err;
+
+  const allFilesLine = full
+    .split("\n")
+    .find((l) => l.includes("All files"));
+  if (!allFilesLine) {
+    return { name: g.name, funcs: 0, lines: 0, output: full, ok: false };
+  }
+  const match = allFilesLine.match(
+    /All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/,
+  );
+  if (!match) {
+    return { name: g.name, funcs: 0, lines: 0, output: full, ok: false };
+  }
+  const funcs = parseFloat(match[1] ?? "0");
+  const lines = parseFloat(match[2] ?? "0");
+  const ok = lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD;
+  return { name: g.name, funcs, lines, output: full, ok };
+}
 
 async function main() {
-  console.log("🧪 Running unit tests with coverage...\n");
-
-  // Run tests with coverage (auto-discover, E2E excluded via bunfig.toml)
-  const repoRoot = import.meta.dir + "/../../..";
-
-  // Run web tests from apps/web_legacy (for @/* path resolution)
-  // Use explicit globs matching the "test" script to avoid E2E test discovery
-  const proc = Bun.spawn(
-    [
-      "bash", "-c",
-      `cd "${repoRoot}/apps/web_legacy" && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage`,
-    ],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-      cwd: repoRoot,
-    }
+  console.log(
+    `🧪 Coverage gate (line ≥ ${LINE_THRESHOLD}%, func ≥ ${FUNC_THRESHOLD}%)\n`,
   );
 
-  const output = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
-  
-  // Print output
-  console.log(output);
-  if (stderr) console.error(stderr);
+  const results = await Promise.all(GROUPS.map(runGroup));
 
-  await proc.exited;
-
-  // Combine stdout and stderr for parsing
-  const fullOutput = output + stderr;
-
-  // Parse coverage from output - look for "All files" line
-  const lines = fullOutput.split("\n");
-  const allFilesLine = lines.find(line => line.includes("All files"));
-  
-  if (!allFilesLine) {
-    console.error("❌ Could not parse coverage output");
-    process.exit(1);
+  let failed = false;
+  for (const r of results) {
+    const status = r.ok ? "✅" : "❌";
+    console.log(
+      `${status} ${r.name.padEnd(12)} funcs=${r.funcs.toFixed(2)}%  lines=${r.lines.toFixed(2)}%`,
+    );
+    if (!r.ok) {
+      failed = true;
+      console.log(r.output);
+    }
   }
 
-  // Parse line coverage percentage (3rd column after "All files")
-  // Format: "All files                                |   90.77 |   95.61 |"
-  const match = allFilesLine.match(/All files\s*\|\s*[\d.]+\s*\|\s*([\d.]+)\s*\|/);
-  if (!match) {
-    console.error("❌ Could not parse coverage percentage from:", allFilesLine);
+  if (failed) {
+    console.error("\n❌ Coverage gate failed");
     process.exit(1);
   }
-
-  const lineCoverage = parseFloat(match[1] ?? "0");
-  console.log(`\n📊 Line Coverage: ${lineCoverage.toFixed(2)}%`);
-  console.log(`   Threshold: ${THRESHOLD}%`);
-
-  if (lineCoverage < THRESHOLD) {
-    console.error(`\n❌ Coverage ${lineCoverage.toFixed(2)}% is below threshold ${THRESHOLD}%`);
-    process.exit(1);
-  }
-
-  console.log("\n✅ Coverage check passed!");
+  console.log("\n✅ Coverage gate passed");
 }
 
 main().catch((err) => {
