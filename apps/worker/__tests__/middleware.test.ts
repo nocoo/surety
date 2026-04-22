@@ -36,18 +36,47 @@ function makeApp(
   return app;
 }
 
+function ctxWithHost(host: string, cf?: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any = { cf };
+  return {
+    req: {
+      header: (name: string) =>
+        name.toLowerCase() === "host" ? host : undefined,
+      raw,
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+}
+
 describe("isLocalhost", () => {
-  test("matches localhost, 127.0.0.1, *.dev.hexly.ai", () => {
-    expect(isLocalhost("localhost")).toBe(true);
-    expect(isLocalhost("localhost:7016")).toBe(true);
-    expect(isLocalhost("127.0.0.1:7016")).toBe(true);
-    expect(isLocalhost("app.dev.hexly.ai")).toBe(true);
+  test("matches localhost, 127.0.0.1, *.dev.hexly.ai when no CF edge", () => {
+    expect(isLocalhost(ctxWithHost("localhost"))).toBe(true);
+    expect(isLocalhost(ctxWithHost("localhost:7016"))).toBe(true);
+    expect(isLocalhost(ctxWithHost("127.0.0.1:7016"))).toBe(true);
+    expect(isLocalhost(ctxWithHost("app.dev.hexly.ai"))).toBe(true);
   });
 
   test("rejects prod hostnames", () => {
-    expect(isLocalhost("surety.hexly.ai")).toBe(false);
-    expect(isLocalhost("example.com")).toBe(false);
-    expect(isLocalhost("")).toBe(false);
+    expect(isLocalhost(ctxWithHost("surety.hexly.ai"))).toBe(false);
+    expect(isLocalhost(ctxWithHost("example.com"))).toBe(false);
+    expect(isLocalhost(ctxWithHost(""))).toBe(false);
+  });
+
+  test("rejects spoofed Host: localhost when request came through CF edge", () => {
+    // request.cf is populated only on real CF edge requests; its presence
+    // proves the Host header is whatever the Worker is bound to (never
+    // localhost), so a spoofed Host must not be treated as local.
+    expect(isLocalhost(ctxWithHost("localhost", { colo: "SJC" }))).toBe(false);
+    expect(isLocalhost(ctxWithHost("127.0.0.1:7016", { colo: "SJC" }))).toBe(
+      false,
+    );
+  });
+
+  test("still accepts *.dev.hexly.ai on CF edge (dev environment)", () => {
+    expect(isLocalhost(ctxWithHost("app.dev.hexly.ai", { colo: "SJC" }))).toBe(
+      true,
+    );
   });
 });
 
@@ -187,6 +216,21 @@ describe("apiKeyAuth middleware", () => {
       { E2E_SKIP_AUTH: "true" },
     );
     expect(res.status).toBe(200);
+  });
+
+  test("spoofed Host: localhost on a CF edge request does NOT bypass auth", async () => {
+    // Attacker sends Host: localhost from outside; the Worker received the
+    // request via CF edge so request.cf is present. Must reject.
+    const app = makeApp(apiKeyAuth, {
+      apiTokens: { verify: async () => null, updateLastUsed: async () => {} },
+    });
+    const req = new Request("https://surety.hexly.ai/api/probe", {
+      headers: { host: "localhost" },
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (req as any).cf = { colo: "SJC" };
+    const res = await app.fetch(req);
+    expect(res.status).toBe(401);
   });
 });
 
