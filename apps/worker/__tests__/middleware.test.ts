@@ -232,6 +232,28 @@ describe("apiKeyAuth middleware", () => {
     const res = await app.fetch(req);
     expect(res.status).toBe(401);
   });
+
+  test("E2E_SKIP_AUTH=*** + ENVIRONMENT=production does NOT bypass auth", async () => {
+    const app = makeApp(apiKeyAuth, {
+      apiTokens: { verify: async () => null, updateLastUsed: async () => {} },
+    });
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety.hexly.ai" } },
+      { E2E_SKIP_AUTH: "true", ENVIRONMENT: "production" },
+    );
+    expect(res.status).toBe(401);
+  });
+
+  test("E2E_SKIP_AUTH=*** + ENVIRONMENT=test still bypasses auth", async () => {
+    const app = makeApp(apiKeyAuth);
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety-test.hexly.ai" } },
+      { E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
+    );
+    expect(res.status).toBe(200);
+  });
 });
 
 describe("accessAuth + apiKeyAuth + /api/me integration", () => {

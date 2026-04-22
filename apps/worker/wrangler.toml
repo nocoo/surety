@@ -8,6 +8,9 @@ routes = [
   { pattern = "surety-api.hexly.ai", custom_domain = true }
 ]
 
+[vars]
+ENVIRONMENT = "production"
+
 [alias]
 "bun:sqlite" = "./src/lib/bun-sqlite-stub.ts"
 
@@ -35,6 +38,7 @@ routes = [
 
 [env.test.vars]
 E2E_SKIP_AUTH = "true"
+ENVIRONMENT = "test"
 
 [env.test.assets]
 directory = "./static"
