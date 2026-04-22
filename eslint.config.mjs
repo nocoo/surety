@@ -46,7 +46,6 @@ const eslintConfig = defineConfig([
       "apps/web_legacy/src/**/*.tsx",
       "packages/api/src/**/*.ts",
       "packages/db/src/**/*.ts",
-      "packages/mcp/src/**/*.ts",
     ],
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
