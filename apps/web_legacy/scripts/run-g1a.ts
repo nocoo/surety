@@ -4,7 +4,7 @@
  * green run.
  *
  * Inputs hashed:
- *   - every *.ts / *.tsx file under src/ and packages/mcp/
+ *   - every *.ts / *.tsx file under src/ and packages/
  *   - every tsconfig*.json under the repo root
  *
  * Cache file: <git-common-dir>/info/g1a-cache.json

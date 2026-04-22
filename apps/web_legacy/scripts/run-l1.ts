@@ -4,7 +4,7 @@
  * green run.
  *
  * Inputs hashed:
- *   - every *.ts / *.tsx file under src/ and packages/mcp/
+ *   - every *.ts / *.tsx file under src/ and packages/
  *   - bunfig.toml
  *   - root package.json (test scripts can change)
  *
@@ -25,7 +25,6 @@ const SOURCE_ROOTS = [
   "apps/worker/src",
   "apps/worker/__tests__",
   "apps/web_legacy/src",
-  "packages/mcp",
   "packages/api/src",
   "packages/db/src",
 ].map((p) => join(REPO_ROOT, p));
@@ -36,7 +35,6 @@ const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p
 const TEST_SHELL_CMD = [
   "bun test apps/web/src/__tests__/ --coverage",
   "bun test apps/worker/__tests__/ --coverage",
-  "bun test packages/mcp/__tests__/api-client.test.ts packages/mcp/__tests__/guard.test.ts --coverage",
   "cd apps/web_legacy && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage",
 ].join(" && ");
 

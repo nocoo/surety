@@ -13,12 +13,12 @@ async function main() {
   // Run tests with coverage (auto-discover, E2E excluded via bunfig.toml)
   const repoRoot = import.meta.dir + "/../../..";
 
-  // Run web tests from apps/web_legacy (for @/* path resolution) then MCP tests
+  // Run web tests from apps/web_legacy (for @/* path resolution)
   // Use explicit globs matching the "test" script to avoid E2E test discovery
   const proc = Bun.spawn(
     [
       "bash", "-c",
-      `cd "${repoRoot}/apps/web_legacy" && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage && cd "${repoRoot}" && bun test packages/mcp/__tests__/tools-*.test.ts packages/mcp/__tests__/guard.test.ts --coverage`,
+      `cd "${repoRoot}/apps/web_legacy" && bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage`,
     ],
     {
       stdout: "pipe",
