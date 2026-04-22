@@ -9,8 +9,8 @@
  * two dimensions we can gate on.
  */
 
-const LINE_THRESHOLD = 90;
-const FUNC_THRESHOLD = 85;
+const LINE_THRESHOLD = 95;
+const FUNC_THRESHOLD = 95;
 
 interface Group {
   name: string;
