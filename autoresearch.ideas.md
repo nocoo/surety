@@ -64,11 +64,18 @@ Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapp
   - `FORCE_COLOR=0` / `NO_COLOR=1` env on spawn (bun test already detects non-TTY)
   - `stdout: ignore` + drop one Response().text() drain (coverage table is on stderr) — single-stream drain not measurable
   - skip `bun run` wrapper in bench harness (1-2ms saving lost in noise)
-  - `FORCE_COLOR=0` / `NO_COLOR=1` env on spawn (bun test already detects non-TTY)
-  - `stdout: ignore` + drop one Response().text() drain (coverage table is on stderr) — single-stream drain not measurable
+  - reorder spawn array (cli first — .map iteration order saves <1ms)
+  - `--reporter=dots` (no diff vs default; bun buffers output)
+  - `BUN_RUNTIME_TRANSPILER_CACHE_PATH` on child procs (cache stays empty; not honored for `bun test` in 1.3.11)
+- **Real win this session**: `bun --bun test` (force bun runtime, skip node-compat) dropped cli proc 71→51ms in isolation (-28%), gate 60→58ms steady.
 - **Untried, but unlikely worth it**:
   - Per-test stdout capture in policies-coverage.test.ts → describe.concurrent (tests <0.5ms each, concurrency overhead > savings)
   - mtime-cache the gate (banned: "不能跳过测试")
   - long-lived bun test --watch daemon (significant infra)
 - **Conclusion**: ~57ms is the hardware floor. The 50ms cli pole = ~10ms bun startup + ~40ms test/module work. To break 50ms wall would need to either (a) cache test runs by hash (banned), or (b) eliminate parent script entirely so wall == cli proc (52ms).
 - **Truly untried**: incremental coverage gate (only re-test groups whose source files changed via L1-style hashing). Probably crosses the "don't skip tests" rule, but would be a real win on warm pre-commit. Defer until the rule is clarified.
+- **Resume #2 attempts (also no win)**:
+  - `bun build --compile scripts/check-coverage.ts` standalone binary: bun child spawn fails with ENOENT because compiled binary's PATH is stripped. Could inject env.PATH but parent overhead is only ~5ms anyway (60ms wall − 55ms cli pole) — not worth the recompile-on-edit pain.
+  - sh wrapper with `bun &` + `wait`: 94-110ms (worse than bun parent at 60ms). Bun.spawn is faster than sh job control.
+  - `coverageSkipTestFiles=true` in bunfig: redundant with `coverageInclude` restriction.
+  - 2-shard merge (cli+web in one proc, worker alone): tied at 64ms AND loses per-app coverage gate safety — the combined 'All files' line could mask a cli regression if web stays high. Rejected on correctness grounds.
