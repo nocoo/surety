@@ -79,6 +79,17 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   }
   process.env.L3_SEED_INSURER_ID = String((insurer.body as { id: number }).id);
 
+  const asset = await fetchJson("POST", "/api/assets", {
+    type: "RealEstate",
+    name: "L3种子公寓",
+    identifier: "沪房SEED001",
+    ownerId: memberId,
+  });
+  if (asset.status !== 201) {
+    throw new Error(`seed asset failed: ${asset.status} ${JSON.stringify(asset.body)}`);
+  }
+
   process.env.L3_SEED_MEMBER_ID = String(memberId);
   process.env.L3_SEED_POLICY_ID = String((policy.body as { id: number }).id);
+  process.env.L3_SEED_ASSET_ID = String((asset.body as { id: number }).id);
 }
