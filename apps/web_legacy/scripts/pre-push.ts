@@ -22,7 +22,19 @@ interface Step {
 const STEPS: Step[] = [
   { name: "osv-scanner", cmd: ["osv-scanner", "--lockfile=bun.lock"] },
   { name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
-  { name: "e2e", cmd: ["bun", "run", "test:e2e"], live: true },
+  // Legacy Next.js E2E targets a retired Worker proxy and is currently
+  // broken; stand in with the worker + cli unit suites until the new
+  // Hono/Vite E2E harness lands (docs/16-cli-replace-mcp.md Phase 5).
+  {
+    name: "worker+cli tests",
+    cmd: [
+      "bun",
+      "test",
+      "apps/worker/__tests__",
+      "apps/cli/__tests__",
+    ],
+    live: true,
+  },
 ];
 
 interface Outcome {
