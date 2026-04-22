@@ -1,4 +1,4 @@
 [test]
 # Auto-discover unit tests, exclude E2E test files and directories
 pathIgnorePatterns = ["**/e2e/**", "**/*.e2e.test.ts"]
-coverageInclude = ["apps/web/src/**", "apps/worker/src/**", "apps/web_legacy/src/lib/**", "apps/web_legacy/src/services/**", "packages/db/src/**", "packages/api/src/**", "apps/web_legacy/src/app/api/**"]
+coverageInclude = ["apps/web/src/**", "apps/worker/src/**", "packages/db/src/**", "packages/api/src/**"]

@@ -1,26 +1,13 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = defineConfig([
-  // Next.js rules scoped to apps/web_legacy only
-  ...nextVitals.map((config) => ({
-    ...config,
-    files: ["apps/web_legacy/**/*.ts", "apps/web_legacy/**/*.tsx"],
-  })),
-  ...nextTs.map((config) => ({
-    ...config,
-    files: ["apps/web_legacy/**/*.ts", "apps/web_legacy/**/*.tsx"],
-  })),
   globalIgnores([
     "**/node_modules/**",
     "**/.next/**",
-    "**/.next-e2e/**",
-    "**/.next-e2e-ui/**",
     "**/out/**",
     "**/build/**",
-    "next-env.d.ts",
+    "**/dist/**",
     "**/e2e/**",
   ]),
   // tseslint strict for all TS files
@@ -41,8 +28,6 @@ const eslintConfig = defineConfig([
   // no-console for application code (scripts use console legitimately)
   {
     files: [
-      "apps/web_legacy/src/**/*.ts",
-      "apps/web_legacy/src/**/*.tsx",
       "packages/api/src/**/*.ts",
       "packages/db/src/**/*.ts",
     ],

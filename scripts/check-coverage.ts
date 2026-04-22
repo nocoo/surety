@@ -22,11 +22,6 @@ const repoRoot = import.meta.dir + "/..";
 
 const GROUPS: Group[] = [
   {
-    name: "web_legacy",
-    cwd: `${repoRoot}/apps/web_legacy`,
-    cmd: "bun test src/__tests__/*.test.ts src/__tests__/db/*.test.ts --coverage",
-  },
-  {
     name: "web",
     cwd: repoRoot,
     cmd: "bun test apps/web/src/__tests__/ --coverage",
