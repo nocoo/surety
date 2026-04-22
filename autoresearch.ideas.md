@@ -38,3 +38,16 @@ Wall is now bound by `max(test, typecheck) ≈ 0.95s`:
 - `eslint --cache` ≈ 600ms (warm; sub-200ms in real lint-staged use)
 
 Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapping the osv-scanner network call with the long e2e run.
+
+## UT coverage gate (segment 6 — 2026-04)
+- Wall is 62-66ms steady (Bun startup ~12ms + parallel max ≈ 50ms cli pole).
+- All 3 groups now 100/100 (web, worker, cli).
+- **Long pole**: cli at ~50ms because policies-coverage.test.ts (36ms) + policies.test.ts (38ms) load + run inside one bun proc.
+- **Tried, no win**:
+  - `--concurrent` flag on cli tests (no diff — tests already <1ms each)
+  - unified single-proc test (85ms vs 53ms parallel — slower)
+  - cwd inside apps/cli (same)
+- **Promising but complex**:
+  - Shard cli into 2 parallel procs and parse "All files" per-shard with a narrowed include glob per shard. Could drop wall to ~46ms (worker pole). Requires per-shard bunfig or env override of `coverageInclude`.
+  - Refactor policies-coverage.test.ts stdout capture to be per-test (returned from helper, not module-level) so describe.concurrent is safe. Then run all 5 describe blocks concurrently. Could shave ~15ms off cli.
+  - Cache coverage gate by hashing src+test mtimes; skip when unchanged. Real-world warm wins, no first-run benefit.
