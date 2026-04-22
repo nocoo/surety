@@ -49,6 +49,14 @@ const STEPS: Step[] = [
     ],
     live: true,
   },
+  // L2 HTTP — boots `wrangler dev --env test --local` on :7017 and drives
+  // the worker through real fetch() over the loopback. Catches D1/R2
+  // binding regressions that the in-memory harness cannot.
+  {
+    name: "l2 http",
+    cmd: ["bun", "run", "scripts/run-l2-http.ts"],
+    live: true,
+  },
 ];
 
 interface Outcome {
