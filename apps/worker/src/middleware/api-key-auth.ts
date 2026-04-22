@@ -17,7 +17,13 @@ export async function apiKeyAuth(c: Context<AppEnv>, next: Next) {
   if (c.env?.E2E_SKIP_AUTH === "true") return next();
 
   const host = c.req.header("host") || "";
-  if (isLocalhost(host)) return next();
+  const hasBearer = (c.req.header("Authorization") ?? "").startsWith(
+    "Bearer ",
+  );
+  // Local/dev hosts normally skip auth for easier debugging, but if the
+  // caller explicitly presented a bearer token we still verify it so that
+  // accessEmail gets populated (e.g. CLI hitting a local worker).
+  if (isLocalhost(host) && !hasBearer) return next();
 
   if (c.get("accessAuthenticated")) return next();
 

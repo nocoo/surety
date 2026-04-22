@@ -10,6 +10,7 @@ import { Hono } from "hono";
 import { accessAuth } from "../src/middleware/access-auth";
 import { apiKeyAuth } from "../src/middleware/api-key-auth";
 import { isLocalhost } from "../src/middleware/is-localhost";
+import meRoutes from "../src/routes/me";
 import type { AppEnv } from "../src/lib/types";
 
 function makeApp(
@@ -70,6 +71,26 @@ describe("accessAuth middleware", () => {
       accessEmail: string | null;
     };
     expect(body.accessAuthenticated).toBe(true);
+    expect(body.accessEmail).toBeNull();
+  });
+
+  test("localhost with Bearer token defers to apiKeyAuth (no bypass flag)", async () => {
+    // When a bearer token is present, accessAuth must NOT short-circuit —
+    // otherwise apiKeyAuth is skipped and accessEmail never gets populated,
+    // breaking /api/me for CLI users hitting a local worker.
+    const app = makeApp(accessAuth);
+    const res = await app.request("/api/probe", {
+      headers: {
+        host: "localhost:7016",
+        authorization: "Bearer sk_xxx",
+      },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      accessAuthenticated: boolean;
+      accessEmail: string | null;
+    };
+    expect(body.accessAuthenticated).toBe(false);
     expect(body.accessEmail).toBeNull();
   });
 
@@ -166,5 +187,75 @@ describe("apiKeyAuth middleware", () => {
       { E2E_SKIP_AUTH: "true" },
     );
     expect(res.status).toBe(200);
+  });
+});
+
+describe("accessAuth + apiKeyAuth + /api/me integration", () => {
+  function buildApp(repos: unknown) {
+    const app = new Hono<AppEnv>();
+    app.use("*", async (c, next) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      c.set("repos", repos as any);
+      return next();
+    });
+    app.use("*", accessAuth);
+    app.use("*", apiKeyAuth);
+    app.route("/", meRoutes);
+    return app;
+  }
+
+  test("localhost host + valid Bearer token → /api/me returns email", async () => {
+    // Regression: previously accessAuth short-circuited on localhost without
+    // populating accessEmail, so apiKeyAuth was skipped and /api/me always
+    // replied { authenticated: false } for CLI users hitting a local worker.
+    const app = buildApp({
+      apiTokens: {
+        verify: async () => ({ id: 7, email: "cli@hexly.ai" }),
+        updateLastUsed: async () => {},
+      },
+    });
+    const res = await app.request(
+      "/api/me",
+      {
+        headers: {
+          host: "localhost:7016",
+          authorization: "Bearer sk_cli",
+        },
+      },
+      {},
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      email: string | null;
+      authenticated: boolean;
+    };
+    expect(body.authenticated).toBe(true);
+    expect(body.email).toBe("cli@hexly.ai");
+  });
+
+  test("prod host + valid Bearer token → /api/me returns email", async () => {
+    const app = buildApp({
+      apiTokens: {
+        verify: async () => ({ id: 9, email: "prod@hexly.ai" }),
+        updateLastUsed: async () => {},
+      },
+    });
+    const res = await app.request(
+      "/api/me",
+      {
+        headers: {
+          host: "surety.hexly.ai",
+          authorization: "Bearer sk_prod",
+        },
+      },
+      {},
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      email: string | null;
+      authenticated: boolean;
+    };
+    expect(body.authenticated).toBe(true);
+    expect(body.email).toBe("prod@hexly.ai");
   });
 });

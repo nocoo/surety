@@ -18,7 +18,14 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
 
   const host = c.req.header("host") || "";
   if (isLocalhost(host)) {
-    c.set("accessAuthenticated", true);
+    // Don't short-circuit when the caller sent a bearer token — let
+    // apiKeyAuth verify it so `accessEmail` gets populated for /api/me.
+    const hasBearer = (c.req.header("Authorization") ?? "").startsWith(
+      "Bearer ",
+    );
+    if (!hasBearer) {
+      c.set("accessAuthenticated", true);
+    }
     return next();
   }
 
