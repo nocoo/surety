@@ -35,6 +35,20 @@ const STEPS: Step[] = [
     ],
     live: true,
   },
+  // L2 E2E for the Hono worker — uses the in-memory D1 harness in
+  // __tests__/e2e/setup.ts. Listed separately so the bunfig E2E path-ignore
+  // can be overridden for this step only.
+  {
+    name: "worker e2e",
+    cmd: [
+      "bun",
+      "test",
+      "apps/worker/__tests__/e2e",
+      "--path-ignore-patterns",
+      "__none__",
+    ],
+    live: true,
+  },
 ];
 
 interface Outcome {

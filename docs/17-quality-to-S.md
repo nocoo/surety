@@ -48,9 +48,9 @@
 
 ## 完成状态
 
-- [ ] Step 1
-- [ ] Step 2
-- [ ] Step 3
-- [ ] Step 4
+- [x] Step 1 — gitleaks 进入 pre-commit
+- [x] Step 2 — 覆盖率门槛扩到 web/cli/worker
+- [x] Step 3 — 低覆盖代码补测试
+- [x] Step 4 — Hono test client 重建 L2 (`apps/worker/__tests__/e2e/`，23 tests)
 - [ ] Step 5
 - [ ] Step 6

@@ -41,7 +41,7 @@ describe("buildClient", () => {
       HOME: cfgRoot,
       SURETY_API_TOKEN: "tok_test",
       SURETY_API_URL: "https://example.test",
-    } as NodeJS.ProcessEnv);
+    } as unknown as NodeJS.ProcessEnv);
     expect(client).toBeDefined();
     // ApiClient is constructed; token presence avoided exit branch
   });
@@ -51,7 +51,7 @@ describe("buildClient", () => {
       buildClient({
         HOME: cfgRoot,
         SURETY_CLI_DEV: "1",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toThrow(ExitCalled);
     const parsed = JSON.parse(stderrOut) as {
       ok: boolean;
