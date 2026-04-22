@@ -61,8 +61,14 @@ Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapp
   - dropping `cwd: repoRoot` from spawn options (no diff)
   - `--smol`, `BUN_RUNTIME_TRANSPILER_CACHE_PATH`, `NODE_NO_WARNINGS` (no effect)
   - `coverageThreshold` in bunfig (Bun 1.3.11 doesn't gate exit code)
+  - `FORCE_COLOR=0` / `NO_COLOR=1` env on spawn (bun test already detects non-TTY)
+  - `stdout: ignore` + drop one Response().text() drain (coverage table is on stderr) — single-stream drain not measurable
+  - skip `bun run` wrapper in bench harness (1-2ms saving lost in noise)
+  - `FORCE_COLOR=0` / `NO_COLOR=1` env on spawn (bun test already detects non-TTY)
+  - `stdout: ignore` + drop one Response().text() drain (coverage table is on stderr) — single-stream drain not measurable
 - **Untried, but unlikely worth it**:
   - Per-test stdout capture in policies-coverage.test.ts → describe.concurrent (tests <0.5ms each, concurrency overhead > savings)
   - mtime-cache the gate (banned: "不能跳过测试")
   - long-lived bun test --watch daemon (significant infra)
 - **Conclusion**: ~57ms is the hardware floor. The 50ms cli pole = ~10ms bun startup + ~40ms test/module work. To break 50ms wall would need to either (a) cache test runs by hash (banned), or (b) eliminate parent script entirely so wall == cli proc (52ms).
+- **Truly untried**: incremental coverage gate (only re-test groups whose source files changed via L1-style hashing). Probably crosses the "don't skip tests" rule, but would be a real win on warm pre-commit. Defer until the rule is clarified.
