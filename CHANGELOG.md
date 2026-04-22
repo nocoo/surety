@@ -420,6 +420,82 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.0
+
+### Added
+- Add L2 hono e2e suite covering crud + auth boundary
+- Extend coverage gate to web/cli/worker with 2-dim threshold
+- Add coverage, renewals, dashboard read-only commands
+- Add policies command with payments/beneficiaries/coverage-items/attachments
+- Add flat entity commands via defineCrudCommand factory
+- Scaffold @nocoo/surety with auth commands
+- Accept `?callback` as alias for `?callback_url` on /api/auth/cli
+- Split API onto surety-api.hexly.ai for Bearer clients
+- Show Access user email in sidebar via /api/me
+- Add /api/me returning Access user info
+- Add E2E_SKIP_AUTH binding for test environment
+- Add /api/auth/cli CLI token mint endpoint
+- Vite dev proxy to prod Worker with bearer token injection
+- Bypass auth on localhost host for local dev
+- Create Vite React SPA with migrated components
+- Rewrite as Hono API server with D1 direct binding
+- Add D1 binding driver support
+
+### Changed
+- Bump version to 2.0.0 for first npm release
+- Prune web_legacy from architecture docs and quality matrix
+- Hoist build scripts and drizzle config to repo root
+- Record post-S MCP cleanup round in docs/17
+- Refresh architecture docs to reflect Vite + Hono + CLI stack
+- Document upgraded six-tier quality system
+- Apply strict eslint to apps/worker + ban .skip/.only
+- Backfill coverage for policies/json-input/client and access-auth jwt branch
+- Run gitleaks at pre-commit for early secret detection
+- Swap broken legacy e2e for worker+cli tests in pre-push
+- Correct README to match real output shape and --data input contract
+- Promote surety CLI from planned to shipped across root docs
+- Add README with install, config, and command reference
+- Align plan with real worker capabilities and shipped cli state
+- Revise CLI replacement plan (align with Worker API, fix phase ordering)
+- Plan CLI replacement for MCP (@nocoo/surety)
+- Bind custom domains and E2E_SKIP_AUTH var
+- Settings page has no token UI at all
+- Flag UI migration record as historical
+- Correct CLI token flow — only loopback endpoint exists
+- Rewrite README for Vite SPA + Hono Worker architecture
+- Commit static logo and favicon assets
+- Restructure test scripts for new architecture
+- Replace DB-direct tool tests with HTTP client + guard tests
+- Add fetchAPI smoke tests
+- Add middleware unit tests
+- Stop tracking Vite build output in worker/static
+- Update root scripts for Vite + Worker architecture
+- Switch to HTTP API client
+- Rename apps/web to apps/web_legacy
+
+### Fixed
+- Gate token-management routes on session auth, scope to caller email
+- Verify bearer token on localhost bypass so /api/me works locally
+- Funnel api errors through emitError for stable JSON stderr contract
+- Propagate bearer token email to context so /api/me works for CLI
+- Separate loginUrl (CF Access) from apiUrl (Bearer)
+- Stub bun:sqlite so wrangler can bundle @surety/db
+- Use bun run in root dev/build scripts
+- Add missing is-localhost helper
+- Align bg-card usage to B05 luminance spec
+
+### Removed
+- Delete apps/web_legacy/ and Next.js dependencies
+- Drop legacy Next.js E2E (Playwright) suite
+- Remove MCP access settings UI and e2e
+- Drop MCP residue from infra config
+- Remove MCP references from CLAUDE.md and .env.example
+- Remove MCP sections, add CLI placeholder
+- Remove MCP setup and CRUD tools guides (superseded by docs/16)
+- Delete packages/mcp and remove MCP scripts
+- Remove MCP settings card from settings page
+- Remove obsolete Google OAuth setup guide
+
 ## v1.6.0
 
 ### Changed
