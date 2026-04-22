@@ -260,13 +260,9 @@ Commit: `feat(cli): scaffold @nocoo/surety with login/logout/whoami`
 
 ### Phase 4: 业务命令（按实体拆分，每个原子 commit）
 
-- [ ] `src/output.ts`：`summarize(data, kind)` + `toJson(data, full)`
-- [ ] `members` → commit
-- [ ] `insurers` → commit
-- [ ] `assets` → commit
-- [ ] `hospitals` → commit
-- [ ] `doctors` → commit
-- [ ] `medical-visits` → commit
+- [x] `src/output.ts`：`summarize(data, kind)` + `toJson(data, full)`
+- [x] Phase 4a：shared CRUD infrastructure (`lib/client.ts` / `lib/json-input.ts` / `lib/crud.ts`)
+- [x] `members` + `insurers` + `assets` + `hospitals` + `doctors` + `medical-visits`（通过 `defineCrudCommand` 工厂统一，一次性 commit + 工厂测试）
 - [ ] `policies` 主 CRUD → commit
 - [ ] `policies payments` 子命令 → commit
 - [ ] `policies beneficiaries` → commit
