@@ -25,6 +25,7 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
     );
     if (!hasBearer) {
       c.set("accessAuthenticated", true);
+      c.set("sessionAuthenticated", true);
     }
     return next();
   }
@@ -44,6 +45,7 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
       audience: aud,
     });
     c.set("accessAuthenticated", true);
+    c.set("sessionAuthenticated", true);
     if (typeof payload.email === "string") {
       c.set("accessEmail", payload.email);
     }

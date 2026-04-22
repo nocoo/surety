@@ -11,6 +11,13 @@ export type Bindings = {
 
 export type Variables = {
   accessAuthenticated?: boolean;
+  /**
+   * True only when the request is authenticated as an interactive browser
+   * session via Cloudflare Access (or a localhost dev bypass). API-key /
+   * bearer-token auth does NOT set this flag — token-management routes use
+   * it to gate operations that must not be reachable from a CLI token.
+   */
+  sessionAuthenticated?: boolean;
   accessEmail?: string;
   db: DbInstance;
   repos: AllRepos;
