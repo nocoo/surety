@@ -135,4 +135,22 @@ describe("GET /api/auth/cli", () => {
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("email")).toBe("alice@example.com");
   });
+
+  test("accepts `callback` as an alias of `callback_url`", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb") +
+        "&state=abc",
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get("location")!);
+    expect(url.origin + url.pathname).toBe("http://127.0.0.1:5173/cb");
+    expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
+    expect(url.searchParams.get("state")).toBe("abc");
+  });
 });

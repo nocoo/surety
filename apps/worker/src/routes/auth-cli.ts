@@ -24,6 +24,8 @@ export function isLocalhostUrl(value: string): boolean {
  *
  * Flow:
  *   1. CLI opens GET /api/auth/cli?callback_url=http://127.0.0.1:PORT/cb&state=NONCE
+ *      (`?callback=` is accepted as an alias for `?callback_url=` to match
+ *      the convention used by @nocoo/cli-base's performLogin helper.)
  *   2. CF Access intercepts; user authenticates via Google and is bounced back
  *      with a Cf-Access-Jwt-Assertion header. accessAuth middleware verifies
  *      the JWT and writes payload.email into context as `accessEmail`.
@@ -41,7 +43,8 @@ export function isLocalhostUrl(value: string): boolean {
  *     rejected with 400 to avoid issuing a token without a known owner.
  */
 app.get("/api/auth/cli", async (c) => {
-  const callbackUrl = c.req.query("callback_url");
+  const callbackUrl =
+    c.req.query("callback_url") ?? c.req.query("callback");
   const state = c.req.query("state") ?? "";
 
   if (!callbackUrl) {
