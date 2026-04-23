@@ -15,7 +15,7 @@ test.describe.serial("medical-visits CRUD", () => {
     await expect(page.getByText("L3种子就诊").first()).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText("测试医院").first()).toBeVisible({
+    await expect(page.getByText("L3测试医院").first()).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -47,11 +47,11 @@ test.describe.serial("medical-visits CRUD", () => {
 
     // Hospital select
     await page.locator("#hospitalId").click();
-    await page.getByRole("option", { name: "测试医院" }).click();
+    await page.getByRole("option", { name: "L3测试医院" }).click();
 
     // Doctor (optional) — pick the seeded doctor
     await page.locator("#doctorId").click();
-    await page.getByRole("option", { name: "测试医生" }).click();
+    await page.getByRole("option", { name: "L3测试医生" }).click();
 
     // Department
     await page.locator("#department").fill("内科");
@@ -154,7 +154,7 @@ test.describe.serial("medical-visits CRUD", () => {
       id: number;
       name: string;
     }>;
-    const hospital = hospitalList.find((h) => h.name === "测试医院");
+    const hospital = hospitalList.find((h) => h.name === "L3测试医院");
     expect(hospital).toBeDefined();
     if (!member || !hospital) return;
 

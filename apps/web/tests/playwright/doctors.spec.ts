@@ -31,7 +31,7 @@ test.describe.serial("doctors page", () => {
     await page.getByLabel("科室").fill("外科");
 
     await page.getByRole("combobox", { name: "职称" }).click();
-    await page.getByRole("option", { name: "主任医师" }).click();
+    await page.getByRole("option", { name: "主任医师" }).first().click();
 
     await page.getByRole("button", { name: "添加", exact: true }).click();
 
