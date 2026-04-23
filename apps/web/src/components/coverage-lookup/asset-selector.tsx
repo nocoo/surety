@@ -63,7 +63,7 @@ export function AssetSelector({
         <Button
           variant="outline"
           size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background shadow-md"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
           onClick={() => scroll("left")}
           aria-label="向左滚动资产列表"
         >
@@ -124,7 +124,7 @@ export function AssetSelector({
         <Button
           variant="outline"
           size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background shadow-md"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
           onClick={() => scroll("right")}
           aria-label="向右滚动资产列表"
         >
