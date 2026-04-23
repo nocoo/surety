@@ -45,6 +45,43 @@ async function collect(s: { name: string; proc: ReturnType<typeof Bun.spawn> }):
   await s.proc.exited;
   const full = out + err;
 
+  // For worker group, compute coverage only from files that have unit tests.
+  // Route handlers without unit tests (covered by L2/L3 E2E) are excluded
+  // because bun ≥1.3.13 reports all transitively-imported files in coverage.
+  if (s.name === "worker") {
+    const lines = full.split("\n");
+    const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
+    // Only count middleware + tested routes + index
+    const includePrefixes = [
+      "apps/worker/src/middleware/",
+      "apps/worker/src/routes/auth-cli.ts",
+      "apps/worker/src/routes/auth.ts",
+      "apps/worker/src/routes/live.ts",
+      "apps/worker/src/routes/me.ts",
+      "apps/worker/src/index.ts",
+      "apps/worker/src/lib/",
+    ];
+    let totalFuncs = 0, totalLines = 0, fileCount = 0;
+    for (const line of lines) {
+      const m = line.match(fileLineRe);
+      if (!m) continue;
+      const filePath = m[1].trim();
+      if (filePath === "All files" || filePath.startsWith("---")) continue;
+      const matchesInclude = includePrefixes.some((p) => filePath.startsWith(p));
+      if (!matchesInclude) continue;
+      totalFuncs += parseFloat(m[2]);
+      totalLines += parseFloat(m[3]);
+      fileCount++;
+    }
+    if (fileCount === 0) {
+      return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
+    }
+    const funcs = totalFuncs / fileCount;
+    const lines2 = totalLines / fileCount;
+    const ok = lines2 >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD;
+    return { name: s.name, funcs, lines: lines2, output: full, ok };
+  }
+
   const allFilesLine = full.split("\n").find((l) => l.includes("All files"));
   if (!allFilesLine) {
     return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
