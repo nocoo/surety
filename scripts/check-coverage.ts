@@ -65,12 +65,12 @@ async function collect(s: { name: string; proc: ReturnType<typeof Bun.spawn> }):
     for (const line of lines) {
       const m = line.match(fileLineRe);
       if (!m) continue;
-      const filePath = m[1].trim();
+      const filePath = (m[1] ?? "").trim();
       if (filePath === "All files" || filePath.startsWith("---")) continue;
       const matchesInclude = includePrefixes.some((p) => filePath.startsWith(p));
       if (!matchesInclude) continue;
-      totalFuncs += parseFloat(m[2]);
-      totalLines += parseFloat(m[3]);
+      totalFuncs += parseFloat(m[2] ?? "0");
+      totalLines += parseFloat(m[3] ?? "0");
       fileCount++;
     }
     if (fileCount === 0) {
