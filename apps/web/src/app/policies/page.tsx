@@ -649,7 +649,7 @@ export default function PoliciesPage() {
                   const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                   const categoryConfig = getCategoryConfig(policy.category);
                   return (
-                    <TableRow key={policy.id} className="hover:bg-muted/50">
+                    <TableRow key={policy.id} className="hover:bg-background/50">
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>

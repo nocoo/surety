@@ -163,7 +163,7 @@ export default function AssetsPage() {
                   const hasPolicies = asset.policyCount > 0;
                   const styleConfig = typeStyleConfig[asset.type];
                   return (
-                    <TableRow key={asset.id} className="hover:bg-muted/50">
+                    <TableRow key={asset.id} className="hover:bg-background/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${styleConfig.iconClass}`}>
