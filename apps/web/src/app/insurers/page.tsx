@@ -131,7 +131,7 @@ export default function InsurersPage() {
                 </TableRow>
               ) : (
                 insurers.map((insurer) => (
-                  <TableRow key={insurer.id} className="hover:bg-muted/50">
+                  <TableRow key={insurer.id} className="hover:bg-background/50">
                     <TableCell>
                       <span className="font-medium">{insurer.name}</span>
                     </TableCell>

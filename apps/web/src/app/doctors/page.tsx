@@ -241,7 +241,7 @@ export default function DoctorsPage() {
                   </TableRow>
                 ) : (
                   filteredDoctors.map((doctor) => (
-                    <TableRow key={doctor.id} className="hover:bg-muted/50">
+                    <TableRow key={doctor.id} className="hover:bg-background/50">
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7">
