@@ -118,3 +118,21 @@ Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapp
 - "L1 cache miss path skips coverage gate" — fixed in run #67.
 - "bun spawn ordering" experiments — sub-noise.
 - "bun --bun on cli proc" — already applied.
+
+### Segment 7 follow-up — cli sub-shard split with cross-shard merge
+
+- **kept**: cli split into cli-a (api,client,config,crud,json-input) + cli-b (output,policies,policies-coverage,readonly). Cross-shard coverage merge: parse each sub-shard table, take MAX(funcs)/MAX(lines) per file across the two, recompute aggregate average. Saves ~5ms (59→54ms l1_miss).
+  - Cost: hardcoded sub-shard file lists (manual maintenance when cli tests are added) + ~50 lines of merge logic.
+- **tried, no win**: worker split into worker-a/worker-b: cli pole still dominates wall. Adding 5th proc cost ~3ms parent overhead. Generalized mergeSubShards helper was ready but reverted with the change.
+- **tried, no win**: cli 3-way split: marginal ~2ms gain on cli pole, cancelled by 5th-proc parent overhead AND wall capped by worker shard at 34ms.
+
+### Final floor (segment 7 close)
+~54ms l1_miss (best of many trials), 21ms l1_hit. Bounded by:
+- worker shard: 34ms (5 files, shared bun startup + module load — splitting helps the shard but doesn't beat the wall floor)
+- cli shard split: 35ms (max of cli-a, cli-b)
+- parent overhead: 17-20ms (bun startup + walk + sha256 of 161 files)
+
+To break below 50ms wall would require:
+- restructure worker tests to skip module load (no real win possible without sacrificing tests)
+- long-lived bun test --watch daemon (significant infra)
+- bun build --compile binary as parent (PATH stripped, child spawns fail ENOENT)
