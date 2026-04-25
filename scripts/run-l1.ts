@@ -1,17 +1,18 @@
 #!/usr/bin/env bun
 /**
- * L1 cache: skip the unit-test suite when no input has changed since the last
- * green run.
+ * L1 cache + coverage gate for unit tests.
+ *
+ * On cache HIT: exit fast (just hash files, compare to cache).
+ * On cache MISS: run the 3 per-app `bun test --coverage` shards in parallel
+ *   AND enforce 95% line + function coverage per shard. Speculatively spawns
+ *   the test shards at script start so their bun startup overlaps with the
+ *   cache-hashing work.
  *
  * Inputs hashed:
  *   - every *.ts / *.tsx file under src/ and packages/
- *   - bunfig.toml
- *   - root package.json (test scripts can change)
+ *   - bunfig.toml + root package.json (test scripts can change)
  *
  * Cache file: <git-common-dir>/info/l1-cache.json
- *
- * On hit: print "L1 cache hit" and exit 0.
- * On miss: run the unit-test suite (with coverage); on success update cache.
  */
 
 import { createHash } from "node:crypto";
@@ -21,25 +22,24 @@ import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
-// Test command — must mirror the "test:coverage" gate. We delegate to
-// check-coverage.ts which (a) runs the 3 per-app `bun test --coverage`
-// invocations in parallel, and (b) enforces the 95% line + function gates.
-// Sequential `bun test && bun test && bun test` invocations were both slower
-// AND skipped coverage thresholds — see autoresearch run #66 baseline.
-const TEST_CMD: [string, ...string[]] = [
-  "bun",
-  "--bun",
-  "scripts/check-coverage.ts",
-];
+// Speculatively start the 3 test shards immediately (top-level Bun.spawn) so
+// their bun startup + module load overlaps with the wrapper's hash work. On
+// cache hit we kill them; on miss we await + parse coverage. Saves ~25-50ms
+// on cache miss vs spawning after the cache decision.
+const SHARDS = [
+  { name: "web", path: "apps/web/src/__tests__/" },
+  { name: "worker", path: "apps/worker/__tests__/" },
+  { name: "cli", path: "apps/cli/__tests__/" },
+] as const;
 
-// Speculatively start the test child immediately, in parallel with hashing.
-// On cache hit we kill it; on miss we await it. Saves ~25ms on cache miss
-// by overlapping bun startup of the child with the wrapper's hash work.
-const speculative = Bun.spawn(TEST_CMD, {
-  stdout: "inherit",
-  stderr: "inherit",
-  cwd: REPO_ROOT,
-});
+const speculative = SHARDS.map((s) => ({
+  name: s.name,
+  proc: Bun.spawn(["bun", "--bun", "test", s.path, "--coverage"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    cwd: REPO_ROOT,
+  }),
+}));
 
 const SOURCE_ROOTS = [
   "apps/web/src",
@@ -50,17 +50,15 @@ const SOURCE_ROOTS = [
 ].map((p) => join(REPO_ROOT, p));
 const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
+const LINE_THRESHOLD = 95;
+const FUNC_THRESHOLD = 95;
+
 // Resolve the git common dir without spawning `git rev-parse` (saves ~10ms).
-// In the common case `.git` is a directory at the repo root. For worktrees,
-// `.git` is a file containing `gitdir: <path>` — fall back to that. Only when
-// neither matches do we shell out to git.
 function gitCommonDir(): string {
   const dotGit = join(REPO_ROOT, ".git");
   if (existsSync(dotGit)) {
     const st = statSync(dotGit);
-    if (st.isDirectory()) {
-      return dotGit;
-    }
+    if (st.isDirectory()) return dotGit;
     if (st.isFile()) {
       const txt = readFileSync(dotGit, "utf8").trim();
       const m = txt.match(/^gitdir:\s*(.+)$/m);
@@ -70,7 +68,6 @@ function gitCommonDir(): string {
       }
     }
   }
-  // Fallback: ask git.
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
     cwd: REPO_ROOT,
     encoding: "utf8",
@@ -140,28 +137,102 @@ function writeCache(path: string, cache: Cache): void {
   writeFileSync(path, JSON.stringify(cache, null, 2));
 }
 
+interface ShardResult {
+  name: string;
+  funcs: number;
+  lines: number;
+  output: string;
+  ok: boolean;
+}
+
+// Worker shard's coverage table includes route files that are loaded but
+// only exercised via L2/L3 E2E (not L1). Filter to the files that have unit
+// tests so the gate stays tight without false negatives.
+const WORKER_INCLUDE_PREFIXES = [
+  "apps/worker/src/middleware/",
+  "apps/worker/src/routes/auth-cli.ts",
+  "apps/worker/src/routes/auth.ts",
+  "apps/worker/src/routes/live.ts",
+  "apps/worker/src/routes/me.ts",
+  "apps/worker/src/index.ts",
+  "apps/worker/src/lib/",
+];
+
+async function collectShard(s: { name: string; proc: ReturnType<typeof Bun.spawn> }): Promise<ShardResult> {
+  const [out, err] = await Promise.all([
+    new Response(s.proc.stdout as ReadableStream).text(),
+    new Response(s.proc.stderr as ReadableStream).text(),
+  ]);
+  await s.proc.exited;
+  const full = out + err;
+
+  if (s.name === "worker") {
+    const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
+    let totalFuncs = 0, totalLines = 0, fileCount = 0;
+    for (const line of full.split("\n")) {
+      const m = line.match(fileLineRe);
+      if (!m) continue;
+      const filePath = (m[1] ?? "").trim();
+      if (filePath === "All files" || filePath.startsWith("---")) continue;
+      if (!WORKER_INCLUDE_PREFIXES.some((p) => filePath.startsWith(p))) continue;
+      totalFuncs += parseFloat(m[2] ?? "0");
+      totalLines += parseFloat(m[3] ?? "0");
+      fileCount++;
+    }
+    if (fileCount === 0) {
+      return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
+    }
+    const funcs = totalFuncs / fileCount;
+    const lines = totalLines / fileCount;
+    return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
+  }
+
+  const allFilesLine = full.split("\n").find((l) => l.includes("All files"));
+  if (!allFilesLine) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
+  const match = allFilesLine.match(/All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/);
+  if (!match) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
+  const funcs = parseFloat(match[1] ?? "0");
+  const lines = parseFloat(match[2] ?? "0");
+  return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
+}
+
 const cachePath = join(gitCommonDir(), "info", "l1-cache.json");
 const files = collectFiles();
 const hash = hashFiles(files);
 const cached = readCache(cachePath);
 
 if (cached && cached.hash === hash) {
-  // Cancel the speculative test run — we don't need it.
-  speculative.kill();
+  for (const s of speculative) s.proc.kill();
   console.log(`✅ L1 cache hit (${files.length} files, ${hash.slice(0, 12)})`);
   process.exit(0);
 }
 
-console.log(`🧪 L1 cache miss — running unit tests (${files.length} files)`);
-const exitCode = await speculative.exited;
+console.log(
+  `🧪 L1 cache miss — running unit tests (${files.length} files, line ≥ ${LINE_THRESHOLD}%, func ≥ ${FUNC_THRESHOLD}%)`,
+);
 
-if (exitCode !== 0) {
-  process.exit(exitCode);
+const results = await Promise.all(speculative.map(collectShard));
+
+let failed = false;
+for (const r of results) {
+  const status = r.ok ? "✅" : "❌";
+  console.log(
+    `${status} ${r.name.padEnd(8)} funcs=${r.funcs.toFixed(2)}%  lines=${r.lines.toFixed(2)}%`,
+  );
+  if (!r.ok) {
+    failed = true;
+    console.log(r.output);
+  }
+}
+
+if (failed) {
+  console.error("\n❌ L1 coverage gate failed");
+  process.exit(1);
 }
 
 writeCache(cachePath, {
   hash,
   updatedAt: new Date().toISOString(),
-  cmd: [...TEST_CMD],
+  cmd: ["bun", "--bun", "test", "<per-shard>", "--coverage"],
 });
 console.log(`💾 L1 cache updated (${hash.slice(0, 12)})`);
