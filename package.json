@@ -69,7 +69,8 @@
     "unrs-resolver"
   ],
   "overrides": {
-    "path-to-regexp": "^8.4.0"
+    "path-to-regexp": "^8.4.0",
+    "postcss": "^8.5.10"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
