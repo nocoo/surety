@@ -19,4 +19,14 @@ describe("L2-HTTP /api/live", () => {
     const res = await httpJson("GET", "/api/live");
     expect(res.headers.get("cache-control")).toContain("no-store");
   });
+
+  test("secureHeaders middleware is wired up (nosniff + SAMEORIGIN)", async () => {
+    // Migrated from L1 (apps/worker/__tests__/secure-headers.test.ts) to keep
+    // pre-commit fast: the L1 version paid a ~80ms cold `import app` to mount
+    // a request through Hono. Here we exercise the real Worker via wrangler
+    // dev, which is a stronger end-to-end check anyway.
+    const res = await httpJson("GET", "/api/live");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+  });
 });

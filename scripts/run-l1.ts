@@ -148,13 +148,14 @@ interface ShardResult {
 // Worker shard's coverage table includes route files that are loaded but
 // only exercised via L2/L3 E2E (not L1). Filter to the files that have unit
 // tests so the gate stays tight without false negatives.
+// index.ts (wiring-only) and routes/live.ts (covered by L2 live.http.test.ts)
+// are intentionally excluded — they were only loaded by the now-deleted
+// secure-headers.test.ts which paid an ~80ms cold-import cost in L1.
 const WORKER_INCLUDE_PREFIXES = [
   "apps/worker/src/middleware/",
   "apps/worker/src/routes/auth-cli.ts",
   "apps/worker/src/routes/auth.ts",
-  "apps/worker/src/routes/live.ts",
   "apps/worker/src/routes/me.ts",
-  "apps/worker/src/index.ts",
   "apps/worker/src/lib/",
 ];
 
