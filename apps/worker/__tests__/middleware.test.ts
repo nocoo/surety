@@ -182,11 +182,14 @@ describe("apiKeyAuth middleware", () => {
 
   test("prod host with valid Bearer token → passthrough", async () => {
     let lastUsedId = -1;
+    let resolveUpdated!: () => void;
+    const updated = new Promise<void>((r) => (resolveUpdated = r));
     const app = makeApp(apiKeyAuth, {
       apiTokens: {
         verify: async () => ({ id: 42, email: "alice@example.com" }),
         updateLastUsed: async (id: number) => {
           lastUsedId = id;
+          resolveUpdated();
         },
       },
     });
@@ -203,8 +206,9 @@ describe("apiKeyAuth middleware", () => {
     };
     expect(body.accessAuthenticated).toBe(true);
     expect(body.accessEmail).toBe("alice@example.com");
-    // updateLastUsed is fire-and-forget; give it a tick to run
-    await new Promise((r) => setTimeout(r, 10));
+    // updateLastUsed is fire-and-forget; await its completion via deferred
+    // (was: setTimeout(10), which added 10ms of pure wall-time per run).
+    await updated;
     expect(lastUsedId).toBe(42);
   });
 
