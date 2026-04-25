@@ -79,3 +79,42 @@ Pre-push parallelization (osv + gitleaks + e2e) saves real-world ~4s by overlapp
   - sh wrapper with `bun &` + `wait`: 94-110ms (worse than bun parent at 60ms). Bun.spawn is faster than sh job control.
   - `coverageSkipTestFiles=true` in bunfig: redundant with `coverageInclude` restriction.
   - 2-shard merge (cli+web in one proc, worker alone): tied at 64ms AND loses per-app coverage gate safety — the combined 'All files' line could mask a cli regression if web stays high. Rejected on correctness grounds.
+
+## Segment 7 — pre-commit test optimization (2026-04-25)
+
+**Wall: 257ms → 59ms (−77%)**, l1_hit 28ms → 21ms, precommit_wall_ms 113ms (bound by lint-staged ~115ms).
+
+### Wins kept
+- **delegate run-l1.ts cache-miss to check-coverage.ts** (parallel + adds 95% gate). Was sequential `bun test && bun test && bun test` with NO coverage threshold (correctness bug).
+- **speculative top-level Bun.spawn** in run-l1.ts overlaps child bun startup with parent's hash work.
+- **skip `git rev-parse --git-common-dir`** (10ms): resolve `.git` dir directly, fall back to git for worktrees only.
+- **drop `setTimeout(10)` in middleware test** → use deferred promise resolved in mocked updateLastUsed.
+- **inline check-coverage.ts logic into run-l1.ts** (skip wrapper bun proc).
+- **move secure-headers.test.ts L1 → L2** (live.http.test.ts). The 4 tests cost ~80ms cold-import for `import app from src/index.ts` — replaced with one real-HTTP assertion in the L2 wrangler-dev suite (stronger test, off the pre-commit critical path).
+- **mock fs.readFileSync in json-input tests** (skip /tmp dance).
+- **drop mkdtemp in buildClient tests** — HOME arg was being silently ignored by `os.homedir()`. Tests were leaking to dev's real `~/.config/surety` AND paying ~5ms for nothing.
+
+### Tried, didn't stick (within noise)
+- `--bun` flag on pre-commit.ts test/typecheck cmds
+- Bun.file parallel async hashing in run-l1.ts (parent hashing isn't on critical path)
+- 4-shard split (worker → worker-fast + worker-app): +complexity, no wall win
+- Collapse 4 secure-headers tests → 1: cold-import dominates either way
+- cli split into 2 sub-shards (cli-a + cli-b): coverage gate fails because cli files are imported by tests across both sub-shards (output.ts at 75% in cli-b alone). Would need cross-shard max-coverage merge.
+
+### Floor analysis (~59ms wall)
+- web shard: 14ms (7 tiny tests, ~10ms bun startup + 4ms tests)
+- worker shard: 34ms (5 files, 46 tests, all sub-ms)
+- **cli shard: 42ms ← long pole** (9 files, ~30 tests, mostly bun startup + module load)
+- parent overhead: ~17ms (bun startup + walk + sha256 of 161 files)
+- Wall = max(parent, max-shard) + serialize ≈ 17 + 42 ≈ 59ms
+
+### Remaining headroom (likely <10ms)
+- Cross-shard coverage merge → enable cli split → ~30-35ms cli pole. But complex and brittle.
+- Long-lived `bun test --watch` daemon: significant infra (IPC for results, lifecycle, port mgmt).
+- `bun build --compile scripts/run-l1.ts`: PATH stripped, `bun` child spawn fails ENOENT. Could inject env.PATH but parent overhead is only ~17ms (gain <5ms).
+- Skip `--coverage` on web shard (web is already 14ms with coverage; not the pole).
+
+### Pruned / superseded ideas (no longer applicable)
+- "L1 cache miss path skips coverage gate" — fixed in run #67.
+- "bun spawn ordering" experiments — sub-noise.
+- "bun --bun on cli proc" — already applied.
