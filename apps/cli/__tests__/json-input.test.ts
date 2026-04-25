@@ -1,8 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test";
 import * as fs from "node:fs";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {
   readJsonInput,
   requireJsonInput,
@@ -67,14 +64,19 @@ describe("readJsonInput", () => {
   });
 
   test("reads from --data-file when provided", () => {
-    const dir = mkdtempSync(join(tmpdir(), "surety-cli-jsoninput-"));
-    const file = join(dir, "payload.json");
+    // Avoid touching /tmp — mock fs.readFileSync so the test stays in-memory.
+    // The real production path uses readFileSync(absolutePath); the spy here
+    // returns canned bytes when called with our sentinel path. Faster than
+    // mkdtemp + write + rm (~2ms saved).
+    const spy = spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
+      if (p === "/in-memory/payload.json") return '{"hello":"world"}';
+      throw new Error("unexpected fs read: " + p);
+    }) as typeof fs.readFileSync);
     try {
-      writeFileSync(file, '{"hello":"world"}');
-      const out = readJsonInput({ "data-file": file });
+      const out = readJsonInput({ "data-file": "/in-memory/payload.json" });
       expect(out).toEqual({ hello: "world" });
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      spy.mockRestore();
     }
   });
 
@@ -90,15 +92,19 @@ describe("readJsonInput", () => {
   });
 
   test("invalid --data-file content emits source path in error", () => {
-    const dir = mkdtempSync(join(tmpdir(), "surety-cli-jsoninput-"));
-    const file = join(dir, "bad.json");
+    // In-memory mock: assert the source path is included in the error envelope
+    // without touching /tmp.
+    const SENTINEL = "/in-memory/bad.json";
+    const spy = spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
+      if (p === SENTINEL) return "not-json";
+      throw new Error("unexpected fs read: " + p);
+    }) as typeof fs.readFileSync);
     try {
-      writeFileSync(file, "not-json");
-      expect(() => readJsonInput({ "data-file": file })).toThrow(ExitCalled);
+      expect(() => readJsonInput({ "data-file": SENTINEL })).toThrow(ExitCalled);
       const parsed = JSON.parse(stderrOut) as { error: string };
-      expect(parsed.error).toContain(file);
+      expect(parsed.error).toContain(SENTINEL);
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      spy.mockRestore();
     }
   });
 });
