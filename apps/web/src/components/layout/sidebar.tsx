@@ -15,6 +15,7 @@ import {
   Stethoscope,
   Hospital,
   UserRound,
+  Terminal,
   type LucideIcon,
 } from "lucide-react";
 import { cn, getAvatarColor } from "@/lib/utils";
@@ -51,6 +52,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Stethoscope,
   Hospital,
   UserRound,
+  Terminal,
 };
 
 // ── Types (internal, with resolved icons) ──

@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 7012,
+      allowedHosts: ["surety.dev.hexly.ai"],
       proxy: {
         "/api": {
           target,

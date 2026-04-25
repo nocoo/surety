@@ -50,7 +50,10 @@ export const NAV_GROUPS: NavGroupDef[] = [
   {
     label: "系统",
     defaultOpen: true,
-    items: [{ href: "/settings", label: "系统设置", icon: "Settings" }],
+    items: [
+      { href: "/cli", label: "CLI", icon: "Terminal" },
+      { href: "/settings", label: "系统设置", icon: "Settings" },
+    ],
   },
 ];
 

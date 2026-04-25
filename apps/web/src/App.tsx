@@ -14,6 +14,7 @@ const MedicalVisits = lazy(() => import("@/app/medical-visits/page"));
 const CoverageLookup = lazy(() => import("@/app/coverage-lookup/page"));
 const RenewalCalendar = lazy(() => import("@/app/renewal-calendar/page"));
 const Settings = lazy(() => import("@/app/settings/page"));
+const Cli = lazy(() => import("@/app/cli/page"));
 
 export function App() {
   return (
@@ -31,6 +32,7 @@ export function App() {
         <Route path="/coverage-lookup" element={<CoverageLookup />} />
         <Route path="/renewal-calendar" element={<RenewalCalendar />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/cli" element={<Cli />} />
       </Routes>
     </Suspense>
   );
