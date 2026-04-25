@@ -16,18 +16,10 @@
 
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
-const SOURCE_ROOTS = [
-  "apps/web/src",
-  "apps/worker/src",
-  "apps/worker/__tests__",
-  "packages/api/src",
-  "packages/db/src",
-].map((p) => join(REPO_ROOT, p));
-const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
 // Test command — must mirror the "test:coverage" gate. We delegate to
 // check-coverage.ts which (a) runs the 3 per-app `bun test --coverage`
@@ -40,7 +32,45 @@ const TEST_CMD: [string, ...string[]] = [
   "scripts/check-coverage.ts",
 ];
 
+// Speculatively start the test child immediately, in parallel with hashing.
+// On cache hit we kill it; on miss we await it. Saves ~25ms on cache miss
+// by overlapping bun startup of the child with the wrapper's hash work.
+const speculative = Bun.spawn(TEST_CMD, {
+  stdout: "inherit",
+  stderr: "inherit",
+  cwd: REPO_ROOT,
+});
+
+const SOURCE_ROOTS = [
+  "apps/web/src",
+  "apps/worker/src",
+  "apps/worker/__tests__",
+  "packages/api/src",
+  "packages/db/src",
+].map((p) => join(REPO_ROOT, p));
+const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
+
+// Resolve the git common dir without spawning `git rev-parse` (saves ~10ms).
+// In the common case `.git` is a directory at the repo root. For worktrees,
+// `.git` is a file containing `gitdir: <path>` — fall back to that. Only when
+// neither matches do we shell out to git.
 function gitCommonDir(): string {
+  const dotGit = join(REPO_ROOT, ".git");
+  if (existsSync(dotGit)) {
+    const st = statSync(dotGit);
+    if (st.isDirectory()) {
+      return dotGit;
+    }
+    if (st.isFile()) {
+      const txt = readFileSync(dotGit, "utf8").trim();
+      const m = txt.match(/^gitdir:\s*(.+)$/m);
+      if (m && m[1]) {
+        const worktreeDir = resolve(REPO_ROOT, m[1]);
+        return resolve(worktreeDir, "..", "..");
+      }
+    }
+  }
+  // Fallback: ask git.
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
     cwd: REPO_ROOT,
     encoding: "utf8",
@@ -48,8 +78,7 @@ function gitCommonDir(): string {
   if (r.status !== 0) {
     throw new Error(`git rev-parse failed: ${r.stderr}`);
   }
-  const dir = r.stdout.trim();
-  return resolve(REPO_ROOT, dir);
+  return resolve(REPO_ROOT, r.stdout.trim());
 }
 
 function walk(root: string, exts: Set<string>, out: string[]): void {
@@ -117,20 +146,17 @@ const hash = hashFiles(files);
 const cached = readCache(cachePath);
 
 if (cached && cached.hash === hash) {
+  // Cancel the speculative test run — we don't need it.
+  speculative.kill();
   console.log(`✅ L1 cache hit (${files.length} files, ${hash.slice(0, 12)})`);
   process.exit(0);
 }
 
 console.log(`🧪 L1 cache miss — running unit tests (${files.length} files)`);
-const [head, ...tail] = TEST_CMD;
-if (!head) throw new Error("TEST_CMD is empty");
-const proc = spawnSync(head, tail, {
-  cwd: REPO_ROOT,
-  stdio: "inherit",
-});
+const exitCode = await speculative.exited;
 
-if (proc.status !== 0) {
-  process.exit(proc.status ?? 1);
+if (exitCode !== 0) {
+  process.exit(exitCode);
 }
 
 writeCache(cachePath, {
