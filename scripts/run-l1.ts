@@ -22,19 +22,43 @@ import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
-// Speculatively start the 3 test shards immediately (top-level Bun.spawn) so
+// Speculatively start the test shards immediately (top-level Bun.spawn) so
 // their bun startup + module load overlaps with the wrapper's hash work. On
 // cache hit we kill them; on miss we await + parse coverage. Saves ~25-50ms
 // on cache miss vs spawning after the cache decision.
+//
+// cli is split into two sub-shards (cli-a, cli-b) because it has the slowest
+// combined wall (~42ms). Splitting halves the workload per proc; we merge the
+// two coverage tables file-by-file (max funcs, max lines per file) so the
+// gate semantics are preserved — a file imported by both sub-shards is gated
+// on its best-coverage view.
 const SHARDS = [
-  { name: "web", path: "apps/web/src/__tests__/" },
-  { name: "worker", path: "apps/worker/__tests__/" },
-  { name: "cli", path: "apps/cli/__tests__/" },
+  { name: "web", paths: ["apps/web/src/__tests__/"] },
+  { name: "worker", paths: ["apps/worker/__tests__/"] },
+  {
+    name: "cli-a",
+    paths: [
+      "apps/cli/__tests__/api.test.ts",
+      "apps/cli/__tests__/client.test.ts",
+      "apps/cli/__tests__/config.test.ts",
+      "apps/cli/__tests__/crud.test.ts",
+      "apps/cli/__tests__/json-input.test.ts",
+    ],
+  },
+  {
+    name: "cli-b",
+    paths: [
+      "apps/cli/__tests__/output.test.ts",
+      "apps/cli/__tests__/policies-coverage.test.ts",
+      "apps/cli/__tests__/policies.test.ts",
+      "apps/cli/__tests__/readonly.test.ts",
+    ],
+  },
 ] as const;
 
 const speculative = SHARDS.map((s) => ({
   name: s.name,
-  proc: Bun.spawn(["bun", "--bun", "test", s.path, "--coverage"], {
+  proc: Bun.spawn(["bun", "--bun", "test", ...s.paths, "--coverage"], {
     stdout: "pipe",
     stderr: "pipe",
     cwd: REPO_ROOT,
@@ -159,6 +183,24 @@ const WORKER_INCLUDE_PREFIXES = [
   "apps/worker/src/lib/",
 ];
 
+// Parse a bun-test text-coverage block into a per-file map of {funcs, lines}.
+// Returns null if no file rows could be parsed (e.g. the proc was killed).
+function parseCoverageTable(out: string): Map<string, { funcs: number; lines: number }> | null {
+  const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
+  const map = new Map<string, { funcs: number; lines: number }>();
+  for (const line of out.split("\n")) {
+    const m = line.match(fileLineRe);
+    if (!m) continue;
+    const filePath = (m[1] ?? "").trim();
+    if (filePath === "All files" || filePath === "File" || filePath.startsWith("---")) continue;
+    map.set(filePath, {
+      funcs: parseFloat(m[2] ?? "0"),
+      lines: parseFloat(m[3] ?? "0"),
+    });
+  }
+  return map.size > 0 ? map : null;
+}
+
 async function collectShard(s: { name: string; proc: ReturnType<typeof Bun.spawn> }): Promise<ShardResult> {
   const [out, err] = await Promise.all([
     new Response(s.proc.stdout as ReadableStream).text(),
@@ -168,16 +210,13 @@ async function collectShard(s: { name: string; proc: ReturnType<typeof Bun.spawn
   const full = out + err;
 
   if (s.name === "worker") {
-    const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
+    const map = parseCoverageTable(full);
+    if (!map) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
     let totalFuncs = 0, totalLines = 0, fileCount = 0;
-    for (const line of full.split("\n")) {
-      const m = line.match(fileLineRe);
-      if (!m) continue;
-      const filePath = (m[1] ?? "").trim();
-      if (filePath === "All files" || filePath.startsWith("---")) continue;
+    for (const [filePath, cov] of map) {
       if (!WORKER_INCLUDE_PREFIXES.some((p) => filePath.startsWith(p))) continue;
-      totalFuncs += parseFloat(m[2] ?? "0");
-      totalLines += parseFloat(m[3] ?? "0");
+      totalFuncs += cov.funcs;
+      totalLines += cov.lines;
       fileCount++;
     }
     if (fileCount === 0) {
@@ -188,12 +227,13 @@ async function collectShard(s: { name: string; proc: ReturnType<typeof Bun.spawn
     return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
   }
 
+  // cli-a / cli-b sub-shards: defer aggregation to the post-merge step below.
+  // We still set funcs/lines from the local All files line so logging shows
+  // the per-shard view; the cross-shard merge overrides the gate decision.
   const allFilesLine = full.split("\n").find((l) => l.includes("All files"));
-  if (!allFilesLine) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-  const match = allFilesLine.match(/All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/);
-  if (!match) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-  const funcs = parseFloat(match[1] ?? "0");
-  const lines = parseFloat(match[2] ?? "0");
+  const match = allFilesLine?.match(/All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/);
+  const funcs = match ? parseFloat(match[1] ?? "0") : 0;
+  const lines = match ? parseFloat(match[2] ?? "0") : 0;
   return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
 }
 
@@ -214,8 +254,54 @@ console.log(
 
 const results = await Promise.all(speculative.map(collectShard));
 
+// Cross-shard merge for cli: cli-a and cli-b each load a subset of cli source
+// files. A file imported by both sub-shards has two coverage views; we take
+// the MAX (funcs, lines) per file and recompute the aggregate. This keeps
+// gate semantics equivalent to the un-split cli shard.
+const cliA = results.find((r) => r.name === "cli-a");
+const cliB = results.find((r) => r.name === "cli-b");
+let cliMerged: ShardResult | null = null;
+if (cliA && cliB) {
+  const mapA = parseCoverageTable(cliA.output) ?? new Map();
+  const mapB = parseCoverageTable(cliB.output) ?? new Map();
+  const merged = new Map<string, { funcs: number; lines: number }>();
+  for (const [k, v] of mapA) merged.set(k, { ...v });
+  for (const [k, v] of mapB) {
+    const prev = merged.get(k);
+    if (prev) {
+      merged.set(k, {
+        funcs: Math.max(prev.funcs, v.funcs),
+        lines: Math.max(prev.lines, v.lines),
+      });
+    } else {
+      merged.set(k, { ...v });
+    }
+  }
+  let tF = 0, tL = 0, n = 0;
+  for (const v of merged.values()) {
+    tF += v.funcs;
+    tL += v.lines;
+    n++;
+  }
+  if (n > 0) {
+    const funcs = tF / n;
+    const lines = tL / n;
+    cliMerged = {
+      name: "cli",
+      funcs,
+      lines,
+      output: cliA.output + "\n" + cliB.output,
+      ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD,
+    };
+  }
+}
+
+const displayResults = cliMerged
+  ? results.filter((r) => r.name !== "cli-a" && r.name !== "cli-b").concat(cliMerged)
+  : results;
+
 let failed = false;
-for (const r of results) {
+for (const r of displayResults) {
   const status = r.ok ? "✅" : "❌";
   console.log(
     `${status} ${r.name.padEnd(8)} funcs=${r.funcs.toFixed(2)}%  lines=${r.lines.toFixed(2)}%`,
