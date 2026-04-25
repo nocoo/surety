@@ -29,13 +29,16 @@ const SOURCE_ROOTS = [
 ].map((p) => join(REPO_ROOT, p));
 const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
 
-// Test command — must mirror the "test" script in package.json but add coverage.
-// Globs are shell-expanded, so run via `sh -c`.
-const TEST_SHELL_CMD = [
-  "bun test apps/web/src/__tests__/ --coverage",
-  "bun test apps/worker/__tests__/ --coverage",
-  "bun test apps/cli/__tests__/ --coverage",
-].join(" && ");
+// Test command — must mirror the "test:coverage" gate. We delegate to
+// check-coverage.ts which (a) runs the 3 per-app `bun test --coverage`
+// invocations in parallel, and (b) enforces the 95% line + function gates.
+// Sequential `bun test && bun test && bun test` invocations were both slower
+// AND skipped coverage thresholds — see autoresearch run #66 baseline.
+const TEST_CMD: [string, ...string[]] = [
+  "bun",
+  "--bun",
+  "scripts/check-coverage.ts",
+];
 
 function gitCommonDir(): string {
   const r = spawnSync("git", ["rev-parse", "--git-common-dir"], {
@@ -119,7 +122,9 @@ if (cached && cached.hash === hash) {
 }
 
 console.log(`🧪 L1 cache miss — running unit tests (${files.length} files)`);
-const proc = spawnSync("sh", ["-c", TEST_SHELL_CMD], {
+const [head, ...tail] = TEST_CMD;
+if (!head) throw new Error("TEST_CMD is empty");
+const proc = spawnSync(head, tail, {
   cwd: REPO_ROOT,
   stdio: "inherit",
 });
@@ -131,6 +136,6 @@ if (proc.status !== 0) {
 writeCache(cachePath, {
   hash,
   updatedAt: new Date().toISOString(),
-  cmd: ["sh", "-c", TEST_SHELL_CMD],
+  cmd: [...TEST_CMD],
 });
 console.log(`💾 L1 cache updated (${hash.slice(0, 12)})`);
