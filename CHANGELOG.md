@@ -428,6 +428,47 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.1
+
+### Added
+- Add /cli page with token management
+- Add secure response headers middleware
+- Add L3 specs for members/policies/coverage/404
+- Add L3 specs for auth contract + core navigation
+- Scaffold Playwright config for L3 browser regression
+- Cover R2 attachments via wrangler local R2 emulator
+- Add L2 HTTP CRUD tests for members + policies
+- Scaffold wrangler-based L2 HTTP runner + smoke test
+- Raise L1 coverage thresholds to 95/95
+
+### Changed
+- Log run#65 floor confirmation
+- Resume #2 floor confirmation + ideas.md updates: 62ms within-noise
+- Bun --bun test in spawned procs: 58ms steady (was 59-60), isolated cli proc 71→51ms (-28%)
+- Final stop: 61ms steady, ideas.md updated with dead ends. Session: 98→61ms (-38%), 100/100 cov.
+- Update floor analysis after run #48 keep (60→57ms)
+- Hoist Bun.spawn to top-level in check-coverage.ts: 60ms→57ms (-5%)
+- Prune autoresearch backlog after 14 experiments at floor
+- Ideas backlog for UT coverage gate optimization
+- Cover me.ts L37 (invalid JWT payload returns 401-shape body): worker 100/99.44 → 100/100; total within-noise 62→64ms (kept for coverage win)
+- Cover json-input.ts stdin paths via fs.readFileSync spy: cli 96.88/98.14 → 100/100, total wall 77→62ms (best-of-7 with warmup)
+- Skip bash -c wrapper in check-coverage.ts: 93→77ms (-17%)
+- Cover api-key-auth .catch + me.ts JSON.parse catch: worker_funcs 95.83→100, lines 98.89→99.44
+- Add UT runtime+coverage benchmark for autoresearch
+- Add hospitals + doctors CRUD specs
+- Add assets CRUD spec
+- Add insurers CRUD spec
+- Add L3 browser E2E job + playwright config hardening
+- Document L1 threshold uplift + L2 HTTP + L3 Playwright
+- Add L2 HTTP suite to pre-push gate
+- Export canonical INIT_SQL for non-drizzle provisioners
+
+### Fixed
+- Override postcss to ^8.5.10
+- Narrow Bun.spawn stdout/stderr types after upstream Bun bump
+- Add production guard to E2E_SKIP_AUTH
+- Prevent Host header spoofing in isLocalhost
+
 ## v2.0.0
 
 ### Added
