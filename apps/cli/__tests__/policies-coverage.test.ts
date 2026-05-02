@@ -9,7 +9,7 @@ function mockFetch(
   return ((url: string, init?: RequestInit) => {
     const { status, body } = handler(url, init ?? {});
     return Promise.resolve(
-      new Response(body, {
+      new Response(status === 204 || status === 205 ? null : body, {
         status,
         headers: { "content-type": "application/json" },
       }),
