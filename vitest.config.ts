@@ -21,7 +21,7 @@ export default defineConfig({
       include: [
         "apps/web/src/**",
         "apps/worker/src/**",
-        "apps/cli/**",
+        "apps/cli/src/**",
         "packages/api/src/**",
         "packages/db/src/**",
       ],
