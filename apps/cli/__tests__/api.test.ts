@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { ApiClient, ApiError } from "../src/api";
 
 function mockFetch(
