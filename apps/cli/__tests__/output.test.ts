@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { emit, emitList, emitRecord } from "../src/output";
 
 interface StreamCapture {
