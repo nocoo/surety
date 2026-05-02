@@ -5,7 +5,7 @@
  * misbehavior here fan-outs everywhere. We cover: credentials are included
  * (CF Access cookie delivery), success parsing, and error-body extraction.
  */
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "vitest";
 import { fetchAPI } from "../api";
 
 const originalFetch = globalThis.fetch;
