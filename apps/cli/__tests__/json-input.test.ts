@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach, spyOn } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach, vi } from "vitest";
 import * as fs from "node:fs";
 import {
   readJsonInput,
@@ -68,7 +68,7 @@ describe("readJsonInput", () => {
     // The real production path uses readFileSync(absolutePath); the spy here
     // returns canned bytes when called with our sentinel path. Faster than
     // mkdtemp + write + rm (~2ms saved).
-    const spy = spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
+    const spy = vi.spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
       if (p === "/in-memory/payload.json") return '{"hello":"world"}';
       throw new Error("unexpected fs read: " + p);
     }) as typeof fs.readFileSync);
@@ -95,7 +95,7 @@ describe("readJsonInput", () => {
     // In-memory mock: assert the source path is included in the error envelope
     // without touching /tmp.
     const SENTINEL = "/in-memory/bad.json";
-    const spy = spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
+    const spy = vi.spyOn(fs, "readFileSync").mockImplementation(((p: string) => {
       if (p === SENTINEL) return "not-json";
       throw new Error("unexpected fs read: " + p);
     }) as typeof fs.readFileSync);
@@ -111,7 +111,7 @@ describe("readJsonInput", () => {
 
 describe("stdin paths", () => {
   test("--data-file - reads from stdin via fd 0", () => {
-    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+    const spy = vi.spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
       if (fd === 0) return '{"piped":true}';
       throw new Error("unexpected fs read");
     }) as typeof fs.readFileSync);
@@ -128,7 +128,7 @@ describe("stdin paths", () => {
       value: false,
       configurable: true,
     });
-    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+    const spy = vi.spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
       if (fd === 0) return '{"via":"stdin"}';
       throw new Error("unexpected fs read");
     }) as typeof fs.readFileSync);
@@ -145,7 +145,7 @@ describe("stdin paths", () => {
       value: false,
       configurable: true,
     });
-    const spy = spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
+    const spy = vi.spyOn(fs, "readFileSync").mockImplementation(((fd: number | string) => {
       if (fd === 0) throw new Error("EBADF");
       throw new Error("unexpected fs read");
     }) as typeof fs.readFileSync);
