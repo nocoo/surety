@@ -3,14 +3,12 @@
  * L1 cache + coverage gate for unit tests.
  *
  * On cache HIT: exit fast (just hash files, compare to cache).
- * On cache MISS: run the 3 per-app `bun test --coverage` shards in parallel
- *   AND enforce 95% line + function coverage per shard. Speculatively spawns
- *   the test shards at script start so their bun startup overlaps with the
- *   cache-hashing work.
+ * On cache MISS: run `vitest run --coverage` which enforces thresholds
+ *   configured in vitest.config.ts (statements/branches/functions/lines).
  *
  * Inputs hashed:
- *   - every *.ts / *.tsx file under src/ and packages/
- *   - bunfig.toml + root package.json (test scripts can change)
+ *   - every *.ts / *.tsx file under src/, packages/, and test dirs
+ *   - vitest.config.ts + root package.json
  *
  * Cache file: <git-common-dir>/info/l1-cache.json
  */
@@ -22,62 +20,17 @@ import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
-// Speculatively start the test shards immediately (top-level Bun.spawn) so
-// their bun startup + module load overlaps with the wrapper's hash work. On
-// cache hit we kill them; on miss we await + parse coverage. Saves ~25-50ms
-// on cache miss vs spawning after the cache decision.
-//
-// cli is split into two sub-shards (cli-a, cli-b) because it has the slowest
-// combined wall (~42ms). Splitting halves the workload per proc; we merge the
-// two coverage tables file-by-file (max funcs, max lines per file) so the
-// gate semantics are preserved — a file imported by both sub-shards is gated
-// on its best-coverage view.
-const SHARDS = [
-  { name: "web", paths: ["apps/web/src/__tests__/"] },
-  { name: "worker", paths: ["apps/worker/__tests__/"] },
-  {
-    name: "cli-a",
-    paths: [
-      "apps/cli/__tests__/api.test.ts",
-      "apps/cli/__tests__/client.test.ts",
-      "apps/cli/__tests__/config.test.ts",
-      "apps/cli/__tests__/crud.test.ts",
-      "apps/cli/__tests__/json-input.test.ts",
-    ],
-  },
-  {
-    name: "cli-b",
-    paths: [
-      "apps/cli/__tests__/output.test.ts",
-      "apps/cli/__tests__/policies-coverage.test.ts",
-      "apps/cli/__tests__/policies.test.ts",
-      "apps/cli/__tests__/readonly.test.ts",
-    ],
-  },
-] as const;
-
-const speculative = SHARDS.map((s) => ({
-  name: s.name,
-  proc: Bun.spawn(["bun", "--bun", "test", ...s.paths, "--coverage"], {
-    stdout: "pipe",
-    stderr: "pipe",
-    cwd: REPO_ROOT,
-  }),
-}));
-
 const SOURCE_ROOTS = [
   "apps/web/src",
   "apps/worker/src",
   "apps/worker/__tests__",
+  "apps/cli/src",
+  "apps/cli/__tests__",
   "packages/api/src",
   "packages/db/src",
 ].map((p) => join(REPO_ROOT, p));
-const EXTRA_FILES = ["bunfig.toml", "package.json"].map((p) => join(REPO_ROOT, p));
+const EXTRA_FILES = ["vitest.config.ts", "package.json"].map((p) => join(REPO_ROOT, p));
 
-const LINE_THRESHOLD = 95;
-const FUNC_THRESHOLD = 95;
-
-// Resolve the git common dir without spawning `git rev-parse` (saves ~10ms).
 function gitCommonDir(): string {
   const dotGit = join(REPO_ROOT, ".git");
   if (existsSync(dotGit)) {
@@ -161,165 +114,43 @@ function writeCache(path: string, cache: Cache): void {
   writeFileSync(path, JSON.stringify(cache, null, 2));
 }
 
-interface ShardResult {
-  name: string;
-  funcs: number;
-  lines: number;
-  output: string;
-  ok: boolean;
-}
-
-// Worker shard's coverage table includes route files that are loaded but
-// only exercised via L2/L3 E2E (not L1). Filter to the files that have unit
-// tests so the gate stays tight without false negatives.
-// index.ts (wiring-only) and routes/live.ts (covered by L2 live.http.test.ts)
-// are intentionally excluded — they were only loaded by the now-deleted
-// secure-headers.test.ts which paid an ~80ms cold-import cost in L1.
-const WORKER_INCLUDE_PREFIXES = [
-  "apps/worker/src/middleware/",
-  "apps/worker/src/routes/auth-cli.ts",
-  "apps/worker/src/routes/auth.ts",
-  "apps/worker/src/routes/me.ts",
-  "apps/worker/src/lib/",
-];
-
-// Parse a bun-test text-coverage block into a per-file map of {funcs, lines}.
-// Returns null if no file rows could be parsed (e.g. the proc was killed).
-function parseCoverageTable(out: string): Map<string, { funcs: number; lines: number }> | null {
-  const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
-  const map = new Map<string, { funcs: number; lines: number }>();
-  for (const line of out.split("\n")) {
-    const m = line.match(fileLineRe);
-    if (!m) continue;
-    const filePath = (m[1] ?? "").trim();
-    if (filePath === "All files" || filePath === "File" || filePath.startsWith("---")) continue;
-    map.set(filePath, {
-      funcs: parseFloat(m[2] ?? "0"),
-      lines: parseFloat(m[3] ?? "0"),
-    });
-  }
-  return map.size > 0 ? map : null;
-}
-
-async function collectShard(s: { name: string; proc: ReturnType<typeof Bun.spawn> }): Promise<ShardResult> {
-  const [out, err] = await Promise.all([
-    new Response(s.proc.stdout as ReadableStream).text(),
-    new Response(s.proc.stderr as ReadableStream).text(),
-  ]);
-  await s.proc.exited;
-  const full = out + err;
-
-  if (s.name === "worker") {
-    const map = parseCoverageTable(full);
-    if (!map) return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-    let totalFuncs = 0, totalLines = 0, fileCount = 0;
-    for (const [filePath, cov] of map) {
-      if (!WORKER_INCLUDE_PREFIXES.some((p) => filePath.startsWith(p))) continue;
-      totalFuncs += cov.funcs;
-      totalLines += cov.lines;
-      fileCount++;
-    }
-    if (fileCount === 0) {
-      return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-    }
-    const funcs = totalFuncs / fileCount;
-    const lines = totalLines / fileCount;
-    return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
-  }
-
-  // cli-a / cli-b sub-shards: defer aggregation to the post-merge step below.
-  // We still set funcs/lines from the local All files line so logging shows
-  // the per-shard view; the cross-shard merge overrides the gate decision.
-  const allFilesLine = full.split("\n").find((l) => l.includes("All files"));
-  const match = allFilesLine?.match(/All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/);
-  const funcs = match ? parseFloat(match[1] ?? "0") : 0;
-  const lines = match ? parseFloat(match[2] ?? "0") : 0;
-  return { name: s.name, funcs, lines, output: full, ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD };
-}
-
 const cachePath = join(gitCommonDir(), "info", "l1-cache.json");
 const files = collectFiles();
 const hash = hashFiles(files);
 const cached = readCache(cachePath);
 
 if (cached && cached.hash === hash) {
-  for (const s of speculative) s.proc.kill();
   console.log(`✅ L1 cache hit (${files.length} files, ${hash.slice(0, 12)})`);
   process.exit(0);
 }
 
-console.log(
-  `🧪 L1 cache miss — running unit tests (${files.length} files, line ≥ ${LINE_THRESHOLD}%, func ≥ ${FUNC_THRESHOLD}%)`,
-);
+console.log(`🧪 L1 cache miss — running vitest (${files.length} files)`);
 
-const results = await Promise.all(speculative.map(collectShard));
+const proc = Bun.spawnSync(["bunx", "vitest", "run", "--coverage"], {
+  cwd: REPO_ROOT,
+  stdout: "pipe",
+  stderr: "pipe",
+});
 
-// Cross-shard merge for cli: cli-a and cli-b each load a subset of cli source
-// files. A file imported by both sub-shards has two coverage views; we take
-// the MAX (funcs, lines) per file and recompute the aggregate. This keeps
-// gate semantics equivalent to the un-split cli shard.
-const cliA = results.find((r) => r.name === "cli-a");
-const cliB = results.find((r) => r.name === "cli-b");
-let cliMerged: ShardResult | null = null;
-if (cliA && cliB) {
-  const mapA = parseCoverageTable(cliA.output) ?? new Map();
-  const mapB = parseCoverageTable(cliB.output) ?? new Map();
-  const merged = new Map<string, { funcs: number; lines: number }>();
-  for (const [k, v] of mapA) merged.set(k, { ...v });
-  for (const [k, v] of mapB) {
-    const prev = merged.get(k);
-    if (prev) {
-      merged.set(k, {
-        funcs: Math.max(prev.funcs, v.funcs),
-        lines: Math.max(prev.lines, v.lines),
-      });
-    } else {
-      merged.set(k, { ...v });
-    }
-  }
-  let tF = 0, tL = 0, n = 0;
-  for (const v of merged.values()) {
-    tF += v.funcs;
-    tL += v.lines;
-    n++;
-  }
-  if (n > 0) {
-    const funcs = tF / n;
-    const lines = tL / n;
-    cliMerged = {
-      name: "cli",
-      funcs,
-      lines,
-      output: cliA.output + "\n" + cliB.output,
-      ok: lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD,
-    };
-  }
-}
+const stdout = proc.stdout.toString();
+const stderr = proc.stderr.toString();
 
-const displayResults = cliMerged
-  ? results.filter((r) => r.name !== "cli-a" && r.name !== "cli-b").concat(cliMerged)
-  : results;
-
-let failed = false;
-for (const r of displayResults) {
-  const status = r.ok ? "✅" : "❌";
-  console.log(
-    `${status} ${r.name.padEnd(8)} funcs=${r.funcs.toFixed(2)}%  lines=${r.lines.toFixed(2)}%`,
-  );
-  if (!r.ok) {
-    failed = true;
-    console.log(r.output);
-  }
-}
-
-if (failed) {
+if (proc.exitCode !== 0) {
+  console.log(stdout);
+  if (stderr.trim()) console.error(stderr);
   console.error("\n❌ L1 coverage gate failed");
   process.exit(1);
 }
 
+// Print summary line from vitest output
+const summaryLines = stdout.split("\n").filter(
+  (l) => l.includes("Test Files") || l.includes("Tests ") || l.includes("All files")
+);
+for (const line of summaryLines) console.log(line.trim());
+
 writeCache(cachePath, {
   hash,
   updatedAt: new Date().toISOString(),
-  cmd: ["bun", "--bun", "test", "<per-shard>", "--coverage"],
+  cmd: ["bunx", "vitest", "run", "--coverage"],
 });
 console.log(`💾 L1 cache updated (${hash.slice(0, 12)})`);
