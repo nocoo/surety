@@ -3,24 +3,22 @@
  * `accessAuth`. Stubs `jose.jwtVerify` so we don't need a real
  * Cloudflare Access deployment.
  */
-import { describe, expect, test, mock, beforeAll, afterAll } from "bun:test";
+import { describe, expect, test, vi, afterAll } from "vitest";
 
 let jwtResult: { ok: true; payload: Record<string, unknown> } | { ok: false };
 
-beforeAll(() => {
-  mock.module("jose", () => ({
-    createRemoteJWKSet: () => () => ({}),
-    jwtVerify: async () => {
-      if (jwtResult.ok) {
-        return { payload: jwtResult.payload, protectedHeader: {} };
-      }
-      throw new Error("invalid jwt");
-    },
-  }));
-});
+vi.mock("jose", () => ({
+  createRemoteJWKSet: () => () => ({}),
+  jwtVerify: async () => {
+    if (jwtResult.ok) {
+      return { payload: jwtResult.payload, protectedHeader: {} };
+    }
+    throw new Error("invalid jwt");
+  },
+}));
 
 afterAll(() => {
-  mock.restore();
+  vi.restoreAllMocks();
 });
 
 import { Hono } from "hono";

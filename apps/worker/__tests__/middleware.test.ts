@@ -5,7 +5,7 @@
  * context flags they set (accessAuthenticated, accessEmail) or the
  * response they emit.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { Hono } from "hono";
 import { accessAuth } from "../src/middleware/access-auth";
 import { apiKeyAuth } from "../src/middleware/api-key-auth";

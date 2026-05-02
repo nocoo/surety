@@ -3,7 +3,7 @@
  * can show it. We either read the email from the context var accessAuth
  * stashed earlier, or (fallback) base64-decode the JWT payload.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { Hono } from "hono";
 import meRoutes, { decodeJwtPayload } from "../src/routes/me";
 import type { AppEnv } from "../src/lib/types";

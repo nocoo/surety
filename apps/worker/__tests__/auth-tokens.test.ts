@@ -2,7 +2,7 @@
  * Token-management routes are gated to interactive (CF Access) sessions.
  * A bearer/CLI token must NOT be able to enumerate or revoke tokens.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { Hono } from "hono";
 import authRoutes from "../src/routes/auth";
 import { accessAuth } from "../src/middleware/access-auth";

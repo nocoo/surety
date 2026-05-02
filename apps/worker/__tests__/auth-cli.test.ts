@@ -5,7 +5,7 @@
  * `accessAuthenticated` + `accessEmail` + `repos` via a wrapper middleware
  * to mimic what the real middleware chain produces.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, vi, test } from "vitest";
 import { Hono } from "hono";
 import authCliRoutes, { isLocalhostUrl } from "../src/routes/auth-cli";
 import type { AppEnv } from "../src/lib/types";
@@ -25,7 +25,7 @@ function makeApp(opts: {
     // Cast to the shape consumers expect; only `create` is exercised here.
     c.set("repos", {
       apiTokens: {
-        create: mock((email: string, name: string) => {
+        create: vi.fn((email: string, name: string) => {
           opts.minted?.push({ email, name });
           return Promise.resolve({
             token: "sk_freshly_minted",
