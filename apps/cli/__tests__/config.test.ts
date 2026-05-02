@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import {
   DEFAULT_API_URL,
   DEFAULT_LOGIN_URL,
