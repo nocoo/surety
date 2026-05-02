@@ -22,8 +22,6 @@ export default defineConfig({
         "apps/web/src/**",
         "apps/worker/src/**",
         "apps/cli/src/**",
-        "packages/api/src/**",
-        "packages/db/src/**",
       ],
       exclude: [
         "**/*.test.ts",
