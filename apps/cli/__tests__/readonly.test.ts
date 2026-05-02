@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test, beforeEach, afterEach } from "vitest";
 import { defineReadonlyCommands } from "../src/commands/readonly";
 import { ApiClient } from "../src/api";
 
