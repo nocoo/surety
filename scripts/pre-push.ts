@@ -22,17 +22,11 @@ interface Step {
 const STEPS: Step[] = [
   { name: "osv-scanner", cmd: ["osv-scanner", "--lockfile=bun.lock"] },
   { name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
-  // Legacy Next.js E2E targets a retired Worker proxy; the Hono/Vite
-  // L2 harness below replaces it. Worker + CLI unit suites stay as the
-  // first fast-fail signal.
+  // Worker + CLI unit suites via vitest (test files migrated to vitest).
+  // vitest.config.ts includes/excludes are authoritative; no path args needed.
   {
-    name: "worker+cli tests",
-    cmd: [
-      "bun",
-      "test",
-      "apps/worker/__tests__",
-      "apps/cli/__tests__",
-    ],
+    name: "vitest unit",
+    cmd: ["bunx", "vitest", "run"],
     live: true,
   },
   // L2 E2E for the Hono worker — uses the in-memory D1 harness in
