@@ -428,6 +428,49 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.2
+
+### Changed
+- CLI page install/auth/token sections
+- Coverage-lookup member/asset switching + data display
+- Dashboard stat cards + all chart sections
+- Policies page full CRUD + detail navigation
+- Comprehensive coverage exclude for L1-only scope
+- Scope cli coverage include to src
+- Fix 3 vitest-migrated test files
+- Migrate user.test.ts from bun:test to vitest
+- Migrate api.test.ts from bun:test to vitest
+- Migrate readonly.test.ts from bun:test to vitest
+- Migrate policies.test.ts from bun:test to vitest
+- Migrate policies-coverage.test.ts from bun:test to vitest
+- Migrate output.test.ts from bun:test to vitest
+- Migrate json-input.test.ts from bun:test to vitest
+- Migrate crud.test.ts from bun:test to vitest
+- Migrate config.test.ts from bun:test to vitest
+- Migrate client.test.ts from bun:test to vitest
+- Migrate unit tests from bun:test to vitest
+- Add vitest config with coverage thresholds
+- Add vitest and @vitest/coverage-v8
+- Unify HTML title to "surety - 家庭保单管理工具"
+- 54ms steady floor + segment 7 ideas.md update
+- Cli split with cross-shard coverage merge: 59→54ms (-8%)
+- Floor confirmation + ideas.md update: 59ms steady (best of 20)
+- Mock fs.readFileSync in json-input tests (skip /tmp I/O): 66→64ms (-3%)
+- Move secure-headers wiring assertion L1→L2: 115→66ms (-43%), worker cold-import gone
+- Inline check-coverage.ts into run-l1.ts (skip wrapper layer): 127→115 (-9%), hit 40→20 (-50%)
+- Speculative spawn + skip git rev-parse: 204→151ms (-26%, vs baseline 257→151 -41%)
+- L1 cache-miss: delegate to check-coverage.ts (parallel + gate). 257→204ms (-21%)
+- Add bench-pre-commit.ts + autoresearch baseline
+
+### Fixed
+- Migrate pre-push worker+cli step to vitest
+- Migrate run-l1.ts from bun test to vitest
+
+### Removed
+- Remove packages from coverage include
+- Drop mkdtemp from buildClient tests (HOME ignored anyway): 64→59ms (-8%)
+- Drop setTimeout(10) in middleware test, use deferred: 151→127ms (-16%)
+
 ## v2.0.1
 
 ### Added
