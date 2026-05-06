@@ -10,7 +10,7 @@
 Production:  Hono Worker → @surety/db (D1 binding driver) → D1
 Unit Test:   bun:sqlite :memory: (无网络)
 L2 E2E:      Hono test client + bun:sqlite :memory: (apps/worker/__tests__/e2e/)
-L3 UI E2E:   远程 D1 test 数据库 (surety-db-test)
+L3 UI E2E:   wrangler dev --env dev --local (本地 D1)
 Management:  drizzle-kit + d1-http driver (开发时 schema push)
 ```
 

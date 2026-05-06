@@ -3,7 +3,7 @@
  * Run pre-push checks in parallel:
  *   - osv-scanner   (vulnerability scan, ~4s, network)
  *   - gitleaks      (staged secret scan, fast)
- *   - test:e2e      (long: spins remote D1 + dev server)
+ *   - test:e2e      (long: local D1/R2 emulator + dev server)
  *
  * All three are independent (read-only against repo / external services).
  * Output of each is buffered and replayed in deterministic order on
@@ -43,7 +43,7 @@ const STEPS: Step[] = [
     ],
     live: true,
   },
-  // L2 HTTP — boots `wrangler dev --env test --local` on :7017 and drives
+  // L2 HTTP — boots `wrangler dev --local` on :7017 and drives
   // the worker through real fetch() over the loopback. Catches D1/R2
   // binding regressions that the in-memory harness cannot.
   {

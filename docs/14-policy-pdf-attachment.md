@@ -16,7 +16,7 @@ Next.js API  /api/policies/[id]/attachments/*
 CF Worker  /r2/:key  (PUT / GET / DELETE)
     │  Bearer auth + X-Target-DB
     ▼
-R2 Bucket  surety (prod) / surety-test (test)
+R2 Bucket  surety (prod) / surety (local, via --env dev --local)
 ```
 
 **Key decisions:**
@@ -28,6 +28,8 @@ R2 Bucket  surety (prod) / surety-test (test)
 ## 1. Worker Extension
 
 ### 1.1 wrangler.toml — 新增 R2 binding
+
+> **Superseded**: 实际实现使用单一 `ATTACHMENTS` binding（生产），本地测试通过 `wrangler dev --local` 模拟。下方的 `R2_PROD` / `R2_TEST` 双 binding 设计已弃用。
 
 ```toml
 # worker/wrangler.toml (append)
@@ -267,7 +269,7 @@ XHR wrapper — fetch API 不支持 upload progress，对 50MB 文件必须用 `
 | DELETE | 204, then GET → 404 |
 | Cross-policy access | 404 (IDOR protection) |
 
-All L2 tests 使用 `X-Target-DB: test` → `surety-test` R2 bucket。
+All L2 tests 使用 `wrangler dev --env dev --local`，R2 bucket 为本地模拟。
 
 ### G1 Static Analysis (pre-commit)
 - `tsc --noEmit` — 新文件类型正确
@@ -278,7 +280,7 @@ All L2 tests 使用 `X-Target-DB: test` → `surety-test` R2 bucket。
 - `gitleaks` — 无硬编码 secret
 
 ### D1 Test Isolation
-- **R2 buckets**: `surety` (prod) / `surety-test` (test)
+- **R2 buckets**: `surety` (prod) / local emulator (dev, via `--env dev --local`)
 - Worker 通过 `X-Target-DB` header 路由到对应 bucket（与 D1 隔离模式一致）
 - L2 测试专用 test bucket
 

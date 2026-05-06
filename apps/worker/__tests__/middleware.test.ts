@@ -236,7 +236,7 @@ describe("apiKeyAuth middleware", () => {
     const app = makeApp(apiKeyAuth);
     const res = await app.request(
       "/api/probe",
-      { headers: { host: "surety-test.hexly.ai" } },
+      { headers: { host: "surety.hexly.ai" } },
       { E2E_SKIP_AUTH: "true" },
     );
     expect(res.status).toBe(200);
@@ -273,7 +273,7 @@ describe("apiKeyAuth middleware", () => {
     const app = makeApp(apiKeyAuth);
     const res = await app.request(
       "/api/probe",
-      { headers: { host: "surety-test.hexly.ai" } },
+      { headers: { host: "surety.hexly.ai" } },
       { E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
     );
     expect(res.status).toBe(200);

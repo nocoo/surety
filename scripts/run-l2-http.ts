@@ -1,8 +1,11 @@
 #!/usr/bin/env bun
 /**
- * L2 HTTP runner — boots `wrangler dev --env test --local` against the
+ * L2 HTTP runner — boots `wrangler dev --local` against the
  * local D1 + R2 emulator on port 7017, applies the schema, then runs the
  * `apps/worker/__tests__/l2-http/**` suite as real `fetch()` clients.
+ *
+ * Uses top-level wrangler.toml bindings (no --env) with --var overrides
+ * for E2E_SKIP_AUTH + ENVIRONMENT to bypass auth locally.
  *
  * Tears the wrangler process down on exit (or test failure) so the port
  * is released for the next run.
@@ -61,10 +64,8 @@ function applySchema(): void {
       "wrangler",
       "d1",
       "execute",
-      "surety-db-test",
+      "surety-db",
       "--local",
-      "--env",
-      "test",
       "--persist-to",
       ".wrangler/state-l2-http",
       `--file=${tmp}`,
@@ -85,8 +86,6 @@ async function startWrangler(): Promise<void> {
       "bunx",
       "wrangler",
       "dev",
-      "--env",
-      "test",
       "--local",
       "--persist-to",
       ".wrangler/state-l2-http",
@@ -96,6 +95,10 @@ async function startWrangler(): Promise<void> {
       "0",
       "--ip",
       "127.0.0.1",
+      "--var",
+      "E2E_SKIP_AUTH:true",
+      "--var",
+      "ENVIRONMENT:test",
     ],
     {
       cwd: WORKER_DIR,

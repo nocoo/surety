@@ -1,9 +1,12 @@
 #!/usr/bin/env bun
 /**
  * L3 server runner — builds the Vite SPA into `apps/worker/static/`
- * and starts `wrangler dev --env test --local` on port 27012 so
+ * and starts `wrangler dev --local` on port 27012 so
  * Playwright's webServer can reach a single endpoint that serves both
  * `/api/*` and the SPA shell.
+ *
+ * Uses top-level wrangler.toml bindings (no --env) with --var overrides
+ * for E2E_SKIP_AUTH + ENVIRONMENT to bypass auth locally.
  *
  * Designed to be invoked from `playwright.config.ts` via `webServer.command`.
  * Stays in the foreground so Playwright can manage its lifetime.
@@ -50,10 +53,8 @@ function applySchema(): void {
       "wrangler",
       "d1",
       "execute",
-      "surety-db-test",
+      "surety-db",
       "--local",
-      "--env",
-      "test",
       "--persist-to",
       ".wrangler/state-l3",
       `--file=${tmp}`,
@@ -74,8 +75,6 @@ async function startWrangler(): Promise<never> {
       "bunx",
       "wrangler",
       "dev",
-      "--env",
-      "test",
       "--local",
       "--persist-to",
       ".wrangler/state-l3",
@@ -85,6 +84,10 @@ async function startWrangler(): Promise<never> {
       "0",
       "--ip",
       "127.0.0.1",
+      "--var",
+      "E2E_SKIP_AUTH:true",
+      "--var",
+      "ENVIRONMENT:test",
     ],
     {
       cwd: WORKER_DIR,

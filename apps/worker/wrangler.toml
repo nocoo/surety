@@ -28,29 +28,3 @@ database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 [[r2_buckets]]
 binding = "ATTACHMENTS"
 bucket_name = "surety"
-
-[env.test]
-name = "surety-test"
-routes = [
-  { pattern = "surety-test.hexly.ai", custom_domain = true },
-  { pattern = "surety-api-test.hexly.ai", custom_domain = true }
-]
-
-[env.test.vars]
-E2E_SKIP_AUTH = "true"
-ENVIRONMENT = "test"
-
-[env.test.assets]
-directory = "./static"
-binding = "ASSETS"
-run_worker_first = ["/api/*"]
-not_found_handling = "single-page-application"
-
-[[env.test.d1_databases]]
-binding = "DB"
-database_name = "surety-db-test"
-database_id = "8650f8a3-72ce-4029-ac54-ec13ebb0c5b0"
-
-[[env.test.r2_buckets]]
-binding = "ATTACHMENTS"
-bucket_name = "surety-test"

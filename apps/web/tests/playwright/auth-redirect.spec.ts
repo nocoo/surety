@@ -4,7 +4,7 @@ import { test, expect } from "./fixtures";
  * Baseline auth contract for the L3 webServer.
  *
  * Production runs behind Cloudflare Access; the test environment sets
- * E2E_SKIP_AUTH=true via wrangler.toml [env.test.vars]. This spec
+ * E2E_SKIP_AUTH=true via --var override in run-l3-server.ts. This spec
  * documents the resulting contract:
  *   - /api/live is always reachable (no auth required)
  *   - protected routes (/api/members) succeed in SKIP mode

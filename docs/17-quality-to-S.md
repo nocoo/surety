@@ -137,7 +137,7 @@ L3 UI E2E 决定**直接删除而非迁移**：跑的是即将下线的 Next.js 
 
 ### L2 HTTP suite
 
-`apps/worker/__tests__/l2-http/`，runner 通过 `bun run scripts/run-l2-http.ts` 启 wrangler dev `--env test --local --persist` 后 fetch 127.0.0.1:7017：
+`apps/worker/__tests__/l2-http/`，runner 通过 `bun run scripts/run-l2-http.ts` 启 wrangler dev `--local --persist-to` 后 fetch 127.0.0.1:7017：
 
 - `live.http.test.ts` — `/api/live` 返回 `version` + D1 状态 + `Cache-Control: no-store`
 - `crud.http.test.ts` — members + policies CRUD（POST/GET/PUT/DELETE），守 `typeof id === "number"`
@@ -147,7 +147,7 @@ Schema 用 `packages/db` 抽出的 `INIT_SQL` 常量（不再依赖可能漂移�
 
 ### L3 Playwright suite
 
-`apps/web/tests/playwright/`，10 个 spec / chromium 单 worker / port 27012 / 总时长 ~42s。webServer 由 `scripts/run-l3-server.ts` 起：先 `bun run build` 把 SPA 产物吐到 `apps/worker/static/`，再启 wrangler dev `--env test --local`（同 process 既托管 `/api/*` 又托管 ASSETS binding）。
+`apps/web/tests/playwright/`，10 个 spec / chromium 单 worker / port 27012 / 总时长 ~42s。webServer 由 `scripts/run-l3-server.ts` 起：先 `bun run build` 把 SPA 产物吐到 `apps/worker/static/`，再启 wrangler dev `--local`（同 process 既托管 `/api/*` 又托管 ASSETS binding）。
 
 | Spec | 内容 |
 |------|------|
