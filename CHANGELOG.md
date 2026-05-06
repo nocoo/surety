@@ -428,6 +428,16 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.3
+
+### Changed
+- Correct L1 test command — vitest run, not bun test
+- Exclude playwright from bun test pathIgnorePatterns
+- Add release.yml for CF Worker CD
+
+### Removed
+- Remove cloud -test resources, use top-level bindings + --local
+
 ## v2.0.2
 
 ### Changed
