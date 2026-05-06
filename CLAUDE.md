@@ -77,8 +77,8 @@ surety/
 bun dev                  # Vite dev server (7012)，代理 /api → 线上 Worker
 bun run dev:worker       # 本地 Hono Worker (wrangler dev --port 7016)
 bun run build            # Vite 构建 → apps/worker/static/
-vitest run               # 全部单元测试 (web + worker + cli)
-vitest run --coverage    # 测试覆盖率（行/函数 ≥ 95）
+bun run test             # 全部单元测试 vitest (web + worker + cli)
+bun run test:coverage    # 测试覆盖率（行/函数 ≥ 95）
 bun run test:l2:http     # L2 HTTP 套件（wrangler dev :7017，真 D1/R2）
 bun run test:e2e:browser # L3 Playwright 浏览器回归（port 27012）
 bun run lint             # ESLint
@@ -176,7 +176,7 @@ AI/脚本入口，通过 Bearer token 访问 Worker HTTP API，已替代原 MCP 
 | 任务 | 命令 |
 |------|------|
 | 本地调试 | `cd apps/cli && bun src/index.ts <cmd>` |
-| 跑测试 | `cd apps/cli && vitest run` |
+| 跑测试 | `bun run test`（根目录 vitest，覆盖 CLI） |
 | 类型检查 | `cd apps/cli && bun run typecheck` |
 | 全局安装 | `bun add -g @nocoo/surety` |
 
