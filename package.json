@@ -30,7 +30,7 @@
     "clsx": "^2.1.1",
     "csv-parse": "^6.2.1",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.14",
+    "hono": "^4.12.18",
     "lucide-react": "^0.577.0",
     "otpauth": "^9.5.0",
     "path-to-regexp": "^8.4.0",
