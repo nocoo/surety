@@ -27,5 +27,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile --ignore-scripts
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx playwright install --with-deps chromium chromium-headless-shell
       - run: bun run test:e2e:browser
