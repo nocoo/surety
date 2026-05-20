@@ -71,6 +71,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           workingDirectory: apps/worker
+          packageManager: bun
 
       - name: Verify /api/live reports new version
         run: |
@@ -144,6 +145,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
           workingDirectory: apps/worker
+          packageManager: bun
 
       - name: Verify /api/live responds 200
         run: |
