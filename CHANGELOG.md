@@ -428,6 +428,26 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.4
+
+### Added
+- Show months for children under 5 years old
+
+### Changed
+- Add packageManager bun to wrangler-action
+- Install chromium-headless-shell for Playwright tests
+- Add --ignore-scripts to custom workflows (Shai-Hulud defense)
+- Enable L2 gate in CI
+
+### Fixed
+- Widen edit mode input fields to w-64
+- Do not fallback to effectiveDate for nextDueDate
+- Default to showing all policies instead of persisting filter
+- Upgrade wrangler-action v3 to v4
+- Bump ws to 8.20.1 (GHSA-58qx-3vcg-4xpx)
+- Run playwright install from apps/web to match local version
+- Upgrade hono to fix CVE
+
 ## v2.0.3
 
 ### Changed
