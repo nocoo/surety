@@ -33,7 +33,7 @@ app.get("/api/policies", async (c) => {
     status: deriveDisplayStatus(p.status as PolicyDbStatus, p.expiryDate),
     premium: p.premium,
     sumAssured: p.sumAssured,
-    nextDueDate: p.nextDueDate ?? p.effectiveDate,
+    nextDueDate: p.nextDueDate ?? null,
     effectiveDate: p.effectiveDate,
     expiryDate: p.expiryDate,
     guaranteedRenewalYears: p.guaranteedRenewalYears,
