@@ -58,19 +58,23 @@ const relationVariants: Record<Relation, "default" | "info" | "success" | "purpl
   Parent: "purple",
 };
 
-function calculateAge(birthDate: string | null): number | null {
+function calculateAge(birthDate: string | null): { years: number; months: number } | null {
   if (!birthDate) return null;
   const today = new Date();
   const parts = birthDate.split("-").map(Number);
   const birthYear = parts[0] ?? 0;
   const birthMonth = (parts[1] ?? 1) - 1;
   const birthDay = parts[2] ?? 1;
-  let age = today.getFullYear() - birthYear;
-  const monthDiff = today.getMonth() - birthMonth;
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
-    age--;
+  let years = today.getFullYear() - birthYear;
+  let months = today.getMonth() - birthMonth;
+  if (today.getDate() < birthDay) {
+    months--;
   }
-  return age;
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  return { years, months };
 }
 
 export default function MembersPage() {
@@ -227,8 +231,14 @@ export default function MembersPage() {
                     <TableCell>
                       {age !== null ? (
                         <>
-                          <span className="font-medium">{age}</span>
+                          <span className="font-medium">{age.years}</span>
                           <span className="text-muted-foreground"> 岁</span>
+                          {age.years < 5 && age.months > 0 && (
+                            <>
+                              <span className="font-medium">{age.months}</span>
+                              <span className="text-muted-foreground"> 个月</span>
+                            </>
+                          )}
                         </>
                       ) : (
                         <span className="text-muted-foreground">-</span>
