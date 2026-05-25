@@ -43,7 +43,7 @@ export function EditableInfoRow({
             value={inputValue}
             onValueChange={onEditChange}
           >
-            <SelectTrigger className="h-7 w-32">
+            <SelectTrigger className="h-7 w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -59,7 +59,7 @@ export function EditableInfoRow({
             type={type}
             value={inputValue}
             onChange={(e) => onEditChange(e.target.value)}
-            className={cn("h-7", type === "date" ? "w-40" : "w-32")}
+            className="h-7 w-64"
           />
         )}
       </div>
