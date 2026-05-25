@@ -220,7 +220,7 @@ export default function PoliciesPage() {
   const [filterApplicant, setFilterApplicant] = usePersistedState("surety-filter-applicant", "all");
   const [filterCategory, setFilterCategory] = usePersistedState("surety-filter-category", "all");
   const [filterAsset, setFilterAsset] = usePersistedState("surety-filter-asset", "all");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = usePersistedState("surety-filter-status-v2", "all");
 
   // View mode state (persisted to localStorage)
   const [viewMode, setViewMode] = usePersistedState<ViewMode>("surety-view-mode", "list");
