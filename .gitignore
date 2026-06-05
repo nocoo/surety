@@ -67,3 +67,7 @@ apps/worker/.l2-http-schema.sql
 apps/worker/.l3-schema.sql
 apps/web/test-results/
 apps/web/playwright-report/
+
+# benchmark run logs (data, not source)
+autoresearch.jsonl
+*.autoresearch.jsonl
