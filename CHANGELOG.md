@@ -428,6 +428,26 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.5
+
+### Changed
+- Untrack .claude/scheduled_tasks.lock
+- Upgrade TypeScript to 6.0.3
+- Stop tracking autoresearch.jsonl benchmark log
+- Bump ws to 8.21.0
+- Bump typescript-eslint to 8.60.1
+- Bump vitest and @vitest/coverage-v8 to 4.1.8
+- Bump react/react-dom to 19.2.7, @types/react to 19.2.17
+- Bump hono to 4.12.23
+
+### Fixed
+- Persist status filter with reset key
+
+### Removed
+- Drop csv-parse from manifest
+- Remove one-off medical-visits import script and csv-parse
+- Remove unused @hono/node-server, otpauth, qrcode, zod
+
 ## v2.0.4
 
 ### Added
