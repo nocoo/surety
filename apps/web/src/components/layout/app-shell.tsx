@@ -1,7 +1,8 @@
 
 import { useEffect } from "react";
 import { useLocation } from "react-router";
-import { Menu, Github } from "lucide-react";
+import { Menu } from "lucide-react";
+import { Github } from "../icons/github";
 import { Sidebar } from "./sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
