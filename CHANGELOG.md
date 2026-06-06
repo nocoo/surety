@@ -428,6 +428,16 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.0.6
+
+### Changed
+- Bump @types/node from 20 to 22.19.20
+- Upgrade lucide-react to 1.17.0
+- Extract Github icon from lucide-react 0.577
+- Bump lint-staged to 17.0.7
+- Bump radix-ui to 1.5.0
+- Bump @types/node to 20.19.42
+
 ## v2.0.5
 
 ### Changed
