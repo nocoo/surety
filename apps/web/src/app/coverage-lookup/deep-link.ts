@@ -8,26 +8,49 @@ export interface CoverageDeepLink {
 /**
  * Read the deep-link target from URL search params.
  *
- * `?member=<id>` and `?asset=<id>` are emitted by the global command
- * palette and any future deep-link share. If both are present, asset
- * wins (defensive: only one should ever be set, but we should not
- * silently merge them).
+ * Wire format:
+ *   ?member        → member tab, no specific id (auto-pick first)
+ *   ?member=<id>   → member tab, that specific id
+ *   ?asset         → asset tab, no specific id
+ *   ?asset=<id>    → asset tab, that specific id
+ *   (none)         → member tab, no id (default landing)
  *
- * Returns { type: "member", id: null } when neither key is present —
- * the previous default for landing on the page without a deep link.
+ * The presence of the `asset` key alone — even with no value — is what
+ * keeps the user on the asset tab after they switch tabs but before
+ * they pick a specific asset. Earlier versions only wrote the key when
+ * an id was set, which made `writeDeepLink("asset", null)` produce an
+ * empty querystring that read back as the member tab.
+ *
+ * If both keys appear, asset wins (defensive: only one should ever be
+ * set, but we should not silently merge them).
  */
 export function readCoverageDeepLink(
   params: URLSearchParams,
 ): CoverageDeepLink {
-  const memberRaw = params.get("member");
-  const assetRaw = params.get("asset");
-  if (assetRaw) {
-    const id = Number(assetRaw);
-    return { type: "asset", id: Number.isFinite(id) && id > 0 ? id : null };
+  if (params.has("asset")) {
+    const raw = params.get("asset");
+    return { type: "asset", id: parseId(raw) };
   }
-  if (memberRaw) {
-    const id = Number(memberRaw);
-    return { type: "member", id: Number.isFinite(id) && id > 0 ? id : null };
+  if (params.has("member")) {
+    const raw = params.get("member");
+    return { type: "member", id: parseId(raw) };
   }
   return { type: "member", id: null };
+}
+
+function parseId(raw: string | null): number | null {
+  if (raw === null || raw === "") return null;
+  const id = Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * "Which selector should the page render right now" — derived purely
+ * from the deep-link result. Extracted so tests can pin the
+ * URL → component-choice mapping without spinning up the full page.
+ */
+export function selectorKindForDeepLink(
+  link: CoverageDeepLink,
+): "member-selector" | "asset-selector" {
+  return link.type === "asset" ? "asset-selector" : "member-selector";
 }

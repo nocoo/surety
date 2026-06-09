@@ -91,13 +91,25 @@ export default function CoverageLookupPage() {
    * Single source of truth for "which subject is selected": the URL.
    * Both type-switch and member/asset-pick paths call this so the deep
    * link stays valid for sharing and back-button.
+   *
+   * Encoding rules — see deep-link.ts for the read side:
+   *   - "asset" tab: ALWAYS writes `?asset` (with or without id), so
+   *     the user can stay on the asset tab while picking nothing.
+   *   - "member" tab + id: writes `?member=<id>`.
+   *   - "member" tab + no id: writes nothing (the default landing).
+   * If we wrote `?member` even when empty, every initial render would
+   * push a no-op query-string change.
    */
   const writeDeepLink = useCallback(
     (type: SelectionType, id: number | null) => {
       const next = new URLSearchParams(searchParams);
       next.delete("member");
       next.delete("asset");
-      if (id != null) next.set(type, String(id));
+      if (type === "asset") {
+        next.set("asset", id != null ? String(id) : "");
+      } else if (id != null) {
+        next.set("member", String(id));
+      }
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
