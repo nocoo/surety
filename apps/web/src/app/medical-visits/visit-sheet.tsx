@@ -561,7 +561,7 @@ function VisitForm({
           </div>
 
           {costMismatch && (
-            <div className="rounded-widget bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-sm text-yellow-700 dark:text-yellow-400">
+            <div className="rounded-widget bg-warning/10 border border-warning/30 px-3 py-2 text-sm text-warning">
               费用不一致：医保({costMismatch.sum.toFixed(2)}) ≠ 总费用({costMismatch.total.toFixed(2)})，差额 {costMismatch.diff.toFixed(2)} 元
             </div>
           )}

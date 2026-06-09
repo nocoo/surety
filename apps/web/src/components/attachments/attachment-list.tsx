@@ -22,9 +22,9 @@ function formatDate(date: Date | string): string {
 
 function AttachmentIcon({ contentType }: { contentType: string }) {
   if (isImageContentType(contentType)) {
-    return <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" />;
+    return <ImageIcon className="h-5 w-5 text-info shrink-0" />;
   }
-  return <FileText className="h-5 w-5 text-red-500 shrink-0" />;
+  return <FileText className="h-5 w-5 text-destructive shrink-0" />;
 }
 
 export function AttachmentList({

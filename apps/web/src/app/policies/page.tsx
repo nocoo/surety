@@ -1004,9 +1004,9 @@ export default function PoliciesPage() {
                   }}
                 >
                   {isImageContentType(att.contentType) ? (
-                    <ImageIcon className="h-5 w-5 text-blue-500 shrink-0" />
+                    <ImageIcon className="h-5 w-5 text-info shrink-0" />
                   ) : (
-                    <FileText className="h-5 w-5 text-red-500 shrink-0" />
+                    <FileText className="h-5 w-5 text-destructive shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{att.filename}</p>
