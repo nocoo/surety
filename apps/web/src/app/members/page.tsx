@@ -209,7 +209,7 @@ export default function MembersPage() {
               {members.map((member) => {
                 const age = calculateAge(member.birthDate);
                 return (
-                  <TableRow key={member.id} className="hover:bg-background/50">
+                  <TableRow key={member.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">

@@ -367,7 +367,7 @@ export default function MedicalVisitsPage() {
                     const daysAgo = calculateDaysAgo(visit.visitDate);
 
                     return (
-                      <TableRow key={visit.id} className="hover:bg-background/50">
+                      <TableRow key={visit.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-7 w-7">

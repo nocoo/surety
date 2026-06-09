@@ -649,7 +649,7 @@ export default function PoliciesPage() {
                   const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                   const categoryConfig = getCategoryConfig(policy.category);
                   return (
-                    <TableRow key={policy.id} className="hover:bg-background/50">
+                    <TableRow key={policy.id}>
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
@@ -872,7 +872,7 @@ export default function PoliciesPage() {
                       const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                       const categoryConfig = getCategoryConfig(policy.category);
                       return (
-                        <div key={policy.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/30">
+                        <div key={policy.id} className="flex items-center justify-between px-4 py-3 hover:bg-background/50 transition-colors">
                           <div className="flex items-center gap-4">
                             <Badge variant={status.variant}>{status.label}</Badge>
                             {viewMode === "byInsured" && (
@@ -995,7 +995,7 @@ export default function PoliciesPage() {
             {pickerAttachments.map((att) => (
               <li key={att.id}>
                 <button
-                  className="flex w-full items-center gap-3 px-2 py-3 hover:bg-muted/50 rounded transition-colors text-left"
+                  className="flex w-full items-center gap-3 px-2 py-3 hover:bg-background/50 rounded transition-colors text-left"
                   onClick={() => {
                     setPreviewPolicyId(pickerPolicyId);
                     setPreviewAttachment(att);
