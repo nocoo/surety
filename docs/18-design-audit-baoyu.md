@@ -325,8 +325,12 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 - ✅ 问题 13（全局 Cmd/Ctrl+K command palette：Dialog + 输入框 + 上下键 + Enter；命令源 = 11 条静态导航 + 4 条快捷新增 + 4 类懒加载数据 (保单/成员/医院/医生)；`useOpenSheetOnNewParam` 共享 hook 让 policies/members/medical-visits/assets 4 页响应 `?new=1`；不引 cmdk 依赖；9 个 L1 测试）
 - ✅ 问题 1（Dashboard 重设计：顶部 5 列布局 = 家庭保障健康度 3 列（保费占年收入比例 + 5..15% 健康区间标尺 + 4 档语义着色 unknown/underinsured/healthy/overspent）+ 未来 30 天行动建议 2 列（按险种聚合即将续费/到期）；8 张图表折叠到 `<details>` 二级；`computeCoverageHealth` / `buildActionItems` 纯函数 + 9 个 L1 测试）
 
-**长期债务**
-- 问题 7（sidebar CJK 排版）、11（StatCard 升级带趋势）、19（行内 Badge 减负）、21（CLI 折叠）、24（dirty 检测）。
+**长期债务** — ✅ 全部完成 (2026-06-10)
+- ✅ 问题 7（sidebar 中文分组标题去 `uppercase` + `tracking-wider`，dashboard / palette 中文 eyebrow 同步处理；改用 `text-[11px]` 保持视觉层级）
+- ✅ 问题 21（CLI 入口从"系统"组移到独立"开发者"组，`defaultOpen: false` 默认折叠）
+- ✅ 问题 24（设置页 dirty 检测：`savedSettings` 快照 + `dirty` 信号 → 顶部"未保存的修改" banner + 保存按钮在 !dirty 时 disable + `beforeunload` 拦截；新增"放弃修改"动作回滚到 saved 快照）
+- ✅ 问题 19（保单 list 表格状态 Badge → 左侧 2px 色条 + row title；类型 Badge → 色点 + 文字；表头减 1 列；新增 `statusStripeClass` helper + 4 个 L1 测试）
+- ✅ 问题 11（StatCard 增加 sub-line：保单数→最多险种、家庭成员→人均保单数、年保费→最大险种占比、总保额→最大险种占比；纯函数派生自已有 charts 数据，无新增 API；空数据 fallback 不显示 sub-line；dashboard-vm.ts 出 coverage exclude 列表 + 9 个 L1 测试）
 
 ## 附：与上一轮 07 报告的关系
 

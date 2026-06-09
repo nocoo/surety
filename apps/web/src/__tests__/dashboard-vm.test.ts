@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createStatCards } from "@/lib/dashboard-vm";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { createStatCards, fetchDashboardData } from "@/lib/dashboard-vm";
 import type {
   DashboardStats,
   DashboardCharts,
@@ -138,5 +138,27 @@ describe("createStatCards", () => {
       }),
     );
     expect(cards[0]?.sub).toBeUndefined();
+  });
+});
+
+describe("fetchDashboardData", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns parsed JSON on a 200 response", async () => {
+    const payload = { stats: baseStats };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+    const data = await fetchDashboardData();
+    expect(data).toEqual(payload);
+  });
+
+  it("throws including the HTTP status on a non-2xx response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("nope", { status: 500 }),
+    );
+    await expect(fetchDashboardData()).rejects.toThrow(/500/);
   });
 });
