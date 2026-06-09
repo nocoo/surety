@@ -63,6 +63,13 @@
   --color-badge-red: hsl(var(--badge-red));
   --color-badge-red-foreground: hsl(var(--badge-red-foreground));
 
+  /* Semantic *text* tokens — for inline notices and helper text where
+     the matching fill token would fail WCAG AA on body backgrounds. */
+  --color-success-text: hsl(var(--success-text));
+  --color-warning-text: hsl(var(--warning-text));
+  --color-info-text: hsl(var(--info-text));
+  --color-destructive-text: hsl(var(--destructive-text));
+
   /* 24 sequential chart colors */
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
@@ -176,6 +183,17 @@
   --badge-red: 340 82% 55%;
   --badge-red-foreground: 0 0% 100%;
 
+  /* Semantic *text* tokens — same hue as the fill tokens above but with
+     lightness pushed to clear ~4.5:1 against the page background, so they
+     can be used for inline notices, helper messages, and small status
+     text. The fill tokens (--success / --warning / --info / --destructive)
+     are tuned for solid backgrounds that put white on top — using them as
+     foreground colors directly fails WCAG AA. */
+  --success-text: 142 71% 28%;
+  --warning-text: 35 85% 32%;
+  --info-text: 217 70% 38%;
+  --destructive-text: 0 72% 38%;
+
   /* 24 sequential chart colors */
   /* chart-1 is offset from primary vermilion (hue 15) to avoid visual
      collision between primary-colored buttons and the dominant chart
@@ -265,6 +283,13 @@
   --teal-foreground: 186 60% 92%;
   --badge-red: 340 65% 45%;
   --badge-red-foreground: 340 65% 92%;
+
+  /* Dark-mode text tokens — pull lightness up so the same names read
+     against the L0/L1 dark surfaces with at least ~4.5:1 contrast. */
+  --success-text: 142 60% 78%;
+  --warning-text: 45 80% 78%;
+  --info-text: 217 75% 78%;
+  --destructive-text: 0 70% 78%;
 
   /* 24 sequential chart colors — controlled brightness, vivid hue */
   /* Note: chart-1 hue (32) is offset from primary vermilion (15) so a

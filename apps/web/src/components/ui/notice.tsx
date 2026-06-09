@@ -18,11 +18,11 @@ const noticeVariants = cva(
   {
     variants: {
       variant: {
-        info: "border-info/30 bg-info/10 text-info",
-        success: "border-success/30 bg-success/10 text-success",
-        warning: "border-warning/30 bg-warning/10 text-warning",
+        info: "border-info/30 bg-info/10 text-info-text",
+        success: "border-success/30 bg-success/10 text-success-text",
+        warning: "border-warning/30 bg-warning/10 text-warning-text",
         destructive:
-          "border-destructive/30 bg-destructive/10 text-destructive",
+          "border-destructive/30 bg-destructive/10 text-destructive-text",
       },
     },
     defaultVariants: {

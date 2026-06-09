@@ -9,7 +9,7 @@ describe("Notice", () => {
     expect(html).toContain('role="status"');
     expect(html).toContain("border-info/30");
     expect(html).toContain("bg-info/10");
-    expect(html).toContain("text-info");
+    expect(html).toContain("text-info-text");
   });
 
   it("applies semantic-token classes for each variant", () => {
@@ -18,7 +18,11 @@ describe("Notice", () => {
       const html = renderToStaticMarkup(<Notice variant={v}>x</Notice>);
       expect(html).toContain(`border-${v}/30`);
       expect(html).toContain(`bg-${v}/10`);
-      expect(html).toContain(`text-${v}`);
+      // Body color uses the dedicated *-text token (not the fill token),
+      // because fill tokens fail WCAG AA when used as foreground on
+      // body backgrounds.
+      expect(html).toContain(`text-${v}-text`);
+      expect(html).not.toMatch(new RegExp(`text-${v}(?!-text)\\b`));
     }
   });
 

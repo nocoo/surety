@@ -170,8 +170,8 @@ function PolicyMobileCard({
               <div
                 className={cn(
                   "text-xs",
-                  dueState.variant === "warning" && "text-warning",
-                  dueState.variant === "destructive" && "text-destructive",
+                  dueState.variant === "warning" && "text-warning-text",
+                  dueState.variant === "destructive" && "text-destructive-text",
                   dueState.variant === "default" && "text-muted-foreground"
                 )}
               >
@@ -741,8 +741,8 @@ export default function PoliciesPage() {
                               {policy.nextDueDate && (
                                 <span className={cn(
                                   "text-xs",
-                                  variant === "warning" && "text-warning",
-                                  variant === "destructive" && "text-destructive",
+                                  variant === "warning" && "text-warning-text",
+                                  variant === "destructive" && "text-destructive-text",
                                   variant === "default" && "text-muted-foreground"
                                 )}>
                                   {text}
