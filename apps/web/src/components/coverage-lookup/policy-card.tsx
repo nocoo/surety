@@ -33,20 +33,20 @@ export function PolicyCard({ policy }: PolicyCardProps) {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-medium truncate">{policy.productName}</p>
+              <p className="text-base font-medium truncate">{policy.productName}</p>
               {!policy.isActive && (
                 <Badge variant="outline" className="shrink-0">
                   {policy.statusLabel}
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {policy.insurerName}
             </p>
           </div>
         </div>
         <div className="text-right shrink-0 ml-4">
-          <p className="text-lg font-semibold">{policy.sumAssuredFormatted}</p>
+          <p className="text-xl font-semibold tabular-nums">{policy.sumAssuredFormatted}</p>
           <p className="text-xs text-muted-foreground">保额</p>
         </div>
       </button>
