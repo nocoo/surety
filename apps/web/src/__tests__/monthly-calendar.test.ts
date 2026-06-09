@@ -1,0 +1,57 @@
+import { describe, it, expect } from "vitest";
+import { __test__ } from "@/components/renewal/monthly-calendar";
+
+const { buildMonthGrid, bucketEventsByDay } = __test__;
+
+describe("buildMonthGrid", () => {
+  it("returns an empty array for malformed keys", () => {
+    expect(buildMonthGrid("garbage")).toEqual([]);
+    expect(buildMonthGrid("")).toEqual([]);
+  });
+
+  it("returns 35 cells for a 30-day month starting Monday (Feb 2027)", () => {
+    // 2027-02-01 is a Monday → 0 leading blanks → 28 days → padded to 28 (already a multiple of 7)
+    const cells = buildMonthGrid("2027-02");
+    expect(cells.length % 7).toBe(0);
+    const realDays = cells.filter((c) => c.day !== null).length;
+    expect(realDays).toBe(28);
+    expect(cells[0]?.day).toBe(1);
+    expect(cells[27]?.day).toBe(28);
+  });
+
+  it("places day 1 at the correct weekday slot", () => {
+    // 2026-09-01 is a Tuesday → leadingBlanks=1
+    const cells = buildMonthGrid("2026-09");
+    expect(cells[0]?.day).toBe(null);
+    expect(cells[1]?.day).toBe(1);
+  });
+
+  it("pads to a multiple of 7 with trailing nulls", () => {
+    const cells = buildMonthGrid("2026-03");
+    expect(cells.length % 7).toBe(0);
+    // Real days inside
+    const realDays = cells.filter((c) => c.day !== null);
+    expect(realDays).toHaveLength(31);
+  });
+});
+
+describe("bucketEventsByDay", () => {
+  it("groups RenewalItems by day-of-month from nextDueDate", () => {
+    const items = [
+      { id: 1, productName: "A", category: "Life", categoryLabel: "寿险", premium: 100, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
+      { id: 2, productName: "B", category: "Life", categoryLabel: "寿险", premium: 200, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "李雷", isSavings: false },
+      { id: 3, productName: "C", category: "Life", categoryLabel: "寿险", premium: 300, nextDueDate: "2026-03-15", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
+    ];
+    const result = bucketEventsByDay(items);
+    expect(result.size).toBe(2);
+    expect(result.get(5)).toHaveLength(2);
+    expect(result.get(15)).toHaveLength(1);
+  });
+
+  it("ignores items whose nextDueDate slice yields a non-numeric day", () => {
+    const items = [
+      { id: 1, productName: "A", category: "Life", categoryLabel: "寿险", premium: 100, nextDueDate: "bad", daysUntilDue: 0, insuredMemberName: "x", isSavings: false },
+    ];
+    expect(bucketEventsByDay(items).size).toBe(0);
+  });
+});

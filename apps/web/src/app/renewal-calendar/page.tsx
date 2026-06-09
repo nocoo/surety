@@ -5,6 +5,7 @@ import { RenewalCalendarSkeleton } from "@/components/skeletons";
 import {
   SummaryCards,
   MonthlyChart,
+  MonthlyCalendar,
   MonthlyDetails,
 } from "@/components/renewal";
 import {
@@ -63,8 +64,18 @@ export default function RenewalCalendarPage() {
         {/* Summary Cards */}
         <SummaryCards summary={data.summary} />
 
-        {/* Monthly Chart - full width */}
-        <MonthlyChart data={data.monthlyData} policyNames={data.policyNames} />
+        {/* 12-month calendar grid — primary view, answers "which days do I owe" */}
+        <MonthlyCalendar data={data.monthlyData} />
+
+        {/* Bar chart — secondary, answers "which month is the heaviest" */}
+        <details className="rounded-card bg-secondary">
+          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium hover:bg-muted/30 transition-colors">
+            按月柱状图
+          </summary>
+          <div className="px-4 pb-4">
+            <MonthlyChart data={data.monthlyData} policyNames={data.policyNames} />
+          </div>
+        </details>
 
         {/* Monthly Details */}
         <div>
