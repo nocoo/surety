@@ -186,7 +186,7 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
               {/* Icon */}
               <div className="absolute left-0 top-0 flex items-center justify-center w-4 h-4">
                 {event.type === "past" && (
-                  <CircleCheck className="h-4 w-4 text-emerald-500" />
+                  <CircleCheck className="h-4 w-4 text-success" />
                 )}
                 {event.type === "today" && (
                   <CalendarDays className="h-4 w-4 text-primary" />

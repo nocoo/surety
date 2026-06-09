@@ -98,12 +98,12 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
           ) : (
             <>
               {month.savingsPremium > 0 && (
-                <span className="text-amber-500">
+                <span className="text-warning">
                   储蓄 {formatCurrency(month.savingsPremium)}
                 </span>
               )}
               {month.protectionPremium > 0 && (
-                <span className="text-emerald-500">
+                <span className="text-success">
                   保障 {formatCurrency(month.protectionPremium)}
                 </span>
               )}

@@ -485,7 +485,7 @@ export function PaymentsSection({
           className={cn(
             "mb-2 text-sm",
             resultMessage.startsWith("成功")
-              ? "text-emerald-600"
+              ? "text-success"
               : "text-destructive",
           )}
         >
