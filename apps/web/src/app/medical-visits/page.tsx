@@ -1,11 +1,13 @@
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock, AlertCircle, List, GalleryVerticalEnd } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import {
   Select,
   SelectContent,
@@ -32,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VisitSheet } from "./visit-sheet";
+import { VisitTimeline } from "./visit-timeline";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
 
 interface Member {
@@ -193,6 +196,10 @@ export default function MedicalVisitsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visitToDelete, setVisitToDelete] = useState<MedicalVisit | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string>("all");
+  const [viewMode, setViewMode] = usePersistedState<"table" | "timeline">(
+    "surety-medical-view",
+    "table",
+  );
 
   const fetchData = () => {
     Promise.all([
@@ -322,6 +329,19 @@ export default function MedicalVisitsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as "table" | "timeline")}
+              aria-label="视图模式"
+            >
+              <ToggleGroupItem value="table" aria-label="表格视图">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="timeline" aria-label="时间轴视图">
+                <GalleryVerticalEnd className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
             <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="全部成员" />
@@ -351,6 +371,18 @@ export default function MedicalVisitsPage() {
               {hospitals.length === 0 && "需要先在医院管理中添加医院。"}
             </p>
           </div>
+        ) : viewMode === "timeline" ? (
+          <VisitTimeline
+            visits={filteredVisits}
+            onEdit={(id) => {
+              const v = filteredVisits.find((x) => x.id === id);
+              if (v) handleEdit(v);
+            }}
+            onDelete={(id) => {
+              const v = filteredVisits.find((x) => x.id === id);
+              if (v) handleDeleteClick(v);
+            }}
+          />
         ) : (
           <div className="rounded-card bg-secondary">
             <Table>
