@@ -112,46 +112,54 @@ export default function PolicyDetailPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {/* Col 1: Meta */}
-        <div className="rounded-card bg-secondary p-5">
-          <MetaColumn
-            policy={policy}
-            beneficiaries={beneficiaries}
-            members={members}
-            assets={assets}
-            onPolicyUpdate={refreshPolicy}
-          />
+      {/*
+       * Layout: on lg+, split into a primary column (Meta + Coverage —
+       * "what is this policy") and a secondary column (Timeline +
+       * Payments — "when does anything happen"). 7/5 of a 12-grid puts
+       * the denser content (Meta is by far the longest) on the left
+       * without making it feel crowded. Below lg, single column so the
+       * narrative reads top-to-bottom.
+       */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          <div className="rounded-card bg-secondary p-5">
+            <MetaColumn
+              policy={policy}
+              beneficiaries={beneficiaries}
+              members={members}
+              assets={assets}
+              onPolicyUpdate={refreshPolicy}
+            />
+          </div>
+
+          <div className="rounded-card bg-secondary p-5">
+            <CoverageSection
+              policyId={policy.id}
+              items={coverageItems}
+              onItemsChange={(items) => {
+                setCoverageItems(items);
+                void refreshCoverage();
+              }}
+            />
+          </div>
         </div>
 
-        {/* Col 2: Timeline */}
-        <div className="rounded-card bg-secondary p-5">
-          <TimelineColumn policy={policy} />
-        </div>
+        <div className="space-y-6 lg:col-span-5">
+          <div className="rounded-card bg-secondary p-5">
+            <TimelineColumn policy={policy} />
+          </div>
 
-        {/* Col 3: Coverage Items */}
-        <div className="rounded-card bg-secondary p-5">
-          <CoverageSection
-            policyId={policy.id}
-            items={coverageItems}
-            onItemsChange={(items) => {
-              setCoverageItems(items);
-              void refreshCoverage();
-            }}
-          />
-        </div>
-
-        {/* Col 4: Payments */}
-        <div className="rounded-card bg-secondary p-5">
-          <PaymentsSection
-            policyId={policy.id}
-            payments={payments}
-            paymentFrequency={policy.paymentFrequency}
-            onPaymentsChange={(p) => {
-              setPayments(p);
-              void refreshPayments();
-            }}
-          />
+          <div className="rounded-card bg-secondary p-5">
+            <PaymentsSection
+              policyId={policy.id}
+              payments={payments}
+              paymentFrequency={policy.paymentFrequency}
+              onPaymentsChange={(p) => {
+                setPayments(p);
+                void refreshPayments();
+              }}
+            />
+          </div>
         </div>
       </div>
     </AppShell>
