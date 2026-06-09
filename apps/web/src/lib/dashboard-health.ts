@@ -72,14 +72,20 @@ export function computeCoverageHealth(
 }
 
 /**
- * Action items for the "未来 30 天" panel. Reads from the dashboard's
- * renewalTimeline (which groups upcoming renewals by month bucket
- * 0/1/3/6/12) — anything in the first bucket (0..1 month) becomes a
- * card row. expiryTimeline contributes the "X 天后到期" hint when the
- * same product also expires within 30 days.
+ * Action items for the "本月" panel. The dashboard's renewalTimeline /
+ * expiryTimeline are bucketed by **calendar month**, not a rolling
+ * 30-day window — see packages/api/src/dashboard.ts:153, where the
+ * first bucket is the current natural month, the second is the next,
+ * etc. So `renewal.data[0]` is "events landing in this calendar month",
+ * which:
+ *   - misses an event in the next month even if it's only 5 days out
+ *     (the user sees "可以喘口气" on the 28th when in fact a payment
+ *     is due on the 3rd)
+ *   - includes events earlier in the same month even if 30+ days have
+ *     passed since the start of the month
  *
- * Returns at most `limit` items, sorted by urgency: bucket-0 first,
- * then bucket-1.
+ * Until the API exposes a true rolling window, the front-end labels
+ * what we actually have ("本月") rather than over-promising "未来 30 天".
  */
 
 export interface ActionItem {
@@ -99,9 +105,6 @@ export function buildActionItems(
   expiry: TimelineCategoryMap,
   limit = 6,
 ): ActionItem[] {
-  // The bar labels look like "0月内", "1-3月", "3-6月" — the first
-  // bucket label varies between API versions, so we just take the
-  // first row regardless of label.
   const renewalFirst = renewal.data[0];
   const expiryFirst = expiry.data[0];
 
@@ -113,8 +116,8 @@ export function buildActionItems(
       if (count > 0) {
         items.push({
           key: `renew-${cat}`,
-          title: `${cat}有 ${count} 份保单即将续费`,
-          detail: `30 天内 · 提前确认账户余额避免失效`,
+          title: `${cat}有 ${count} 份保单本月需续费`,
+          detail: `提前确认账户余额避免失效`,
           tone: "warning",
         });
       }
@@ -127,8 +130,8 @@ export function buildActionItems(
       if (count > 0) {
         items.push({
           key: `expire-${cat}`,
-          title: `${cat}有 ${count} 份保单即将到期`,
-          detail: `30 天内 · 提前评估是否需要续保或更换`,
+          title: `${cat}有 ${count} 份保单本月到期`,
+          detail: `提前评估是否需要续保或更换`,
           tone: "info",
         });
       }

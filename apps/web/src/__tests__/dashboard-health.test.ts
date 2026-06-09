@@ -55,6 +55,9 @@ describe("buildActionItems", () => {
     expect(items[0]?.tone).toBe("warning");
     expect(items[0]?.title).toContain("重疾险");
     expect(items[0]?.title).toContain("3");
+    // Title aligns with the API's natural-month bucketing — see
+    // dashboard-health.ts comment.
+    expect(items[0]?.title).toContain("本月");
   });
 
   it("renders expiry items with info tone", () => {
@@ -65,6 +68,7 @@ describe("buildActionItems", () => {
     const items = buildActionItems(empty, expiry);
     expect(items[0]?.tone).toBe("info");
     expect(items[0]?.title).toContain("车险");
+    expect(items[0]?.title).toContain("本月");
   });
 
   it("respects the limit", () => {

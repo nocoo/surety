@@ -373,14 +373,14 @@ function ActionItemsCard({
           <CalendarClock className="h-5 w-5 text-primary" strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground/80">未来 30 天</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground/80">本月</p>
           <h2 className="font-display text-lg font-semibold">行动建议</h2>
         </div>
       </header>
 
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          未来 30 天没有保单需要续费或到期，可以喘口气
+          本月没有保单需要续费或到期，可以喘口气
         </p>
       ) : (
         <ul className="space-y-3">
