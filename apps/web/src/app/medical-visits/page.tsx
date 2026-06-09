@@ -389,23 +389,18 @@ export default function MedicalVisitsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>就诊人</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>月龄</TableHead>
-                  <TableHead>距今</TableHead>
+                  <TableHead className="w-[80px]">类型</TableHead>
                   <TableHead>时间</TableHead>
                   <TableHead>就诊原因</TableHead>
-                  <TableHead>医院</TableHead>
-                  <TableHead>医生</TableHead>
-                  <TableHead>症状</TableHead>
-                  <TableHead>诊断</TableHead>
-                  <TableHead>治疗方案</TableHead>
+                  <TableHead>医院 / 医生</TableHead>
+                  <TableHead>症状 / 诊断 / 治疗</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredVisits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       <div className="text-muted-foreground">
                         暂无就诊记录，点击上方按钮添加
                       </div>
@@ -414,7 +409,9 @@ export default function MedicalVisitsPage() {
                 ) : (
                   filteredVisits.map((visit) => {
                     const ageInMonths = calculateAgeInMonths(visit.memberBirthDate, visit.visitDate);
+                    const ageLabel = formatAgeInMonths(ageInMonths);
                     const daysAgo = calculateDaysAgo(visit.visitDate);
+                    const symptoms = visit.symptoms ? parseSymptoms(visit.symptoms) : [];
 
                     return (
                       <TableRow key={visit.id}>
@@ -425,7 +422,12 @@ export default function MedicalVisitsPage() {
                                 {visit.memberName?.[0] ?? "?"}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">{visit.memberName}</span>
+                            <div className="flex flex-col leading-tight">
+                              <span className="font-medium">{visit.memberName}</span>
+                              {ageLabel !== "-" && (
+                                <span className="text-xs text-muted-foreground">{ageLabel}</span>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -434,90 +436,70 @@ export default function MedicalVisitsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {formatAgeInMonths(ageInMonths)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-sm">{formatDaysAgo(daysAgo)}</span>
+                          <div className="flex flex-col gap-0.5 leading-tight">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="font-mono text-sm">{formatDate(visit.visitDate)}</span>
+                            </div>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {formatDaysAgo(daysAgo)}
+                              {(visit.visitTimeStart || visit.visitTimeEnd) && (
+                                <>
+                                  <span className="mx-1">·</span>
+                                  {visit.visitTimeStart || "?"}-{visit.visitTimeEnd || "?"}
+                                </>
+                              )}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                              {formatDate(visit.visitDate)}
-                            </div>
-                            {(visit.visitTimeStart || visit.visitTimeEnd) && (
-                              <span className="text-xs text-muted-foreground">
-                                {visit.visitTimeStart || "?"} - {visit.visitTimeEnd || "?"}
+                          <span className="whitespace-normal">{visit.visitReason}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5 leading-tight">
+                            <span className="flex items-center gap-1.5 whitespace-normal">
+                              <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              {visit.hospitalName}
+                            </span>
+                            {visit.doctorName && (
+                              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <UserRound className="h-3 w-3 shrink-0" />
+                                {visit.doctorName}
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <span className="whitespace-normal">
-                            {visit.visitReason}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="whitespace-normal">
-                              {visit.hospitalName}
-                            </span>
+                        <TableCell className="max-w-[420px]">
+                          <div className="flex flex-col gap-1 text-sm">
+                            {symptoms.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {symptoms.map((s, i) => (
+                                  <span
+                                    key={`${s}-${i}`}
+                                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(s)}`}
+                                  >
+                                    {s}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {visit.diagnosis && (
+                              <p className="whitespace-normal">
+                                <span className="text-xs text-muted-foreground mr-1">诊断:</span>
+                                {visit.diagnosis}
+                              </p>
+                            )}
+                            {visit.treatment && (
+                              <p className="whitespace-normal">
+                                <span className="text-xs text-muted-foreground mr-1">治疗:</span>
+                                {visit.treatment}
+                              </p>
+                            )}
+                            {symptoms.length === 0 && !visit.diagnosis && !visit.treatment && (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {visit.doctorName ? (
-                            <div className="flex items-center gap-1.5">
-                              <UserRound className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span>{visit.doctorName}</span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {visit.symptoms ? (
-                            <div className="flex flex-wrap gap-1">
-                              {parseSymptoms(visit.symptoms).slice(0, 3).map((symptom, idx) => (
-                                <span
-                                  key={idx}
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(symptom)}`}
-                                >
-                                  {symptom}
-                                </span>
-                              ))}
-                              {parseSymptoms(visit.symptoms).length > 3 && (
-                                <span className="text-xs text-muted-foreground">
-                                  +{parseSymptoms(visit.symptoms).length - 3}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {visit.diagnosis ? (
-                            <span className="whitespace-normal">
-                              {visit.diagnosis}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {visit.treatment ? (
-                            <span className="whitespace-normal text-sm">
-                              {visit.treatment}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
