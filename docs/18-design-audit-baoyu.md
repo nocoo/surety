@@ -304,13 +304,13 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 
 下面是个排期建议，方便挑下一轮 sprint 着手：
 
-**第一周（视觉 token 收口、零品牌成本）** — ✅ 已完成 (2026-06-09)
+**第一周（视觉 token 收口、零品牌成本）** — 部分完成 (2026-06-09)
 - ✅ 问题 6（AlertDialogAction 收口，8 处统一为 variant="destructive"）
-- ✅ 问题 9（settings/cli/visit-sheet/attachment-list 硬编码色 → 语义 token；新增 Notice 组件覆盖 6 处 red/green 状态卡片；medical-visits 症状色 → hash + chart palette）
+- ✅ 问题 8（CJK 字体栈显式声明 PingFang/Microsoft YaHei/Noto Sans SC）
+- ✅ 问题 9（settings/cli/visit-sheet/attachment-list 硬编码色 → 语义 token；新增 Notice 组件覆盖 6 处 red/green 状态卡片；medical-visits 症状色 → hash + chart palette；新增 `--success-text` / `--warning-text` / `--info-text` / `--destructive-text` 文本专用 token，覆盖 Notice + visit-sheet + monthly-details + payments-section + policies 的小号状态文字以满足 WCAG AA）
 - ✅ 问题 10（dark + light mode chart-1 偏移到橙系，避免与 primary 同色冲撞）
 - ✅ 问题 16（TableRow hover 收回组件默认值，7 个页面去掉冗余声明；policies 两处 list-row outlier 对齐）
-- ✅ 问题 17（avatar 与 chart palette 共用 hash + 16 色，新增 getChartColorForName）
-- ✅ 问题 8（CJK 字体栈显式声明 PingFang/Microsoft YaHei/Noto Sans SC）
+- ⏸ 问题 17（avatar 与 chart palette 对齐）— **撤回**。曾尝试让 avatar 直接使用 `bg-chart-1..16`，但 chart 色板是为填充背景设计、不是为白字前景设计：实测 chart-7 ≈ 1.98:1、chart-6 ≈ 2.15:1、chart-1 ≈ 2.6:1，均远低于 4.5:1，会让头像首字母不可读。已回退到 16 色可读性专用色板（每个槽位都验证 ≥ 4.5:1），并删除了未实际接入 dashboard 的 `getChartColorForName` helper。"同一实体同一颜色"还需要后续单独处理：要么给每个 avatar 槽配一个 chart 槽（颜色不同但语义对应），要么在图表里另外建一套 fill-friendly entity palette。
 
 **第二周（信息密度调整、提升日常使用体验）**
 - 问题 2（保单密度切换 + 卡片视图）、3（医疗就诊时间轴视图）、14（filter chip 化）、15（保单详情布局调整）。
