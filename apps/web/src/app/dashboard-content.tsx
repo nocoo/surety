@@ -22,7 +22,10 @@ import {
   StackedTimelineChart,
 } from "@/components/charts";
 import { CHART_COLORS } from "@/lib/chart-config";
-import { createStatCards, type DashboardData, type StatCardData } from "@/lib/dashboard-vm";
+import { createStatCards, type DashboardData, type DashboardStats, type StatCardData } from "@/lib/dashboard-vm";
+import { greetingForHour, familySubtitle } from "@/lib/greeting";
+import { useMe } from "@/hooks/use-me";
+import { getDisplayName } from "@/lib/user";
 
 const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
   FileText,
@@ -47,6 +50,31 @@ function StatCard({ label, value, iconName, index }: StatCardData & { index: num
       <div className="mt-2">
         <span className="text-2xl font-bold font-display tabular-nums">{value}</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Family-tone dashboard header — greets the signed-in user by name, and
+ * tells them in plain language how many people / policies they're
+ * tracking instead of the previous "家庭保障概览" boilerplate.
+ *
+ * `new Date()` is called inline because the greeting is purely
+ * cosmetic — re-renders see the same hour bucket for at least an hour,
+ * and there's no SSR / hydration concern (this is a Vite SPA).
+ */
+function DashboardHeader({ stats }: { stats: DashboardStats }) {
+  const { data: user } = useMe();
+  const { name } = getDisplayName(user);
+  const greeting = greetingForHour(new Date().getHours());
+  const subtitle = familySubtitle(stats.memberCount, stats.policyCount);
+
+  return (
+    <div>
+      <h1 className="font-display text-2xl font-semibold tracking-tight">
+        {greeting}，{name}
+      </h1>
+      <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
     </div>
   );
 }
@@ -94,10 +122,7 @@ export function DashboardContent({ data }: { data: DashboardData }) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">仪表盘</h1>
-        <p className="text-sm text-muted-foreground">家庭保障概览</p>
-      </div>
+      <DashboardHeader stats={data.stats} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat, i) => (

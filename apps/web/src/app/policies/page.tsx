@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { Trash2, Info, Check, List, LayoutGrid, LayoutList, Rows3, Rows4, Users, Plus, Paperclip, FileText, ImageIcon, AlertCircle, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { EmptyState } from "@/components/ui/empty-state";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -576,13 +577,17 @@ export default function PoliciesPage() {
 
         {/* Empty State */}
         {policies.length === 0 && (
-          <div className="rounded-card bg-secondary p-8 text-center">
-            <Shield className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium">暂无保单</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              点击上方按钮添加您的第一份保单
-            </p>
-          </div>
+          <EmptyState
+            icon={Shield}
+            title="还没有保单"
+            description="为家人守护从录入第一份保单开始 —— 健康险、寿险、车险、房屋险都可以在这里集中管理"
+            action={
+              <Button onClick={() => setSheetOpen(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                新增第一份保单
+              </Button>
+            }
+          />
         )}
 
         {/* List View */}

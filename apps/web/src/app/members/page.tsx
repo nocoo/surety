@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Shield, AlertCircle, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { EmptyState } from "@/components/ui/empty-state";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -182,13 +183,17 @@ export default function MembersPage() {
         </div>
 
         {members.length === 0 ? (
-          <div className="rounded-card bg-secondary p-8 text-center">
-            <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium">暂无家庭成员</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              点击上方按钮添加您的第一位家庭成员
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="还没有家庭成员"
+            description="先把家人添加进来 —— 本人、配偶、子女、父母都可以。之后所有保单都会自动关联到他们"
+            action={
+              <Button onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-1.5" />
+                添加第一位家庭成员
+              </Button>
+            }
+          />
         ) : (
         <div className="rounded-card bg-secondary">
           <Table>
