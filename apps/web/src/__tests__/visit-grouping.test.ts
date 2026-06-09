@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { groupVisitsByMonth, formatMonthLabel } from "@/lib/visit-grouping";
+import {
+  groupVisitsByMonth,
+  formatMonthLabel,
+  UNKNOWN_DATE_KEY,
+} from "@/lib/visit-grouping";
 
 describe("groupVisitsByMonth", () => {
   it("returns empty list for no visits", () => {
@@ -29,15 +33,46 @@ describe("groupVisitsByMonth", () => {
     expect(result[1]?.visits.map((v) => v.id)).toEqual([2, 3]);
   });
 
-  it("drops visits with invalid date strings", () => {
+  it("collects visits with invalid dates into a trailing 'unknown' bucket", () => {
     const visits = [
       { id: 1, visitDate: "2026-03-05" },
       { id: 2, visitDate: "garbage" },
       { id: 3, visitDate: "" },
     ];
     const result = groupVisitsByMonth(visits);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.key).toBe("2026-03");
+    expect(result[1]?.key).toBe(UNKNOWN_DATE_KEY);
+    expect(result[1]?.label).toBe("日期未识别");
+    expect(result[1]?.visits.map((v) => v.id).sort()).toEqual([2, 3]);
+  });
+
+  it("returns a single unknown bucket when ALL visits have invalid dates", () => {
+    // Regression: previously every visit was silently dropped, leaving
+    // the timeline with an empty array even when records existed.
+    const visits = [
+      { id: 1, visitDate: "garbage" },
+      { id: 2, visitDate: "" },
+      { id: 3, visitDate: "not-a-date" },
+    ];
+    const result = groupVisitsByMonth(visits);
     expect(result).toHaveLength(1);
-    expect(result[0]?.visits.map((v) => v.id)).toEqual([1]);
+    expect(result[0]?.key).toBe(UNKNOWN_DATE_KEY);
+    expect(result[0]?.visits).toHaveLength(3);
+  });
+
+  it("places the unknown bucket after all real months", () => {
+    const visits = [
+      { id: 1, visitDate: "garbage" },
+      { id: 2, visitDate: "2026-03-05" },
+      { id: 3, visitDate: "2025-12-01" },
+    ];
+    const result = groupVisitsByMonth(visits);
+    expect(result.map((b) => b.key)).toEqual([
+      "2026-03",
+      "2025-12",
+      UNKNOWN_DATE_KEY,
+    ]);
   });
 
   it("zero-pads month in key for stable lexicographic sort", () => {
@@ -55,6 +90,10 @@ describe("formatMonthLabel", () => {
   it("formats key as Chinese year-month", () => {
     expect(formatMonthLabel("2026-03")).toBe("2026 年 3 月");
     expect(formatMonthLabel("2025-12")).toBe("2025 年 12 月");
+  });
+
+  it("formats UNKNOWN_DATE_KEY as a friendly label", () => {
+    expect(formatMonthLabel(UNKNOWN_DATE_KEY)).toBe("日期未识别");
   });
 
   it("returns the key unchanged when malformed", () => {

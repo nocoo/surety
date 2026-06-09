@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
-import { groupVisitsByMonth } from "@/lib/visit-grouping";
+import { groupVisitsByMonth, UNKNOWN_DATE_KEY } from "@/lib/visit-grouping";
 
 // Mirror of the page-local type — kept structural to avoid a circular import.
 export interface VisitForTimeline {
@@ -100,12 +100,22 @@ export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) 
       {months.map((bucket) => (
         <section key={bucket.key}>
           <div className="mb-3 flex items-center gap-3">
-            <h2 className="font-display text-lg font-semibold tabular-nums">
+            <h2
+              className={cn(
+                "font-display text-lg font-semibold tabular-nums",
+                bucket.key === UNKNOWN_DATE_KEY && "text-warning-text",
+              )}
+            >
               {bucket.label}
             </h2>
             <span className="text-xs text-muted-foreground">
               {bucket.visits.length} 条
             </span>
+            {bucket.key === UNKNOWN_DATE_KEY && (
+              <span className="text-xs text-muted-foreground">
+                · 这些记录的就诊日期为空或格式不合法，请编辑修复
+              </span>
+            )}
             <div className="flex-1 border-t border-border/60" />
           </div>
 
