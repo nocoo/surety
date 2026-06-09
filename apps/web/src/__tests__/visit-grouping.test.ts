@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   groupVisitsByMonth,
   formatMonthLabel,
+  formatVisitDate,
   UNKNOWN_DATE_KEY,
 } from "@/lib/visit-grouping";
 
@@ -99,5 +100,29 @@ describe("formatMonthLabel", () => {
   it("returns the key unchanged when malformed", () => {
     expect(formatMonthLabel("garbage")).toBe("garbage");
     expect(formatMonthLabel("")).toBe("");
+  });
+});
+
+describe("formatVisitDate", () => {
+  it("formats ISO date as YYYY-MM-DD", () => {
+    expect(formatVisitDate("2026-03-05")).toBe("2026-03-05");
+    expect(formatVisitDate("2025-12-09")).toBe("2025-12-09");
+  });
+
+  it("zero-pads single-digit months and days", () => {
+    // Verify the padStart matches the bucket-key pad so visit date
+    // strings displayed in a card always align with the month header.
+    expect(formatVisitDate("2026-01-05")).toBe("2026-01-05");
+    expect(formatVisitDate("2026-09-09")).toBe("2026-09-09");
+  });
+
+  it("returns the unknown-date label for invalid input", () => {
+    // Regression: previously `new Date("garbage")` produced
+    // `NaN-NaN-NaN` in the rendered card under the unknown-date bucket.
+    expect(formatVisitDate("garbage")).toBe("日期未识别");
+    expect(formatVisitDate("not-a-date")).toBe("日期未识别");
+    expect(formatVisitDate("")).toBe("日期未识别");
+    expect(formatVisitDate(null)).toBe("日期未识别");
+    expect(formatVisitDate(undefined)).toBe("日期未识别");
   });
 });

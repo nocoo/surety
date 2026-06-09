@@ -82,3 +82,16 @@ export function formatMonthLabel(key: string): string {
   if (!y || !m) return key;
   return `${y} 年 ${Number(m)} 月`;
 }
+
+/**
+ * Format a visit date as `YYYY-MM-DD`. If the input is missing or
+ * unparseable, returns the same "日期未识别" string used by the
+ * timeline's unknown-date bucket — never `NaN-NaN-NaN`, which would
+ * leak through from `new Date("garbage")`.
+ */
+export function formatVisitDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "日期未识别";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "日期未识别";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

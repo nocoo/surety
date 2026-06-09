@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
-import { groupVisitsByMonth, UNKNOWN_DATE_KEY } from "@/lib/visit-grouping";
+import { groupVisitsByMonth, UNKNOWN_DATE_KEY, formatVisitDate } from "@/lib/visit-grouping";
 
 // Mirror of the page-local type — kept structural to avoid a circular import.
 export interface VisitForTimeline {
@@ -70,11 +70,6 @@ function parseSymptoms(symptoms: string | null | undefined): string[] {
     /* fall through to delimiter split */
   }
   return symptoms.split(/[,，、]/).map((s) => s.trim()).filter((s) => s.length > 0);
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 interface VisitTimelineProps {
@@ -171,7 +166,7 @@ function VisitCard({
             <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {formatDate(visit.visitDate)}
+                {formatVisitDate(visit.visitDate)}
               </span>
               {(visit.visitTimeStart || visit.visitTimeEnd) && (
                 <span className="inline-flex items-center gap-1">

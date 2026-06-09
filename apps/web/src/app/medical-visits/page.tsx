@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { formatVisitDate } from "@/lib/visit-grouping";
 import {
   Select,
   SelectContent,
@@ -134,8 +135,9 @@ function parseSymptoms(symptoms: string | null | undefined): string[] {
 }
 
 function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  // Local wrapper kept so existing call sites in this page don't need
+  // to import the helper individually; behaviour is now NaN-safe.
+  return formatVisitDate(dateStr);
 }
 
 function calculateDaysAgo(dateStr: string): number {
