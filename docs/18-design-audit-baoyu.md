@@ -318,8 +318,12 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 - ✅ 问题 2（保单列表新增密度切换 cards/comfortable/compact，持久化到 localStorage；mobile card 升级为桌面 grid 1/2/3 列；compact 模式行高减少约 30%）
 - ✅ 问题 3（就诊记录新增 Timeline 视图——按月聚合 + 卡片式呈现，`groupVisitsByMonth` 抽出独立模块，7 个 L1 测试；表格视图从 12 列瘦身到 7 列：月龄并入"就诊人"副标，距今/时间合并，医生并入医院，症状/诊断/治疗合并为一列垂直堆叠）
 
-**第三-四周（品牌叙事、做出差异化）**
-- 问题 1（Dashboard 重新设计为"健康度 + 行动项"）、5（品牌化空态插画 + 顶栏问候）、12（保障速查紧急 UI）、13（command palette）、4（续保日历加真日历）。
+**第三-四周（品牌叙事、做出差异化）** — ✅ 全部完成 (2026-06-09)
+- ✅ 问题 4（续保日历新增 12 月 calendar grid 视图：每月一个 Mon-start 小日历，有续保的日子点亮 + 多事件徽标 + tooltip 列每事件 + 点击跳转保单；柱状图退到 `<details>` 二级；`buildMonthGrid` / `bucketEventsByDay` 抽到 __test__，6 个 L1 测试）
+- ✅ 问题 12（保障速查紧急 UI：紧急联系电话块在分类之前优先展示，1/2 列网格 + 18px mono 号码 + `tel:` 链接；header 加"复制全部信息"按钮，输出多行人类可读文本；type switcher 升级为大尺寸 segmented control；PolicyCard 数字 18→20px；`buildEmergencyContacts` / `buildCoverageClipboardText` 纯函数，8 个 L1 测试）
+- ✅ 问题 5（品牌温度：dashboard header 替换"仪表盘/家庭保障概览"为 `{greeting}, {name}` + 家庭维度副标；新增 `<EmptyState>` 共享组件，软渐变品牌色圆 + CTA slot；dashboard 错误态 / policies / members 空态全部接入；`greetingForHour` / `familySubtitle` 纯函数 + 9 个 L1 测试）
+- ✅ 问题 13（全局 Cmd/Ctrl+K command palette：Dialog + 输入框 + 上下键 + Enter；命令源 = 11 条静态导航 + 4 条快捷新增 + 4 类懒加载数据 (保单/成员/医院/医生)；`useOpenSheetOnNewParam` 共享 hook 让 policies/members/medical-visits/assets 4 页响应 `?new=1`；不引 cmdk 依赖；9 个 L1 测试）
+- ✅ 问题 1（Dashboard 重设计：顶部 5 列布局 = 家庭保障健康度 3 列（保费占年收入比例 + 5..15% 健康区间标尺 + 4 档语义着色 unknown/underinsured/healthy/overspent）+ 未来 30 天行动建议 2 列（按险种聚合即将续费/到期）；8 张图表折叠到 `<details>` 二级；`computeCoverageHealth` / `buildActionItems` 纯函数 + 9 个 L1 测试）
 
 **长期债务**
 - 问题 7（sidebar CJK 排版）、11（StatCard 升级带趋势）、19（行内 Badge 减负）、21（CLI 折叠）、24（dirty 检测）。
