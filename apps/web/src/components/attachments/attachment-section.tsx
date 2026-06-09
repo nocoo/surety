@@ -151,7 +151,7 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               {deleting ? "删除中..." : "删除"}
             </AlertDialogAction>

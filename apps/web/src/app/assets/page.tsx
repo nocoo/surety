@@ -250,7 +250,7 @@ export default function AssetsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDeleteConfirm} variant="destructive">
               删除
             </AlertDialogAction>
           </AlertDialogFooter>
