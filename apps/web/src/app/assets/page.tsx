@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Home, Car, FileText } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { AssetsPageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,8 @@ export default function AssetsPage() {
     setEditingAsset(null);
     setSheetOpen(true);
   };
+
+  useOpenSheetOnNewParam(handleAdd);
 
   const handleEdit = (asset: Asset) => {
     setEditingAsset(asset);

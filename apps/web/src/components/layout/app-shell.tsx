@@ -8,6 +8,7 @@ import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
 import { DbSelector } from "./db-selector";
 import { Breadcrumbs } from "./breadcrumbs";
+import { CommandPalette } from "./command-palette";
 import {
   Sheet,
   SheetContent,
@@ -98,6 +99,9 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
           </div>
         </div>
       </main>
+
+      {/* Global Cmd/Ctrl+K command palette — present on every route. */}
+      <CommandPalette />
     </div>
   );
 }

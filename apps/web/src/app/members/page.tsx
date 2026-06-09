@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Shield, AlertCircle, Users } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -108,6 +109,11 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers();
   }, []);
+
+  useOpenSheetOnNewParam(() => {
+    setEditingMember(null);
+    setSheetOpen(true);
+  });
 
   const handleAdd = () => {
     setEditingMember(null);

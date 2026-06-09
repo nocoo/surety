@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Pencil, Trash2, Building2, UserRound, Calendar, Clock, AlertCircle, List, GalleryVerticalEnd } from "lucide-react";
 import { AppShell } from "@/components/layout";
+import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -219,6 +220,8 @@ export default function MedicalVisitsPage() {
     setEditingVisit(null);
     setSheetOpen(true);
   };
+
+  useOpenSheetOnNewParam(handleAdd);
 
   const handleEdit = (visit: MedicalVisit) => {
     setEditingVisit(visit);

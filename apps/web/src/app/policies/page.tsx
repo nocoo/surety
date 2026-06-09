@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { Trash2, Info, Check, List, LayoutGrid, LayoutList, Rows3, Rows4, Users, Plus, Paperclip, FileText, ImageIcon, AlertCircle, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -282,6 +283,8 @@ export default function PoliciesPage() {
   useEffect(() => {
     fetchPolicies();
   }, []);
+
+  useOpenSheetOnNewParam(() => setSheetOpen(true));
 
   // Get unique insured names and categories for filter options
   const insuredNames = useMemo(() => {
