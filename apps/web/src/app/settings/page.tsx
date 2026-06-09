@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useBlocker } from "react-router";
 import { Save, Shield, Bell, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,26 @@ export default function SettingsPage() {
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
+
+  // In-app navigation guard: block sidebar/<Link>/navigate() jumps
+  // while there are unsaved changes. Pairs with the beforeunload guard
+  // above — beforeunload covers refresh/close, useBlocker covers SPA
+  // route changes. useBlocker requires a data router; main.tsx wires
+  // one up via createBrowserRouter for exactly this reason.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      const ok = window.confirm(
+        "有未保存的修改，确定要离开吗？\n\n点击「取消」留在本页继续编辑，点击「确定」放弃修改并离开。",
+      );
+      if (ok) blocker.proceed();
+      else blocker.reset();
+    }
+  }, [blocker]);
 
   const handleChange = (field: keyof SettingsData, value: string) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
