@@ -89,8 +89,8 @@ export function DatabaseSettings() {
   return (
     <div className="rounded-card bg-secondary p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-          <Database className="h-5 w-5 text-blue-500" strokeWidth={1.5} />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+          <Database className="h-5 w-5 text-info" strokeWidth={1.5} />
         </div>
         <div>
           <h2 className="font-semibold">数据管理</h2>

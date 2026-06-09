@@ -204,8 +204,8 @@ export function BackySettings() {
   return (
     <div className="rounded-card bg-secondary p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
-          <Cloud className="h-5 w-5 text-violet-500" strokeWidth={1.5} />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple/10">
+          <Cloud className="h-5 w-5 text-purple" strokeWidth={1.5} />
         </div>
         <div className="flex items-center gap-2">
           <div>

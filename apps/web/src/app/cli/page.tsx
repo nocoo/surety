@@ -157,8 +157,8 @@ surety --help`}</code>
         {/* Card 2: Auth */}
         <div className="rounded-card bg-secondary p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <Cloud className="h-5 w-5 text-blue-500" strokeWidth={1.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+              <Cloud className="h-5 w-5 text-info" strokeWidth={1.5} />
             </div>
             <div>
               <h2 className="font-semibold">认证机制</h2>
@@ -204,8 +204,8 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
         {/* Card 3: Token Management */}
         <div className="rounded-card bg-secondary p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-              <Key className="h-5 w-5 text-orange-500" strokeWidth={1.5} />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+              <Key className="h-5 w-5 text-warning" strokeWidth={1.5} />
             </div>
             <div>
               <h2 className="font-semibold">Token 管理</h2>
