@@ -177,7 +177,10 @@
   --badge-red-foreground: 0 0% 100%;
 
   /* 24 sequential chart colors */
-  --chart-1: 15 85% 52%;
+  /* chart-1 is offset from primary vermilion (hue 15) to avoid visual
+     collision between primary-colored buttons and the dominant chart
+     segment in dashboards. */
+  --chart-1: 32 88% 52%;
   --chart-2: 200 90% 55%;
   --chart-3: 186 80% 45%;
   --chart-4: 166 72% 44%;
@@ -264,7 +267,10 @@
   --badge-red-foreground: 340 65% 92%;
 
   /* 24 sequential chart colors — controlled brightness, vivid hue */
-  --chart-1: 15 75% 48%;
+  /* Note: chart-1 hue (32) is offset from primary vermilion (15) so a
+     primary-colored button never collides visually with the largest
+     chart segment when both render in the same dashboard view. */
+  --chart-1: 32 80% 48%;
   --chart-2: 200 75% 48%;
   --chart-3: 186 68% 42%;
   --chart-4: 166 62% 42%;
