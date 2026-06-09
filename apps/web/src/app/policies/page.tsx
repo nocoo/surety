@@ -529,13 +529,20 @@ export default function PoliciesPage() {
             }}
           />
           <div className="flex items-center gap-2">
-            {/* Density toggle — only relevant for flat list view */}
+            {/*
+             * Density toggle — only meaningful for the flat list view, and
+             * only on sm+ widths. Below sm the layout is pinned to cards
+             * regardless of listDensity (the table has no chance at narrow
+             * widths), so showing the toggle there would let users select
+             * "comfortable"/"compact" and see no change.
+             */}
             {viewMode === "list" && (
               <ToggleGroup
                 type="single"
                 value={listDensity}
                 onValueChange={(v) => v && setListDensity(v as ListDensity)}
                 aria-label="列表密度"
+                className="hidden sm:flex"
               >
                 <ToggleGroupItem value="cards" aria-label="卡片视图">
                   <LayoutList className="h-4 w-4" />
