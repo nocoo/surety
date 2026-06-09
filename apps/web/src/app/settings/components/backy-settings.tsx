@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Notice } from "@/components/ui/notice";
 import { Separator } from "@/components/ui/separator";
 
 // ── Backy types ──
@@ -243,10 +244,10 @@ export function BackySettings() {
 
         {/* Save error display */}
         {backySaveError && (
-          <div className="flex items-start gap-2 rounded-widget border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
-            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700 dark:text-red-300">{backySaveError}</p>
-          </div>
+          <Notice variant="destructive" className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p>{backySaveError}</p>
+          </Notice>
         )}
 
         {/* Action buttons */}
@@ -285,40 +286,33 @@ export function BackySettings() {
 
         {/* Test result */}
         {backyTestResult && (
-          <div className={`flex items-start gap-2 rounded-widget border p-3 ${
-            backyTestResult.success
-              ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
-              : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950"
-          }`}>
+          <Notice
+            variant={backyTestResult.success ? "success" : "destructive"}
+            className="flex items-start gap-2"
+          >
             {backyTestResult.success ? (
-              <p className="text-sm text-green-700 dark:text-green-300">
-                连接成功 (HTTP {backyTestResult.status})
-              </p>
+              <p>连接成功 (HTTP {backyTestResult.status})</p>
             ) : (
               <>
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <p>
                   连接失败{backyTestResult.status ? ` (HTTP ${backyTestResult.status})` : ""}{backyTestResult.error ? `: ${backyTestResult.error}` : ""}
                 </p>
               </>
             )}
-          </div>
+          </Notice>
         )}
 
         {/* Push result */}
         {backyPushResult && (
-          <div className={`rounded-widget border p-3 ${
-            backyPushResult.success
-              ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
-              : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950"
-          }`}>
+          <Notice variant={backyPushResult.success ? "success" : "destructive"}>
             {backyPushResult.success ? (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                <p className="font-medium">
                   推送成功 ({backyPushResult.durationMs}ms)
                 </p>
                 {backyPushResult.request && (
-                  <div className="text-xs text-green-700 dark:text-green-300 space-y-1">
+                  <div className="text-xs space-y-1">
                     <p>Tag: {backyPushResult.request.tag}</p>
                     <p>文件: {backyPushResult.request.fileName} ({formatFileSize(backyPushResult.request.fileSizeBytes)})</p>
                     <div className="grid grid-cols-3 gap-x-4 gap-y-0.5">
@@ -331,8 +325,8 @@ export function BackySettings() {
               </div>
             ) : (
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                <div className="text-sm text-red-700 dark:text-red-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div>
                   <p>推送失败: {backyPushResult.error}</p>
                   {backyPushResult.response && (
                     <p className="text-xs mt-1">HTTP {backyPushResult.response.status}: {JSON.stringify(backyPushResult.response.body)}</p>
@@ -340,7 +334,7 @@ export function BackySettings() {
                 </div>
               </div>
             )}
-          </div>
+          </Notice>
         )}
       </div>
 

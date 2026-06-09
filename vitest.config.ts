@@ -1,6 +1,15 @@
 import { defineConfig } from "vitest/config";
+import { resolve } from "node:path";
 
 export default defineConfig({
+  // Mirror the Vite app's "@/" alias so web tests can import via the same
+  // path they use in production code instead of needing to know how deeply
+  // they're nested in apps/web/src/__tests__.
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "apps/web/src"),
+    },
+  },
   test: {
     pool: "threads",
     globals: true,

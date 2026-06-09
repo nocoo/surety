@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { Database, Download, Upload, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/notice";
 import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
@@ -138,25 +139,23 @@ export function DatabaseSettings() {
           </Button>
 
           {importError && (
-            <div className="flex items-start gap-2 rounded-widget border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
-              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700 dark:text-red-300">{importError}</p>
-            </div>
+            <Notice variant="destructive" className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>{importError}</p>
+            </Notice>
           )}
 
           {importResult && (
-            <div className="rounded-widget border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950">
-              <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">
-                导入成功
-              </p>
-              <div className="text-xs text-green-700 dark:text-green-300 grid grid-cols-3 gap-x-4 gap-y-1">
+            <Notice variant="success">
+              <p className="font-medium mb-1">导入成功</p>
+              <div className="text-xs grid grid-cols-3 gap-x-4 gap-y-1">
                 {Object.entries(importResult).map(([key, count]) => (
                   <span key={key}>
                     {TABLE_LABELS[key] || key}: {count}
                   </span>
                 ))}
               </div>
-            </div>
+            </Notice>
           )}
         </div>
       </div>
