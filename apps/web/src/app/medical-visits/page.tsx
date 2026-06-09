@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { formatVisitDate } from "@/lib/visit-grouping";
+import { formatVisitDate, calculateDaysAgo, calculateAgeInMonths, formatAgeInMonths, formatDaysAgo } from "@/lib/visit-grouping";
 import {
   Select,
   SelectContent,
@@ -138,51 +138,6 @@ function formatDate(dateStr: string): string {
   // Local wrapper kept so existing call sites in this page don't need
   // to import the helper individually; behaviour is now NaN-safe.
   return formatVisitDate(dateStr);
-}
-
-function calculateDaysAgo(dateStr: string): number {
-  const visitDate = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  visitDate.setHours(0, 0, 0, 0);
-  return Math.floor((today.getTime() - visitDate.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function calculateAgeInMonths(birthDateStr: string | null | undefined, visitDateStr: string): number | null {
-  if (!birthDateStr) return null;
-  const birthDate = new Date(birthDateStr);
-  const visitDate = new Date(visitDateStr);
-  const months = (visitDate.getFullYear() - birthDate.getFullYear()) * 12
-    + (visitDate.getMonth() - birthDate.getMonth());
-  return months;
-}
-
-function formatAgeInMonths(months: number | null): string {
-  if (months === null) return "-";
-  if (months < 0) return "-";
-  if (months < 12) return `${months}月龄`;
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-  if (remainingMonths === 0) return `${years}岁`;
-  return `${years}岁${remainingMonths}月`;
-}
-
-function formatDaysAgo(days: number): string {
-  if (days === 0) return "今天";
-  if (days === 1) return "昨天";
-  if (days === -1) return "明天";
-  if (days < 0) {
-    // Future date
-    const abs = -days;
-    if (abs < 7) return `${abs}天后`;
-    if (abs < 30) return `${Math.floor(abs / 7)}周后`;
-    if (abs < 365) return `${Math.floor(abs / 30)}月后`;
-    return `${Math.floor(abs / 365)}年后`;
-  }
-  if (days < 7) return `${days}天前`;
-  if (days < 30) return `${Math.floor(days / 7)}周前`;
-  if (days < 365) return `${Math.floor(days / 30)}月前`;
-  return `${Math.floor(days / 365)}年前`;
 }
 
 export default function MedicalVisitsPage() {

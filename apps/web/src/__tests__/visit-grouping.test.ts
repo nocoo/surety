@@ -1,8 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   groupVisitsByMonth,
   formatMonthLabel,
   formatVisitDate,
+  calculateDaysAgo,
+  calculateAgeInMonths,
+  formatAgeInMonths,
+  formatDaysAgo,
   UNKNOWN_DATE_KEY,
 } from "@/lib/visit-grouping";
 
@@ -124,5 +128,79 @@ describe("formatVisitDate", () => {
     expect(formatVisitDate("")).toBe("日期未识别");
     expect(formatVisitDate(null)).toBe("日期未识别");
     expect(formatVisitDate(undefined)).toBe("日期未识别");
+  });
+});
+
+// Tests for relative-date helpers — fake the clock so "today" is stable.
+// Using a date in the middle of the year so day/week/month arithmetic
+// can be checked without month-boundary noise.
+describe("calculateDaysAgo / formatDaysAgo", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("returns positive days for past dates", () => {
+    expect(calculateDaysAgo("2026-06-10")).toBe(5);
+    expect(calculateDaysAgo("2026-05-15")).toBe(31);
+  });
+
+  it("returns 0 for today and -1 for tomorrow", () => {
+    expect(calculateDaysAgo("2026-06-15")).toBe(0);
+    expect(calculateDaysAgo("2026-06-16")).toBe(-1);
+  });
+
+  it("returns null for missing or invalid input", () => {
+    // Regression: previously the page rendered "NaN年前" for any record
+    // with a malformed visitDate that survived into the table view.
+    expect(calculateDaysAgo("garbage")).toBeNull();
+    expect(calculateDaysAgo("")).toBeNull();
+    expect(calculateDaysAgo(null)).toBeNull();
+    expect(calculateDaysAgo(undefined)).toBeNull();
+  });
+
+  it("formatDaysAgo handles null and the boundary buckets", () => {
+    expect(formatDaysAgo(null)).toBe("-");
+    expect(formatDaysAgo(0)).toBe("今天");
+    expect(formatDaysAgo(1)).toBe("昨天");
+    expect(formatDaysAgo(-1)).toBe("明天");
+    expect(formatDaysAgo(5)).toBe("5天前");
+    expect(formatDaysAgo(14)).toBe("2周前");
+    expect(formatDaysAgo(60)).toBe("2月前");
+    expect(formatDaysAgo(800)).toBe("2年前");
+    expect(formatDaysAgo(-3)).toBe("3天后");
+  });
+});
+
+describe("calculateAgeInMonths / formatAgeInMonths", () => {
+  it("returns null when birth date is missing", () => {
+    expect(calculateAgeInMonths(null, "2026-06-15")).toBeNull();
+    expect(calculateAgeInMonths(undefined, "2026-06-15")).toBeNull();
+  });
+
+  it("returns null when either date is invalid", () => {
+    // Regression: previously the page rendered "NaN岁NaN月" when
+    // visitDate was garbage and birthDate was valid.
+    expect(calculateAgeInMonths("2020-01-01", "garbage")).toBeNull();
+    expect(calculateAgeInMonths("garbage", "2026-06-15")).toBeNull();
+    expect(calculateAgeInMonths("", "2026-06-15")).toBeNull();
+  });
+
+  it("computes months between two valid dates", () => {
+    expect(calculateAgeInMonths("2026-01-01", "2026-06-15")).toBe(5);
+    expect(calculateAgeInMonths("2020-06-01", "2026-06-01")).toBe(72);
+  });
+
+  it("formatAgeInMonths renders months / years / years-and-months", () => {
+    expect(formatAgeInMonths(null)).toBe("-");
+    expect(formatAgeInMonths(-1)).toBe("-");
+    expect(formatAgeInMonths(0)).toBe("0月龄");
+    expect(formatAgeInMonths(8)).toBe("8月龄");
+    expect(formatAgeInMonths(12)).toBe("1岁");
+    expect(formatAgeInMonths(14)).toBe("1岁2月");
+    expect(formatAgeInMonths(36)).toBe("3岁");
   });
 });
