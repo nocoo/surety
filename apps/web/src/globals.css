@@ -70,6 +70,29 @@
   --color-info-text: hsl(var(--info-text));
   --color-destructive-text: hsl(var(--destructive-text));
 
+  /* Avatar palette — 16 hand-tuned slots that all clear ≥ 5.3:1 vs
+     white text in BOTH light and dark mode, so getAvatarColor() can
+     safely pair its bg with text-white. Do NOT use these as chart fills:
+     they're tuned to be foregrounds-for-white, so when used as a fill
+     under colored text they fight for contrast. Chart fills should keep
+     using --chart-1..24 (lighter, fill-friendly). */
+  --color-avatar-1: hsl(var(--avatar-1));
+  --color-avatar-2: hsl(var(--avatar-2));
+  --color-avatar-3: hsl(var(--avatar-3));
+  --color-avatar-4: hsl(var(--avatar-4));
+  --color-avatar-5: hsl(var(--avatar-5));
+  --color-avatar-6: hsl(var(--avatar-6));
+  --color-avatar-7: hsl(var(--avatar-7));
+  --color-avatar-8: hsl(var(--avatar-8));
+  --color-avatar-9: hsl(var(--avatar-9));
+  --color-avatar-10: hsl(var(--avatar-10));
+  --color-avatar-11: hsl(var(--avatar-11));
+  --color-avatar-12: hsl(var(--avatar-12));
+  --color-avatar-13: hsl(var(--avatar-13));
+  --color-avatar-14: hsl(var(--avatar-14));
+  --color-avatar-15: hsl(var(--avatar-15));
+  --color-avatar-16: hsl(var(--avatar-16));
+
   /* 24 sequential chart colors */
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
@@ -194,6 +217,25 @@
   --info-text: 217 70% 38%;
   --destructive-text: 0 72% 38%;
 
+  /* Avatar palette (light) — every slot ≥ 5.3:1 vs #fff. See note in
+     @theme block: do not reuse these for chart fills. */
+  --avatar-1: 348 65% 42%;
+  --avatar-2: 22 75% 34%;
+  --avatar-3: 38 80% 28%;
+  --avatar-4: 70 50% 26%;
+  --avatar-5: 142 55% 28%;
+  --avatar-6: 172 65% 25%;
+  --avatar-7: 192 70% 28%;
+  --avatar-8: 210 60% 38%;
+  --avatar-9: 220 60% 42%;
+  --avatar-10: 240 50% 45%;
+  --avatar-11: 260 50% 45%;
+  --avatar-12: 280 50% 40%;
+  --avatar-13: 300 45% 38%;
+  --avatar-14: 325 55% 42%;
+  --avatar-15: 0 60% 40%;
+  --avatar-16: 210 14% 38%;
+
   /* 24 sequential chart colors */
   /* chart-1 is offset from primary vermilion (hue 15) to avoid visual
      collision between primary-colored buttons and the dominant chart
@@ -290,6 +332,24 @@
   --warning-text: 45 80% 78%;
   --info-text: 217 75% 78%;
   --destructive-text: 0 70% 78%;
+
+  /* Avatar palette (dark) — every slot ≥ 5.3:1 vs #fff. */
+  --avatar-1: 348 55% 42%;
+  --avatar-2: 22 65% 38%;
+  --avatar-3: 38 65% 33%;
+  --avatar-4: 70 42% 30%;
+  --avatar-5: 142 48% 32%;
+  --avatar-6: 172 55% 30%;
+  --avatar-7: 192 55% 33%;
+  --avatar-8: 210 50% 42%;
+  --avatar-9: 220 55% 46%;
+  --avatar-10: 240 45% 48%;
+  --avatar-11: 260 45% 48%;
+  --avatar-12: 280 45% 44%;
+  --avatar-13: 300 40% 42%;
+  --avatar-14: 325 45% 46%;
+  --avatar-15: 0 50% 44%;
+  --avatar-16: 210 14% 42%;
 
   /* 24 sequential chart colors — controlled brightness, vivid hue */
   /* Note: chart-1 hue (32) is offset from primary vermilion (15) so a

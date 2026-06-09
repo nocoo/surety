@@ -20,35 +20,41 @@ export function hashString(str: string): number {
 }
 
 /**
- * Avatar color palette — 16 hand-picked semantic-token shades that all
- * meet at least ~4.5:1 contrast against white text in both light and
- * dark mode. Avoid pulling slots blindly from the chart palette: chart
- * tokens are tuned for fill on neutral backgrounds, not foregrounds for
- * white text — chart-1/6/7/8 in particular drop below 3:1 with #fff,
- * which is unreadable for the avatar initial.
+ * Avatar color palette — 16 token-backed slots, hand-tuned in
+ * globals.css so every slot clears WCAG AA (≥ 4.5:1) against `text-white`
+ * in BOTH light and dark mode. See `--avatar-1..16` in globals.css.
  *
- * If the chart palette ever needs to be reused for entity-keyed chart
- * series (so a person's chart-segment color matches their avatar), do
- * NOT route through this list: build a parallel palette keyed by the
- * same hash but using fill-friendly tokens.
+ * Why a dedicated palette instead of reusing semantic/chart tokens:
+ * - The semantic fill tokens (--success / --info / --teal / etc.) are
+ *   tuned for solid backgrounds with white-on-color, but most of them
+ *   only clear ~3.5:1 against white in light mode — fine for badges
+ *   with bold text but unreadable for a single-character initial.
+ * - The chart palette is tuned for fills next to other chart fills, on
+ *   a card background. They're typically lighter than ~50% L, which
+ *   pushes white-text contrast even lower (chart-1/6/7 ≈ 2:1).
+ *
+ * If a future chart needs to color series by entity name to match the
+ * avatar, route through these same `bg-avatar-N` slots — they're token
+ * names, so consumers can read them via Tailwind utilities or via
+ * `hsl(var(--avatar-N))` for inline styles.
  */
 const AVATAR_COLORS = [
-  "bg-badge-red",
-  "bg-purple",
-  "bg-purple/85",
-  "bg-purple/70",
-  "bg-info",
-  "bg-info/85",
-  "bg-primary",
-  "bg-info/70",
-  "bg-teal",
-  "bg-teal/85",
-  "bg-success",
-  "bg-success/85",
-  "bg-muted-foreground",
-  "bg-primary/85",
-  "bg-destructive",
-  "bg-destructive/85",
+  "bg-avatar-1",
+  "bg-avatar-2",
+  "bg-avatar-3",
+  "bg-avatar-4",
+  "bg-avatar-5",
+  "bg-avatar-6",
+  "bg-avatar-7",
+  "bg-avatar-8",
+  "bg-avatar-9",
+  "bg-avatar-10",
+  "bg-avatar-11",
+  "bg-avatar-12",
+  "bg-avatar-13",
+  "bg-avatar-14",
+  "bg-avatar-15",
+  "bg-avatar-16",
 ] as const;
 
 /**
