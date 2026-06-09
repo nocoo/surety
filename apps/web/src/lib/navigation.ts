@@ -51,8 +51,17 @@ export const NAV_GROUPS: NavGroupDef[] = [
     label: "系统",
     defaultOpen: true,
     items: [
-      { href: "/cli", label: "CLI", icon: "Terminal" },
       { href: "/settings", label: "系统设置", icon: "Settings" },
+    ],
+  },
+  {
+    // CLI is intended for AI assistants and shell scripts, not for the
+    // 99% of end users who just want to manage policies. Hide it in a
+    // collapsed group so the sidebar stays focused on core tasks.
+    label: "开发者",
+    defaultOpen: false,
+    items: [
+      { href: "/cli", label: "CLI", icon: "Terminal" },
     ],
   },
 ];
