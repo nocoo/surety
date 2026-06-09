@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VisitSheet } from "./visit-sheet";
-import { cn, getAvatarColor } from "@/lib/utils";
+import { cn, getAvatarColor, hashString } from "@/lib/utils";
 
 interface Member {
   id: number;
@@ -84,15 +84,33 @@ const VISIT_TYPE_COLORS: Record<string, "default" | "secondary" | "destructive" 
   "儿保": "success",
 };
 
-// Color palette for symptom tags - cycle through these colors
-const SYMPTOM_COLORS = [
-  "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-  "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-  "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-  "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-  "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300",
-  "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300",
-];
+// Symptom tag palette — name-keyed via the same chart palette used for
+// avatars/charts, so the same symptom ("咳嗽") is always the same color,
+// and the color picks up dark-mode automatically through tokens.
+// Listed verbatim so Tailwind's source detection picks them up.
+const SYMPTOM_BG_CLASSES = [
+  "bg-chart-1/15",
+  "bg-chart-2/15",
+  "bg-chart-3/15",
+  "bg-chart-4/15",
+  "bg-chart-5/15",
+  "bg-chart-6/15",
+  "bg-chart-7/15",
+  "bg-chart-8/15",
+  "bg-chart-9/15",
+  "bg-chart-10/15",
+  "bg-chart-11/15",
+  "bg-chart-12/15",
+  "bg-chart-13/15",
+  "bg-chart-14/15",
+  "bg-chart-15/15",
+  "bg-chart-16/15",
+] as const;
+
+function symptomColorClass(symptom: string): string {
+  const idx = hashString(symptom) % SYMPTOM_BG_CLASSES.length;
+  return SYMPTOM_BG_CLASSES[idx] ?? SYMPTOM_BG_CLASSES[0] ?? "bg-chart-1/15";
+}
 
 function parseSymptoms(symptoms: string | null | undefined): string[] {
   if (!symptoms) return [];
@@ -436,7 +454,7 @@ export default function MedicalVisitsPage() {
                               {parseSymptoms(visit.symptoms).slice(0, 3).map((symptom, idx) => (
                                 <span
                                   key={idx}
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${SYMPTOM_COLORS[idx % SYMPTOM_COLORS.length]}`}
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(symptom)}`}
                                 >
                                   {symptom}
                                 </span>
