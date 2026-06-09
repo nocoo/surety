@@ -11,6 +11,25 @@ export const statusConfig: Record<
   Claimed: { label: "已理赔", variant: "purple" },
 };
 
+/**
+ * Tailwind class for a thin left-border accent that represents the
+ * policy's status as a visual stripe. Used by the dense list view in
+ * place of an inline <Badge> so the row stays scannable.
+ *
+ * The badge label still shows in row tooltips and on the detail page;
+ * the stripe is recognition, not the source of truth.
+ */
+export function statusStripeClass(status: PolicyStatus): string {
+  switch (statusConfig[status].variant) {
+    case "success": return "border-l-2 border-l-success";
+    case "destructive": return "border-l-2 border-l-destructive";
+    case "warning": return "border-l-2 border-l-warning";
+    case "purple": return "border-l-2 border-l-purple";
+    case "outline":
+    default: return "border-l-2 border-l-muted-foreground/30";
+  }
+}
+
 export const categoryLabels: Record<string, string> = {
   Life: "寿险",
   CriticalIllness: "重疾险",

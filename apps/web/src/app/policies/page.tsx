@@ -14,7 +14,7 @@ import { cn, getAvatarColor } from "@/lib/utils";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
 import { getDaysFromToday, formatDaysFromToday } from "@surety/db/lib/date-utils";
-import { statusConfig, categoryLabels } from "@/lib/constants/policy";
+import { statusConfig, statusStripeClass, categoryLabels } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import {
   Table,
@@ -639,8 +639,7 @@ export default function PoliciesPage() {
               <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">状态</TableHead>
-                  <SortHeader label="类型" sortKey="category" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} className="w-[90px]" />
+                  <SortHeader label="类型" sortKey="category" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} className="w-[110px]" />
                   <SortHeader label="产品名称" sortKey="productName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
                   <SortHeader label="保险公司" sortKey="insurerName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
                   <SortHeader label="投保人" sortKey="applicantName" currentSort={sortField} currentDir={sortDirection} onSort={handleSort} />
@@ -660,14 +659,21 @@ export default function PoliciesPage() {
                   const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                   const categoryConfig = getCategoryConfig(policy.category);
                   return (
-                    <TableRow key={policy.id}>
+                    <TableRow
+                      key={policy.id}
+                      className={statusStripeClass(policy.status)}
+                      title={`状态: ${status.label}`}
+                    >
                       <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={categoryConfig.variant}>
-                          {categoryLabel}
-                        </Badge>
+                        {/* Type as colored dot + plain label — same info
+                            as the previous <Badge> but ~60% less ink. */}
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            aria-hidden="true"
+                            className={cn("inline-block h-2 w-2 rounded-full", categoryConfig.accentClass.replace("text-", "bg-"))}
+                          />
+                          <span className="text-sm">{categoryLabel}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
