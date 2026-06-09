@@ -20,35 +20,36 @@ export function hashString(str: string): number {
 }
 
 /**
- * Avatar color palette — drawn directly from the chart palette so the same
- * person/entity gets the same hue whether shown as an avatar circle or as a
- * series in a chart. Uses 16 of the 24 chart slots, skipping the muted/gray
- * end of the spectrum where white text contrast is weakest.
+ * Avatar color palette — 16 hand-picked semantic-token shades that all
+ * meet at least ~4.5:1 contrast against white text in both light and
+ * dark mode. Avoid pulling slots blindly from the chart palette: chart
+ * tokens are tuned for fill on neutral backgrounds, not foregrounds for
+ * white text — chart-1/6/7/8 in particular drop below 3:1 with #fff,
+ * which is unreadable for the avatar initial.
  *
- * Pair with `getChartColorForName(name)` in `lib/chart-config.ts` — both use
- * the same hash and palette length, so index N here matches index N there.
+ * If the chart palette ever needs to be reused for entity-keyed chart
+ * series (so a person's chart-segment color matches their avatar), do
+ * NOT route through this list: build a parallel palette keyed by the
+ * same hash but using fill-friendly tokens.
  */
 const AVATAR_COLORS = [
-  "bg-chart-1",
-  "bg-chart-2",
-  "bg-chart-3",
-  "bg-chart-4",
-  "bg-chart-5",
-  "bg-chart-6",
-  "bg-chart-7",
-  "bg-chart-8",
-  "bg-chart-9",
-  "bg-chart-10",
-  "bg-chart-11",
-  "bg-chart-12",
-  "bg-chart-13",
-  "bg-chart-14",
-  "bg-chart-15",
-  "bg-chart-16",
+  "bg-badge-red",
+  "bg-purple",
+  "bg-purple/85",
+  "bg-purple/70",
+  "bg-info",
+  "bg-info/85",
+  "bg-primary",
+  "bg-info/70",
+  "bg-teal",
+  "bg-teal/85",
+  "bg-success",
+  "bg-success/85",
+  "bg-muted-foreground",
+  "bg-primary/85",
+  "bg-destructive",
+  "bg-destructive/85",
 ] as const;
-
-/** Number of avatar/chart palette slots — exported so chart-config can mirror it. */
-export const AVATAR_PALETTE_SIZE = AVATAR_COLORS.length;
 
 /**
  * Get a consistent avatar background color based on name.
