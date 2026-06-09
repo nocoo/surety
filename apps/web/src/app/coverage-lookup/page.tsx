@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router";
 import { Users, Building2, Phone, Copy, Check } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { CoverageLookupSkeleton } from "@/components/skeletons";
@@ -15,15 +16,22 @@ import {
 } from "@surety/api/coverage-lookup";
 import { cn } from "@/lib/utils";
 import { buildEmergencyContacts, buildCoverageClipboardText } from "./emergency";
+import { readCoverageDeepLink } from "./deep-link";
 
 const breadcrumbs = [{ label: "保障速查" }];
 
 export default function CoverageLookupPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initial = useMemo(() => readCoverageDeepLink(searchParams), []);
+  // ^ intentionally only on mount — see useEffect below for follow-up
+  // navigations (e.g. user clicks a different palette item without
+  // unmounting the page).
+
   const [data, setData] = useState<CoverageLookupData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectionType, setSelectionType] = useState<SelectionType>("member");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectionType, setSelectionType] = useState<SelectionType>(initial.type);
+  const [selectedId, setSelectedId] = useState<number | null>(initial.id);
   const [showInactive, setShowInactive] = useState(false);
 
   // Filter category groups based on showInactive toggle
@@ -65,25 +73,48 @@ export default function CoverageLookupPage() {
     }
   }, []);
 
+  // Load on mount + whenever the URL deep-link changes (palette / link).
+  // selectionType+selectedId are kept in sync with `searchParams` here so
+  // the back/forward buttons restore the previous subject correctly.
   useEffect(() => {
-    loadData(selectionType);
-  }, [loadData, selectionType]);
+    const next = readCoverageDeepLink(searchParams);
+    setSelectionType(next.type);
+    setSelectedId(next.id);
+    if (next.id != null) {
+      loadData(next.type, next.id);
+    } else {
+      loadData(next.type);
+    }
+  }, [loadData, searchParams]);
+
+  /**
+   * Single source of truth for "which subject is selected": the URL.
+   * Both type-switch and member/asset-pick paths call this so the deep
+   * link stays valid for sharing and back-button.
+   */
+  const writeDeepLink = useCallback(
+    (type: SelectionType, id: number | null) => {
+      const next = new URLSearchParams(searchParams);
+      next.delete("member");
+      next.delete("asset");
+      if (id != null) next.set(type, String(id));
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   const handleSwitchType = (type: SelectionType) => {
     if (type !== selectionType) {
-      setSelectionType(type);
-      setSelectedId(null);
+      writeDeepLink(type, null);
     }
   };
 
   const handleSelectMember = (memberId: number) => {
-    setSelectedId(memberId);
-    loadData("member", memberId);
+    writeDeepLink("member", memberId);
   };
 
   const handleSelectAsset = (assetId: number) => {
-    setSelectedId(assetId);
-    loadData("asset", assetId);
+    writeDeepLink("asset", assetId);
   };
 
   const [copied, setCopied] = useState(false);
