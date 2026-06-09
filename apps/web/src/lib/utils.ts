@@ -20,27 +20,35 @@ export function hashString(str: string): number {
 }
 
 /**
- * Avatar color palette - carefully selected for good contrast with white text.
- * Uses HSL for consistent saturation and lightness.
+ * Avatar color palette — drawn directly from the chart palette so the same
+ * person/entity gets the same hue whether shown as an avatar circle or as a
+ * series in a chart. Uses 16 of the 24 chart slots, skipping the muted/gray
+ * end of the spectrum where white text contrast is weakest.
+ *
+ * Pair with `getChartColorForName(name)` in `lib/chart-config.ts` — both use
+ * the same hash and palette length, so index N here matches index N there.
  */
 const AVATAR_COLORS = [
-  "bg-badge-red",        // 0
-  "bg-purple",           // 1
-  "bg-purple/85",        // 2
-  "bg-purple/70",        // 3
-  "bg-info",             // 4
-  "bg-info/85",          // 5
-  "bg-primary",          // 6
-  "bg-info/70",          // 7
-  "bg-teal",             // 8
-  "bg-teal/85",          // 9
-  "bg-success",          // 10
-  "bg-success/85",       // 11
-  "bg-muted-foreground", // 12
-  "bg-warning",          // 13
-  "bg-primary/85",       // 14
-  "bg-destructive",      // 15
+  "bg-chart-1",
+  "bg-chart-2",
+  "bg-chart-3",
+  "bg-chart-4",
+  "bg-chart-5",
+  "bg-chart-6",
+  "bg-chart-7",
+  "bg-chart-8",
+  "bg-chart-9",
+  "bg-chart-10",
+  "bg-chart-11",
+  "bg-chart-12",
+  "bg-chart-13",
+  "bg-chart-14",
+  "bg-chart-15",
+  "bg-chart-16",
 ] as const;
+
+/** Number of avatar/chart palette slots — exported so chart-config can mirror it. */
+export const AVATAR_PALETTE_SIZE = AVATAR_COLORS.length;
 
 /**
  * Get a consistent avatar background color based on name.

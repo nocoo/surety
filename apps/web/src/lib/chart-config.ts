@@ -3,6 +3,8 @@
  * Provides unified color palette, axis settings, and formatters for recharts
  */
 
+import { hashString, AVATAR_PALETTE_SIZE } from "./utils";
+
 // ── Color palette (CSS custom properties from globals.css) ──
 
 /** Helper — wraps a CSS custom property name for inline style usage. */
@@ -60,6 +62,20 @@ export const CHART_COLORS = {
  */
 export function getChartColor(index: number): string {
   return PALETTE_COLORS[index % PALETTE_COLORS.length] as string;
+}
+
+/**
+ * Get a chart color for a named entity using the same hash + palette as
+ * `getAvatarColor`. Use this when a chart series corresponds to a person
+ * or asset who is also shown with an avatar elsewhere on screen — the
+ * dot in the legend will then match the avatar background.
+ *
+ * For positional series (category index, time index), use `getChartColor`.
+ */
+export function getChartColorForName(name: string): string {
+  const hash = hashString(name);
+  const index = hash % AVATAR_PALETTE_SIZE;
+  return PALETTE_COLORS[index] as string;
 }
 
 /**
