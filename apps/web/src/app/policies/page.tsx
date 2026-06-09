@@ -15,13 +15,6 @@ import { getDaysFromToday, formatDaysFromToday } from "@surety/db/lib/date-utils
 import { statusConfig, categoryLabels } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -47,6 +40,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PolicySheet } from "./policy-sheet";
+import {
+  PolicyFilters,
+  countActiveFilters,
+  type PolicyFilterState,
+} from "./policy-filters";
 import { SortHeader } from "@/components/ui/sort-header";
 import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
 import {
@@ -215,12 +213,31 @@ export default function PoliciesPage() {
   const [pickerAttachments, setPickerAttachments] = useState<Attachment[]>([]);
   const [pickerPolicyId, setPickerPolicyId] = useState<number | null>(null);
 
-  // Filter state (persisted to localStorage)
-  const [filterInsured, setFilterInsured] = usePersistedState("surety-filter-insured", "all");
-  const [filterApplicant, setFilterApplicant] = usePersistedState("surety-filter-applicant", "all");
-  const [filterCategory, setFilterCategory] = usePersistedState("surety-filter-category", "all");
-  const [filterAsset, setFilterAsset] = usePersistedState("surety-filter-asset", "all");
-  const [filterStatus, setFilterStatus] = usePersistedState("surety-filter-status-v2", "all");
+  // Filter state (persisted to localStorage). Kept as 5 separate keys
+  // for backward compatibility with existing users' localStorage; bundled
+  // into a single PolicyFilterState object below for the PolicyFilters
+  // component, which is the only place the app reads the filter shape.
+  const [filterInsured, setFilterInsured] = usePersistedState<string>("surety-filter-insured", "all");
+  const [filterApplicant, setFilterApplicant] = usePersistedState<string>("surety-filter-applicant", "all");
+  const [filterCategory, setFilterCategory] = usePersistedState<string>("surety-filter-category", "all");
+  const [filterAsset, setFilterAsset] = usePersistedState<string>("surety-filter-asset", "all");
+  const [filterStatus, setFilterStatus] = usePersistedState<string>("surety-filter-status-v2", "all");
+
+  const filters: PolicyFilterState = {
+    applicant: filterApplicant,
+    insured: filterInsured,
+    category: filterCategory,
+    asset: filterAsset,
+    status: filterStatus,
+  };
+
+  const handleFiltersChange = (next: PolicyFilterState) => {
+    setFilterApplicant(next.applicant);
+    setFilterInsured(next.insured);
+    setFilterCategory(next.category);
+    setFilterAsset(next.asset);
+    setFilterStatus(next.status);
+  };
 
   // View mode state (persisted to localStorage)
   const [viewMode, setViewMode] = usePersistedState<ViewMode>("surety-view-mode", "list");
@@ -472,7 +489,7 @@ export default function PoliciesPage() {
             <h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
             <p className="text-sm text-muted-foreground">
               共 {filteredPolicies.length} 份保单
-              {(filterInsured !== "all" || filterApplicant !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") &&
+              {countActiveFilters(filters) > 0 &&
                 ` (已筛选，共 ${policies.length} 份)`
               }
             </p>
@@ -485,105 +502,17 @@ export default function PoliciesPage() {
 
         {/* Filter Area */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">投保人:</span>
-              <Select value={filterApplicant} onValueChange={setFilterApplicant}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  {applicantNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">被保人:</span>
-              <Select value={filterInsured} onValueChange={setFilterInsured}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  {insuredNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">类型:</span>
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {categoryLabels[cat] ?? cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {assetNames.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">资产:</span>
-                <Select value={filterAsset} onValueChange={setFilterAsset}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="全部" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部</SelectItem>
-                    {assetNames.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">状态:</span>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="全部" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {statusConfig[s].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {(filterInsured !== "all" || filterApplicant !== "all" || filterCategory !== "all" || filterAsset !== "all" || filterStatus !== "all") && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setFilterInsured("all");
-                  setFilterApplicant("all");
-                  setFilterCategory("all");
-                  setFilterAsset("all");
-                  setFilterStatus("all");
-                }}
-              >
-                清除筛选
-              </Button>
-            )}
-          </div>
+          <PolicyFilters
+            filters={filters}
+            onChange={handleFiltersChange}
+            options={{
+              applicantNames,
+              insuredNames,
+              categories,
+              assetNames,
+              statuses,
+            }}
+          />
           <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
             <ToggleGroupItem value="list" aria-label="列表视图">
               <List className="h-4 w-4" />
