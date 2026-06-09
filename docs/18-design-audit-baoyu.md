@@ -304,8 +304,13 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 
 下面是个排期建议，方便挑下一轮 sprint 着手：
 
-**第一周（视觉 token 收口、零品牌成本）**
-- 修问题 6（destructive variant）、9（settings icon 色）、10（dark primary vs chart-1）、16（hover 色统一）、17（avatar 与 chart 色板对齐）、8（CJK 字体栈）。
+**第一周（视觉 token 收口、零品牌成本）** — ✅ 已完成 (2026-06-09)
+- ✅ 问题 6（AlertDialogAction 收口，8 处统一为 variant="destructive"）
+- ✅ 问题 9（settings/cli/visit-sheet/attachment-list 硬编码色 → 语义 token；新增 Notice 组件覆盖 6 处 red/green 状态卡片；medical-visits 症状色 → hash + chart palette）
+- ✅ 问题 10（dark + light mode chart-1 偏移到橙系，避免与 primary 同色冲撞）
+- ✅ 问题 16（TableRow hover 收回组件默认值，7 个页面去掉冗余声明；policies 两处 list-row outlier 对齐）
+- ✅ 问题 17（avatar 与 chart palette 共用 hash + 16 色，新增 getChartColorForName）
+- ✅ 问题 8（CJK 字体栈显式声明 PingFang/Microsoft YaHei/Noto Sans SC）
 
 **第二周（信息密度调整、提升日常使用体验）**
 - 问题 2（保单密度切换 + 卡片视图）、3（医疗就诊时间轴视图）、14（filter chip 化）、15（保单详情布局调整）。
