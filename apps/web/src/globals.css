@@ -303,7 +303,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), "Inter", -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
   }
 }
 
