@@ -46,7 +46,7 @@ const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
   Shield,
 };
 
-function StatCard({ label, value, iconName, index }: StatCardData & { index: number }) {
+function StatCard({ label, value, iconName, sub, index }: StatCardData & { index: number }) {
   const Icon = ICON_MAP[iconName];
   return (
     <div
@@ -62,6 +62,14 @@ function StatCard({ label, value, iconName, index }: StatCardData & { index: num
       <div className="mt-2">
         <span className="text-2xl font-bold font-display tabular-nums">{value}</span>
       </div>
+      {sub ? (
+        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+      ) : (
+        // Reserve the line so cards stay the same height whether the
+        // sub-line is present or not — avoids dancing layout in the
+        // 4-up grid when some categories are empty.
+        <p className="mt-1 text-xs text-muted-foreground">&nbsp;</p>
+      )}
     </div>
   );
 }
@@ -92,7 +100,7 @@ function DashboardHeader({ stats }: { stats: DashboardStats }) {
 }
 
 export function DashboardContent({ data }: { data: DashboardData }) {
-  const statCards = createStatCards(data.stats);
+  const statCards = createStatCards(data.stats, data.charts);
 
   const premiumByCategoryData = useMemo(
     () =>

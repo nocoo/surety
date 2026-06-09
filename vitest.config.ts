@@ -65,8 +65,6 @@ export default defineConfig({
         "apps/web/src/lib/navigation.ts",
         "apps/web/src/lib/chart-config.ts",
         "apps/web/src/lib/constants/**",
-        // View-model that drives chart rendering — verified via L3 browser tests.
-        "apps/web/src/lib/dashboard-vm.ts",
       ],
       thresholds: {
         statements: 95,
