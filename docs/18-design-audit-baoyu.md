@@ -312,8 +312,11 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 - ✅ 问题 16（TableRow hover 收回组件默认值，7 个页面去掉冗余声明；policies 两处 list-row outlier 对齐）
 - ⏸ 问题 17（avatar 与 chart palette 对齐）— **撤回**。曾尝试让 avatar 直接使用 `bg-chart-1..16`，但 chart 色板是为填充背景设计、不是为白字前景设计：实测 chart-7 ≈ 1.98:1、chart-6 ≈ 2.15:1、chart-1 ≈ 2.6:1，均远低于 4.5:1，会让头像首字母不可读。已回退到 16 色可读性专用色板（每个槽位都验证 ≥ 4.5:1），并删除了未实际接入 dashboard 的 `getChartColorForName` helper。"同一实体同一颜色"还需要后续单独处理：要么给每个 avatar 槽配一个 chart 槽（颜色不同但语义对应），要么在图表里另外建一套 fill-friendly entity palette。
 
-**第二周（信息密度调整、提升日常使用体验）**
-- 问题 2（保单密度切换 + 卡片视图）、3（医疗就诊时间轴视图）、14（filter chip 化）、15（保单详情布局调整）。
+**第二周（信息密度调整、提升日常使用体验）** — ✅ 全部完成 (2026-06-09)
+- ✅ 问题 15（保单详情 4 列等宽 → 7/5 主+边栏布局：左 Meta+Coverage / 右 Timeline+Payments；PolicyDetailSkeleton 同步）
+- ✅ 问题 14（保单页 5 个 Select 抽出 `<PolicyFilters>`：紧凑触发按钮 + 已应用条件以可移除 chip 展示 + Sheet 内编辑面板；保留 5 个 localStorage key 向后兼容；新增 8 个 L1 测试覆盖 `countActiveFilters` / `buildChips`）
+- ✅ 问题 2（保单列表新增密度切换 cards/comfortable/compact，持久化到 localStorage；mobile card 升级为桌面 grid 1/2/3 列；compact 模式行高减少约 30%）
+- ✅ 问题 3（就诊记录新增 Timeline 视图——按月聚合 + 卡片式呈现，`groupVisitsByMonth` 抽出独立模块，7 个 L1 测试；表格视图从 12 列瘦身到 7 列：月龄并入"就诊人"副标，距今/时间合并，医生并入医院，症状/诊断/治疗合并为一列垂直堆叠）
 
 **第三-四周（品牌叙事、做出差异化）**
 - 问题 1（Dashboard 重新设计为"健康度 + 行动项"）、5（品牌化空态插画 + 顶栏问候）、12（保障速查紧急 UI）、13（command palette）、4（续保日历加真日历）。
