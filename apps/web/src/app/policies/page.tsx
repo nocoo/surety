@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { Trash2, Info, Check, List, LayoutGrid, Users, Plus, Paperclip, FileText, ImageIcon, AlertCircle, Shield } from "lucide-react";
+import { Trash2, Info, Check, List, LayoutGrid, LayoutList, Rows3, Rows4, Users, Plus, Paperclip, FileText, ImageIcon, AlertCircle, Shield } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,7 @@ function PolicyMobileCard({
   const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
 
   return (
-    <div className="rounded-card bg-secondary p-4 sm:hidden">
+    <div className="rounded-card bg-secondary p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -196,6 +196,17 @@ function PolicyMobileCard({
 
 type SortField = "category" | "productName" | "insurerName" | "insuredName" | "applicantName" | "sumAssured" | "premium" | "effectiveDate" | "nextDueDate";
 type SortDirection = "asc" | "desc";
+
+/**
+ * Visual density of the "list" view.
+ * - cards: card-per-row (was the mobile layout) — most information,
+ *   easiest to scan, takes more vertical space. Default on mobile.
+ * - comfortable: the original ~13-column table — most information per
+ *   row at the cost of horizontal density. Default on desktop.
+ * - compact: same table but with reduced cell padding for users who
+ *   want to see more rows on screen.
+ */
+type ListDensity = "cards" | "comfortable" | "compact";
 type ViewMode = "list" | "byCategory" | "byInsured";
 
 export default function PoliciesPage() {
@@ -241,6 +252,10 @@ export default function PoliciesPage() {
 
   // View mode state (persisted to localStorage)
   const [viewMode, setViewMode] = usePersistedState<ViewMode>("surety-view-mode", "list");
+  const [listDensity, setListDensity] = usePersistedState<ListDensity>(
+    "surety-list-density",
+    "comfortable",
+  );
 
   // Sort state (persisted to localStorage)
   const [sortField, setSortField] = usePersistedState<SortField>("surety-sort-field", "insuredName");
@@ -513,17 +528,43 @@ export default function PoliciesPage() {
               statuses,
             }}
           />
-          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
-            <ToggleGroupItem value="list" aria-label="列表视图">
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="byCategory" aria-label="按类型分组">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="byInsured" aria-label="按被保人分组">
-              <Users className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <div className="flex items-center gap-2">
+            {/* Density toggle — only relevant for flat list view */}
+            {viewMode === "list" && (
+              <ToggleGroup
+                type="single"
+                value={listDensity}
+                onValueChange={(v) => v && setListDensity(v as ListDensity)}
+                aria-label="列表密度"
+              >
+                <ToggleGroupItem value="cards" aria-label="卡片视图">
+                  <LayoutList className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="comfortable" aria-label="舒适表格">
+                  <Rows3 className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="compact" aria-label="紧凑表格">
+                  <Rows4 className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            )}
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && setViewMode(v as ViewMode)}
+              aria-label="视图模式"
+            >
+              <ToggleGroupItem value="list" aria-label="列表视图">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="byCategory" aria-label="按类型分组">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="byInsured" aria-label="按被保人分组">
+                <Users className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
 
         {/* Empty State */}
@@ -540,20 +581,46 @@ export default function PoliciesPage() {
         {/* List View */}
         {viewMode === "list" && policies.length > 0 && (
           <>
-            <div className="space-y-3 sm:hidden">
-              {filteredPolicies.map((policy) => (
-                <PolicyMobileCard
-                  key={policy.id}
-                  policy={policy}
-                  copied={copiedId === policy.id}
-                  onViewDetail={handleViewDetail}
-                  onCopyPolicyNumber={handleCopyPolicyNumber}
-                  onDelete={handleDeleteClick}
-                />
-              ))}
-            </div>
+            {/*
+             * Mobile (<sm) always uses cards — table has no chance at
+             * narrow widths. Above sm, the user's chosen listDensity
+             * decides whether the cards layout continues or a table
+             * (comfortable / compact) takes over.
+             */}
+            {(listDensity === "cards") ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredPolicies.map((policy) => (
+                  <PolicyMobileCard
+                    key={policy.id}
+                    policy={policy}
+                    copied={copiedId === policy.id}
+                    onViewDetail={handleViewDetail}
+                    onCopyPolicyNumber={handleCopyPolicyNumber}
+                    onDelete={handleDeleteClick}
+                  />
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 sm:hidden">
+                  {filteredPolicies.map((policy) => (
+                    <PolicyMobileCard
+                      key={policy.id}
+                      policy={policy}
+                      copied={copiedId === policy.id}
+                      onViewDetail={handleViewDetail}
+                      onCopyPolicyNumber={handleCopyPolicyNumber}
+                      onDelete={handleDeleteClick}
+                    />
+                  ))}
+                </div>
 
-            <div className="hidden rounded-card bg-secondary sm:block">
+                <div
+                  className={cn(
+                    "hidden rounded-card bg-secondary sm:block",
+                    listDensity === "compact" && "[&_td]:py-1 [&_th]:h-9"
+                  )}
+                >
               <Table>
               <TableHeader>
                 <TableRow>
@@ -750,9 +817,11 @@ export default function PoliciesPage() {
                     </TableRow>
                   );
                 })}
-              </TableBody>
+                </TableBody>
             </Table>
             </div>
+              </>
+            )}
           </>
         )}
 
