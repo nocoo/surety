@@ -255,7 +255,7 @@ function CoverageHealthCard({ annualPremium }: { annualPremium: number }) {
           <ShieldCheck className={cn("h-5 w-5", levelIconColor(health.level))} strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground/80">
+          <p className="text-[11px] text-muted-foreground/80">
             家庭保障健康度
           </p>
           <h2 className="font-display text-lg font-semibold">{health.title}</h2>
@@ -373,7 +373,7 @@ function ActionItemsCard({
           <CalendarClock className="h-5 w-5 text-primary" strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground/80">本月</p>
+          <p className="text-[11px] text-muted-foreground/80">本月</p>
           <h2 className="font-display text-lg font-semibold">行动建议</h2>
         </div>
       </header>
