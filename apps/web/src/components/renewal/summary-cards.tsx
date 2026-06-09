@@ -18,8 +18,8 @@ interface StatCardProps {
 function StatCard({ label, value, subValue, icon: Icon, variant = "default" }: StatCardProps) {
   const iconColors = {
     default: "text-primary",
-    savings: "text-warning",
-    protection: "text-success",
+    savings: "text-warning-text",
+    protection: "text-success-text",
   };
 
   return (
