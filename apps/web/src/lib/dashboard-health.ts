@@ -3,7 +3,7 @@
  *
  * Inputs:
  *   - protectionPremium: 当前年度保障型保费（CNY），剔除年金险 /
- *                        增额终身寿等储蓄型产品；后端聚合于 stats
+ *                        终身寿/增额终身寿等储蓄型产品；后端聚合于 stats
  *   - annualIncome:      家庭年收入（CNY），来自 /api/settings/annualIncome；
  *                        可能为 0/null/missing — 调用方传 0 时返回 unknown 档位
  *
@@ -18,7 +18,7 @@
  *   - 5..15%  → healthy        （建议区间）
  *   - > 15%   → overspent      （保费占比偏高）
  *
- * 储蓄型保险（年金、增额终身寿）是强制储蓄工具，不属于风险对冲支出，
+ * 储蓄型保险（年金、终身寿、增额终身寿）是强制储蓄工具，不属于风险对冲支出，
  * 不应进入这个比例。后端 packages/api/src/dashboard.ts 用
  * isSavingsPolicy() 在源头剔除，前端只接 protectionPremium。
  */

@@ -250,7 +250,7 @@ export function DashboardContent({ data }: { data: DashboardData }) {
  * from the dashboard payload, then computeCoverageHealth turns the
  * ratio into a verdict + recommendation.
  *
- * Savings policies (年金险 / 增额终身寿) are excluded from the
+ * Savings policies (年金险 / 终身寿 / 增额终身寿) are excluded from the
  * numerator so the % reflects risk-coverage spend; they would
  * otherwise inflate the ratio and make a well-insured family look
  * "overspent" simply because they also forced-save through insurance.

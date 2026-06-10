@@ -87,6 +87,7 @@ export const policies = sqliteTable(
     category: text("category", {
       enum: [
         "Life",
+        "WholeLife",
         "CriticalIllness",
         "Medical",
         "Accident",

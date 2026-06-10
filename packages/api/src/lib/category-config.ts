@@ -8,7 +8,7 @@ import type { PolicyCategory } from "@surety/db/types";
 export interface CategoryConfig {
   label: string;
   /** Badge variant from shadcn/ui */
-  variant: "default" | "secondary" | "success" | "warning" | "info" | "purple" | "teal" | "destructive";
+  variant: "default" | "secondary" | "success" | "warning" | "info" | "purple" | "teal" | "indigo" | "destructive";
   /** Semantic accent classes for icon and lightweight surfaces */
   accentClass: string;
   accentSoftClass: string;
@@ -24,6 +24,12 @@ export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
     variant: "info",
     accentClass: "text-info",
     accentSoftClass: "bg-info/10 text-info",
+  },
+  WholeLife: {
+    label: "终身寿",
+    variant: "indigo",
+    accentClass: "text-indigo",
+    accentSoftClass: "bg-indigo/10 text-indigo",
   },
   CriticalIllness: {
     label: "重疾险",

@@ -2,6 +2,7 @@ import { parseLocalDate } from "./lib/date-utils";
 
 export type PolicyCategory =
   | "Life"
+  | "WholeLife"
   | "CriticalIllness"
   | "Medical"
   | "Accident"

@@ -12,7 +12,7 @@ export interface DashboardStats {
   totalPremium: number;
   /**
    * Premium spent on protection-type policies only (excluding
-   * savings vehicles like annuities and 增额终身寿). Used by the
+   * savings vehicles like annuities and 终身寿/增额终身寿). Used by the
    * dashboard's coverage-health card so the "% of household income"
    * metric reflects actual risk-coverage spend, not forced savings.
    *

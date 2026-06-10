@@ -29,6 +29,7 @@ interface MetaColumnProps {
 
 const categories = [
   { value: "Life", label: "定期寿" },
+  { value: "WholeLife", label: "终身寿" },
   { value: "CriticalIllness", label: "重疾险" },
   { value: "Medical", label: "医疗险" },
   { value: "Accident", label: "意外险" },

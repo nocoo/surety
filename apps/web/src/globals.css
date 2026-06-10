@@ -59,6 +59,8 @@
   --color-purple-foreground: hsl(var(--purple-foreground));
   --color-teal: hsl(var(--teal));
   --color-teal-foreground: hsl(var(--teal-foreground));
+  --color-indigo: hsl(var(--indigo));
+  --color-indigo-foreground: hsl(var(--indigo-foreground));
 
   --color-badge-red: hsl(var(--badge-red));
   --color-badge-red-foreground: hsl(var(--badge-red-foreground));
@@ -203,6 +205,8 @@
   --purple-foreground: 0 0% 100%;
   --teal: 186 72% 38%;
   --teal-foreground: 0 0% 100%;
+  --indigo: 232 70% 56%;
+  --indigo-foreground: 0 0% 100%;
   --badge-red: 340 82% 55%;
   --badge-red-foreground: 0 0% 100%;
 
@@ -323,6 +327,8 @@
   --purple-foreground: 270 60% 92%;
   --teal: 186 60% 35%;
   --teal-foreground: 186 60% 92%;
+  --indigo: 232 60% 50%;
+  --indigo-foreground: 232 60% 92%;
   --badge-red: 340 65% 45%;
   --badge-red-foreground: 340 65% 92%;
 

@@ -8,6 +8,7 @@ import { parseLocalDate, formatLocalDate } from "@surety/db/lib/date-utils";
 // Category labels
 export const CATEGORY_LABELS: Record<string, string> = {
   Life: "定期寿",
+  WholeLife: "终身寿",
   CriticalIllness: "重疾险",
   Medical: "医疗险",
   Accident: "意外险",
@@ -17,9 +18,10 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 // Savings insurance categories
 // - Annuity: always savings
+// - WholeLife: 定额终身寿，主功能是储蓄（含一点身故保障），整体按储蓄归类
 // - Life: only savings when subCategory contains "增额" (e.g., 增额终身寿)
 //   Regular term life insurance is protection, not savings
-export const SAVINGS_CATEGORIES = ["Annuity"];
+export const SAVINGS_CATEGORIES = ["Annuity", "WholeLife"];
 export const SAVINGS_LIFE_SUBCATEGORIES = ["增额终身寿", "增额寿"];
 
 // ============================================================================

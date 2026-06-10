@@ -42,6 +42,7 @@ export function statusStripeClass(status: PolicyStatus): string {
  */
 export const categoryLabels: Record<string, string> = {
   Life: "定期寿",
+  WholeLife: "终身寿",
   CriticalIllness: "重疾险",
   Medical: "医疗险",
   Accident: "意外险",
