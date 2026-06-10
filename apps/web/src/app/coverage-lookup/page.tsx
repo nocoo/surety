@@ -332,8 +332,7 @@ export default function CoverageLookupPage() {
               filteredGroups.map((group) => (
                 <CategorySection
                   key={group.category}
-                  categoryLabel={group.categoryLabel}
-                  categoryVariant={group.categoryVariant}
+                  category={group.category}
                   policies={group.policies}
                   totalSumAssured={group.totalSumAssured}
                 />

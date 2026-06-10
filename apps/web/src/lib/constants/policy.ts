@@ -30,6 +30,16 @@ export function statusStripeClass(status: PolicyStatus): string {
   }
 }
 
+/**
+ * Category enum-key → Chinese label map.
+ *
+ * Display surfaces (badges, chips, table cells, group headers) should
+ * route through `getCategoryConfig(category).label` from
+ * `@surety/api/lib/category-config`, which is the single source of
+ * truth pairing the label with its Badge variant. This map exists
+ * only as a static enumeration of the supported categories — used by
+ * the policy-sheet form's category Select to render the option list.
+ */
 export const categoryLabels: Record<string, string> = {
   Life: "寿险",
   CriticalIllness: "重疾险",

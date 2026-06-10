@@ -14,7 +14,7 @@ import { cn, getAvatarColor } from "@/lib/utils";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
 import { getDaysFromToday, formatDaysFromToday } from "@surety/db/lib/date-utils";
-import { statusConfig, statusStripeClass, categoryLabels } from "@/lib/constants/policy";
+import { statusConfig, statusStripeClass } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import {
   Table,
@@ -107,7 +107,6 @@ function PolicyMobileCard({
   onDelete: (policy: Policy) => void;
 }) {
   const status = statusConfig[policy.status];
-  const categoryLabel = categoryLabels[policy.category] ?? policy.category;
   const categoryConfig = getCategoryConfig(policy.category);
   const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
 
@@ -117,7 +116,7 @@ function PolicyMobileCard({
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={status.variant}>{status.label}</Badge>
-            <Badge variant={categoryConfig.variant}>{categoryLabel}</Badge>
+            <Badge variant={categoryConfig.variant}>{categoryConfig.label}</Badge>
           </div>
           <button
             onClick={() => onViewDetail(policy)}
@@ -386,8 +385,8 @@ export default function PoliciesPage() {
       groups.set(policy.category, existing);
     }
     // Sort by category name
-    return Array.from(groups.entries()).sort((a, b) => 
-      (categoryLabels[a[0]] ?? a[0]).localeCompare(categoryLabels[b[0]] ?? b[0], "zh-CN")
+    return Array.from(groups.entries()).sort((a, b) =>
+      getCategoryConfig(a[0]).label.localeCompare(getCategoryConfig(b[0]).label, "zh-CN")
     );
   }, [filteredPolicies]);
 
@@ -656,7 +655,6 @@ export default function PoliciesPage() {
               <TableBody>
                 {filteredPolicies.map((policy) => {
                   const status = statusConfig[policy.status];
-                  const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                   const categoryConfig = getCategoryConfig(policy.category);
                   return (
                     <TableRow
@@ -674,15 +672,9 @@ export default function PoliciesPage() {
                          * color or hover.
                          */}
                         <span className="sr-only">状态: {status.label}.</span>
-                        {/* Type as colored dot + plain label — same info
-                            as the previous <Badge> but ~60% less ink. */}
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            aria-hidden="true"
-                            className={cn("inline-block h-2 w-2 rounded-full", categoryConfig.accentClass.replace("text-", "bg-"))}
-                          />
-                          <span className="text-sm">{categoryLabel}</span>
-                        </div>
+                        <Badge variant={categoryConfig.variant}>
+                          {categoryConfig.label}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -859,8 +851,8 @@ export default function PoliciesPage() {
         {(viewMode === "byCategory" || viewMode === "byInsured") && policies.length > 0 && (
           <div className="space-y-6">
             {(viewMode === "byCategory" ? policiesByCategory : policiesByInsured).map(([groupKey, groupPolicies]) => {
-              const groupLabel = viewMode === "byCategory" 
-                ? (categoryLabels[groupKey] ?? groupKey)
+              const groupLabel = viewMode === "byCategory"
+                ? getCategoryConfig(groupKey).label
                 : groupKey;
               const totalPremium = groupPolicies.reduce((sum, p) => sum + p.premium, 0);
               const totalSumAssured = groupPolicies.reduce((sum, p) => sum + p.sumAssured, 0);
@@ -897,7 +889,6 @@ export default function PoliciesPage() {
                   <div className="divide-y divide-border/50">
                     {groupPolicies.map((policy) => {
                       const status = statusConfig[policy.status];
-                      const categoryLabel = categoryLabels[policy.category] ?? policy.category;
                       const categoryConfig = getCategoryConfig(policy.category);
                       return (
                         <div key={policy.id} className="flex items-center justify-between px-4 py-3 hover:bg-background/50 transition-colors">
@@ -905,7 +896,7 @@ export default function PoliciesPage() {
                             <Badge variant={status.variant}>{status.label}</Badge>
                             {viewMode === "byInsured" && (
                               <Badge variant={categoryConfig.variant}>
-                                {categoryLabel}
+                                {categoryConfig.label}
                               </Badge>
                             )}
                             {viewMode === "byCategory" && (

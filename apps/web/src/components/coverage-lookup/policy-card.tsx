@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, Phone, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
 import type { PolicyCoverageCard } from "@surety/api/coverage-lookup";
 
 interface PolicyCardProps {
@@ -120,24 +121,28 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 }
 
 interface CategorySectionProps {
-  categoryLabel: string;
-  categoryVariant: string;
+  /** Category enum from the API (e.g. "Medical", "CriticalIllness"). */
+  category: string;
   policies: PolicyCoverageCard[];
   totalSumAssured: number;
 }
 
 export function CategorySection({
-  categoryLabel,
-  categoryVariant,
+  category,
   policies,
   totalSumAssured,
 }: CategorySectionProps) {
+  // Single source of truth for label + Badge variant per category. The
+  // API also ships these alongside the row, but routing through
+  // getCategoryConfig keeps every category surface in the app on the
+  // same pinned color/label so a future palette change reaches them all.
+  const config = getCategoryConfig(category);
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant={categoryVariant as "default"}>
-            {categoryLabel}
+          <Badge variant={config.variant}>
+            {config.label}
           </Badge>
           <span className="text-sm text-muted-foreground">
             ({policies.length})

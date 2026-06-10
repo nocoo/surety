@@ -18,7 +18,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { categoryLabels, statusConfig } from "@/lib/constants/policy";
+import { statusConfig } from "@/lib/constants/policy";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
 import type { PolicyStatus } from "@/lib/types/policy";
 
 export interface PolicyFilterState {
@@ -192,7 +193,7 @@ export function PolicyFilters({ filters, onChange, options }: PolicyFiltersProps
                   <SelectItem value="all">全部</SelectItem>
                   {options.categories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {categoryLabels[cat] ?? cat}
+                      {getCategoryConfig(cat).label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -278,7 +279,7 @@ export function buildChips(
     chips.push({
       key: "category",
       label: filters.category,
-      display: (v) => categoryLabels[v] ?? v,
+      display: (v) => getCategoryConfig(v).label,
     });
   }
   if (filters.asset !== "all") {
