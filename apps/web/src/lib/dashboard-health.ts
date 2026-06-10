@@ -2,20 +2,25 @@
  * Pure logic for the dashboard "家庭保障健康度" header card.
  *
  * Inputs:
- *   - annualPremium: 当前年度保费支出（CNY）
- *   - annualIncome:  家庭年收入（CNY），来自 /api/settings/annualIncome；
- *                    可能为 0/null/missing — 调用方传 0 时返回 unknown 档位
+ *   - protectionPremium: 当前年度保障型保费（CNY），剔除年金险 /
+ *                        增额终身寿等储蓄型产品；后端聚合于 stats
+ *   - annualIncome:      家庭年收入（CNY），来自 /api/settings/annualIncome；
+ *                        可能为 0/null/missing — 调用方传 0 时返回 unknown 档位
  *
  * Output:
- *   - ratio:   premium / income, fraction（0..1+），未知收入时为 null
+ *   - ratio:   protection / income, fraction（0..1+），未知收入时为 null
  *   - level:   "unknown" | "underinsured" | "healthy" | "overspent"
  *   - title:   一句话结论
  *   - detail:  ratio 的人话格式 + 推荐区间
  *
- * 行业经验区间（保费占年收入）：
+ * 行业经验区间（保障型保费占年收入）：
  *   - <  5%   → underinsured （保障可能不足）
  *   - 5..15%  → healthy        （建议区间）
  *   - > 15%   → overspent      （保费占比偏高）
+ *
+ * 储蓄型保险（年金、增额终身寿）是强制储蓄工具，不属于风险对冲支出，
+ * 不应进入这个比例。后端 packages/api/src/dashboard.ts 用
+ * isSavingsPolicy() 在源头剔除，前端只接 protectionPremium。
  */
 
 export type CoverageLevel = "unknown" | "underinsured" | "healthy" | "overspent";
@@ -31,7 +36,7 @@ const LOW = 0.05;
 const HIGH = 0.15;
 
 export function computeCoverageHealth(
-  annualPremium: number,
+  protectionPremium: number,
   annualIncome: number,
 ): CoverageHealth {
   if (!annualIncome || annualIncome <= 0) {
@@ -39,34 +44,34 @@ export function computeCoverageHealth(
       ratio: null,
       level: "unknown",
       title: "尚未设置家庭年收入",
-      detail: "在「系统设置」中填写年收入，可以看到保费占比是否处于建议区间",
+      detail: "在「系统设置」中填写年收入，可以看到保障型保费占比是否处于建议区间",
     };
   }
 
-  const ratio = annualPremium / annualIncome;
+  const ratio = protectionPremium / annualIncome;
   const pct = (ratio * 100).toFixed(1);
-  const recommend = `建议区间 ${LOW * 100}% ~ ${HIGH * 100}%`;
+  const recommend = `建议区间 ${LOW * 100}% ~ ${HIGH * 100}%（不含储蓄型）`;
 
   if (ratio < LOW) {
     return {
       ratio,
       level: "underinsured",
-      title: `保费占年收入 ${pct}%，可能偏低`,
-      detail: `${recommend}。家庭可能存在保障缺口，建议补充重疾、医疗、寿险等核心险种`,
+      title: `保障型保费占年收入 ${pct}%，可能偏低`,
+      detail: `${recommend}。家庭可能存在保障缺口，建议补充重疾、医疗、定期寿等核心险种`,
     };
   }
   if (ratio > HIGH) {
     return {
       ratio,
       level: "overspent",
-      title: `保费占年收入 ${pct}%，偏高`,
-      detail: `${recommend}。可以审视储蓄型保险占比，避免挤压日常现金流`,
+      title: `保障型保费占年收入 ${pct}%，偏高`,
+      detail: `${recommend}。即使已剔除储蓄型，保障支出仍偏高，注意挤压日常现金流`,
     };
   }
   return {
     ratio,
     level: "healthy",
-    title: `保费占年收入 ${pct}%，处于健康区间`,
+    title: `保障型保费占年收入 ${pct}%，处于健康区间`,
     detail: `${recommend}。继续保持当前配置`,
   };
 }

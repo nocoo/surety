@@ -33,6 +33,23 @@ describe("computeCoverageHealth", () => {
     expect(h.level).toBe("overspent");
     expect(h.title).toContain("20.0%");
   });
+
+  it("communicates that the ratio is computed off protection-only premium", () => {
+    // Every non-unknown verdict's detail line explicitly says "不含储蓄型"
+    // so the user knows annuities / 增额终身寿 weren't included.
+    const cases = [
+      computeCoverageHealth(10_000, 1_000_000),
+      computeCoverageHealth(100_000, 1_000_000),
+      computeCoverageHealth(200_000, 1_000_000),
+    ];
+    for (const c of cases) {
+      expect(c.detail).toContain("不含储蓄型");
+    }
+    // And the headline begins with "保障型" not just "保费"
+    for (const c of cases) {
+      expect(c.title).toContain("保障型保费");
+    }
+  });
 });
 
 describe("buildActionItems", () => {

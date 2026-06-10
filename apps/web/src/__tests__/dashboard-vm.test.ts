@@ -11,6 +11,8 @@ const baseStats: DashboardStats = {
   policyCount: 12,
   memberCount: 5,
   totalPremium: 50_000,
+  protectionPremium: 35_000,
+  savingsPremium: 15_000,
   totalSumAssured: 6_000_000,
 };
 

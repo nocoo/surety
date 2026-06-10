@@ -1,6 +1,7 @@
 import { isEffectivelyActive, type PolicyDbStatus } from "@surety/db/types";
 import { parseLocalDate } from "@surety/db/lib/date-utils";
 import type { AllRepos } from "@surety/db/repositories";
+import { isSavingsPolicy } from "./renewal-calendar";
 
 const categoryLabels: Record<string, string> = {
   Life: "寿险",
@@ -20,6 +21,25 @@ export async function getDashboardData(repos: AllRepos) {
   );
   const totalPremium = activePolicies.reduce((sum, p) => sum + p.premium, 0);
   const totalSumAssured = activePolicies.reduce((sum, p) => sum + p.sumAssured, 0);
+
+  // Split premium by savings vs protection. Savings-type policies
+  // (annuity, 增额终身寿) function as forced-saving vehicles, so they
+  // skew the "premium as % of income" health metric upward and make
+  // a well-protected family look over-spent. The health card uses
+  // protectionPremium to compare against household income; the
+  // overview keeps totalPremium for the "this is what you actually pay"
+  // headline figure. See packages/api/src/renewal-calendar.ts for
+  // the canonical isSavingsPolicy rule.
+  let savingsPremium = 0;
+  let protectionPremium = 0;
+  for (const p of activePolicies) {
+    if (isSavingsPolicy(p.category, p.subCategory)) {
+      savingsPremium += p.premium;
+    } else {
+      protectionPremium += p.premium;
+    }
+  }
+
   const memberCount = members.length;
   const policyCount = activePolicies.length;
 
@@ -242,6 +262,8 @@ export async function getDashboardData(repos: AllRepos) {
       policyCount,
       memberCount,
       totalPremium,
+      protectionPremium,
+      savingsPremium,
       totalSumAssured,
     },
     charts: {

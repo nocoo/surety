@@ -156,7 +156,10 @@ export function DashboardContent({ data }: { data: DashboardData }) {
       <SectionDivider title="保障状态">
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3">
-            <CoverageHealthCard annualPremium={data.stats.totalPremium} />
+            <CoverageHealthCard
+              protectionPremium={data.stats.protectionPremium}
+              savingsPremium={data.stats.savingsPremium}
+            />
           </div>
           <div className="lg:col-span-2">
             <ActionItemsCard
@@ -240,15 +243,27 @@ export function DashboardContent({ data }: { data: DashboardData }) {
 
 /**
  * Health-of-coverage hero card. Pulls /api/settings/annualIncome
- * (lazy, SWR cache 60s) and joins it with the policy premium total
- * already in the dashboard payload, then computeCoverageHealth turns
- * the ratio into a verdict + recommendation.
+ * (lazy, SWR cache 60s) and joins it with the protection-only premium
+ * from the dashboard payload, then computeCoverageHealth turns the
+ * ratio into a verdict + recommendation.
+ *
+ * Savings policies (年金险 / 增额终身寿) are excluded from the
+ * numerator so the % reflects risk-coverage spend; they would
+ * otherwise inflate the ratio and make a well-insured family look
+ * "overspent" simply because they also forced-save through insurance.
+ * `savingsPremium` is shown as a secondary note for transparency.
  *
  * Renders a different visual tone per level — green when healthy,
  * warning when under/over, muted when unknown — and points the user
  * at /settings when no income is configured yet.
  */
-function CoverageHealthCard({ annualPremium }: { annualPremium: number }) {
+function CoverageHealthCard({
+  protectionPremium,
+  savingsPremium,
+}: {
+  protectionPremium: number;
+  savingsPremium: number;
+}) {
   // Settings API shape: { value: string | null }
   const { data: incomeSetting } = useSWR<{ value: string | null }>(
     "/api/settings/annualIncome",
@@ -256,7 +271,7 @@ function CoverageHealthCard({ annualPremium }: { annualPremium: number }) {
     { revalidateOnFocus: false, dedupingInterval: 60_000 },
   );
   const annualIncome = Number(incomeSetting?.value ?? 0) || 0;
-  const health = computeCoverageHealth(annualPremium, annualIncome);
+  const health = computeCoverageHealth(protectionPremium, annualIncome);
 
   return (
     <article className={cn("rounded-card p-6 h-full flex flex-col gap-4", levelSurface(health.level))}>
@@ -275,11 +290,18 @@ function CoverageHealthCard({ annualPremium }: { annualPremium: number }) {
       <p className="text-sm text-muted-foreground">{health.detail}</p>
 
       <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-baseline gap-2">
-          <span className="font-display text-3xl font-bold tabular-nums">
-            {formatCurrency(annualPremium)}
-          </span>
-          <span className="text-xs text-muted-foreground">/ 年保费</span>
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-3xl font-bold tabular-nums">
+              {formatCurrency(protectionPremium)}
+            </span>
+            <span className="text-xs text-muted-foreground">/ 年保障型保费</span>
+          </div>
+          {savingsPremium > 0 && (
+            <span className="mt-1 text-xs text-muted-foreground">
+              另含储蓄型 {formatCurrency(savingsPremium)}（未计入占比）
+            </span>
+          )}
         </div>
         {health.level === "unknown" ? (
           <Link

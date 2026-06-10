@@ -10,6 +10,15 @@ export interface DashboardStats {
   policyCount: number;
   memberCount: number;
   totalPremium: number;
+  /**
+   * Premium spent on protection-type policies only (excluding
+   * savings vehicles like annuities and 增额终身寿). Used by the
+   * dashboard's coverage-health card so the "% of household income"
+   * metric reflects actual risk-coverage spend, not forced savings.
+   */
+  protectionPremium: number;
+  /** Premium spent on savings-type policies. Sum = totalPremium. */
+  savingsPremium: number;
   totalSumAssured: number;
 }
 
