@@ -428,6 +428,72 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.1.0
+
+### Added
+- Renewal calendar dialog as URL state + round-trip back nav
+- Coverage health ratio excludes savings-type premium
+- SectionDivider for page-level segments; default everything open
+- Renewal calendar legibility + multi-event dialog
+- Stat cards get derived sub-lines
+- Settings page tracks dirty state
+- Dashboard rehome — health + actions, charts demoted
+- Global Cmd+K command palette
+- Brand-toned dashboard greeting + warmer empty states
+- Coverage-lookup emergency UI
+- Renewal calendar — 12-month calendar grid view
+- Medical visit timeline view
+- Policy list density toggle (cards / comfortable / compact)
+- Add semantic *-text tokens for accessible inline copy
+- Add Notice component for inline status messages
+
+### Changed
+- Suppress recharts default focus outline
+- Rename "寿险" → "定期寿" display label
+- Unify category type display to Badge + getCategoryConfig
+- Mark audit 18 long-tail debt as done
+- Policies row visual decluttering
+- Split CLI into its own collapsed "开发者" group
+- Mark audit 18 week-3/4 roadmap items as done
+- Mark audit 18 week-2 roadmap items as done
+- Trim medical visit table from 12 to 7 columns
+- Consolidate policy filters into chip + sheet UI
+- Policy detail to 7/5 split layout
+- Revise audit 18 week-1 status — withdraw #17, expand #9
+- Mark audit 18 week-1 roadmap items as done
+- Symptom tags use hash-keyed chart palette
+- Map remaining hardcoded colors to semantic tokens
+- Map renewal/policy-detail amber+emerald to warning+success
+- Replace hardcoded icon container colors with semantic tokens
+- Align avatar palette with chart palette
+- Consolidate table-row hover to TableRow default
+- Use AlertDialogAction variant=destructive everywhere
+- Offset chart-1 hue from primary vermilion
+- Declare explicit CJK font stack
+- Add baoyu design audit report (18)
+
+### Fixed
+- Dashboard tolerates stats without protectionPremium
+- Visit-sheet symptom tag-input visual height
+- Coverage-lookup avatars use verified-contrast palette
+- Sidebar group containing the current route opens on mount
+- Policy status accessible to keyboard/touch/screen readers
+- Settings dirty guard catches in-app navigation too
+- Coverage-lookup keeps asset tab when no asset is selected
+- Dashboard action card labels match natural-month buckets
+- Coverage-lookup honors ?member= / ?asset= deep links
+- Days-ago and age-in-months handle invalid dates
+- Visit date formatter handles invalid input gracefully
+- Timeline shows unknown-date bucket instead of dropping rows
+- Hide density toggle on mobile (state matches view)
+- Medical-visits header wraps on mobile
+- Use text-warning-text for icons that fail 3:1 graphical AA
+- Introduce avatar-only palette with verified contrast
+- Revert avatar palette to readable tokens (a11y)
+
+### Removed
+- Drop uppercase + tracking-wider from CJK section labels
+
 ## v2.0.6
 
 ### Changed
