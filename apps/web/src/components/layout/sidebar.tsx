@@ -25,6 +25,8 @@ import { APP_VERSION } from "@surety/api/lib/version";
 import {
   NAV_GROUPS as NAV_GROUPS_DEF,
   ALL_NAV_ITEMS as ALL_NAV_ITEMS_DEF,
+  isItemActive,
+  shouldGroupBeOpenOnMount,
   type NavItemDef,
   type NavGroupDef,
 } from "@/lib/navigation";
@@ -101,7 +103,12 @@ function NavGroupSection({
   pathname: string;
   onNavigate: () => void;
 }) {
-  const [open, setOpen] = useState(group.defaultOpen ?? true);
+  // The group containing the current route is always opened on mount,
+  // even if it's marked defaultOpen: false. Without this, deep-linking
+  // to /cli (in the collapsed "开发者" group) hides the active item
+  // entirely. We only seed the initial state from pathname; once the
+  // user manually toggles the group their choice wins.
+  const [open, setOpen] = useState(shouldGroupBeOpenOnMount(group, pathname));
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -137,10 +144,7 @@ function NavGroupSection({
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col gap-0.5 px-3">
             {group.items.map((item) => {
-              const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
+              const isActive = isItemActive(item.href, pathname);
 
               return (
                 <Link
@@ -226,10 +230,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
             {/* Navigation — flat icon list, no groups */}
             <nav className="flex-1 flex flex-col items-center gap-1 overflow-y-auto pt-1">
               {ALL_NAV_ITEMS.map((item) => {
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                const isActive = isItemActive(item.href, pathname);
 
                 return (
                   <Tooltip key={item.href}>

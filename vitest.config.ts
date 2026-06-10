@@ -62,7 +62,6 @@ export default defineConfig({
         "apps/web/src/lib/upload-with-progress.ts",
         "apps/web/src/lib/utils.ts",
         // Pure data / config modules — declarative, no behavior.
-        "apps/web/src/lib/navigation.ts",
         "apps/web/src/lib/chart-config.ts",
         "apps/web/src/lib/constants/**",
       ],

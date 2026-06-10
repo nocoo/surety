@@ -67,3 +67,31 @@ export const NAV_GROUPS: NavGroupDef[] = [
 ];
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+
+/**
+ * Same active-route check the sidebar uses for individual nav items —
+ * exact match for "/", prefix match for everything else (so /policies/42
+ * still highlights "保单管理"). Exported so the sidebar's per-group
+ * "should open on mount" decision and per-item "is active" highlight
+ * stay in sync, and so we can unit-test the group-expansion rule.
+ */
+export function isItemActive(href: string, pathname: string): boolean {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
+/**
+ * Initial open-state for a sidebar group: the group containing the
+ * current route is always opened, otherwise we honour `defaultOpen`
+ * (default true). Once the user toggles the group manually their
+ * choice replaces this seed; this only decides the very first render.
+ *
+ * Generic over the group shape so the runtime resolved-icon variant
+ * (NavGroup in sidebar.tsx) and the static NavGroupDef both work.
+ */
+export function shouldGroupBeOpenOnMount(
+  group: { items: { href: string }[]; defaultOpen?: boolean | undefined },
+  pathname: string,
+): boolean {
+  if (group.items.some((item) => isItemActive(item.href, pathname))) return true;
+  return group.defaultOpen ?? true;
+}
