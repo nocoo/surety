@@ -137,7 +137,7 @@ export default function HospitalsPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "医院管理" }]}>
-        <TablePageSkeleton />
+        <TablePageSkeleton rows={6} columns={7} />
       </AppShell>
     );
   }

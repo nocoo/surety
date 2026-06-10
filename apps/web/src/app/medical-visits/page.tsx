@@ -260,7 +260,7 @@ export default function MedicalVisitsPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "就诊记录" }]}>
-        <TablePageSkeleton />
+        <TablePageSkeleton rows={8} columns={7} />
       </AppShell>
     );
   }

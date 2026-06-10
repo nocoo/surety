@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { AppShell } from "@/components/layout";
 import { DashboardContent } from "./dashboard-content";
-import { TablePageSkeleton } from "@/components/skeletons";
+import { DashboardSkeleton } from "@/components/skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { fetchAPI } from "@/api";
@@ -14,7 +14,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <AppShell>
-        <TablePageSkeleton />
+        <DashboardSkeleton />
       </AppShell>
     );
   }

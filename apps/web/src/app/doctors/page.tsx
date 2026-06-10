@@ -148,7 +148,7 @@ export default function DoctorsPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "医生管理" }]}>
-        <TablePageSkeleton />
+        <TablePageSkeleton rows={6} columns={8} />
       </AppShell>
     );
   }

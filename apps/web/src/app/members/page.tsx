@@ -155,7 +155,7 @@ export default function MembersPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "家庭成员" }]}>
-        <TablePageSkeleton />
+        <TablePageSkeleton rows={6} columns={9} withFilters={false} />
       </AppShell>
     );
   }

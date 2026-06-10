@@ -482,7 +482,7 @@ export default function PoliciesPage() {
   if (loading) {
     return (
       <AppShell breadcrumbs={[{ label: "保单" }]}>
-        <TablePageSkeleton rows={10} />
+        <TablePageSkeleton rows={10} columns={9} />
       </AppShell>
     );
   }
