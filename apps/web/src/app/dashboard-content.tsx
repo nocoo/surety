@@ -38,6 +38,7 @@ import { useMe } from "@/hooks/use-me";
 import { getDisplayName } from "@/lib/user";
 import { cn } from "@/lib/utils";
 import { fetchAPI } from "@/api";
+import { SectionDivider } from "@/components/ui/section-divider";
 
 const ICON_MAP: Record<StatCardData["iconName"], LucideIcon> = {
   FileText,
@@ -144,29 +145,30 @@ export function DashboardContent({ data }: { data: DashboardData }) {
     <div className="space-y-8">
       <DashboardHeader stats={data.stats} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat, i) => (
-          <StatCard key={stat.label} {...stat} index={i} />
-        ))}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <CoverageHealthCard annualPremium={data.stats.totalPremium} />
+      <SectionDivider title="家庭概览">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((stat, i) => (
+            <StatCard key={stat.label} {...stat} index={i} />
+          ))}
         </div>
-        <div className="lg:col-span-2">
-          <ActionItemsCard
-            renewal={data.charts.renewalTimeline}
-            expiry={data.charts.expiryTimeline}
-          />
-        </div>
-      </div>
+      </SectionDivider>
 
-      <details className="rounded-card bg-secondary/60">
-        <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium hover:bg-muted/30 transition-colors">
-          分布详情（{8} 张图表）
-        </summary>
-        <div className="space-y-6 px-5 pb-5 pt-2">
+      <SectionDivider title="保障状态">
+        <div className="grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            <CoverageHealthCard annualPremium={data.stats.totalPremium} />
+          </div>
+          <div className="lg:col-span-2">
+            <ActionItemsCard
+              renewal={data.charts.renewalTimeline}
+              expiry={data.charts.expiryTimeline}
+            />
+          </div>
+        </div>
+      </SectionDivider>
+
+      <SectionDivider title="分布详情">
+        <div className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             <DonutChart data={premiumByCategoryData} title="保费构成" icon={PieChart} />
             <StackedValueChart
@@ -231,7 +233,7 @@ export function DashboardContent({ data }: { data: DashboardData }) {
             <DonutChart data={channelData} title="缴费渠道分布" icon={Wallet} />
           </div>
         </div>
-      </details>
+      </SectionDivider>
     </div>
   );
 }

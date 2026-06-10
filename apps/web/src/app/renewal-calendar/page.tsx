@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/layout";
 import { RenewalCalendarSkeleton } from "@/components/skeletons";
+import { SectionDivider } from "@/components/ui/section-divider";
 import {
   SummaryCards,
   MonthlyChart,
@@ -65,23 +66,18 @@ export default function RenewalCalendarPage() {
         <SummaryCards summary={data.summary} />
 
         {/* 12-month calendar grid — primary view, answers "which days do I owe" */}
-        <MonthlyCalendar data={data.monthlyData} />
+        <SectionDivider title="日历视图">
+          <MonthlyCalendar data={data.monthlyData} />
+        </SectionDivider>
 
         {/* Bar chart — secondary, answers "which month is the heaviest" */}
-        <details className="rounded-card bg-secondary">
-          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium hover:bg-muted/30 transition-colors">
-            按月柱状图
-          </summary>
-          <div className="px-4 pb-4">
-            <MonthlyChart data={data.monthlyData} policyNames={data.policyNames} />
-          </div>
-        </details>
+        <SectionDivider title="按月柱状图">
+          <MonthlyChart data={data.monthlyData} policyNames={data.policyNames} />
+        </SectionDivider>
 
-        {/* Monthly Details */}
-        <div>
-          <h2 className="text-lg font-semibold mb-4">月度明细</h2>
+        <SectionDivider title="月度明细">
           <MonthlyDetails data={data.monthlyData} />
-        </div>
+        </SectionDivider>
       </div>
     </AppShell>
   );
