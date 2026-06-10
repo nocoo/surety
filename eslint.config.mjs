@@ -5,9 +5,11 @@ const eslintConfig = defineConfig([
   globalIgnores([
     "**/node_modules/**",
     "**/.next/**",
+    "**/.wrangler/**",
     "**/out/**",
     "**/build/**",
     "**/dist/**",
+    "**/coverage/**",
     "**/e2e/**",
   ]),
   // tseslint strict for all TS files
