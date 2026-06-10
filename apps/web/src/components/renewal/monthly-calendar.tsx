@@ -1,7 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import { CalendarDays } from "lucide-react";
 import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/chart-config";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
 
 interface MonthlyCalendarProps {
   data: MonthlyRenewal[];
@@ -9,14 +20,26 @@ interface MonthlyCalendarProps {
 
 /**
  * Compact 12-month calendar grid. Each month is a small 7-col grid;
- * days with renewal events show a colored dot + the event count.
+ * days with renewal events show a colored cell + the event count.
  *
  * Used as a complement to MonthlyChart (bar) — the bar answers
  * "which month is the heaviest", the calendar answers "exactly which
  * days in 九月 do I owe a premium". Both views consume the same
  * MonthlyRenewal[] from the API, no extra fetch.
+ *
+ * Click behavior:
+ *   - day with 1 event → navigate straight to /policies/<id>
+ *   - day with 2+ events → open a Dialog listing all events for that
+ *     day; the user picks one to drill into. Avoids "click a day with
+ *     3 renewals, only see one" surprise from the previous version.
  */
 export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
+  const [activeDay, setActiveDay] = useState<{
+    date: string;
+    monthLabel: string;
+    events: RenewalItem[];
+  } | null>(null);
+
   if (data.length === 0) {
     return (
       <div className="rounded-card bg-secondary p-6">
@@ -31,43 +54,83 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
     <div className="rounded-card bg-secondary p-4">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {data.map((month) => (
-          <MonthCalendar key={month.month} month={month} />
+          <MonthCalendar
+            key={month.month}
+            month={month}
+            onPickDay={(events, day) =>
+              setActiveDay({
+                date: `${month.month}-${String(day).padStart(2, "0")}`,
+                monthLabel: month.monthLabel,
+                events,
+              })
+            }
+          />
         ))}
       </div>
+
+      <DayEventsDialog
+        active={activeDay}
+        onClose={() => setActiveDay(null)}
+      />
     </div>
   );
 }
 
-function MonthCalendar({ month }: { month: MonthlyRenewal }) {
+interface MonthCalendarProps {
+  month: MonthlyRenewal;
+  onPickDay: (events: RenewalItem[], day: number) => void;
+}
+
+function MonthCalendar({ month, onPickDay }: MonthCalendarProps) {
   const eventsByDay = bucketEventsByDay(month.items);
   const cells = buildMonthGrid(month.month);
+  const accent = monthAccentClasses(month.count);
 
   return (
-    <article className="rounded-widget bg-card p-3">
-      <header className="mb-2 flex items-baseline justify-between">
-        <h3 className="font-display text-sm font-semibold tabular-nums">
+    <article className={cn("rounded-widget bg-card p-4 border-l-2", accent.border)}>
+      <header className="mb-4 flex items-baseline justify-between gap-2">
+        <h3 className={cn("font-display text-base font-semibold tabular-nums", accent.title)}>
           {month.monthLabel}
         </h3>
-        {month.count > 0 && (
-          <span className="text-[11px] text-muted-foreground tabular-nums">
+        {month.count > 0 ? (
+          <span className="text-xs text-muted-foreground tabular-nums">
             {month.count} 次 · {formatCurrency(month.totalPremium)}
           </span>
+        ) : (
+          <span className="text-xs text-muted-foreground/60">无续保</span>
         )}
       </header>
 
-      <div className="grid grid-cols-7 gap-y-1 text-center text-[10px] text-muted-foreground">
+      <div className="grid grid-cols-7 gap-y-1.5 text-center text-[11px] text-muted-foreground">
         {WEEKDAY_LABELS.map((d) => (
           <span key={d} className="leading-none">{d}</span>
         ))}
       </div>
 
-      <div className="mt-1 grid grid-cols-7 gap-1">
+      <div className="mt-2 grid grid-cols-7 gap-1">
         {cells.map((cell, i) => (
-          <DayCell key={i} day={cell.day} events={cell.day ? eventsByDay.get(cell.day) ?? [] : []} />
+          <DayCell
+            key={i}
+            day={cell.day}
+            events={cell.day ? eventsByDay.get(cell.day) ?? [] : []}
+            onPickDay={onPickDay}
+          />
         ))}
       </div>
     </article>
   );
+}
+
+/**
+ * Visual accent per month: the busier the month, the warmer the
+ * left-border + title color. Decoration only — the textual "N 次" is
+ * still the source of truth.
+ */
+function monthAccentClasses(count: number): { border: string; title: string } {
+  if (count === 0) return { border: "border-l-muted-foreground/15", title: "text-muted-foreground" };
+  if (count <= 2) return { border: "border-l-primary/30", title: "text-foreground" };
+  if (count <= 5) return { border: "border-l-primary/60", title: "text-foreground" };
+  return { border: "border-l-primary", title: "text-primary" };
 }
 
 const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
@@ -110,7 +173,15 @@ function bucketEventsByDay(items: RenewalItem[]): Map<number, RenewalItem[]> {
   return byDay;
 }
 
-function DayCell({ day, events }: { day: number | null; events: RenewalItem[] }) {
+function DayCell({
+  day,
+  events,
+  onPickDay,
+}: {
+  day: number | null;
+  events: RenewalItem[];
+  onPickDay: (events: RenewalItem[], day: number) => void;
+}) {
   const navigate = useNavigate();
 
   if (day === null) {
@@ -119,35 +190,48 @@ function DayCell({ day, events }: { day: number | null; events: RenewalItem[] })
 
   if (events.length === 0) {
     return (
-      <span className="aspect-square flex items-center justify-center text-[11px] text-muted-foreground/70 tabular-nums">
+      <span className="aspect-square flex items-center justify-center text-xs text-muted-foreground/70 tabular-nums">
         {day}
       </span>
     );
   }
 
+  const single = events.length === 1;
+  // Multi-event days open the dialog so all renewals on that day are
+  // visible — clicking the button on a 3-event day used to jump to
+  // event[0] only.
+  const onClick = () => {
+    if (single) {
+      const target = events[0]?.id;
+      if (target != null) navigate(`/policies/${target}`);
+    } else {
+      onPickDay(events, day);
+    }
+  };
+
   const total = events.reduce((sum, e) => sum + e.premium, 0);
   const tooltip = events
     .map((e) => `${e.productName} (${e.insuredMemberName}) · ${formatCurrency(e.premium)}`)
     .join("\n");
-
-  // Single-event days link straight to that policy; multi-event days
-  // jump to the first one — the tooltip lists all so the user can pick.
-  const target = events[0]?.id;
+  const ariaLabel = single
+    ? `${day} 日：${events[0]?.productName}`
+    : `${day} 日：${events.length} 笔续费，点击查看`;
 
   return (
     <button
       type="button"
-      onClick={() => target != null && navigate(`/policies/${target}`)}
+      onClick={onClick}
       title={`${tooltip}\n合计 ${formatCurrency(total)}`}
+      aria-label={ariaLabel}
       className={cn(
-        "relative aspect-square flex items-center justify-center rounded-sm tabular-nums text-[11px]",
+        "relative aspect-square flex items-center justify-center rounded-sm tabular-nums text-xs",
         "bg-primary/15 text-foreground font-medium",
         "hover:bg-primary/25 transition-colors",
       )}
     >
       {day}
       {events.length > 1 && (
-        <span className="absolute -top-0.5 -right-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground leading-none">
+        <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground leading-none">
           {events.length}
         </span>
       )}
@@ -155,5 +239,78 @@ function DayCell({ day, events }: { day: number | null; events: RenewalItem[] })
   );
 }
 
+interface DayEventsDialogProps {
+  active: { date: string; monthLabel: string; events: RenewalItem[] } | null;
+  onClose: () => void;
+}
+
+/**
+ * Dialog opened by clicking a multi-event day cell. Lists every renewal
+ * on that calendar day with category badge, member, premium, and a
+ * link into the policy detail. Closing the dialog returns the user to
+ * the calendar — preserves nav-stack expectations vs. a hard navigate.
+ */
+function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
+  const navigate = useNavigate();
+
+  return (
+    <Dialog
+      open={active !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            {active ? active.date : ""}
+          </DialogTitle>
+          <DialogDescription>
+            {active
+              ? `${active.monthLabel} · ${active.events.length} 笔续费 · 合计 ${formatCurrency(
+                  active.events.reduce((s, e) => s + e.premium, 0),
+                )}`
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        {active && (
+          <ul className="divide-y divide-border/50 max-h-[60vh] overflow-y-auto">
+            {active.events.map((event) => {
+              const category = getCategoryConfig(event.category);
+              return (
+                <li key={`${event.id}-${event.nextDueDate}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(`/policies/${event.id}`);
+                      onClose();
+                    }}
+                    className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left hover:bg-muted/40 rounded transition-colors"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium truncate">{event.productName}</span>
+                        <Badge variant={category.variant} className="shrink-0">
+                          {category.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{event.insuredMemberName}</p>
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums shrink-0">
+                      {formatCurrency(event.premium)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Export pure helpers so they're unit-testable without rendering.
-export const __test__ = { buildMonthGrid, bucketEventsByDay };
+export const __test__ = { buildMonthGrid, bucketEventsByDay, monthAccentClasses };

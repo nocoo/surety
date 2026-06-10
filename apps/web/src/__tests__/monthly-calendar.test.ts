@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { __test__ } from "@/components/renewal/monthly-calendar";
 
-const { buildMonthGrid, bucketEventsByDay } = __test__;
+const { buildMonthGrid, bucketEventsByDay, monthAccentClasses } = __test__;
 
 describe("buildMonthGrid", () => {
   it("returns an empty array for malformed keys", () => {
@@ -53,5 +53,25 @@ describe("bucketEventsByDay", () => {
       { id: 1, productName: "A", category: "Life", categoryLabel: "寿险", premium: 100, nextDueDate: "bad", daysUntilDue: 0, insuredMemberName: "x", isSavings: false },
     ];
     expect(bucketEventsByDay(items).size).toBe(0);
+  });
+});
+
+describe("monthAccentClasses", () => {
+  it("returns muted treatment for empty months", () => {
+    const a = monthAccentClasses(0);
+    expect(a.border).toContain("muted-foreground");
+    expect(a.title).toContain("muted-foreground");
+  });
+
+  it("escalates from low primary opacity to full primary as count grows", () => {
+    expect(monthAccentClasses(1).border).toContain("primary/30");
+    expect(monthAccentClasses(2).border).toContain("primary/30");
+    expect(monthAccentClasses(3).border).toContain("primary/60");
+    expect(monthAccentClasses(5).border).toContain("primary/60");
+    // Busy months (>5) recolor the title too, not just the border.
+    const busy = monthAccentClasses(8);
+    expect(busy.border).toContain("border-l-primary");
+    expect(busy.border).not.toContain("/");
+    expect(busy.title).toBe("text-primary");
   });
 });
