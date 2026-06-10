@@ -419,3 +419,25 @@
 @utility animate-fade-up {
   animation: fade-up 0.4s ease-out both;
 }
+
+/*
+ * Recharts focus suppression
+ *
+ * Recharts marks pie sectors / bars / surfaces as focusable so keyboard
+ * users can tab through them, but it surfaces as an unwanted blue
+ * default focus ring whenever the user clicks a chart. Charts in this
+ * app are display-only (no per-segment action), so there's nothing to
+ * focus on — drop the visible outline and the default behaviour goes
+ * away. Tooltips still work; keyboard tab order isn't broken because
+ * these elements weren't doing anything actionable on Enter/Space
+ * either.
+ */
+.recharts-wrapper :focus,
+.recharts-wrapper :focus-visible,
+.recharts-surface :focus,
+.recharts-surface :focus-visible,
+.recharts-sector:focus,
+.recharts-rectangle:focus,
+.recharts-layer:focus {
+  outline: none;
+}
