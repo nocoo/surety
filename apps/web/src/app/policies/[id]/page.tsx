@@ -140,38 +140,41 @@ export default function PolicyDetailPage() {
       </div>
 
       {/*
-       * Layout: on lg+, split into a primary column (Meta + Coverage —
-       * "what is this policy") and a secondary column (Timeline +
-       * Payments — "when does anything happen"). 7/5 of a 12-grid puts
-       * the denser content (Meta is by far the longest) on the left
-       * without making it feel crowded. Below lg, single column so the
-       * narrative reads top-to-bottom.
+       * Layout (per哥 2026-06-10):
+       *   <lg  → single column, top-to-bottom narrative
+       *   lg+ → three equal columns 1:1:1
+       *     col 1  保单信息 (Meta)
+       *     col 2  保障明细 (Coverage)
+       *     col 3  保单时间线 + 缴费记录 (Timeline / Payments stacked)
+       *
+       * On mobile / tablet the columns collapse to a single stack so each
+       * card keeps its full readable width — three columns under ~1024px
+       * would otherwise compress dense forms (date inputs, currency
+       * fields) into unreadable strips.
        */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="space-y-6 lg:col-span-7">
-          <div className="rounded-card bg-secondary p-5">
-            <MetaColumn
-              policy={policy}
-              beneficiaries={beneficiaries}
-              members={members}
-              assets={assets}
-              onPolicyUpdate={refreshPolicy}
-            />
-          </div>
-
-          <div className="rounded-card bg-secondary p-5">
-            <CoverageSection
-              policyId={policy.id}
-              items={coverageItems}
-              onItemsChange={(items) => {
-                setCoverageItems(items);
-                void refreshCoverage();
-              }}
-            />
-          </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="rounded-card bg-secondary p-5">
+          <MetaColumn
+            policy={policy}
+            beneficiaries={beneficiaries}
+            members={members}
+            assets={assets}
+            onPolicyUpdate={refreshPolicy}
+          />
         </div>
 
-        <div className="space-y-6 lg:col-span-5">
+        <div className="rounded-card bg-secondary p-5">
+          <CoverageSection
+            policyId={policy.id}
+            items={coverageItems}
+            onItemsChange={(items) => {
+              setCoverageItems(items);
+              void refreshCoverage();
+            }}
+          />
+        </div>
+
+        <div className="space-y-6">
           <div className="rounded-card bg-secondary p-5">
             <TimelineColumn policy={policy} />
           </div>
