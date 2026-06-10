@@ -66,18 +66,18 @@ function TagInput({
   }, [inputValue, addTag]);
 
   return (
-    <div className="flex flex-wrap gap-1.5 rounded-md border border-border hover:border-foreground/20 bg-secondary px-3 py-2 min-h-[80px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+    <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border hover:border-foreground/20 bg-secondary px-3 py-2 min-h-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       {value.map((tag, index) => (
         <Badge
           key={index}
           variant="secondary"
-          className="gap-1 pr-1"
+          className="h-6 gap-1 pl-2 pr-1 py-0"
         >
           {tag}
           <button
             type="button"
             onClick={() => removeTag(index)}
-            className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-sm hover:bg-muted-foreground/20"
           >
             <X className="h-3 w-3" />
             <span className="sr-only">删除 {tag}</span>
