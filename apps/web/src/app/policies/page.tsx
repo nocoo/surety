@@ -665,6 +665,15 @@ export default function PoliciesPage() {
                       title={`状态: ${status.label}`}
                     >
                       <TableCell>
+                        {/*
+                         * Status is conveyed by the row's left-border
+                         * stripe (color), and by the title attribute
+                         * (mouse-only). Add an sr-only text node so
+                         * keyboard / touch / screen-reader users get
+                         * the same information without depending on
+                         * color or hover.
+                         */}
+                        <span className="sr-only">状态: {status.label}.</span>
                         {/* Type as colored dot + plain label — same info
                             as the previous <Badge> but ~60% less ink. */}
                         <div className="flex items-center gap-1.5">
