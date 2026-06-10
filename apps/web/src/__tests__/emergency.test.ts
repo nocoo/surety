@@ -12,7 +12,7 @@ function makePolicy(over: Partial<PolicyCoverageCard>): PolicyCoverageCard {
     insurerName: "中国人寿",
     insurerPhone: "95519",
     category: "Life",
-    categoryLabel: "寿险",
+    categoryLabel: "定期寿",
     categoryVariant: "default",
     subCategory: null,
     sumAssured: 1_000_000,
@@ -45,7 +45,7 @@ describe("buildEmergencyContacts", () => {
   });
 
   it("dedupes by (insurer, phone) across all policies", () => {
-    const g = group("寿险", [
+    const g = group("定期寿", [
       makePolicy({ id: 1, insurerName: "中国人寿", insurerPhone: "95519" }),
       makePolicy({ id: 2, insurerName: "中国人寿", insurerPhone: "95519" }),
       makePolicy({ id: 3, insurerName: "平安", insurerPhone: "95511" }),
@@ -57,14 +57,14 @@ describe("buildEmergencyContacts", () => {
   });
 
   it("skips inactive policies entirely", () => {
-    const g = group("寿险", [
+    const g = group("定期寿", [
       makePolicy({ id: 1, isActive: false }),
     ]);
     expect(buildEmergencyContacts([g])).toEqual([]);
   });
 
   it("skips missing/blank phones", () => {
-    const g = group("寿险", [
+    const g = group("定期寿", [
       makePolicy({ id: 1, insurerName: "A", insurerPhone: null }),
       makePolicy({ id: 2, insurerName: "B", insurerPhone: "   " }),
       makePolicy({ id: 3, insurerName: "C", insurerPhone: "95511" }),
@@ -74,7 +74,7 @@ describe("buildEmergencyContacts", () => {
   });
 
   it("sorts by insurer name (zh-CN)", () => {
-    const g = group("寿险", [
+    const g = group("定期寿", [
       makePolicy({ id: 1, insurerName: "平安", insurerPhone: "95511" }),
       makePolicy({ id: 2, insurerName: "中国人寿", insurerPhone: "95519" }),
       makePolicy({ id: 3, insurerName: "太平洋", insurerPhone: "95500" }),
@@ -93,7 +93,7 @@ describe("buildCoverageClipboardText", () => {
 
   it("groups by category and emits a grand total", () => {
     const groups: CategoryGroup[] = [
-      group("寿险", [
+      group("定期寿", [
         makePolicy({ id: 1, productName: "终身寿", sumAssured: 1_000_000 }),
       ]),
       group("医疗险", [
@@ -102,7 +102,7 @@ describe("buildCoverageClipboardText", () => {
     ];
     const text = buildCoverageClipboardText("张伟", groups);
     expect(text).toContain("【张伟 · 保障速查】");
-    expect(text).toContain("▎寿险");
+    expect(text).toContain("▎定期寿");
     expect(text).toContain("终身寿");
     expect(text).toContain("百万医疗");
     expect(text).toContain("合计保额：600万");
@@ -110,7 +110,7 @@ describe("buildCoverageClipboardText", () => {
 
   it("skips inactive policies", () => {
     const groups: CategoryGroup[] = [
-      group("寿险", [
+      group("定期寿", [
         makePolicy({ id: 1, productName: "active", isActive: true }),
         makePolicy({ id: 2, productName: "lapsed", isActive: false }),
       ]),

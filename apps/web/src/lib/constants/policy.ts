@@ -41,7 +41,7 @@ export function statusStripeClass(status: PolicyStatus): string {
  * the policy-sheet form's category Select to render the option list.
  */
 export const categoryLabels: Record<string, string> = {
-  Life: "寿险",
+  Life: "定期寿",
   CriticalIllness: "重疾险",
   Medical: "医疗险",
   Accident: "意外险",

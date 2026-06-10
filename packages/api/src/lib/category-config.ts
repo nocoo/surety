@@ -20,7 +20,7 @@ export interface CategoryConfig {
  */
 export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
   Life: {
-    label: "寿险",
+    label: "定期寿",
     variant: "info",
     accentClass: "text-info",
     accentSoftClass: "bg-info/10 text-info",

@@ -53,7 +53,7 @@ describe("buildChips", () => {
     );
     expect(chips).toHaveLength(1);
     expect(chips[0]?.key).toBe("category");
-    expect(chips[0]?.display("Life")).toBe("寿险");
+    expect(chips[0]?.display("Life")).toBe("定期寿");
   });
 
   it("resolves status to its human label", () => {

@@ -35,7 +35,7 @@ function makeCharts(over: Partial<DashboardCharts> = {}): DashboardCharts {
 function cat(over: Partial<CategoryData>): CategoryData {
   return {
     category: "Life",
-    label: "寿险",
+    label: "定期寿",
     count: 0,
     premium: 0,
     sumAssured: 0,
@@ -44,7 +44,7 @@ function cat(over: Partial<CategoryData>): CategoryData {
 }
 
 function cov(over: Partial<CoverageData>): CoverageData {
-  return { label: "寿险", sumAssured: 0, ...over };
+  return { label: "定期寿", sumAssured: 0, ...over };
 }
 
 describe("createStatCards", () => {
@@ -62,7 +62,7 @@ describe("createStatCards", () => {
       baseStats,
       makeCharts({
         premiumByCategory: [
-          cat({ label: "寿险", count: 3 }),
+          cat({ label: "定期寿", count: 3 }),
           cat({ label: "重疾险", count: 7 }),
           cat({ label: "意外险", count: 2 }),
         ],
@@ -94,13 +94,13 @@ describe("createStatCards", () => {
       baseStats,
       makeCharts({
         premiumByCategory: [
-          cat({ label: "寿险", premium: 30_000 }),
+          cat({ label: "定期寿", premium: 30_000 }),
           cat({ label: "重疾险", premium: 20_000 }),
         ],
       }),
     );
     // 30000 / 50000 = 60%
-    expect(cards[2]?.sub).toBe("寿险占 60%");
+    expect(cards[2]?.sub).toBe("定期寿占 60%");
   });
 
   it("总保额: percentage share of the dominant category", () => {
@@ -109,7 +109,7 @@ describe("createStatCards", () => {
       makeCharts({
         coverageByCategory: [
           cov({ label: "重疾险", sumAssured: 5_000_000 }),
-          cov({ label: "寿险", sumAssured: 1_000_000 }),
+          cov({ label: "定期寿", sumAssured: 1_000_000 }),
         ],
       }),
     );
@@ -134,7 +134,7 @@ describe("createStatCards", () => {
       baseStats,
       makeCharts({
         premiumByCategory: [
-          cat({ label: "寿险", count: 0 }),
+          cat({ label: "定期寿", count: 0 }),
           cat({ label: "重疾险", count: 0 }),
         ],
       }),

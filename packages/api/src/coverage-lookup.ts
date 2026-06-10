@@ -129,7 +129,7 @@ export const CATEGORY_ORDER: PolicyCategory[] = [
   "Accident",      // 意外险 - emergency focus
   "Medical",       // 医疗险
   "CriticalIllness", // 重疾险
-  "Life",          // 寿险
+  "Life",          // 定期寿
   "Annuity",       // 年金险
   "Property",      // 财产险
 ];

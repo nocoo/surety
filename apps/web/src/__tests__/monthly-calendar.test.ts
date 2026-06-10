@@ -38,9 +38,9 @@ describe("buildMonthGrid", () => {
 describe("bucketEventsByDay", () => {
   it("groups RenewalItems by day-of-month from nextDueDate", () => {
     const items = [
-      { id: 1, productName: "A", category: "Life", categoryLabel: "寿险", premium: 100, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
-      { id: 2, productName: "B", category: "Life", categoryLabel: "寿险", premium: 200, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "李雷", isSavings: false },
-      { id: 3, productName: "C", category: "Life", categoryLabel: "寿险", premium: 300, nextDueDate: "2026-03-15", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
+      { id: 1, productName: "A", category: "Life", categoryLabel: "定期寿", premium: 100, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
+      { id: 2, productName: "B", category: "Life", categoryLabel: "定期寿", premium: 200, nextDueDate: "2026-03-05", daysUntilDue: 0, insuredMemberName: "李雷", isSavings: false },
+      { id: 3, productName: "C", category: "Life", categoryLabel: "定期寿", premium: 300, nextDueDate: "2026-03-15", daysUntilDue: 0, insuredMemberName: "张伟", isSavings: false },
     ];
     const result = bucketEventsByDay(items);
     expect(result.size).toBe(2);
@@ -50,7 +50,7 @@ describe("bucketEventsByDay", () => {
 
   it("ignores items whose nextDueDate slice yields a non-numeric day", () => {
     const items = [
-      { id: 1, productName: "A", category: "Life", categoryLabel: "寿险", premium: 100, nextDueDate: "bad", daysUntilDue: 0, insuredMemberName: "x", isSavings: false },
+      { id: 1, productName: "A", category: "Life", categoryLabel: "定期寿", premium: 100, nextDueDate: "bad", daysUntilDue: 0, insuredMemberName: "x", isSavings: false },
     ];
     expect(bucketEventsByDay(items).size).toBe(0);
   });

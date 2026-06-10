@@ -582,7 +582,7 @@ export default function PoliciesPage() {
           <EmptyState
             icon={Shield}
             title="还没有保单"
-            description="为家人守护从录入第一份保单开始 —— 健康险、寿险、车险、房屋险都可以在这里集中管理"
+            description="为家人守护从录入第一份保单开始 —— 健康险、定期寿、车险、房屋险都可以在这里集中管理"
             action={
               <Button onClick={() => setSheetOpen(true)}>
                 <Plus className="h-4 w-4 mr-1.5" />

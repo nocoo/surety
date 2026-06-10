@@ -7,7 +7,7 @@ import { parseLocalDate, formatLocalDate } from "@surety/db/lib/date-utils";
 
 // Category labels
 export const CATEGORY_LABELS: Record<string, string> = {
-  Life: "寿险",
+  Life: "定期寿",
   CriticalIllness: "重疾险",
   Medical: "医疗险",
   Accident: "意外险",

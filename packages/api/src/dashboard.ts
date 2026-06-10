@@ -4,7 +4,7 @@ import type { AllRepos } from "@surety/db/repositories";
 import { isSavingsPolicy } from "./renewal-calendar";
 
 const categoryLabels: Record<string, string> = {
-  Life: "寿险",
+  Life: "定期寿",
   CriticalIllness: "重疾险",
   Medical: "医疗险",
   Accident: "意外险",
