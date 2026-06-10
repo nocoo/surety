@@ -1,10 +1,10 @@
 
 import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarColor } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getMemberAvatarColors, getNameInitial } from "@surety/api/lib/category-config";
+import { getNameInitial } from "@surety/api/lib/category-config";
 import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
 
 interface MemberSelectorProps {
@@ -77,7 +77,11 @@ export function MemberSelector({
       >
         {members.map((member) => {
           const isSelected = member.id === selectedMemberId;
-          const colors = getMemberAvatarColors(member.name);
+          // Use the web's verified-contrast avatar palette (bg-avatar-N,
+          // each ≥ 5.3:1 vs white). The packages/api MEMBER_AVATAR_COLORS
+          // table mixed bg+fg pairs which produced unreadable cards for
+          // names that hashed onto fg ≠ white slots.
+          const bgClass = getAvatarColor(member.name);
 
           return (
             <button
@@ -91,7 +95,7 @@ export function MemberSelector({
               )}
             >
               <Avatar size="lg">
-                <AvatarFallback className={cn(colors.bg, colors.text)}>
+                <AvatarFallback className={cn(bgClass, "text-white")}>
                   {getNameInitial(member.name)}
                 </AvatarFallback>
               </Avatar>

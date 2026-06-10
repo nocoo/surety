@@ -6,9 +6,9 @@ import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { formatCurrency } from "@/lib/chart-config";
 import {
   getCategoryConfig,
-  getMemberAvatarColors,
   getNameInitial,
 } from "@surety/api/lib/category-config";
+import { cn, getAvatarColor } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,14 +18,17 @@ interface MonthlyDetailsProps {
 
 function RenewalRow({ item }: { item: RenewalItem }) {
   const navigate = useNavigate();
-  const avatarColors = getMemberAvatarColors(item.insuredMemberName);
+  // Web's verified-contrast avatar palette — every slot is white-on-color
+  // safe, so we don't get pale-name + light-bg combinations like the old
+  // packages/api MEMBER_AVATAR_COLORS could produce.
+  const bgClass = getAvatarColor(item.insuredMemberName);
   const categoryConfig = getCategoryConfig(item.category);
 
   return (
     <div className="flex items-center gap-3 py-3 pl-10 pr-4 hover:bg-muted/50 border-b border-border/50 last:border-0">
       {/* Member Avatar */}
       <Avatar size="sm">
-        <AvatarFallback className={`${avatarColors.bg} ${avatarColors.text}`}>
+        <AvatarFallback className={cn(bgClass, "text-white")}>
           {getNameInitial(item.insuredMemberName)}
         </AvatarFallback>
       </Avatar>

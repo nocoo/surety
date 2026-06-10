@@ -181,7 +181,7 @@ export default function CoverageLookupPage() {
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>
-      <div className="space-y-8">
+      <div className="space-y-5">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
