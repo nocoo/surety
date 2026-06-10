@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { CalendarDays } from "lucide-react";
 import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { cn } from "@/lib/utils";
@@ -27,18 +27,49 @@ interface MonthlyCalendarProps {
  * days in 九月 do I owe a premium". Both views consume the same
  * MonthlyRenewal[] from the API, no extra fetch.
  *
- * Click behavior:
- *   - day with 1 event → navigate straight to /policies/<id>
- *   - day with 2+ events → open a Dialog listing all events for that
- *     day; the user picks one to drill into. Avoids "click a day with
- *     3 renewals, only see one" surprise from the previous version.
+ * Click behaviour: any day with at least one event opens the same
+ * Dialog (was: single-event days jumped straight to the policy). The
+ * dialog is the single drill-down surface — even a single event is
+ * worth a quick preview before committing to a navigation.
+ *
+ * Dialog open state lives in the URL (?day=YYYY-MM-DD) so:
+ *   - The browser back button closes the dialog instead of leaving
+ *     the page.
+ *   - Sharing the URL deep-links to the same dialog.
+ *   - Coming back from a policy detail page via the "返回续保日历"
+ *     button restores the same open dialog.
  */
 export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
-  const [activeDay, setActiveDay] = useState<{
-    date: string;
-    monthLabel: string;
-    events: RenewalItem[];
-  } | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dayParam = searchParams.get("day");
+
+  // Resolve the URL `day` to a real bucket from `data`. If the value is
+  // garbage or points to a day with no events, the dialog stays closed
+  // (we don't want to surface an empty bucket from a bad share link).
+  const activeDay = useMemo(() => {
+    if (!dayParam) return null;
+    const monthKey = dayParam.slice(0, 7); // YYYY-MM
+    const dayNum = Number(dayParam.slice(8, 10));
+    if (!monthKey || !dayNum) return null;
+    const month = data.find((m) => m.month === monthKey);
+    if (!month) return null;
+    const events = month.items.filter((it) => Number(it.nextDueDate.slice(8, 10)) === dayNum);
+    if (events.length === 0) return null;
+    return { date: dayParam, monthLabel: month.monthLabel, events };
+  }, [data, dayParam]);
+
+  function openDay(monthKey: string, day: number) {
+    const date = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const next = new URLSearchParams(searchParams);
+    next.set("day", date);
+    setSearchParams(next);
+  }
+
+  function closeDay() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("day");
+    setSearchParams(next);
+  }
 
   if (data.length === 0) {
     return (
@@ -57,21 +88,12 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
           <MonthCalendar
             key={month.month}
             month={month}
-            onPickDay={(events, day) =>
-              setActiveDay({
-                date: `${month.month}-${String(day).padStart(2, "0")}`,
-                monthLabel: month.monthLabel,
-                events,
-              })
-            }
+            onPickDay={(_events, day) => openDay(month.month, day)}
           />
         ))}
       </div>
 
-      <DayEventsDialog
-        active={activeDay}
-        onClose={() => setActiveDay(null)}
-      />
+      <DayEventsDialog active={activeDay} onClose={closeDay} />
     </div>
   );
 }
@@ -182,8 +204,6 @@ function DayCell({
   events: RenewalItem[];
   onPickDay: (events: RenewalItem[], day: number) => void;
 }) {
-  const navigate = useNavigate();
-
   if (day === null) {
     return <span aria-hidden="true" className="aspect-square" />;
   }
@@ -196,26 +216,20 @@ function DayCell({
     );
   }
 
-  const single = events.length === 1;
-  // Multi-event days open the dialog so all renewals on that day are
-  // visible — clicking the button on a 3-event day used to jump to
-  // event[0] only.
-  const onClick = () => {
-    if (single) {
-      const target = events[0]?.id;
-      if (target != null) navigate(`/policies/${target}`);
-    } else {
-      onPickDay(events, day);
-    }
-  };
+  // Every event-day opens the preview dialog — even a single renewal.
+  // Surfaces a quick "what is this and how much" preview before the
+  // user commits to a full navigation, and keeps the URL stable so
+  // back-button + share-link work consistently.
+  const onClick = () => onPickDay(events, day);
 
   const total = events.reduce((sum, e) => sum + e.premium, 0);
   const tooltip = events
     .map((e) => `${e.productName} (${e.insuredMemberName}) · ${formatCurrency(e.premium)}`)
     .join("\n");
-  const ariaLabel = single
-    ? `${day} 日：${events[0]?.productName}`
-    : `${day} 日：${events.length} 笔续费，点击查看`;
+  const ariaLabel =
+    events.length === 1
+      ? `${day} 日：${events[0]?.productName}，点击查看`
+      : `${day} 日：${events.length} 笔续费，点击查看`;
 
   return (
     <button
@@ -245,13 +259,20 @@ interface DayEventsDialogProps {
 }
 
 /**
- * Dialog opened by clicking a multi-event day cell. Lists every renewal
- * on that calendar day with category badge, member, premium, and a
- * link into the policy detail. Closing the dialog returns the user to
- * the calendar — preserves nav-stack expectations vs. a hard navigate.
+ * Dialog opened by clicking any event day. Lists every renewal on that
+ * calendar day with category badge, member, premium, and a link into
+ * the policy detail. Closing the dialog returns the user to the
+ * calendar — preserves nav-stack expectations vs. a hard navigate.
+ *
+ * When the user picks an item the navigate() carries a `from` state
+ * carrying the original page+query so policy-detail's back button can
+ * round-trip the user straight back to the same dialog (see
+ * apps/web/src/app/policies/[id]/page.tsx — Back button reads
+ * location.state?.from and falls back to /policies).
  */
 function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   return (
     <Dialog
@@ -284,7 +305,19 @@ function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      navigate(`/policies/${event.id}`);
+                      // Carry the current renewal-calendar URL (including
+                      // ?day=...) so the policy detail page's back button
+                      // can return the user to the same open dialog
+                      // instead of dumping them on /policies.
+                      navigate(`/policies/${event.id}`, {
+                        state: {
+                          from: {
+                            pathname: "/renewal-calendar",
+                            search: `?${searchParams.toString()}`,
+                            label: "返回续保日历",
+                          },
+                        },
+                      });
                       onClose();
                     }}
                     className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left hover:bg-muted/40 rounded transition-colors"

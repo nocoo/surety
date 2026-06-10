@@ -1,6 +1,6 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/layout";
 import { PolicyDetailSkeleton } from "@/components/skeletons";
@@ -11,10 +11,37 @@ import { CoverageSection } from "@/components/policy-detail/coverage-section";
 import { PaymentsSection } from "@/components/policy-detail/payments-section";
 import type { PolicyDetail, CoverageItem, Beneficiary, Payment } from "@/lib/types/policy";
 
+/**
+ * Optional referrer info attached to navigate(state) when the user
+ * enters this page from a list/dialog that wants the back button to
+ * round-trip them home (e.g. the renewal calendar's day-events dialog
+ * passes { pathname, search, label: "返回续保日历" } so closing the
+ * detail returns to the same open dialog).
+ */
+interface BackRef {
+  pathname: string;
+  search?: string;
+  label: string;
+}
+
 export default function PolicyDetailPage() {
   const params = useParams<"id">();
   const navigate = useNavigate();
+  const location = useLocation();
   const policyId = parseInt(params.id ?? "0", 10);
+
+  // The back-link target: explicit referrer from navigate-state wins,
+  // else fall back to /policies. useMemo so consumers don't re-resolve
+  // each render.
+  const back = useMemo<BackRef>(() => {
+    const state = location.state as { from?: BackRef } | null;
+    if (state?.from?.pathname && state.from.label) return state.from;
+    return { pathname: "/policies", label: "返回保单列表" };
+  }, [location.state]);
+
+  const goBack = useCallback(() => {
+    navigate(`${back.pathname}${back.search ?? ""}`);
+  }, [navigate, back]);
 
   const [policy, setPolicy] = useState<PolicyDetail | null>(null);
   const [coverageItems, setCoverageItems] = useState<CoverageItem[]>([]);
@@ -94,9 +121,9 @@ export default function PolicyDetailPage() {
       <AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: "错误" }]}>
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <p className="text-muted-foreground">{error ?? "保单不存在"}</p>
-          <Button variant="outline" onClick={() => navigate("/policies")}>
+          <Button variant="outline" onClick={goBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            返回保单列表
+            {back.label}
           </Button>
         </div>
       </AppShell>
@@ -106,9 +133,9 @@ export default function PolicyDetailPage() {
   return (
     <AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: policy.productName }]}>
       <div className="mb-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/policies")}>
+        <Button variant="ghost" size="sm" onClick={goBack}>
           <ArrowLeft className="h-4 w-4 mr-1.5" />
-          返回保单列表
+          {back.label}
         </Button>
       </div>
 
