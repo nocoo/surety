@@ -38,7 +38,7 @@ test.describe("coverage-lookup page", () => {
       page.getByRole("heading", { level: 1, name: "保障速查" }),
     ).toBeVisible({ timeout: 10_000 });
 
-    const assetBtn = page.getByRole("button", { name: /资产/ });
+    const assetBtn = page.getByRole("tab", { name: /资产/ });
     await assetBtn.click();
 
     // After switching to asset tab, should show asset selector
@@ -55,13 +55,13 @@ test.describe("coverage-lookup page", () => {
     ).toBeVisible({ timeout: 10_000 });
 
     // Switch to asset
-    await page.getByRole("button", { name: /资产/ }).click();
+    await page.getByRole("tab", { name: /资产/ }).click();
     await expect(page.getByText("L3种子公寓").first()).toBeVisible({
       timeout: 10_000,
     });
 
     // Switch back to member
-    await page.getByRole("button", { name: /家庭成员/ }).click();
+    await page.getByRole("tab", { name: /家庭成员/ }).click();
     await expect(page.getByText("测试家庭成员").first()).toBeVisible({
       timeout: 10_000,
     });
