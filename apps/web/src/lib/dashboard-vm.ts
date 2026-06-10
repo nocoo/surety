@@ -15,10 +15,14 @@ export interface DashboardStats {
    * savings vehicles like annuities and 增额终身寿). Used by the
    * dashboard's coverage-health card so the "% of household income"
    * metric reflects actual risk-coverage spend, not forced savings.
+   *
+   * Optional because rolling deploys briefly serve a web bundle that
+   * expects this field against a worker that doesn't yet emit it.
+   * Callers should fall back to `totalPremium` when undefined.
    */
-  protectionPremium: number;
-  /** Premium spent on savings-type policies. Sum = totalPremium. */
-  savingsPremium: number;
+  protectionPremium?: number;
+  /** Premium spent on savings-type policies. Optional, see above. */
+  savingsPremium?: number;
   totalSumAssured: number;
 }
 

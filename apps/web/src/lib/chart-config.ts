@@ -89,9 +89,16 @@ export const BAR_RADIUS = {
 } as const;
 
 /**
- * Format currency for display
+ * Format currency for display.
+ *
+ * Defensive against `undefined` / `null` / `NaN` so a missing field
+ * from a stale backend can't crash the dashboard with `Cannot read
+ * properties of undefined (reading 'toLocaleString')`. Most call
+ * sites do pre-check, but the dashboard joins multiple stats and one
+ * stale rollout broke it once.
  */
-export function formatCurrency(value: number): string {
+export function formatCurrency(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "¥0";
   if (value >= 10000) {
     return `¥${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
   }

@@ -157,8 +157,11 @@ export function DashboardContent({ data }: { data: DashboardData }) {
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <CoverageHealthCard
-              protectionPremium={data.stats.protectionPremium}
-              savingsPremium={data.stats.savingsPremium}
+              // Fallback to totalPremium when the backend hasn't yet
+              // shipped the protectionPremium/savingsPremium split
+              // (rolling deploy: web bundle leads worker by a refresh).
+              protectionPremium={data.stats.protectionPremium ?? data.stats.totalPremium}
+              savingsPremium={data.stats.savingsPremium ?? 0}
             />
           </div>
           <div className="lg:col-span-2">
