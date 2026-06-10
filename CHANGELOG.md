@@ -428,6 +428,21 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.1.1
+
+### Added
+- Add WholeLife (终身寿) policy category
+
+### Changed
+- MAJOR @types/node 22.19.20 → 25.9.2
+- MAJOR eslint 9.39.4 → 10.4.1
+- MAJOR vite 6→8 + @vitejs/plugin-react 4→6
+- Batch minor/patch upgrades + eslint ignore .wrangler/coverage
+- Policy detail page → 1:1:1 three-column layout
+
+### Fixed
+- Align Playwright e2e with current dashboard / coverage UI
+
 ## v2.1.0
 
 ### Added
