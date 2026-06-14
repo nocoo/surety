@@ -3,6 +3,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { accessAuth } from "./middleware/access-auth";
 import { apiKeyAuth } from "./middleware/api-key-auth";
 import { dbMiddleware } from "./middleware/db";
+import { originGuard } from "./middleware/origin-guard";
 import liveRoutes from "./routes/live";
 import membersRoutes from "./routes/members";
 import policiesRoutes from "./routes/policies";
@@ -28,6 +29,7 @@ app.use("*", secureHeaders());
 app.use("/api/*", dbMiddleware);
 app.use("/api/*", accessAuth);
 app.use("/api/*", apiKeyAuth);
+app.use("/api/*", originGuard);
 
 app.route("/", liveRoutes);
 app.route("/", membersRoutes);
