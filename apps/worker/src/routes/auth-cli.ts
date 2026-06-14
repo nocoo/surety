@@ -46,18 +46,24 @@ export function isLocalhostUrl(value: string): boolean {
  *     already have a token) have no reason to call this endpoint and are
  *     rejected with 400 to avoid issuing a token without a known owner.
  *   - The handler also requires the request to look like a real top-level
- *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document).
- *     Without this, a malicious cross-origin page could embed the mint URL
- *     via <img>/<script>/<iframe>; the victim's CF Access cookie would
- *     auto-attach and a token would be minted to whatever loopback URL the
- *     attacker chose. Top-level navigations are what `openBrowser()` from
- *     the CLI actually produces. Requests without Sec-Fetch headers (old
- *     clients, curl) are allowed through — those are not the attack
- *     surface, since the attack requires a victim browser, and any modern
- *     browser sends Sec-Fetch-* on every request.
+ *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document) AND
+ *     to NOT originate from a cross-site context (Sec-Fetch-Site != cross-site).
+ *     Without the mode/dest check, a malicious cross-origin page could embed
+ *     the mint URL via <img>/<script>/<iframe>; without the site check, an
+ *     attacker page could still cause a top-level cross-site navigation via
+ *     window.open / <a target="_blank"> / form POST, and the victim's CF
+ *     Access cookie would auto-attach. Real entry points (CLI openBrowser,
+ *     user typing URL, bookmark) all produce Sec-Fetch-Site: none. The CF
+ *     Access redirect chain preserves the original navigation's
+ *     Sec-Fetch-Site per the fetch spec, so legitimate flows still pass.
+ *     Requests without Sec-Fetch headers (old clients, curl) are allowed
+ *     through — those are not the attack surface, since the attack requires
+ *     a victim browser, and any modern browser sends Sec-Fetch-* on every
+ *     request.
  */
 const SAFE_FETCH_MODES = new Set(["navigate"]);
 const SAFE_FETCH_DESTS = new Set(["document"]);
+const SAFE_FETCH_SITES = new Set(["none", "same-origin", "same-site"]);
 
 app.get("/api/auth/cli", async (c) => {
   const callbackUrl =
@@ -71,14 +77,17 @@ app.get("/api/auth/cli", async (c) => {
     return c.json({ error: "callback_url must be a localhost URL" }, 400);
   }
 
-  // If Sec-Fetch-* headers are present (modern browsers always send them on
-  // top-level navigations), require navigation + document. Reject embedded
-  // contexts (image/script/iframe) outright. Absent headers fall through
-  // for backwards compatibility with curl-style direct CLI flows; this is
-  // not the attack surface — a real browser victim is always sending them.
+  // If Sec-Fetch-* headers are present (modern browsers always send them),
+  // require all three of: navigation, document destination, and a non-
+  // cross-site initiator. Reject embedded contexts (image/script/iframe)
+  // AND top-level cross-site navigations (window.open / target="_blank"
+  // from an attacker page). Absent headers fall through for backwards
+  // compatibility with curl-style direct CLI flows; this is not the attack
+  // surface — a real browser victim is always sending them.
   const fetchMode = c.req.header("Sec-Fetch-Mode");
   const fetchDest = c.req.header("Sec-Fetch-Dest");
-  if (fetchMode || fetchDest) {
+  const fetchSite = c.req.header("Sec-Fetch-Site");
+  if (fetchMode || fetchDest || fetchSite) {
     if (!SAFE_FETCH_MODES.has(fetchMode ?? "")) {
       return c.json(
         { error: "CLI token mint requires a top-level navigation" },
@@ -88,6 +97,14 @@ app.get("/api/auth/cli", async (c) => {
     if (!SAFE_FETCH_DESTS.has(fetchDest ?? "")) {
       return c.json(
         { error: "CLI token mint requires a top-level navigation" },
+        400,
+      );
+    }
+    // Empty Sec-Fetch-Site is treated as cross-site to be safe — a browser
+    // that sent the other two headers but omitted this one is anomalous.
+    if (!SAFE_FETCH_SITES.has(fetchSite ?? "")) {
+      return c.json(
+        { error: "CLI token mint cannot be triggered cross-site" },
         400,
       );
     }
