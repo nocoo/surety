@@ -153,4 +153,109 @@ describe("GET /api/auth/cli", () => {
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("state")).toBe("abc");
   });
+
+  test("rejects request with Sec-Fetch-Mode=no-cors (image/script embed) with 400", async () => {
+    // Embedded contexts must never be allowed to trigger CLI token mint —
+    // they would let a malicious cross-origin page silently issue a token
+    // bound to the victim's CF Access cookie and 302 it to a controlled
+    // loopback listener.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "no-cors",
+          "sec-fetch-dest": "image",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request with Sec-Fetch-Mode=cors (fetch/XHR) with 400", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "cors",
+          "sec-fetch-dest": "empty",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request with Sec-Fetch-Dest=iframe with 400", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "iframe",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("accepts request with Sec-Fetch-Mode=navigate + Dest=document", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb") +
+        "&state=nav",
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+        },
+      },
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get("location") ?? "");
+    expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
+    expect(url.searchParams.get("state")).toBe("nav");
+    expect(minted).toEqual([{ email: "alice@example.com", name: "CLI" }]);
+  });
+
+  test("legacy clients without Sec-Fetch headers are still allowed", async () => {
+    // curl / older browsers don't emit Sec-Fetch-*; those aren't the
+    // attack surface (the attack requires a victim browser, all of which
+    // send Sec-Fetch-* today).
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+    );
+    expect(res.status).toBe(302);
+    expect(minted).toEqual([{ email: "alice@example.com", name: "CLI" }]);
+  });
 });

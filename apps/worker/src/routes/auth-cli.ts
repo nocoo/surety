@@ -34,14 +34,31 @@ export function isLocalhostUrl(value: string): boolean {
  *
  * Security:
  *   - callback_url must point to http://127.0.0.1:* or http://localhost:*.
- *   - `state` is echoed back unchanged for CSRF defense.
+ *   - `state` is echoed back unchanged. The CLI side (@nocoo/cli-base's
+ *     performLogin) generates the nonce, stores it in the local loopback
+ *     listener, and compares it against the `state` query param on the
+ *     callback hit — that is where CSRF binding lives. The server has no
+ *     persisted record of the nonce and cannot validate it on its own.
  *   - An authenticated Access session OR a valid Bearer token is required to
  *     reach this handler (middleware enforces). If neither is present the
  *     request is already rejected upstream.
  *   - Minting requires a verified Access email. Bearer-only callers (who
  *     already have a token) have no reason to call this endpoint and are
  *     rejected with 400 to avoid issuing a token without a known owner.
+ *   - The handler also requires the request to look like a real top-level
+ *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document).
+ *     Without this, a malicious cross-origin page could embed the mint URL
+ *     via <img>/<script>/<iframe>; the victim's CF Access cookie would
+ *     auto-attach and a token would be minted to whatever loopback URL the
+ *     attacker chose. Top-level navigations are what `openBrowser()` from
+ *     the CLI actually produces. Requests without Sec-Fetch headers (old
+ *     clients, curl) are allowed through — those are not the attack
+ *     surface, since the attack requires a victim browser, and any modern
+ *     browser sends Sec-Fetch-* on every request.
  */
+const SAFE_FETCH_MODES = new Set(["navigate"]);
+const SAFE_FETCH_DESTS = new Set(["document"]);
+
 app.get("/api/auth/cli", async (c) => {
   const callbackUrl =
     c.req.query("callback_url") ?? c.req.query("callback");
@@ -52,6 +69,28 @@ app.get("/api/auth/cli", async (c) => {
   }
   if (!isLocalhostUrl(callbackUrl)) {
     return c.json({ error: "callback_url must be a localhost URL" }, 400);
+  }
+
+  // If Sec-Fetch-* headers are present (modern browsers always send them on
+  // top-level navigations), require navigation + document. Reject embedded
+  // contexts (image/script/iframe) outright. Absent headers fall through
+  // for backwards compatibility with curl-style direct CLI flows; this is
+  // not the attack surface — a real browser victim is always sending them.
+  const fetchMode = c.req.header("Sec-Fetch-Mode");
+  const fetchDest = c.req.header("Sec-Fetch-Dest");
+  if (fetchMode || fetchDest) {
+    if (!SAFE_FETCH_MODES.has(fetchMode ?? "")) {
+      return c.json(
+        { error: "CLI token mint requires a top-level navigation" },
+        400,
+      );
+    }
+    if (!SAFE_FETCH_DESTS.has(fetchDest ?? "")) {
+      return c.json(
+        { error: "CLI token mint requires a top-level navigation" },
+        400,
+      );
+    }
   }
 
   const email = c.get("accessEmail");
