@@ -296,6 +296,32 @@ describe("GET /api/auth/cli", () => {
     expect(minted.length).toBe(0);
   });
 
+  test("rejects same-site top-level navigation (no legitimate cousin-host initiator) with 400", async () => {
+    // We tightened the allowlist to {none, same-origin} — there is no
+    // legitimate same-site entry point for /api/auth/cli (no other
+    // hexly.ai subdomain links here), so admitting same-site would widen
+    // the surface to whatever cousin host could be planted on the
+    // registrable domain.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "same-site",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
   test("rejects request whose Sec-Fetch-Mode+Dest are present but Sec-Fetch-Site is missing", async () => {
     // A browser that sent the other two but omitted Sec-Fetch-Site is
     // anomalous — treat as cross-site to avoid leaving a bypass.

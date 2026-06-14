@@ -47,23 +47,32 @@ export function isLocalhostUrl(value: string): boolean {
  *     rejected with 400 to avoid issuing a token without a known owner.
  *   - The handler also requires the request to look like a real top-level
  *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document) AND
- *     to NOT originate from a cross-site context (Sec-Fetch-Site != cross-site).
- *     Without the mode/dest check, a malicious cross-origin page could embed
- *     the mint URL via <img>/<script>/<iframe>; without the site check, an
- *     attacker page could still cause a top-level cross-site navigation via
- *     window.open / <a target="_blank"> / form POST, and the victim's CF
- *     Access cookie would auto-attach. Real entry points (CLI openBrowser,
- *     user typing URL, bookmark) all produce Sec-Fetch-Site: none. The CF
- *     Access redirect chain preserves the original navigation's
- *     Sec-Fetch-Site per the fetch spec, so legitimate flows still pass.
- *     Requests without Sec-Fetch headers (old clients, curl) are allowed
- *     through — those are not the attack surface, since the attack requires
- *     a victim browser, and any modern browser sends Sec-Fetch-* on every
- *     request.
+ *     to NOT originate from a cross-site or same-site context (Sec-Fetch-Site
+ *     must be `none` or `same-origin`). Without the mode/dest check, a
+ *     malicious cross-origin page could embed the mint URL via
+ *     <img>/<script>/<iframe>; without the site check, an attacker page
+ *     could still cause a top-level cross-site navigation via window.open /
+ *     <a target="_blank"> / form POST, and the victim's CF Access cookie
+ *     would auto-attach. Real entry points (CLI openBrowser, user typing
+ *     URL, bookmark) all produce Sec-Fetch-Site: none; an in-app SPA link
+ *     produces same-origin. `same-site` is rejected because there is no
+ *     legitimate cousin-host initiator. The CF Access redirect chain
+ *     preserves the original navigation's Sec-Fetch-Site per the fetch
+ *     spec, so legitimate flows still pass. Requests without Sec-Fetch
+ *     headers (old clients, curl) are allowed through — those are not the
+ *     attack surface, since the attack requires a victim browser, and any
+ *     modern browser sends Sec-Fetch-* on every request.
  */
 const SAFE_FETCH_MODES = new Set(["navigate"]);
 const SAFE_FETCH_DESTS = new Set(["document"]);
-const SAFE_FETCH_SITES = new Set(["none", "same-origin", "same-site"]);
+// Only the entry points that actually drive `/api/auth/cli` produce these
+// values: `none` for CLI openBrowser / address-bar / bookmark, and
+// `same-origin` for a click from the surety SPA itself. `same-site` is not
+// enumerated because there is no legitimate same-site initiator (no other
+// hexly.ai subdomain links here), and admitting it would widen the surface
+// to whatever cousin host an attacker could plant on the registrable
+// domain. Tightened from a prior `same-site`-inclusive list per review.
+const SAFE_FETCH_SITES = new Set(["none", "same-origin"]);
 
 app.get("/api/auth/cli", async (c) => {
   const callbackUrl =
