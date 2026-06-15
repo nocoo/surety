@@ -34,14 +34,46 @@ export function isLocalhostUrl(value: string): boolean {
  *
  * Security:
  *   - callback_url must point to http://127.0.0.1:* or http://localhost:*.
- *   - `state` is echoed back unchanged for CSRF defense.
+ *   - `state` is echoed back unchanged. The CLI side (@nocoo/cli-base's
+ *     performLogin) generates the nonce, stores it in the local loopback
+ *     listener, and compares it against the `state` query param on the
+ *     callback hit — that is where CSRF binding lives. The server has no
+ *     persisted record of the nonce and cannot validate it on its own.
  *   - An authenticated Access session OR a valid Bearer token is required to
  *     reach this handler (middleware enforces). If neither is present the
  *     request is already rejected upstream.
  *   - Minting requires a verified Access email. Bearer-only callers (who
  *     already have a token) have no reason to call this endpoint and are
  *     rejected with 400 to avoid issuing a token without a known owner.
+ *   - The handler also requires the request to look like a real top-level
+ *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document) AND
+ *     to NOT originate from a cross-site or same-site context (Sec-Fetch-Site
+ *     must be `none` or `same-origin`). Without the mode/dest check, a
+ *     malicious cross-origin page could embed the mint URL via
+ *     <img>/<script>/<iframe>; without the site check, an attacker page
+ *     could still cause a top-level cross-site navigation via window.open /
+ *     <a target="_blank"> / form POST, and the victim's CF Access cookie
+ *     would auto-attach. Real entry points (CLI openBrowser, user typing
+ *     URL, bookmark) all produce Sec-Fetch-Site: none; an in-app SPA link
+ *     produces same-origin. `same-site` is rejected because there is no
+ *     legitimate cousin-host initiator. The CF Access redirect chain
+ *     preserves the original navigation's Sec-Fetch-Site per the fetch
+ *     spec, so legitimate flows still pass. Requests without Sec-Fetch
+ *     headers (old clients, curl) are allowed through — those are not the
+ *     attack surface, since the attack requires a victim browser, and any
+ *     modern browser sends Sec-Fetch-* on every request.
  */
+const SAFE_FETCH_MODES = new Set(["navigate"]);
+const SAFE_FETCH_DESTS = new Set(["document"]);
+// Only the entry points that actually drive `/api/auth/cli` produce these
+// values: `none` for CLI openBrowser / address-bar / bookmark, and
+// `same-origin` for a click from the surety SPA itself. `same-site` is not
+// enumerated because there is no legitimate same-site initiator (no other
+// hexly.ai subdomain links here), and admitting it would widen the surface
+// to whatever cousin host an attacker could plant on the registrable
+// domain. Tightened from a prior `same-site`-inclusive list per review.
+const SAFE_FETCH_SITES = new Set(["none", "same-origin"]);
+
 app.get("/api/auth/cli", async (c) => {
   const callbackUrl =
     c.req.query("callback_url") ?? c.req.query("callback");
@@ -52,6 +84,39 @@ app.get("/api/auth/cli", async (c) => {
   }
   if (!isLocalhostUrl(callbackUrl)) {
     return c.json({ error: "callback_url must be a localhost URL" }, 400);
+  }
+
+  // If Sec-Fetch-* headers are present (modern browsers always send them),
+  // require all three of: navigation, document destination, and a non-
+  // cross-site initiator. Reject embedded contexts (image/script/iframe)
+  // AND top-level cross-site navigations (window.open / target="_blank"
+  // from an attacker page). Absent headers fall through for backwards
+  // compatibility with curl-style direct CLI flows; this is not the attack
+  // surface — a real browser victim is always sending them.
+  const fetchMode = c.req.header("Sec-Fetch-Mode");
+  const fetchDest = c.req.header("Sec-Fetch-Dest");
+  const fetchSite = c.req.header("Sec-Fetch-Site");
+  if (fetchMode || fetchDest || fetchSite) {
+    if (!SAFE_FETCH_MODES.has(fetchMode ?? "")) {
+      return c.json(
+        { error: "CLI token mint requires a top-level navigation" },
+        400,
+      );
+    }
+    if (!SAFE_FETCH_DESTS.has(fetchDest ?? "")) {
+      return c.json(
+        { error: "CLI token mint requires a top-level navigation" },
+        400,
+      );
+    }
+    // Empty Sec-Fetch-Site is treated as cross-site to be safe — a browser
+    // that sent the other two headers but omitted this one is anomalous.
+    if (!SAFE_FETCH_SITES.has(fetchSite ?? "")) {
+      return c.json(
+        { error: "CLI token mint cannot be triggered cross-site" },
+        400,
+      );
+    }
   }
 
   const email = c.get("accessEmail");

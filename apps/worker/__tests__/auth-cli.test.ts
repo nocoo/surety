@@ -153,4 +153,211 @@ describe("GET /api/auth/cli", () => {
     expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
     expect(url.searchParams.get("state")).toBe("abc");
   });
+
+  test("rejects request with Sec-Fetch-Mode=no-cors (image/script embed) with 400", async () => {
+    // Embedded contexts must never be allowed to trigger CLI token mint —
+    // they would let a malicious cross-origin page silently issue a token
+    // bound to the victim's CF Access cookie and 302 it to a controlled
+    // loopback listener.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "no-cors",
+          "sec-fetch-dest": "image",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request with Sec-Fetch-Mode=cors (fetch/XHR) with 400", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "cors",
+          "sec-fetch-dest": "empty",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request with Sec-Fetch-Dest=iframe with 400", async () => {
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "iframe",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("accepts request with Sec-Fetch-Mode=navigate + Dest=document + Site=none", async () => {
+    // Sec-Fetch-Site=none is what `openBrowser()` and browser address-bar
+    // entries produce; this is the legitimate CLI happy path.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb") +
+        "&state=nav",
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "none",
+        },
+      },
+    );
+    expect(res.status).toBe(302);
+    const url = new URL(res.headers.get("location") ?? "");
+    expect(url.searchParams.get("api_key")).toBe("sk_freshly_minted");
+    expect(url.searchParams.get("state")).toBe("nav");
+    expect(minted).toEqual([{ email: "alice@example.com", name: "CLI" }]);
+  });
+
+  test("accepts request with Sec-Fetch-Site=same-origin (UI-initiated link)", async () => {
+    // A user clicking a link from the surety UI itself produces same-origin.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "same-origin",
+        },
+      },
+    );
+    expect(res.status).toBe(302);
+    expect(minted.length).toBe(1);
+  });
+
+  test("rejects cross-site top-level navigation (window.open from attacker) with 400", async () => {
+    // The exact attack the reviewer flagged: attacker.com opens a new tab /
+    // popup pointing at /api/auth/cli with their own loopback callback. The
+    // victim's CF Access cookie auto-attaches; without a Sec-Fetch-Site
+    // check the request looks identical to a real CLI navigation. The site
+    // header is the only signal that distinguishes them.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb") +
+        "&state=attacker",
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "cross-site",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/cross-site/i);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects same-site top-level navigation (no legitimate cousin-host initiator) with 400", async () => {
+    // We tightened the allowlist to {none, same-origin} — there is no
+    // legitimate same-site entry point for /api/auth/cli (no other
+    // hexly.ai subdomain links here), so admitting same-site would widen
+    // the surface to whatever cousin host could be planted on the
+    // registrable domain.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "same-site",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request whose Sec-Fetch-Mode+Dest are present but Sec-Fetch-Site is missing", async () => {
+    // A browser that sent the other two but omitted Sec-Fetch-Site is
+    // anomalous — treat as cross-site to avoid leaving a bypass.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+        },
+      },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("legacy clients without Sec-Fetch headers are still allowed", async () => {
+    // curl / older browsers don't emit Sec-Fetch-*; those aren't the
+    // attack surface (the attack requires a victim browser, all of which
+    // send Sec-Fetch-* today).
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+    );
+    expect(res.status).toBe(302);
+    expect(minted).toEqual([{ email: "alice@example.com", name: "CLI" }]);
+  });
 });
