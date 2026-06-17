@@ -70,7 +70,7 @@
     "path-to-regexp": "^8.4.0",
     "postcss": "^8.5.10",
     "ws": "^8.21.0",
-    "wrangler": "4.84.0"
+    "wrangler": "4.101.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
