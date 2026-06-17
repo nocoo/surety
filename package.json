@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "hono": "4.12.25",
-    "lucide-react": "1.18.0",
+    "lucide-react": "1.20.0",
     "path-to-regexp": "^8.4.0",
     "radix-ui": "1.6.0",
     "react": "^19.2.7",
@@ -70,7 +70,7 @@
     "path-to-regexp": "^8.4.0",
     "postcss": "^8.5.10",
     "ws": "^8.21.0",
-    "wrangler": "4.84.0"
+    "wrangler": "4.101.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
