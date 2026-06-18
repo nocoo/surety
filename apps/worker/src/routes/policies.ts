@@ -316,8 +316,14 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
   // past due.
   const cutoffDate = parseLocalDate(endOfYearInTimeZone());
 
+  // First due date anchors the schedule. Prefer policy.nextDueDate (the
+  // first contractually scheduled premium date — absorbs waiting periods,
+  // hesitation windows, and bank cycle alignment) and fall back to
+  // effectiveDate for older records that pre-date nextDueDate capture.
+  const firstDueDate = policy.nextDueDate ?? policy.effectiveDate;
+
   const newRecords = generatePaymentRecords(
-    { policyId, firstDueDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
+    { policyId, firstDueDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
     { cutoffDate, existingPeriodNumbers },
   );
   // createMany uses onConflictDoNothing on (policyId, periodNumber), so
