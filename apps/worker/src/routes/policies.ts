@@ -309,9 +309,14 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
   const existingPayments = await repos.payments.findByPolicyId(policyId);
   const existingPeriodNumbers = new Set(existingPayments.map((p: { periodNumber: number }) => p.periodNumber));
 
+  // Cutoff at today: user manually confirms paid status per row, so we
+  // only backfill dues up to today and never auto-mark anything Paid.
+  const cutoffDate = new Date();
+  cutoffDate.setHours(0, 0, 0, 0);
+
   const newRecords = generatePaymentRecords(
     { policyId, effectiveDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
-    null, existingPeriodNumbers,
+    { cutoffDate, existingPeriodNumbers },
   );
   if (newRecords.length > 0) await repos.payments.createMany(newRecords);
 
