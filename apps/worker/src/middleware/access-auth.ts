@@ -14,7 +14,16 @@ function getJWKS(teamDomain: string) {
 }
 
 // The bearer-token API host bypasses CF Access entirely; apiKeyAuth handles it.
+//
+// Host headers are attacker-controlled, so the raw value is not enough — a
+// direct hit on `*.workers.dev` carrying `Host: surety-api.hexly.ai` would
+// otherwise bypass accessAuth. We require `c.req.raw.cf` as proof that the
+// request traversed the Cloudflare edge, mirroring isLocalhost's stance.
+// On the CF edge the Host header reflects the actual bound custom domain,
+// so spoofing is not viable.
 function isMachineEndpoint(c: Context<AppEnv>): boolean {
+  const onCfEdge = Boolean((c.req.raw as { cf?: unknown }).cf);
+  if (!onCfEdge) return false;
   const host = c.req.header("host") ?? "";
   return host === "surety-api.hexly.ai";
 }

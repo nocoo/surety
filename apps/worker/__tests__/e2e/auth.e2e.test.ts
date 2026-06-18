@@ -50,7 +50,13 @@ describe("L2 E2E: auth-cli token mint", () => {
     probe.route("/", authCliRoutes);
     const res = await probe.request(
       "/api/auth/cli?callback_url=http://127.0.0.1:9876/cb&state=xyz",
-      {},
+      {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+          "sec-fetch-site": "none",
+        },
+      },
       env.bindings,
     );
     expect(res.status).toBe(302);

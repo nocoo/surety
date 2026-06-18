@@ -29,6 +29,18 @@ import { Hono } from "hono";
 import { accessAuth } from "../src/middleware/access-auth";
 import type { AppEnv } from "../src/lib/types";
 
+/**
+ * Stamp `cf` on a Request to simulate the Cloudflare edge having processed
+ * it. The runtime adds this property in production; tests must do it
+ * explicitly so that edge-witness checks (`isLocalhost`, `isMachineEndpoint`)
+ * behave the same way they do at the edge.
+ */
+function cfEdgeRequest(url: string, init?: RequestInit): Request {
+  const req = new Request(url, init);
+  Object.assign(req, { cf: { colo: "TEST" } });
+  return req;
+}
+
 function probeApp() {
   const app = new Hono<AppEnv>();
   app.use("*", accessAuth);
@@ -180,13 +192,16 @@ describe("accessAuth - CF JWT branch", () => {
     expect(res.status).toBe(200);
   });
 
-  test("machine endpoint (surety-api.hexly.ai) bypasses Access — apiKeyAuth handles it", async () => {
+  test("machine endpoint (surety-api.hexly.ai) bypasses Access when reached via CF edge", async () => {
     // The CLI/bearer host shares the Worker with the browser host. accessAuth
     // must not 401 it for a missing JWT — apiKeyAuth gates that route.
     const app = probeApp();
+    const req = cfEdgeRequest("http://localhost/api/probe", {
+      headers: { host: "surety-api.hexly.ai" },
+    });
     const res = await app.request(
-      "/api/probe",
-      { headers: { host: "surety-api.hexly.ai" } },
+      req,
+      undefined,
       {
         CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
         CF_ACCESS_AUD: "aud-id",
@@ -196,6 +211,24 @@ describe("accessAuth - CF JWT branch", () => {
     const body = (await res.json()) as Record<string, unknown>;
     expect(body.accessAuthenticated).toBe(false);
     expect(body.sessionAuthenticated).toBe(false);
+  });
+
+  test("machine endpoint host claim WITHOUT CF edge (spoofed Host) is not honoured", async () => {
+    // Defence: a direct hit on *.workers.dev or any non-edge path with
+    // Host: surety-api.hexly.ai must not bypass accessAuth. Without
+    // c.req.raw.cf as proof of edge transit, the host header is
+    // attacker-controlled and cannot be trusted.
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety-api.hexly.ai" } },
+      {
+        CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+        CF_ACCESS_AUD: "aud-id",
+      },
+    );
+    // No bypass → JWT path runs → missing JWT → 401 fail-closed
+    expect(res.status).toBe(401);
   });
 
   test("E2E_SKIP_AUTH=true bypasses JWT verification in non-prod (L2-HTTP)", async () => {
