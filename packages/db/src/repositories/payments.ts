@@ -30,12 +30,22 @@ export function createPaymentsRepo(dbInstance: DbInstance) {
 
     async createMany(data: NewPayment[]): Promise<Payment[]> {
       // D1 has a bound parameter limit (~100). Batch insert in chunks.
+      // onConflictDoNothing on (policyId, periodNumber) makes the call safe
+      // under concurrent /payments/generate requests — a duplicate period
+      // is silently skipped instead of throwing a uniqueness violation.
       const batchSize = 10;
       const results: Payment[] = [];
 
       for (let i = 0; i < data.length; i += batchSize) {
         const batch = data.slice(i, i + batchSize);
-        const inserted = await dbInstance.insert(payments).values(batch).returning().all();
+        const inserted = await dbInstance
+          .insert(payments)
+          .values(batch)
+          .onConflictDoNothing({
+            target: [payments.policyId, payments.periodNumber],
+          })
+          .returning()
+          .all();
         results.push(...inserted);
       }
 

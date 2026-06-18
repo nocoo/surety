@@ -318,10 +318,13 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
     { policyId, effectiveDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
     { cutoffDate, existingPeriodNumbers },
   );
-  if (newRecords.length > 0) await repos.payments.createMany(newRecords);
+  // createMany uses onConflictDoNothing on (policyId, periodNumber), so
+  // generated counts the rows actually inserted — accurate when a
+  // concurrent request raced us and inserted some of the same periods.
+  const inserted = newRecords.length > 0 ? await repos.payments.createMany(newRecords) : [];
 
   const allPayments = await repos.payments.findByPolicyId(policyId);
-  return c.json({ generated: newRecords.length, payments: allPayments.sort((a: { periodNumber: number }, b: { periodNumber: number }) => b.periodNumber - a.periodNumber) });
+  return c.json({ generated: inserted.length, payments: allPayments.sort((a: { periodNumber: number }, b: { periodNumber: number }) => b.periodNumber - a.periodNumber) });
 });
 
 // -- Coverage items --
