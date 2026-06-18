@@ -9,21 +9,42 @@ export interface GeneratePaymentsInput {
   premium: number;
 }
 
+export interface GeneratePaymentsOptions {
+  /**
+   * When set, only generate records with dueDate <= cutoffDate.
+   * When null/undefined, generate all periods up to totalPayments.
+   */
+  cutoffDate?: Date | null;
+
+  /** Period numbers already in DB; skipped for idempotency. */
+  existingPeriodNumbers?: Set<number>;
+
+  /**
+   * Seed mode flag: when true, periods whose dueDate is strictly before today
+   * are emitted with status="Paid" + paidDate/paidAmount populated. When false
+   * (default), every generated record is "Pending" with no paid fields.
+   *
+   * The user-facing "generate" button uses false so the user manually marks
+   * what was actually paid. Demo seed uses true so historical periods look
+   * realistic without manual work.
+   */
+  markPastAsPaid?: boolean;
+}
+
 /**
  * Generate payment records for a policy.
  *
- * @param input - Policy payment parameters
- * @param cutoffDate - When non-null, only generate records with dueDate <= cutoffDate.
- *                     When null, generate all periods (seed mode).
- * @param existingPeriodNumbers - Period numbers that already exist; skipped for idempotency.
  * @returns Array of NewPayment records ready for DB insertion.
  */
 export function generatePaymentRecords(
   input: GeneratePaymentsInput,
-  cutoffDate: Date | null,
-  existingPeriodNumbers: Set<number>,
+  options: GeneratePaymentsOptions = {},
 ): NewPayment[] {
   const { policyId, effectiveDate, paymentFrequency, premium } = input;
+  const cutoffDate = options.cutoffDate ?? null;
+  const existingPeriodNumbers = options.existingPeriodNumbers ?? new Set<number>();
+  const markPastAsPaid = options.markPastAsPaid ?? false;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -39,15 +60,14 @@ export function generatePaymentRecords(
 
   const records: NewPayment[] = [];
 
+  // Parse start date as local (YYYY-MM-DD) — hoist outside the loop.
+  const [year, month, day] = effectiveDate.split("-").map(Number);
+  const startYear = year ?? 0;
+  const startMonth = (month ?? 1) - 1; // JS months are 0-indexed
+  const startDay = day ?? 1;
+
   for (let i = 0; i < maxPeriods; i++) {
     const periodNumber = i + 1;
-
-    // Parse start date as local (YYYY-MM-DD)
-    const [year, month, day] = effectiveDate.split("-").map(Number);
-    // Safe defaults for malformed input
-    const startYear = year ?? 0;
-    const startMonth = (month ?? 1) - 1; // JS months are 0-indexed
-    const startDay = day ?? 1;
 
     let dueYear: number;
     let dueMonth: number; // 0-indexed
@@ -79,15 +99,16 @@ export function generatePaymentRecords(
 
     const dueDateStr = formatLocalDate(dueDate);
     const isPast = dueDate < today;
+    const treatAsPaid = markPastAsPaid && isPast;
 
     records.push({
       policyId,
       periodNumber,
       dueDate: dueDateStr,
       amount: premium,
-      status: isPast ? "Paid" : "Pending",
-      paidDate: isPast ? dueDateStr : null,
-      paidAmount: isPast ? premium : null,
+      status: treatAsPaid ? "Paid" : "Pending",
+      paidDate: treatAsPaid ? dueDateStr : null,
+      paidAmount: treatAsPaid ? premium : null,
     });
   }
 

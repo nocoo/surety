@@ -335,7 +335,7 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
         }
       }
 
-      // Payments
+      // Payments — seed mode: generate every period, mark past ones as Paid
       const paymentRecords = generatePaymentRecords(
         {
           policyId: policy.id,
@@ -344,8 +344,7 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
           totalPayments: seed.policy.totalPayments ?? null,
           premium: seed.policy.premium,
         },
-        null, // null = generate all periods (seed mode)
-        new Set(), // no existing records
+        { markPastAsPaid: true },
       );
       if (paymentRecords.length > 0) {
         await r.payments.createMany(paymentRecords);
