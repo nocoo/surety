@@ -428,6 +428,43 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.1.2
+
+### Changed
+- Generate handles concurrent requests via onConflictDoNothing
+- Freeze clock and assert generate never emits future dues
+- Payments generate is pending-only, backfills past, idempotent
+- Cover generatePaymentRecords behavior and edge cases
+- Generate-payments take options bag with markPastAsPaid
+- Bump react-router 7.18.0 → 8.0.0
+- Bump @cloudflare/workers-types to 4.20260617.1
+- Upgrade wrangler 4.99.0 → 4.101.0
+- Upgrade react-router 7.17.0 → 7.18.0
+- Upgrade lucide-react 1.18.0 → 1.20.0
+- Upgrade @cloudflare/workers-types 4.20260615.1 → 4.20260616.1
+- Batch upgrade 7 dependencies (incl. vite security fix) (#117)
+- Tighten /api/auth/cli Sec-Fetch-Site allowlist to {none, same-origin}
+- Reject cross-site navigations on /api/auth/cli
+- Require Sec-Fetch top-level navigation for /api/auth/cli
+- Add Origin/Referer CSRF guard for session-authenticated writes
+- Bump @cloudflare/workers-types 4.20260612.1 → 4.20260613.1
+- Upgrade base-ci to v2026.4
+- Bump @tailwindcss/vite 4.3.0 → 4.3.1
+- Bump @tailwindcss/postcss 4.3.0 → 4.3.1
+- Bump tailwindcss 4.3.0 → 4.3.1
+- Bump lucide-react 1.17.0 → 1.18.0
+- Bump eslint 10.4.1 → 10.5.0
+- Bump @cloudflare/workers-types 4.20260610.1 → 4.20260612.1
+- Bump @types/node 25.9.2 → 25.9.3
+
+### Fixed
+- Generate cutoff uses CST calendar date, not UTC clock
+- Payments createMany skips policy/period conflict for concurrency
+- Clarify payments generate dialog wording
+- Generate payments only up to today, never auto-paid
+- Override esbuild to ^0.28.1 (GHSA-gv7w-rqvm-qjhr)
+- Align loading skeletons with current page layouts
+
 ## v2.1.1
 
 ### Added
