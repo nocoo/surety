@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { generatePaymentRecords } from "@surety/db/lib/generate-payments";
+import { parseLocalDate, todayInTimeZone } from "@surety/db/lib/date-utils";
 import { validateFile, validateMagicBytes, generateR2Key, MAX_ATTACHMENTS_PER_POLICY } from "@surety/api/lib/attachment-validation";
 import type { AppEnv } from "../lib/types";
 
@@ -309,10 +310,10 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
   const existingPayments = await repos.payments.findByPolicyId(policyId);
   const existingPeriodNumbers = new Set(existingPayments.map((p: { periodNumber: number }) => p.periodNumber));
 
-  // Cutoff at today: user manually confirms paid status per row, so we
-  // only backfill dues up to today and never auto-mark anything Paid.
-  const cutoffDate = new Date();
-  cutoffDate.setHours(0, 0, 0, 0);
+  // Cutoff at today's calendar date in the product timezone (CST). Using
+  // `new Date()` directly would honour the Worker runtime's UTC clock and
+  // miss any periods due "today" during 00:00–08:00 CST.
+  const cutoffDate = parseLocalDate(todayInTimeZone());
 
   const newRecords = generatePaymentRecords(
     { policyId, effectiveDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },

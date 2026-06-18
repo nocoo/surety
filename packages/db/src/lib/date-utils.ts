@@ -52,6 +52,26 @@ export function todayStr(): string {
 }
 
 /**
+ * Get today's calendar date in the given IANA timezone as "YYYY-MM-DD".
+ *
+ * Workers/Node typically run in UTC, but the product semantics are based
+ * on the user's local calendar (Asia/Shanghai by default). Using `new Date()`
+ * + `getDate()` server-side would emit the UTC day and silently skip
+ * the first ~8 hours of every CST day. This helper picks the calendar
+ * day in the requested timezone via Intl.
+ */
+export function todayInTimeZone(timeZone = "Asia/Shanghai"): string {
+  // 'en-CA' formats as YYYY-MM-DD; combined with timeZone it gives a
+  // stable calendar date regardless of the host timezone.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/**
  * Calculate the number of days between a date and today.
  * Positive = future, negative = past.
  */
