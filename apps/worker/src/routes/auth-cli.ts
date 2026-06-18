@@ -42,9 +42,11 @@ export function isLocalhostUrl(value: string): boolean {
  *   - An authenticated Access session OR a valid Bearer token is required to
  *     reach this handler (middleware enforces). If neither is present the
  *     request is already rejected upstream.
- *   - Minting requires a verified Access email. Bearer-only callers (who
- *     already have a token) have no reason to call this endpoint and are
- *     rejected with 400 to avoid issuing a token without a known owner.
+ *   - Minting REQUIRES sessionAuthenticated (a verified Access JWT or the
+ *     localhost-dev session). A Bearer-token caller (CLI hitting the
+ *     machine endpoint `surety-api.hexly.ai`) is rejected with 403 — they
+ *     already hold a token; minting another from one would create a
+ *     self-replication loop that survives revoking the original.
  *   - The handler also requires the request to look like a real top-level
  *     navigation (Sec-Fetch-Mode: navigate AND Sec-Fetch-Dest: document) AND
  *     to NOT originate from a cross-site or same-site context (Sec-Fetch-Site
@@ -114,6 +116,21 @@ app.get("/api/auth/cli", async (c) => {
     return c.json(
       { error: "CLI token mint cannot be triggered cross-site" },
       400,
+    );
+  }
+
+  // Minting a token must be initiated by a real Access session (browser
+  // user signed in via Google), never by a caller who already holds a
+  // Bearer token. Otherwise a leaked token could mint fresh tokens for
+  // the same email in a self-replication loop — surviving any revoke of
+  // the original. `sessionAuthenticated` is set only by accessAuth's
+  // localhost-no-bearer and verified-JWT branches; the machine-endpoint
+  // bypass and E2E bypass do not set it, so this check naturally rejects
+  // Bearer-only callers on `surety-api.hexly.ai`.
+  if (!c.get("sessionAuthenticated")) {
+    return c.json(
+      { error: "CF Access session required to mint a CLI token" },
+      403,
     );
   }
 

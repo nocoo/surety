@@ -23,12 +23,23 @@ const NAV_HEADERS = {
 function makeApp(opts: {
   accessEmail?: string;
   accessAuthenticated?: boolean;
+  /**
+   * Whether to set sessionAuthenticated upstream of the route. Defaults to
+   * true when accessEmail is supplied (the typical "user signed in via CF
+   * Access" happy path). Tests that want to exercise the Bearer-only path
+   * (machine endpoint, accessEmail populated by apiKeyAuth, but no Access
+   * session) must pass `sessionAuthenticated: false` explicitly.
+   */
+  sessionAuthenticated?: boolean;
   minted?: MintArgs[];
 }) {
   const app = new Hono<AppEnv>();
   app.use("*", async (c, next) => {
     if (opts.accessAuthenticated) c.set("accessAuthenticated", true);
     if (opts.accessEmail) c.set("accessEmail", opts.accessEmail);
+    const sessionFlag =
+      opts.sessionAuthenticated ?? Boolean(opts.accessEmail);
+    if (sessionFlag) c.set("sessionAuthenticated", true);
     // Inject a fake `repos` object with just apiTokens.create
     // Cast to the shape consumers expect; only `create` is exercised here.
     c.set("repos", {
@@ -93,8 +104,10 @@ describe("GET /api/auth/cli", () => {
     expect(minted.length).toBe(0);
   });
 
-  test("rejects request without verified Access email with 400", async () => {
-    const app = makeApp({ minted }); // no accessEmail
+  test("rejects session-authenticated request without an Access email claim with 400", async () => {
+    // Defence-in-depth: a verified Access JWT without an `email` claim
+    // (misconfigured CF Access policy) must not mint an unowned token.
+    const app = makeApp({ minted, sessionAuthenticated: true }); // session but no accessEmail
     const res = await app.request(
       "/api/auth/cli?callback_url=" +
         encodeURIComponent("http://127.0.0.1:5173/cb"),
@@ -353,6 +366,28 @@ describe("GET /api/auth/cli", () => {
       },
     );
     expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects Bearer-only caller (machine endpoint) — no token self-replication", async () => {
+    // apiKeyAuth populates accessEmail from a valid Bearer token but never
+    // sets sessionAuthenticated. The mint must refuse those callers, or a
+    // leaked token could mint fresh tokens for itself in a loop that
+    // survives revoking the original.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      sessionAuthenticated: false, // ← key: Bearer path, not Access path
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      { headers: NAV_HEADERS },
+    );
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/Access session required/);
     expect(minted.length).toBe(0);
   });
 

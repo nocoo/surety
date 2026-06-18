@@ -44,6 +44,7 @@ describe("L2 E2E: auth-cli token mint", () => {
     probe.use("*", async (c, next) => {
       c.set("repos", env.repos);
       c.set("accessAuthenticated", true);
+      c.set("sessionAuthenticated", true);
       c.set("accessEmail", "owner@hexly.ai");
       return next();
     });
