@@ -3,7 +3,15 @@ import { formatLocalDate } from "./date-utils";
 
 export interface GeneratePaymentsInput {
   policyId: number;
-  effectiveDate: string; // ISO date string (YYYY-MM-DD)
+  /**
+   * Anchor date for period 1 ("YYYY-MM-DD"). All later periods are computed
+   * by offsetting this date by i * frequency. Callers should pass the
+   * policy's `nextDueDate` (the first contractually scheduled premium date)
+   * and only fall back to `effectiveDate` when nextDueDate is unknown —
+   * `effectiveDate` does not account for waiting periods or hesitation
+   * windows that shift the first real due date.
+   */
+  firstDueDate: string;
   paymentFrequency: "Single" | "Monthly" | "Yearly";
   totalPayments: number | null; // null → 1 for Single
   premium: number;
@@ -40,7 +48,7 @@ export function generatePaymentRecords(
   input: GeneratePaymentsInput,
   options: GeneratePaymentsOptions = {},
 ): NewPayment[] {
-  const { policyId, effectiveDate, paymentFrequency, premium } = input;
+  const { policyId, firstDueDate, paymentFrequency, premium } = input;
   const cutoffDate = options.cutoffDate ?? null;
   const existingPeriodNumbers = options.existingPeriodNumbers ?? new Set<number>();
   const markPastAsPaid = options.markPastAsPaid ?? false;
@@ -60,8 +68,8 @@ export function generatePaymentRecords(
 
   const records: NewPayment[] = [];
 
-  // Parse start date as local (YYYY-MM-DD) — hoist outside the loop.
-  const [year, month, day] = effectiveDate.split("-").map(Number);
+  // Parse anchor date as local (YYYY-MM-DD) — hoist outside the loop.
+  const [year, month, day] = firstDueDate.split("-").map(Number);
   const startYear = year ?? 0;
   const startMonth = (month ?? 1) - 1; // JS months are 0-indexed
   const startDay = day ?? 1;
@@ -79,7 +87,7 @@ export function generatePaymentRecords(
       dueYear = startYear + i;
       dueMonth = startMonth;
     } else {
-      // Single: use effectiveDate as-is
+      // Single: anchor date is the only period
       dueYear = startYear;
       dueMonth = startMonth;
     }

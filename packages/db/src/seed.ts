@@ -335,11 +335,12 @@ export async function seedDatabase(repos?: AllRepos, dbInstance?: DbInstance): P
         }
       }
 
-      // Payments — seed mode: generate every period, mark past ones as Paid
+      // Payments — seed mode: generate every period, mark past ones as Paid.
+      // No nextDueDate in seed data, so first due date == effective date.
       const paymentRecords = generatePaymentRecords(
         {
           policyId: policy.id,
-          effectiveDate: seed.policy.effectiveDate,
+          firstDueDate: seed.policy.effectiveDate,
           paymentFrequency: seed.policy.paymentFrequency,
           totalPayments: seed.policy.totalPayments ?? null,
           premium: seed.policy.premium,

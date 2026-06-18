@@ -316,7 +316,7 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
   const cutoffDate = parseLocalDate(todayInTimeZone());
 
   const newRecords = generatePaymentRecords(
-    { policyId, effectiveDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
+    { policyId, firstDueDate: policy.effectiveDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
     { cutoffDate, existingPeriodNumbers },
   );
   // createMany uses onConflictDoNothing on (policyId, periodNumber), so

@@ -4,10 +4,10 @@ import { generatePaymentRecords } from "../lib/generate-payments";
 const POLICY = { policyId: 42, premium: 5000 } as const;
 
 describe("generatePaymentRecords (default options)", () => {
-  test("Single frequency emits exactly one period on effectiveDate", () => {
+  test("Single frequency emits exactly one period on firstDueDate", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2025-03-15",
+      firstDueDate: "2025-03-15",
       paymentFrequency: "Single",
       totalPayments: null,
     });
@@ -27,7 +27,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("Yearly with totalPayments=N emits N periods at yearly cadence", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2020-06-01",
+      firstDueDate: "2020-06-01",
       paymentFrequency: "Yearly",
       totalPayments: 5,
     });
@@ -45,7 +45,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("Monthly with totalPayments=N walks month-by-month with year rollover", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2025-11-10",
+      firstDueDate: "2025-11-10",
       paymentFrequency: "Monthly",
       totalPayments: 4,
     });
@@ -61,7 +61,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("Monthly day clamps to last day of shorter target month", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2025-01-31",
+      firstDueDate: "2025-01-31",
       paymentFrequency: "Monthly",
       totalPayments: 3,
     });
@@ -76,7 +76,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("Yearly Feb 29 clamps to Feb 28 on non-leap years", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2024-02-29",
+      firstDueDate: "2024-02-29",
       paymentFrequency: "Yearly",
       totalPayments: 3,
     });
@@ -91,7 +91,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("every generated record is Pending with no paid fields", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "1990-01-01", // far in the past
+      firstDueDate: "1990-01-01", // far in the past
       paymentFrequency: "Yearly",
       totalPayments: 5,
     });
@@ -107,7 +107,7 @@ describe("generatePaymentRecords (default options)", () => {
   test("totalPayments=null without cutoff degrades to a single Pending period", () => {
     const records = generatePaymentRecords({
       ...POLICY,
-      effectiveDate: "2025-01-01",
+      firstDueDate: "2025-01-01",
       paymentFrequency: "Yearly",
       totalPayments: null,
     });
@@ -122,7 +122,7 @@ describe("generatePaymentRecords (cutoffDate)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: "2020-06-01",
+        firstDueDate: "2020-06-01",
         paymentFrequency: "Yearly",
         totalPayments: 10,
       },
@@ -141,7 +141,7 @@ describe("generatePaymentRecords (cutoffDate)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: "2024-01-15",
+        firstDueDate: "2024-01-15",
         paymentFrequency: "Monthly",
         totalPayments: null,
       },
@@ -161,7 +161,7 @@ describe("generatePaymentRecords (cutoffDate)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: "2020-01-01",
+        firstDueDate: "2020-01-01",
         paymentFrequency: "Yearly",
         totalPayments: 10,
       },
@@ -180,7 +180,7 @@ describe("generatePaymentRecords (existingPeriodNumbers)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: "2020-01-01",
+        firstDueDate: "2020-01-01",
         paymentFrequency: "Yearly",
         totalPayments: 5,
       },
@@ -193,7 +193,7 @@ describe("generatePaymentRecords (existingPeriodNumbers)", () => {
   test("repeated call with all periods present yields zero new records", () => {
     const input = {
       ...POLICY,
-      effectiveDate: "2020-01-01",
+      firstDueDate: "2020-01-01",
       paymentFrequency: "Yearly" as const,
       totalPayments: 3,
     };
@@ -212,7 +212,7 @@ describe("generatePaymentRecords (markPastAsPaid: seed mode)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: "1990-01-01",
+        firstDueDate: "1990-01-01",
         paymentFrequency: "Yearly",
         totalPayments: 3,
       },
@@ -232,7 +232,7 @@ describe("generatePaymentRecords (markPastAsPaid: seed mode)", () => {
     const records = generatePaymentRecords(
       {
         ...POLICY,
-        effectiveDate: `${farFuture}-01-01`,
+        firstDueDate: `${farFuture}-01-01`,
         paymentFrequency: "Yearly",
         totalPayments: 2,
       },
