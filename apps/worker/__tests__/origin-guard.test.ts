@@ -27,6 +27,22 @@ function makeApp() {
   return app;
 }
 
+/**
+ * App where sessionAuthenticated=true is injected upstream of originGuard,
+ * simulating what accessAuth does after validating a CF Access JWT.
+ * Used to test that the Bearer-exemption is not honoured for sessions.
+ */
+function makeSessionApp() {
+  const app = new Hono<AppEnv>();
+  app.use("*", async (c, next) => {
+    c.set("sessionAuthenticated", true);
+    return next();
+  });
+  app.use("*", originGuard);
+  app.post("/api/things", (c) => c.json({ created: true }, 201));
+  return app;
+}
+
 const PROD_HOST = "surety.hexly.ai";
 const PROD_ORIGIN = `https://${PROD_HOST}`;
 
@@ -90,6 +106,38 @@ describe("originGuard middleware", () => {
         origin: "https://evil.example",
         authorization: "Bearer sk_xxx",
       },
+      body: "{}",
+    });
+    expect(res.status).toBe(201);
+  });
+
+  test("Bearer header on a session-authenticated request does NOT grant exemption", async () => {
+    // Today browser CSRF cannot attach an Authorization header without a CORS
+    // preflight, but the Bearer-exemption is semantically "this is a CLI
+    // request" — not "any request that says Bearer". If a session is already
+    // authenticated, the caller is the browser, not the CLI; treating
+    // Authorization as a CSRF bypass for that path is the wrong gate. Lock
+    // it down now so a future CORS allowlist doesn't reopen the hole.
+    const app = makeSessionApp();
+    const res = await app.request("https://surety.hexly.ai/api/things", {
+      method: "POST",
+      headers: {
+        host: PROD_HOST,
+        origin: "https://evil.example",
+        authorization: "Bearer sk_forged",
+      },
+      body: "{}",
+    });
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/cross-origin/i);
+  });
+
+  test("session-authenticated same-origin write still passes", async () => {
+    const app = makeSessionApp();
+    const res = await app.request("https://surety.hexly.ai/api/things", {
+      method: "POST",
+      headers: { host: PROD_HOST, origin: PROD_ORIGIN },
       body: "{}",
     });
     expect(res.status).toBe(201);

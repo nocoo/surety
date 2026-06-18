@@ -44,9 +44,11 @@ function targetOrigin(c: Context<AppEnv>): string | null {
  *
  * It only fires when ALL of these are true:
  *   - method is not GET / HEAD / OPTIONS,
- *   - the caller did NOT present `Authorization: Bearer ...`
- *     (Bearer-token API clients cannot be CSRF'd: CORS prevents arbitrary
- *     scripts from attaching an Authorization header to a cross-site fetch),
+ *   - the caller is a pure Bearer-token client (Authorization: Bearer ...
+ *     AND no Access session). Today browsers cannot forge Authorization
+ *     headers on cross-site fetches without a CORS preflight, but the
+ *     stricter `!sessionAuthenticated` check is the semantically correct
+ *     gate and prevents accidental loosening if CORS is added in the future.
  *   - the request is not the public liveness probe,
  *   - the request is not a localhost / dev-host bypass,
  *   - E2E_SKIP_AUTH is not set in a non-prod environment.
@@ -56,7 +58,7 @@ function targetOrigin(c: Context<AppEnv>): string | null {
  */
 export async function originGuard(c: Context<AppEnv>, next: Next) {
   if (SAFE_METHODS.has(c.req.method)) return next();
-  if (hasBearer(c)) return next();
+  if (hasBearer(c) && !c.get("sessionAuthenticated")) return next();
   if (c.req.path === "/api/live") return next();
   if (isLocalhost(c)) return next();
   if (
