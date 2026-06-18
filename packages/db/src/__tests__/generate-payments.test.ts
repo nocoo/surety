@@ -190,6 +190,27 @@ describe("generatePaymentRecords (existingPeriodNumbers)", () => {
     expect(records.map((r) => r.periodNumber)).toEqual([2, 4, 5]);
   });
 
+  test("skipped periods do not shift later periods' dueDate", () => {
+    // Anchor on 2022-09-22 Yearly. Period 2 (2023-09-22) already exists.
+    // Period 3 must stay on 2024-09-22 — NOT slide back to fill the gap.
+    const records = generatePaymentRecords(
+      {
+        ...POLICY,
+        firstDueDate: "2022-09-22",
+        paymentFrequency: "Yearly",
+        totalPayments: 5,
+      },
+      { existingPeriodNumbers: new Set([2]) },
+    );
+
+    expect(records.map((r) => ({ n: r.periodNumber, d: r.dueDate }))).toEqual([
+      { n: 1, d: "2022-09-22" },
+      { n: 3, d: "2024-09-22" },
+      { n: 4, d: "2025-09-22" },
+      { n: 5, d: "2026-09-22" },
+    ]);
+  });
+
   test("repeated call with all periods present yields zero new records", () => {
     const input = {
       ...POLICY,

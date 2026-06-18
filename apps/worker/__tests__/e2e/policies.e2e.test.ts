@@ -302,6 +302,136 @@ describe("L2 E2E: policy sub-resources", () => {
     periodNumbers.forEach((p, i) => expect(p).toBe(i + 1));
   });
 
+  test("payments generate anchors on nextDueDate when present, ignoring effectiveDate", async () => {
+    // Freeze the clock so test is deterministic; cutoff → 2024-12-31.
+    setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      // effectiveDate sits in Jan, but nextDueDate (after a 90-day waiting
+      // period) actually starts the schedule in April. The generated dates
+      // must follow nextDueDate, not effectiveDate.
+      const policyId = await seedPolicy(env, memberId, "POL-NDD", {
+        effectiveDate: "2024-01-15",
+        nextDueDate: "2024-04-15",
+        totalPayments: 5,
+        paymentFrequency: "Yearly",
+      });
+
+      const r = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments/generate`,
+        {},
+      );
+      expect(r.status).toBe(200);
+      const body = r.body as {
+        generated: number;
+        payments: Array<{ periodNumber: number; dueDate: string }>;
+      };
+
+      // 2024-04-15 only (next 2025-04-15 is past cutoff 2024-12-31).
+      expect(body.generated).toBe(1);
+      const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
+      expect(sorted).toEqual([
+        expect.objectContaining({ periodNumber: 1, dueDate: "2024-04-15" }),
+      ]);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("payments generate falls back to effectiveDate when nextDueDate is null", async () => {
+    setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const policyId = await seedPolicy(env, memberId, "POL-FB", {
+        effectiveDate: "2024-03-15",
+        // nextDueDate intentionally omitted
+        totalPayments: 5,
+        paymentFrequency: "Yearly",
+      });
+
+      const r = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments/generate`,
+        {},
+      );
+      expect(r.status).toBe(200);
+      const body = r.body as {
+        generated: number;
+        payments: Array<{ periodNumber: number; dueDate: string }>;
+      };
+
+      expect(body.generated).toBe(1);
+      expect(body.payments[0]?.dueDate).toBe("2024-03-15");
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("payments generate keeps period dueDates anchored when earlier periods already exist", async () => {
+    // Yearly Monthly schedule anchored at 2024-01-15. Seed period 2 first
+    // (out-of-band addition by the user), then run generate. Subsequent
+    // periods must remain at their original yearly offset (3 = 2026, etc.)
+    // even though period 2 was added by hand — no sliding.
+    setSystemTime(new Date("2026-06-15T04:00:00.000Z"));
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const policyId = await seedPolicy(env, memberId, "POL-EX", {
+        effectiveDate: "2024-01-15",
+        nextDueDate: "2024-01-15",
+        totalPayments: 5,
+        paymentFrequency: "Yearly",
+      });
+
+      // Manually insert period 2 with a slightly different dueDate to prove
+      // the generator does not overwrite or shift around it.
+      const seedPeriod = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments`,
+        {
+          periodNumber: 2,
+          dueDate: "2025-01-20",
+          amount: 5000,
+          status: "Paid",
+          paidDate: "2025-01-20",
+          paidAmount: 5000,
+        },
+      );
+      expect(seedPeriod.status).toBe(201);
+
+      const r = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments/generate`,
+        {},
+      );
+      expect(r.status).toBe(200);
+      const body = r.body as {
+        generated: number;
+        payments: Array<{ periodNumber: number; dueDate: string; status: string }>;
+      };
+
+      // Generated: periods 1 and 3 (period 2 was seeded; period 4 = 2027 > cutoff)
+      expect(body.generated).toBe(2);
+
+      const byPeriod = new Map(body.payments.map((p) => [p.periodNumber, p]));
+      expect(byPeriod.get(1)?.dueDate).toBe("2024-01-15");
+      // Period 2 untouched — keeps the hand-entered date and Paid status.
+      expect(byPeriod.get(2)?.dueDate).toBe("2025-01-20");
+      expect(byPeriod.get(2)?.status).toBe("Paid");
+      // Period 3 still anchored on Jan 15, not shifted around the seeded record.
+      expect(byPeriod.get(3)?.dueDate).toBe("2026-01-15");
+    } finally {
+      setSystemTime();
+    }
+  });
+
   test("coverage-items full lifecycle", async () => {
     const env = buildTestApp();
     const memberId = await seedMember(env);
