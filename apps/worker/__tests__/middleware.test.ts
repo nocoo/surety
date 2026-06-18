@@ -123,20 +123,14 @@ describe("accessAuth middleware", () => {
     expect(body.accessEmail).toBeNull();
   });
 
-  test("no CF_ACCESS config and not localhost → passthrough with no flag", async () => {
+  test("no CF_ACCESS config and not localhost → 500 fail-closed", async () => {
     const app = makeApp(accessAuth);
     const res = await app.request(
       "/api/probe",
       { headers: { host: "surety.hexly.ai" } },
       {},
     );
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as {
-      accessAuthenticated: boolean;
-      accessEmail: string | null;
-    };
-    expect(body.accessAuthenticated).toBe(false);
-    expect(body.accessEmail).toBeNull();
+    expect(res.status).toBe(500);
   });
 });
 
@@ -323,7 +317,9 @@ describe("accessAuth + apiKeyAuth + /api/me integration", () => {
     expect(body.email).toBe("cli@hexly.ai");
   });
 
-  test("prod host + valid Bearer token → /api/me returns email", async () => {
+  test("machine host (surety-api.hexly.ai) + valid Bearer token → /api/me returns email", async () => {
+    // Bearer-token clients hit the machine endpoint where accessAuth
+    // short-circuits and apiKeyAuth gates the request.
     const app = buildApp({
       apiTokens: {
         verify: async () => ({ id: 9, email: "prod@hexly.ai" }),
@@ -334,7 +330,7 @@ describe("accessAuth + apiKeyAuth + /api/me integration", () => {
       "/api/me",
       {
         headers: {
-          host: "surety.hexly.ai",
+          host: "surety-api.hexly.ai",
           authorization: "Bearer sk_prod",
         },
       },

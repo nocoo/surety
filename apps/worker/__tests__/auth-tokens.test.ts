@@ -84,7 +84,7 @@ describe("GET /api/auth/tokens", () => {
       "/api/auth/tokens",
       {
         headers: {
-          host: "surety.hexly.ai",
+          host: "surety-api.hexly.ai",
           authorization: "Bearer sk_alice",
         },
       },
@@ -139,7 +139,7 @@ describe("DELETE /api/auth/tokens/:id", () => {
       {
         method: "DELETE",
         headers: {
-          host: "surety.hexly.ai",
+          host: "surety-api.hexly.ai",
           authorization: "Bearer sk_alice",
         },
       },
