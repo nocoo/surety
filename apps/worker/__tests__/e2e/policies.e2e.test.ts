@@ -18,6 +18,7 @@ async function seedPolicy(
   env: ReturnType<typeof buildTestApp>,
   memberId: number,
   policyNumber = "POL-100",
+  overrides: Record<string, unknown> = {},
 ) {
   const r = await jsonRequest(env, "POST", "/api/policies", {
     applicantId: memberId,
@@ -31,6 +32,7 @@ async function seedPolicy(
     sumAssured: 1000000,
     premium: 5000,
     paymentFrequency: "Yearly",
+    ...overrides,
   });
   expect(r.status).toBe(201);
   return (r.body as { id: number }).id;
@@ -170,9 +172,83 @@ describe("L2 E2E: policy sub-resources", () => {
       {},
     );
     expect(r.status).toBe(200);
-    const body = r.body as { generated: number; payments: unknown[] };
+    const body = r.body as {
+      generated: number;
+      payments: Array<{ status: string; paidDate: string | null; periodNumber: number }>;
+    };
     expect(body.generated).toBeGreaterThan(0);
     expect(body.payments.length).toBe(body.generated);
+
+    // Every generated record must be Pending — the user manually marks
+    // what's actually paid. None should be auto-marked as Paid.
+    for (const p of body.payments) {
+      expect(p.status).toBe("Pending");
+      expect(p.paidDate).toBeNull();
+    }
+  });
+
+  test("payments generate backfills past periods up to today for policy with totalPayments", async () => {
+    const env = buildTestApp();
+    const memberId = await seedMember(env);
+    const policyId = await seedPolicy(env, memberId, "POL-GP", {
+      effectiveDate: "2020-01-01",
+      totalPayments: 30,
+      paymentFrequency: "Yearly",
+    });
+
+    const r = await jsonRequest(
+      env,
+      "POST",
+      `/api/policies/${policyId}/payments/generate`,
+      {},
+    );
+    expect(r.status).toBe(200);
+    const body = r.body as {
+      generated: number;
+      payments: Array<{ status: string; periodNumber: number; dueDate: string }>;
+    };
+
+    // Cutoff is "today", so we must get more than one period (vs the
+    // previous bug where totalPayments was ignored and only 1 was emitted),
+    // and not the full 30 future periods either.
+    expect(body.generated).toBeGreaterThan(1);
+    expect(body.generated).toBeLessThan(30);
+    expect(body.payments.every((p) => p.status === "Pending")).toBe(true);
+
+    // Period numbers must be contiguous starting at 1.
+    const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
+    sorted.forEach((p, idx) => expect(p.periodNumber).toBe(idx + 1));
+  });
+
+  test("payments generate is idempotent — second call adds nothing", async () => {
+    const env = buildTestApp();
+    const memberId = await seedMember(env);
+    const policyId = await seedPolicy(env, memberId, "POL-GI", {
+      effectiveDate: "2022-01-01",
+      totalPayments: 10,
+      paymentFrequency: "Yearly",
+    });
+
+    const first = await jsonRequest(
+      env,
+      "POST",
+      `/api/policies/${policyId}/payments/generate`,
+      {},
+    );
+    expect(first.status).toBe(200);
+    const firstCount = (first.body as { generated: number }).generated;
+    expect(firstCount).toBeGreaterThan(0);
+
+    const second = await jsonRequest(
+      env,
+      "POST",
+      `/api/policies/${policyId}/payments/generate`,
+      {},
+    );
+    expect(second.status).toBe(200);
+    const secondBody = second.body as { generated: number; payments: unknown[] };
+    expect(secondBody.generated).toBe(0);
+    expect(secondBody.payments.length).toBe(firstCount);
   });
 
   test("coverage-items full lifecycle", async () => {
