@@ -187,18 +187,19 @@ describe("L2 E2E: policy sub-resources", () => {
     }
   });
 
-  test("payments generate backfills past periods up to today for policy with totalPayments", async () => {
-    // Freeze the clock at 2024-06-15 12:00 CST so the test is deterministic.
-    // effectiveDate 2020-01-01 Yearly + totalPayments 30 → expect periods 1..5
-    // (2020-01-01 ... 2024-01-01); 2025-01-01 onward must be clipped.
+  test("payments generate backfills to end-of-year, includes future periods within this year", async () => {
+    // Freeze the clock at 2024-06-15 12:00 CST. With Monthly cadence and
+    // effective 2024-01-15, the generator should emit all 12 months of 2024
+    // (Jan-Dec) — past months are backfilled and Jul-Dec are this year's
+    // upcoming periods the user should see now.
     setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
     try {
       const env = buildTestApp();
       const memberId = await seedMember(env);
       const policyId = await seedPolicy(env, memberId, "POL-GP", {
-        effectiveDate: "2020-01-01",
-        totalPayments: 30,
-        paymentFrequency: "Yearly",
+        effectiveDate: "2024-01-15",
+        totalPayments: 24,
+        paymentFrequency: "Monthly",
       });
 
       const r = await jsonRequest(
@@ -213,20 +214,18 @@ describe("L2 E2E: policy sub-resources", () => {
         payments: Array<{ status: string; periodNumber: number; dueDate: string }>;
       };
 
-      // Exactly the 5 past-or-today periods, no future ones, all Pending.
-      expect(body.generated).toBe(5);
-      expect(body.payments.length).toBe(5);
+      expect(body.generated).toBe(12);
+      expect(body.payments.length).toBe(12);
       expect(body.payments.every((p) => p.status === "Pending")).toBe(true);
-      expect(body.payments.every((p) => p.dueDate <= "2024-06-15")).toBe(true);
 
       const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
       expect(sorted.map((p) => p.dueDate)).toEqual([
-        "2020-01-01",
-        "2021-01-01",
-        "2022-01-01",
-        "2023-01-01",
-        "2024-01-01",
+        "2024-01-15", "2024-02-15", "2024-03-15", "2024-04-15",
+        "2024-05-15", "2024-06-15", "2024-07-15", "2024-08-15",
+        "2024-09-15", "2024-10-15", "2024-11-15", "2024-12-15",
       ]);
+      // No 2025 periods leaked across the year boundary.
+      expect(sorted.every((p) => p.dueDate <= "2024-12-31")).toBe(true);
     } finally {
       setSystemTime();
     }

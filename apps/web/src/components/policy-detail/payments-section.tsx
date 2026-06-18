@@ -610,7 +610,7 @@ export function PaymentsSection({
           <AlertDialogHeader>
             <AlertDialogTitle>生成缴费记录</AlertDialogTitle>
             <AlertDialogDescription>
-              将按保单的缴费周期和总期数，补齐到今天为止应缴的所有期数，全部标记为&ldquo;待缴&rdquo;。已有期数不会被修改或重复。是否继续？
+              将按保单的缴费周期和总期数，补齐到今年底为止应缴的所有期数（含今年内尚未到期的），全部标记为&ldquo;待缴&rdquo;。已有期数不会被修改或重复。是否继续？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

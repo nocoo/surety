@@ -72,6 +72,18 @@ export function todayInTimeZone(timeZone = "Asia/Shanghai"): string {
 }
 
 /**
+ * Get Dec 31 of the current year in the given IANA timezone as "YYYY-MM-DD".
+ * Used as the cutoff when backfilling premium schedules — we generate all
+ * periods up to the end of the current calendar year, including ones still
+ * in the future, so users see what's coming this year without waiting.
+ */
+export function endOfYearInTimeZone(timeZone = "Asia/Shanghai"): string {
+  const today = todayInTimeZone(timeZone);
+  const yearStr = today.slice(0, 4);
+  return `${yearStr}-12-31`;
+}
+
+/**
  * Calculate the number of days between a date and today.
  * Positive = future, negative = past.
  */

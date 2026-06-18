@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { todayInTimeZone, todayStr, formatLocalDate, parseLocalDate } from "../lib/date-utils";
+import {
+  todayInTimeZone,
+  todayStr,
+  formatLocalDate,
+  parseLocalDate,
+  endOfYearInTimeZone,
+} from "../lib/date-utils";
 
 describe("todayInTimeZone", () => {
   afterEach(() => {
@@ -34,6 +40,26 @@ describe("todayInTimeZone", () => {
     vi.setSystemTime(new Date("2026-06-18T20:00:00.000Z")); // 2026-06-19 04:00 CST
 
     expect(todayInTimeZone()).toBe("2026-06-19");
+  });
+});
+
+describe("endOfYearInTimeZone", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("returns Dec 31 of the current CST year", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-18T04:00:00.000Z"));
+    expect(endOfYearInTimeZone()).toBe("2026-12-31");
+  });
+
+  test("UTC late-evening still lands in tomorrow's CST year-end", () => {
+    // 2026-12-31 23:30 UTC === 2027-01-01 07:30 CST — already in 2027
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-12-31T23:30:00.000Z"));
+    expect(endOfYearInTimeZone("Asia/Shanghai")).toBe("2027-12-31");
+    expect(endOfYearInTimeZone("UTC")).toBe("2026-12-31");
   });
 });
 
