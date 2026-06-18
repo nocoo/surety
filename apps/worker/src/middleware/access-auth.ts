@@ -34,6 +34,7 @@ function isMachineEndpoint(c: Context<AppEnv>): boolean {
  *   - /api/live (public liveness probe)
  *   - localhost / dev host (with bearer-token escape hatch for CLI dev)
  *   - surety-api.hexly.ai (machine endpoint — apiKeyAuth gates it)
+ *   - E2E_SKIP_AUTH=true in a non-production environment (L2-HTTP runner)
  *
  * Fail-closed responses on the CF Access-protected host:
  *   - env missing → 500 (deployment configuration error)
@@ -57,6 +58,18 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
   }
 
   if (isMachineEndpoint(c)) return next();
+
+  // L2-HTTP harness (wrangler dev) sets E2E_SKIP_AUTH=true so the
+  // browser-host code path is reachable without a real CF Access JWT.
+  // Match the apiKeyAuth/originGuard bypass shape: only honoured when
+  // ENVIRONMENT is not production, so a leaked var on prod cannot
+  // re-open the fail-open hole this commit closes.
+  if (
+    c.env?.E2E_SKIP_AUTH === "true" &&
+    c.env?.ENVIRONMENT !== "production"
+  ) {
+    return next();
+  }
 
   const teamDomain = c.env.CF_ACCESS_TEAM_DOMAIN;
   const aud = c.env.CF_ACCESS_AUD;

@@ -198,6 +198,29 @@ describe("accessAuth - CF JWT branch", () => {
     expect(body.sessionAuthenticated).toBe(false);
   });
 
+  test("E2E_SKIP_AUTH=true bypasses JWT verification in non-prod (L2-HTTP)", async () => {
+    // The L2-HTTP runner boots wrangler dev with E2E_SKIP_AUTH=true so the
+    // suite can exercise the browser-host code path without a real CF
+    // Access JWT. Without this bypass the suite would always see 500.
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety.hexly.ai" } },
+      { E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
+    );
+    expect(res.status).toBe(200);
+  });
+
+  test("E2E_SKIP_AUTH=true is ignored when ENVIRONMENT=production (still fail-closed)", async () => {
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety.hexly.ai" } },
+      { E2E_SKIP_AUTH: "true", ENVIRONMENT: "production" },
+    );
+    expect(res.status).toBe(500);
+  });
+
   test("JWKS cache reused across requests for same team domain", async () => {
     jwtResult = { ok: true, payload: { email: "cached@hexly.ai" } };
     const app = probeApp();
