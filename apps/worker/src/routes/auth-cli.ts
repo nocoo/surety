@@ -59,9 +59,12 @@ export function isLocalhostUrl(value: string): boolean {
  *     legitimate cousin-host initiator. The CF Access redirect chain
  *     preserves the original navigation's Sec-Fetch-Site per the fetch
  *     spec, so legitimate flows still pass. Requests without Sec-Fetch
- *     headers (old clients, curl) are allowed through — those are not the
- *     attack surface, since the attack requires a victim browser, and any
- *     modern browser sends Sec-Fetch-* on every request.
+ *     headers are also rejected: this endpoint has no legitimate non-
+ *     browser caller (CLI shells out to the OS browser; it does not call
+ *     this URL directly), and every modern browser since Chrome 76 /
+ *     Firefox 90 / Safari 16.4 sends Sec-Fetch-*. Fail-closed eliminates
+ *     the downgrade path through old webviews and header-stripping
+ *     intermediaries.
  */
 const SAFE_FETCH_MODES = new Set(["navigate"]);
 const SAFE_FETCH_DESTS = new Set(["document"]);
@@ -86,37 +89,32 @@ app.get("/api/auth/cli", async (c) => {
     return c.json({ error: "callback_url must be a localhost URL" }, 400);
   }
 
-  // If Sec-Fetch-* headers are present (modern browsers always send them),
-  // require all three of: navigation, document destination, and a non-
-  // cross-site initiator. Reject embedded contexts (image/script/iframe)
-  // AND top-level cross-site navigations (window.open / target="_blank"
-  // from an attacker page). Absent headers fall through for backwards
-  // compatibility with curl-style direct CLI flows; this is not the attack
-  // surface — a real browser victim is always sending them.
-  const fetchMode = c.req.header("Sec-Fetch-Mode");
-  const fetchDest = c.req.header("Sec-Fetch-Dest");
-  const fetchSite = c.req.header("Sec-Fetch-Site");
-  if (fetchMode || fetchDest || fetchSite) {
-    if (!SAFE_FETCH_MODES.has(fetchMode ?? "")) {
-      return c.json(
-        { error: "CLI token mint requires a top-level navigation" },
-        400,
-      );
-    }
-    if (!SAFE_FETCH_DESTS.has(fetchDest ?? "")) {
-      return c.json(
-        { error: "CLI token mint requires a top-level navigation" },
-        400,
-      );
-    }
-    // Empty Sec-Fetch-Site is treated as cross-site to be safe — a browser
-    // that sent the other two headers but omitted this one is anomalous.
-    if (!SAFE_FETCH_SITES.has(fetchSite ?? "")) {
-      return c.json(
-        { error: "CLI token mint cannot be triggered cross-site" },
-        400,
-      );
-    }
+  // Require all three Sec-Fetch-* signals to be present and safe. There is
+  // no legitimate non-browser caller of this endpoint — the CLI opens the
+  // URL in the OS default browser, it does not call this directly. Missing
+  // headers (curl, old webviews, header-stripping intermediaries) are
+  // rejected rather than fall through, removing the only remaining
+  // downgrade path.
+  const fetchMode = c.req.header("Sec-Fetch-Mode") ?? "";
+  const fetchDest = c.req.header("Sec-Fetch-Dest") ?? "";
+  const fetchSite = c.req.header("Sec-Fetch-Site") ?? "";
+  if (!SAFE_FETCH_MODES.has(fetchMode)) {
+    return c.json(
+      { error: "CLI token mint requires a top-level navigation" },
+      400,
+    );
+  }
+  if (!SAFE_FETCH_DESTS.has(fetchDest)) {
+    return c.json(
+      { error: "CLI token mint requires a top-level navigation" },
+      400,
+    );
+  }
+  if (!SAFE_FETCH_SITES.has(fetchSite)) {
+    return c.json(
+      { error: "CLI token mint cannot be triggered cross-site" },
+      400,
+    );
   }
 
   const email = c.get("accessEmail");

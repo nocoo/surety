@@ -12,6 +12,14 @@ import type { AppEnv } from "../src/lib/types";
 
 type MintArgs = { email: string; name: string };
 
+// Standard Sec-Fetch headers a top-level browser navigation produces.
+// Every successful test path needs these — the endpoint now requires them.
+const NAV_HEADERS = {
+  "sec-fetch-mode": "navigate",
+  "sec-fetch-dest": "document",
+  "sec-fetch-site": "none",
+} as const;
+
 function makeApp(opts: {
   accessEmail?: string;
   accessAuthenticated?: boolean;
@@ -90,6 +98,7 @@ describe("GET /api/auth/cli", () => {
     const res = await app.request(
       "/api/auth/cli?callback_url=" +
         encodeURIComponent("http://127.0.0.1:5173/cb"),
+      { headers: NAV_HEADERS },
     );
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: string };
@@ -107,6 +116,7 @@ describe("GET /api/auth/cli", () => {
       "/api/auth/cli?callback_url=" +
         encodeURIComponent("http://127.0.0.1:5173/cb") +
         "&state=xyz",
+      { headers: NAV_HEADERS },
     );
     expect(res.status).toBe(302);
     const loc = res.headers.get("location");
@@ -128,6 +138,7 @@ describe("GET /api/auth/cli", () => {
     const res = await app.request(
       "/api/auth/cli?callback_url=" +
         encodeURIComponent("http://localhost:9999/done"),
+      { headers: NAV_HEADERS },
     );
     expect(res.status).toBe(302);
     const url = new URL(res.headers.get("location") ?? "");
@@ -146,6 +157,7 @@ describe("GET /api/auth/cli", () => {
       "/api/auth/cli?callback=" +
         encodeURIComponent("http://127.0.0.1:5173/cb") +
         "&state=abc",
+      { headers: NAV_HEADERS },
     );
     expect(res.status).toBe(302);
     const url = new URL(res.headers.get("location") ?? "");
@@ -344,10 +356,13 @@ describe("GET /api/auth/cli", () => {
     expect(minted.length).toBe(0);
   });
 
-  test("legacy clients without Sec-Fetch headers are still allowed", async () => {
-    // curl / older browsers don't emit Sec-Fetch-*; those aren't the
-    // attack surface (the attack requires a victim browser, all of which
-    // send Sec-Fetch-* today).
+  test("rejects clients that omit all Sec-Fetch headers (curl, old webview)", async () => {
+    // The endpoint has no legitimate non-browser caller — the CLI shells
+    // out to the OS default browser and never hits this URL directly.
+    // Modern browsers (Chrome 76+, Firefox 90+, Safari 16.4+) always send
+    // Sec-Fetch-*, so absence indicates either a header-stripping
+    // intermediary or a non-browser client; both are downgrade paths we
+    // refuse to honour for a token-mint endpoint.
     const app = makeApp({
       accessEmail: "alice@example.com",
       accessAuthenticated: true,
@@ -357,7 +372,25 @@ describe("GET /api/auth/cli", () => {
       "/api/auth/cli?callback_url=" +
         encodeURIComponent("http://127.0.0.1:5173/cb"),
     );
-    expect(res.status).toBe(302);
-    expect(minted).toEqual([{ email: "alice@example.com", name: "CLI" }]);
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
+  });
+
+  test("rejects request whose Sec-Fetch-Site is present but Mode/Dest are missing", async () => {
+    // Inverse of the existing "Mode/Dest present but Site missing" case.
+    // A request that only carries Sec-Fetch-Site is anomalous; the Mode
+    // and Dest checks must still reject it.
+    const app = makeApp({
+      accessEmail: "alice@example.com",
+      accessAuthenticated: true,
+      minted,
+    });
+    const res = await app.request(
+      "/api/auth/cli?callback_url=" +
+        encodeURIComponent("http://127.0.0.1:5173/cb"),
+      { headers: { "sec-fetch-site": "none" } },
+    );
+    expect(res.status).toBe(400);
+    expect(minted.length).toBe(0);
   });
 });
