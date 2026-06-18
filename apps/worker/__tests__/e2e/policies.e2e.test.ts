@@ -263,6 +263,46 @@ describe("L2 E2E: policy sub-resources", () => {
     expect(secondBody.payments.length).toBe(firstCount);
   });
 
+  test("payments generate tolerates concurrent calls without unique conflict", async () => {
+    const env = buildTestApp();
+    const memberId = await seedMember(env);
+    const policyId = await seedPolicy(env, memberId, "POL-GC", {
+      effectiveDate: "2022-01-01",
+      totalPayments: 10,
+      paymentFrequency: "Yearly",
+    });
+
+    // Fire both calls before awaiting either, so both handlers race through
+    // findByPolicyId() → createMany(). onConflictDoNothing should keep both
+    // responses 200 and the final period set unique.
+    const [a, b] = await Promise.all([
+      jsonRequest(env, "POST", `/api/policies/${policyId}/payments/generate`, {}),
+      jsonRequest(env, "POST", `/api/policies/${policyId}/payments/generate`, {}),
+    ]);
+
+    expect(a.status).toBe(200);
+    expect(b.status).toBe(200);
+
+    const aBody = a.body as { generated: number; payments: Array<{ periodNumber: number }> };
+    const bBody = b.body as { generated: number; payments: Array<{ periodNumber: number }> };
+
+    // Across both calls the union of inserted records must equal the
+    // final set of periods (no duplicates, no losses).
+    const finalCount = Math.max(aBody.payments.length, bBody.payments.length);
+    expect(aBody.generated + bBody.generated).toBe(finalCount);
+
+    // Persisted period numbers must be unique and contiguous from 1.
+    const persisted = await jsonRequest(
+      env,
+      "GET",
+      `/api/policies/${policyId}/payments`,
+    );
+    const rows = persisted.body as Array<{ periodNumber: number }>;
+    const periodNumbers = rows.map((r) => r.periodNumber).sort((x, y) => x - y);
+    expect(new Set(periodNumbers).size).toBe(periodNumbers.length);
+    periodNumbers.forEach((p, i) => expect(p).toBe(i + 1));
+  });
+
   test("coverage-items full lifecycle", async () => {
     const env = buildTestApp();
     const memberId = await seedMember(env);
