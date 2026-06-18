@@ -2,6 +2,10 @@
  * Coverage tests for the CF Access JWT verification branch in
  * `accessAuth`. Stubs `jose.jwtVerify` so we don't need a real
  * Cloudflare Access deployment.
+ *
+ * Behaviour under test: fail-CLOSED. On the CF Access-protected host
+ * (`surety.hexly.ai`), every failure mode short-circuits with an error
+ * response rather than falling through to apiKeyAuth.
  */
 import { describe, expect, test, vi, afterAll } from "vitest";
 
@@ -83,7 +87,7 @@ describe("accessAuth - CF JWT branch", () => {
     expect(body.accessEmail).toBeNull();
   });
 
-  test("invalid JWT falls through with no flags set", async () => {
+  test("forged JWT (signature invalid) → 403 fail-closed", async () => {
     jwtResult = { ok: false };
     const app = probeApp();
     const res = await app.request(
@@ -99,13 +103,12 @@ describe("accessAuth - CF JWT branch", () => {
         CF_ACCESS_AUD: "aud-id",
       },
     );
-    const body = (await res.json()) as Record<string, unknown>;
-    expect(body.sessionAuthenticated).toBe(false);
-    expect(body.accessAuthenticated).toBe(false);
+    expect(res.status).toBe(403);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/invalid/i);
   });
 
-  test("missing JWT header on prod host falls through", async () => {
-    jwtResult = { ok: false };
+  test("missing JWT header on prod host → 401 fail-closed", async () => {
     const app = probeApp();
     const res = await app.request(
       "/api/probe",
@@ -115,8 +118,84 @@ describe("accessAuth - CF JWT branch", () => {
         CF_ACCESS_AUD: "aud-id",
       },
     );
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/missing/i);
+  });
+
+  test("CF_ACCESS env missing on prod host → 500 fail-closed", async () => {
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      {
+        headers: {
+          host: "surety.hexly.ai",
+          "Cf-Access-Jwt-Assertion": "anything",
+        },
+      },
+      {},
+    );
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/CF_ACCESS_TEAM_DOMAIN/);
+  });
+
+  test("CF_ACCESS partial env (team domain only) on prod host → 500 fail-closed", async () => {
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      {
+        headers: {
+          host: "surety.hexly.ai",
+          "Cf-Access-Jwt-Assertion": "anything",
+        },
+      },
+      { CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com" },
+    );
+    expect(res.status).toBe(500);
+  });
+
+  test("localhost bypass still works (env unconfigured) — no fail-closed 500", async () => {
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "localhost:7016" } },
+      {},
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.accessAuthenticated).toBe(true);
+    expect(body.sessionAuthenticated).toBe(true);
+  });
+
+  test("/api/live whitelist still works (env unconfigured) — no fail-closed 500", async () => {
+    const app = new Hono<AppEnv>();
+    app.use("*", accessAuth);
+    app.get("/api/live", (c) => c.text("ok"));
+    const res = await app.request(
+      "/api/live",
+      { headers: { host: "surety.hexly.ai" } },
+      {},
+    );
+    expect(res.status).toBe(200);
+  });
+
+  test("machine endpoint (surety-api.hexly.ai) bypasses Access — apiKeyAuth handles it", async () => {
+    // The CLI/bearer host shares the Worker with the browser host. accessAuth
+    // must not 401 it for a missing JWT — apiKeyAuth gates that route.
+    const app = probeApp();
+    const res = await app.request(
+      "/api/probe",
+      { headers: { host: "surety-api.hexly.ai" } },
+      {
+        CF_ACCESS_TEAM_DOMAIN: "team.cloudflareaccess.com",
+        CF_ACCESS_AUD: "aud-id",
+      },
+    );
+    expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
     expect(body.accessAuthenticated).toBe(false);
+    expect(body.sessionAuthenticated).toBe(false);
   });
 
   test("JWKS cache reused across requests for same team domain", async () => {
