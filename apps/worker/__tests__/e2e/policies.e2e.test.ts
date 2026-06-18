@@ -3,7 +3,7 @@
  * coverage-items, attachments) and dependent surfaces (dashboard, coverage-lookup)
  * driven against a real in-memory Drizzle DB.
  */
-import { describe, expect, test } from "bun:test";
+import { describe, expect, setSystemTime, test } from "bun:test";
 import { buildTestApp, jsonRequest } from "./setup";
 
 async function seedMember(env: ReturnType<typeof buildTestApp>) {
@@ -188,36 +188,48 @@ describe("L2 E2E: policy sub-resources", () => {
   });
 
   test("payments generate backfills past periods up to today for policy with totalPayments", async () => {
-    const env = buildTestApp();
-    const memberId = await seedMember(env);
-    const policyId = await seedPolicy(env, memberId, "POL-GP", {
-      effectiveDate: "2020-01-01",
-      totalPayments: 30,
-      paymentFrequency: "Yearly",
-    });
+    // Freeze the clock at 2024-06-15 12:00 CST so the test is deterministic.
+    // effectiveDate 2020-01-01 Yearly + totalPayments 30 → expect periods 1..5
+    // (2020-01-01 ... 2024-01-01); 2025-01-01 onward must be clipped.
+    setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const policyId = await seedPolicy(env, memberId, "POL-GP", {
+        effectiveDate: "2020-01-01",
+        totalPayments: 30,
+        paymentFrequency: "Yearly",
+      });
 
-    const r = await jsonRequest(
-      env,
-      "POST",
-      `/api/policies/${policyId}/payments/generate`,
-      {},
-    );
-    expect(r.status).toBe(200);
-    const body = r.body as {
-      generated: number;
-      payments: Array<{ status: string; periodNumber: number; dueDate: string }>;
-    };
+      const r = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments/generate`,
+        {},
+      );
+      expect(r.status).toBe(200);
+      const body = r.body as {
+        generated: number;
+        payments: Array<{ status: string; periodNumber: number; dueDate: string }>;
+      };
 
-    // Cutoff is "today", so we must get more than one period (vs the
-    // previous bug where totalPayments was ignored and only 1 was emitted),
-    // and not the full 30 future periods either.
-    expect(body.generated).toBeGreaterThan(1);
-    expect(body.generated).toBeLessThan(30);
-    expect(body.payments.every((p) => p.status === "Pending")).toBe(true);
+      // Exactly the 5 past-or-today periods, no future ones, all Pending.
+      expect(body.generated).toBe(5);
+      expect(body.payments.length).toBe(5);
+      expect(body.payments.every((p) => p.status === "Pending")).toBe(true);
+      expect(body.payments.every((p) => p.dueDate <= "2024-06-15")).toBe(true);
 
-    // Period numbers must be contiguous starting at 1.
-    const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
-    sorted.forEach((p, idx) => expect(p.periodNumber).toBe(idx + 1));
+      const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
+      expect(sorted.map((p) => p.dueDate)).toEqual([
+        "2020-01-01",
+        "2021-01-01",
+        "2022-01-01",
+        "2023-01-01",
+        "2024-01-01",
+      ]);
+    } finally {
+      setSystemTime();
+    }
   });
 
   test("payments generate is idempotent — second call adds nothing", async () => {
