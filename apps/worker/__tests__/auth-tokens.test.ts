@@ -80,16 +80,16 @@ describe("GET /api/auth/tokens", () => {
   test("rejects bearer-only auth (CLI token)", async () => {
     const repos = buildRepos("alice@hexly.ai");
     const app = buildApp(repos);
-    const res = await app.request(
-      "/api/auth/tokens",
-      {
-        headers: {
-          host: "surety-api.hexly.ai",
-          authorization: "Bearer sk_alice",
-        },
+    // accessAuth's machine-endpoint bypass requires CF edge witness, so
+    // stamp `cf` on the Request to simulate edge transit.
+    const req = new Request("http://localhost/api/auth/tokens", {
+      headers: {
+        host: "surety-api.hexly.ai",
+        authorization: "Bearer sk_alice",
       },
-      {},
-    );
+    });
+    Object.assign(req, { cf: { colo: "TEST" } });
+    const res = await app.request(req, undefined, {});
     expect(res.status).toBe(401);
     const body = (await res.json()) as { error: string };
     expect(body.error).toContain("Session");
@@ -134,17 +134,15 @@ describe("DELETE /api/auth/tokens/:id", () => {
   test("rejects bearer-only auth", async () => {
     const repos = buildRepos("alice@hexly.ai");
     const app = buildApp(repos);
-    const res = await app.request(
-      "/api/auth/tokens/2",
-      {
-        method: "DELETE",
-        headers: {
-          host: "surety-api.hexly.ai",
-          authorization: "Bearer sk_alice",
-        },
+    const req = new Request("http://localhost/api/auth/tokens/2", {
+      method: "DELETE",
+      headers: {
+        host: "surety-api.hexly.ai",
+        authorization: "Bearer sk_alice",
       },
-      {},
-    );
+    });
+    Object.assign(req, { cf: { colo: "TEST" } });
+    const res = await app.request(req, undefined, {});
     expect(res.status).toBe(401);
     expect(repos.lastRevokedId).toBeNull();
   });

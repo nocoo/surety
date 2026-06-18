@@ -319,23 +319,23 @@ describe("accessAuth + apiKeyAuth + /api/me integration", () => {
 
   test("machine host (surety-api.hexly.ai) + valid Bearer token → /api/me returns email", async () => {
     // Bearer-token clients hit the machine endpoint where accessAuth
-    // short-circuits and apiKeyAuth gates the request.
+    // short-circuits and apiKeyAuth gates the request. accessAuth requires
+    // c.req.raw.cf to honour the machine-host claim, so simulate edge
+    // transit on the Request object.
     const app = buildApp({
       apiTokens: {
         verify: async () => ({ id: 9, email: "prod@hexly.ai" }),
         updateLastUsed: async () => {},
       },
     });
-    const res = await app.request(
-      "/api/me",
-      {
-        headers: {
-          host: "surety-api.hexly.ai",
-          authorization: "Bearer sk_prod",
-        },
+    const req = new Request("http://localhost/api/me", {
+      headers: {
+        host: "surety-api.hexly.ai",
+        authorization: "Bearer sk_prod",
       },
-      {},
-    );
+    });
+    Object.assign(req, { cf: { colo: "TEST" } });
+    const res = await app.request(req, undefined, {});
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
       email: string | null;
