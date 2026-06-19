@@ -428,6 +428,23 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.1.3
+
+### Changed
+- Clear resolved osv-scanner ignored vulns
+- Override undici to ^7.28.0 (GHSA-vmh5-mc38-953g, GHSA-pr7r-676h-xcf6)
+- Origin-guard Bearer exemption requires no session
+- Stamp cf on machine-endpoint test requests
+- Lock down nextDueDate anchor, fallback, and skip-no-shift behaviour
+- Generator anchors on firstDueDate not effectiveDate
+
+### Fixed
+- /api/auth/cli requires Access session, blocks token self-replication
+- IsMachineEndpoint requires CF edge witness
+- /api/auth/cli requires Sec-Fetch headers, fails closed
+- Generate anchors on nextDueDate, falls back to effectiveDate
+- Generate cutoff extends to end of current year
+
 ## v2.1.2
 
 ### Changed
