@@ -113,32 +113,54 @@ termination_reason TEXT,
 | `terminatedAt < policy.effectiveDate` | 400 `Terminated date must be on or after effective date` |
 | `terminatedAt > today` (`todayInTimeZone("Asia/Shanghai")` 比较) | 400 `Terminated date cannot be in the future` |
 | `terminationReason.length > 500` | 400 `Reason too long` |
-| 当前已是终止态且新 `terminatedAt > 当前 policy.terminatedAt` | 400 `Cannot extend the termination date forward` |
+| 当前已是终止态且 `existing.terminatedAt != null` 且新 `terminatedAt > existing.terminatedAt` | 400 `Cannot extend the termination date forward` |
 
 > **日期校验的可执行定义**：`parseLocalDate` 对越界数值容忍（`new Date("2026-99-99")` 会被 JS 引擎滚到 2034 年），不能单独使用。必须用 regex 先卡死格式，再做 round-trip：`const d = parseLocalDate(s); if (formatDateString(d) !== s) reject(...)`。`today` 一律走 `todayInTimeZone("Asia/Shanghai")`（`packages/db/src/lib/date-utils.ts:63`）取项目标准时区当日，避免 Worker 容器 UTC 与用户本地日期相差一天。
 
 > **terminatedAt 单调向前**：v1 不允许把已有的终止日期向后挪。原因：`cancelPendingAfter` 的 SQL 只把 `Pending → Cancelled`，不把 `Cancelled → Pending`；如果允许把 2026-03-01 改成 2026-06-01，3–6 月之间被取消的缴费会继续保持 Cancelled，与 "只取消 `dueDate > terminated_at`" 的约定相悖，产生静默不一致。允许的修改方向：(1) 同一终止日只改 reason / status；(2) 把 terminatedAt 向**更早**的日期挪 —— 这时只会有"更多"未来 Pending 被翻成 Cancelled，仍然单向收敛。把日期后移的真实需求按"先 PUT 回 Active 再重新 terminate"的路径处理（用户必须显式经过 reactivate 步骤，并自行重新生成需要的缴费）。
+>
+> **老数据补录例外**：旧版本可能已存在 `status` 是终止态但 `terminated_at IS NULL` 的保单（schema 升级前写入的）。此时**允许**首次通过 terminate 端点补录任何合法的 `terminatedAt`（视为初始化，不触发单调校验）。单调校验只在 `existing.terminatedAt != null` 时生效。这条规则保证 schema 迁移后用户能补齐审计字段。
 
 **Behavior（D1 batch 原子执行）：**
 
 使用 D1 binding 的 `db.batch([...])` 把以下两条语句作为单一 atomic 事务发出（D1 batch 提供 all-or-nothing 语义，参见 `packages/db/src/backup.ts:351` 与 `packages/db/src/index.ts:149-162`）：
 
-1. `UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status='Pending' AND due_date > ?`
+1. `UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`
 2. `UPDATE policies SET status=?, terminated_at=?, termination_reason=?, updated_at=? WHERE id=?`
 
 batch 整个失败时两条都回滚，DB 保持 terminate 前的状态，前端收到 500 后用户可以原样重试，**不会出现** "Active policy + Cancelled payments" 的中间态。
 
+> **为什么连同 Overdue 一起翻**：用户允许把 terminatedAt 回溯到任意 `[effectiveDate, today]` 区间，这意味着回溯点之前可能已经积累了一批 `Overdue` 的缴费。如果只翻 `Pending`，那些 `Overdue` 行会继续出现在 dashboard、未结清统计、续保提醒里，制造"已退保的保单还在催缴"的鬼影。规则就一句话：**任何 `dueDate > terminated_at` 且尚未实际缴费（`Pending` 或 `Overdue`）的行，都按"作废"处理**，`Paid` 行无论日期都不动（已发生事实不可改）。
+
 实现要点：
 
-- Worker 路由通过 `c.env.DB.batch(...)` 直接发 batch；不要写在 repository 里逐条 `await`。`paymentsRepo.cancelPendingAfter` 仅作为单元测试入口和文档化的纯函数语义（构造 UPDATE 语句），不在 terminate 路径上单独调用。
+- Worker 路由通过 `c.env.DB.batch(...)` 直接发 batch；不要写在 repository 里逐条 `await`。`paymentsRepo.cancelPendingAfter` 仅作为单元测试入口和文档化的纯函数语义（构造 UPDATE 语句、用 `IN ('Pending','Overdue')` 选行），不在 terminate 路径上单独调用。
 - bun:sqlite L1 单测里用 `db.transaction(() => { ... })` 替代 batch（drizzle bun-sqlite driver 支持同步事务），保持 atomic 语义一致。
 - 受影响行数：D1 batch 返回 `D1Result[]`，每条 statement 的 `meta.changes` 即对应行数。`cancelledPaymentCount` 取 batch[0].meta.changes。
+- **`.bind()` 参数细节**（绕过 Drizzle 的类型转换后必须手动处理）：
+  - `updated_at` 列是 `integer("updated_at", { mode: "timestamp" })`，Drizzle 平时把 `Date` 序列化为 unix epoch **seconds**（见 `drizzle-orm/sqlite-core` timestamp mode）。raw bind 必须显式传 `Math.floor(Date.now() / 1000)` 而不是 `new Date()`，否则会写入字符串 "2026-06-22T..." 破坏后续读取。
+  - `termination_reason` 缺省必须显式 `null`，不能让 `undefined` 进 `.bind()` —— D1 binding 对 `undefined` 行为未定义，可能转成字符串 "undefined" 或抛错。Worker 路由收 body 后立刻 normalize：`const reason = body.terminationReason ?? null`。
+  - `terminated_at` 始终是 string（已通过 regex + round-trip 校验），直接 bind。
+  - 完整调用示例：
+    ```typescript
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    const cancelStmt = c.env.DB.prepare(
+      `UPDATE payments SET status='Cancelled'
+       WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`,
+    ).bind(policyId, terminatedAt);
+    const updateStmt = c.env.DB.prepare(
+      `UPDATE policies SET status=?, terminated_at=?, termination_reason=?, updated_at=?
+       WHERE id=?`,
+    ).bind(status, terminatedAt, reason, nowEpoch, policyId);
+    const [cancelResult] = await c.env.DB.batch([cancelStmt, updateStmt]);
+    const cancelledPaymentCount = cancelResult.meta.changes;
+    ```
 
 **Idempotency：**
 
 - 二次调用（用户重新打开对话框确认）：
   - policies UPDATE 直接覆写 `terminatedAt` / `terminationReason`，幂等
-  - payments UPDATE 用 `WHERE status="Pending"` 过滤，已经 `Cancelled` 的行不会被再次翻转；`cancelledPaymentCount` 在二次调用中为 0
+  - payments UPDATE 用 `WHERE status IN ('Pending','Overdue')` 过滤，已经 `Cancelled` 的行不会被再次翻转；`cancelledPaymentCount` 在二次调用中为 0
 - 因此 `terminate` 端点可安全重试，无累加副作用
 
 **Response：**
@@ -159,6 +181,23 @@ batch 整个失败时两条都回滚，DB 保持 terminate 前的状态，前端
 
 PUT **不** 自动恢复 `Cancelled` 缴费 —— 用户切回 Active 后如需补回缴费记录，请走 payments 模块手工重建，避免误恢复历史"作废"凭证。
 
+### 通用 POST / PUT 禁写终止态（旁路封堵）
+
+数据模型约束规定终止态必须有 `terminated_at`，否则审计就有空洞。光加 terminate 路由不够 —— `POST /api/policies` (`apps/worker/src/routes/policies.ts:50`) 和 `PUT /api/policies/:id` (`apps/worker/src/routes/policies.ts:131`) 现在都直接接受 `body.status`，新建表单 `apps/web/src/app/policies/policy-sheet.tsx:65` 还把四个状态选项摆在用户面前；任何前端跳过 dialog 都能写出 `status=Surrendered, terminated_at=null` 的非法数据。
+
+API 层强约束：
+
+- `POST /api/policies`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot create a policy in a terminated state — use POST /api/policies/:id/terminate after creation`。新建保单只允许进入 `Active`（默认）。
+- `PUT /api/policies/:id`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 DB 现有 status 不一致时返回 400 `Use POST /api/policies/:id/terminate to transition into a terminal status`。仅在 `body.status` 与现有相等时透传（让其它字段更新可继续走 PUT），且即便相等也不允许通过 PUT 修改 `terminatedAt` / `terminationReason`（必须走 terminate）。
+- `PUT` 切回 Active 仍按上一节规则强制清空 metadata。
+
+UI 层呼应：
+
+- `apps/web/src/app/policies/policy-sheet.tsx` 新建保单流程的 `statusOptions` (line 65) 收窄为单一 `Active`（或直接移除 status 字段，新建默认 Active）。
+- 已存在的"编辑保单" sheet 在已 Active 时也不再渲染终止态选项；终止动作只能走详情页 MetaColumn 的三按钮 dialog。
+
+> **L2 必须覆盖**：直接 `POST /api/policies { status: "Surrendered" }` → 400；直接 `PUT { status: "Lapsed" }` 在 Active 保单上 → 400；`PUT { status: "Active", terminatedAt: "2026-01-01" }`（试图通过 PUT 伪造 metadata）→ Active 路径下 metadata 被强制清空。
+
 ### PolicyDetail 响应
 
 `apps/worker/src/routes/policies.ts` GET single (line 125-128) + GET list 的返回 shape，以及 `apps/web/src/lib/types/policy.ts:9-41` 的 `PolicyDetail` interface，均新增：
@@ -176,6 +215,7 @@ terminationReason: string | null;
 |------|------|------|
 | `POST /api/policies/:id/payments` (`apps/worker/src/routes/policies.ts:232`) | 直接 create | 加守卫：当 `policy.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot add payments to a terminated policy` |
 | `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：终止保单下，body 中若包含 `status="Pending"` 或将 `Cancelled` 改为其它非 `Paid` 状态，返回 400；仅允许将 `Cancelled`/`Pending` 行标记为 `Paid`（用户在终止日**之前**实际已缴的历史补录），以及编辑 paidDate / paidAmount / 备注 |
+| `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 直接 delete | 加守卫：终止保单下一律返回 400 `Cannot delete payments of a terminated policy`，保护 `Cancelled` 行作为审计痕迹永久留存；保留 `DELETE /api/policies/:id`（全保单级联删除）路径不变 |
 | `POST /api/policies/:id/payments/generate` (`apps/worker/src/routes/policies.ts:301`) | 按 schedule 生成 | 加守卫：终止保单直接返回 400 `Cannot generate payments for a terminated policy`；自动批量生成路径完全关闭 |
 | 反向 PUT policy → Active | 仅清字段 | 不主动恢复 Cancelled 缴费（详见 [反向操作](#反向操作复用-put-apipoliciesid)）；用户切回 Active 后才能继续走 generate 路径 |
 
@@ -183,6 +223,7 @@ UI 同步：
 
 - `apps/web/src/components/policy-detail/payments-section.tsx` 中"添加缴费记录" (line 455) 与"生成本年度缴费" (line 529) 两个按钮在 `policy.status` ∈ 终止态时隐藏
 - 已存在的缴费行：`Paid` 行保留"编辑 paidDate / 备注"入口；`Cancelled` 行整行 readonly（参见 [Payments Section 更新](#4-payments-section-更新)）
+- 行级删除按钮在终止态下隐藏（呼应 DELETE 守卫）；用户若要批量清理只能删除整张保单
 
 L2 E2E 必须覆盖：终止后 POST payments → 400、generate → 400、PUT 把 Cancelled 改 Pending → 400。
 
@@ -366,8 +407,8 @@ interface TimelineEvent {
 | `packages/db/src/schema.ts` | MODIFY | `policies` table 追加 `terminatedAt` / `terminationReason`，`payments.status` enum 扩展 `Cancelled` (line 127-131, 194) |
 | `packages/db/src/index.ts` | MODIFY | INIT_SQL 中 `policies` CREATE TABLE 同步追加两列 (line 280-313) |
 | `packages/db/src/types.ts` | MODIFY | 新增 export `TerminalPolicyStatus = "Surrendered" \| "Claimed" \| "Lapsed"` 供 API / Dialog 复用 (line 11) |
-| `packages/db/src/repositories/payments.ts` | MODIFY | 新增 `cancelPendingAfter(policyId, dateStr)`：`UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status='Pending' AND due_date > ?`；返回受影响行数 |
-| `packages/db/__tests__/payments.test.ts` | MODIFY/CREATE | 覆盖 `cancelPendingAfter` 边界（只翻 Pending、只翻 dueDate > terminatedAt、idempotency） |
+| `packages/db/src/repositories/payments.ts` | MODIFY | 新增 `cancelPendingAfter(policyId, dateStr)`：`UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`；返回受影响行数 |
+| `packages/db/__tests__/payments.test.ts` | MODIFY/CREATE | 覆盖 `cancelPendingAfter` 边界（Pending 与 Overdue 都翻、Paid 不动、只翻 dueDate > terminatedAt、idempotency） |
 | `drizzle/000X_policy_termination.sql` | CREATE | `bunx drizzle-kit generate` 产出两条 `ALTER TABLE policies ADD COLUMN` |
 
 ### Phase 2: API Layer
@@ -376,7 +417,9 @@ interface TimelineEvent {
 |------|--------|-------------|
 | `apps/worker/src/routes/policies.ts` | MODIFY | 新增 `POST /api/policies/:id/terminate` handler，紧挨 PUT 之后；用 `c.env.DB.batch([cancelPendingStmt, updatePolicyStmt])` 一次发出两条语句以保证原子性；GET single / GET list 响应 shape 增加 `terminatedAt` / `terminationReason` (line 125-128) |
 | `apps/worker/src/routes/policies.ts` | MODIFY | PUT handler 内追加规则：当 `body.status === "Active"` 时强制 `terminatedAt=null`, `terminationReason=null` (line 148-162) |
-| `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies/:id/payments` (line 232)、`PUT /api/policies/:id/payments/:paymentId` (line 258)、`POST /api/policies/:id/payments/generate` (line 301) 三条路由头部加 `policy.status` 终止态守卫，返回 400（详见 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)） |
+| `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies` (line 50) 与 `PUT /api/policies/:id` (line 131) 加守卫拒绝通用 CRUD 直接写终止态（详见 [通用 POST / PUT 禁写终止态](#通用-post--put-禁写终止态旁路封堵)） |
+| `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies/:id/payments` (line 232)、`PUT /api/policies/:id/payments/:paymentId` (line 258)、`DELETE /api/policies/:id/payments/:paymentId` (line 287)、`POST /api/policies/:id/payments/generate` (line 301) 四条路由头部加 `policy.status` 终止态守卫，返回 400（详见 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)） |
+| `apps/worker/__tests__/e2e/setup.ts` (line 88) | MODIFY | fake D1 当前只暴露 `prepare().first()`，没有 `batch()`。补一个最小 `batch(stmts)` 实现：顺序在 bun:sqlite `db.transaction(() => ...)` 内执行每条 statement，返回 `[{ meta: { changes } }, ...]` 形状；让 terminate handler 与所有 batch atomicity 测试可跑。模拟 batch 失败用 stmt 里塞一个会触发约束错误的 statement 验证回滚 |
 | `packages/api/src/policies.ts` (如存在) | MODIFY | 如有 framework-agnostic 业务层则在此实现 `terminatePolicy(repos, id, input)`，Worker 路由薄壳调用；坚守 CLAUDE.md "路由是薄壳" 原则。如不存在则直接写在 worker 路由内（与现有 PUT 一致风格） |
 
 ### Phase 3: UI Core
@@ -427,12 +470,19 @@ interface TimelineEvent {
 | POST terminate 非法 status（如 `Active`） | 400 |
 | POST terminate 不存在的 policy | 404 |
 | POST terminate 后将 terminatedAt 后移 | 400 `Cannot extend the termination date forward` |
-| POST terminate 后将 terminatedAt 前移 | 200，额外区间内的 Pending 被翻成 Cancelled |
+| POST terminate 后将 terminatedAt 前移 | 200，额外区间内的 Pending/Overdue 被翻成 Cancelled |
+| POST terminate 对老数据（status 已终止但 terminatedAt NULL） | 200，允许首次补录任意合法日期，不触发单调校验 |
+| POST terminate 把 Overdue 翻成 Cancelled | 终止日之后的 Overdue 行被翻；终止日之前的 Overdue 保留 Overdue（已属于"真实历史欠缴"，不能洗白） |
 | POST terminate batch atomicity | 模拟 policies UPDATE 失败（例如向只读副本注入错误）后 GET payments：原 Pending 仍为 Pending，policy 状态未改 |
+| POST `/api/policies` body.status="Surrendered" 创建 | 400（旁路被堵） |
+| PUT `/api/policies/:id` 把 Active 直接改成 Lapsed | 400（必须走 terminate） |
+| PUT `/api/policies/:id` 在终止态下尝试修改 `terminatedAt` / `terminationReason` | 400（这两个字段只能通过 terminate 路径改） |
 | 终止后 POST `/api/policies/:id/payments` | 400 `Cannot add payments to a terminated policy` |
 | 终止后 POST `/api/policies/:id/payments/generate` | 400 |
 | 终止后 PUT 把 Cancelled 行改 Pending | 400 |
 | 终止后 PUT 把 Pending 行改 Paid | 200（允许补录历史已缴） |
+| 终止后 DELETE 行级 payment | 400 `Cannot delete payments of a terminated policy` |
+| 终止后 DELETE 整张保单 | 200（级联删除路径不受守卫影响） |
 | PUT policy status=Active 反向切回 | terminatedAt / terminationReason 被清空；Cancelled 缴费保持 Cancelled（不自动恢复） |
 | 反向切回 Active 后再 POST payments | 200（守卫解除） |
 
@@ -454,10 +504,10 @@ L2 HTTP 套件 `bun run test:l2:http` 同样运行一遍 terminate 路径，验�
 |---|---------|-------|--------|
 | 1 | `feat(db): add terminated_at / termination_reason to policies; extend payments enum with Cancelled` | `packages/db/src/schema.ts`, `packages/db/src/index.ts` INIT_SQL, `packages/db/src/types.ts`, drizzle migration | pending |
 | 2 | `feat(db): add paymentsRepo.cancelPendingAfter` | `packages/db/src/repositories/payments.ts` + L1 test | pending |
-| 3 | `feat(api): add POST /api/policies/:id/terminate; expose terminatedAt / terminationReason; guard payments routes against terminated policies` | `apps/worker/src/routes/policies.ts` (terminate handler with D1 `batch()`, PUT auto-clear, payments guards on POST/PUT/generate), `packages/api/...`, `apps/web/src/lib/types/policy.ts` PolicyDetail + PaymentStatus | pending |
-| 4 | `test(e2e): cover policy terminate endpoint and payments side-effect` | `apps/worker/__tests__/e2e/policies.e2e.test.ts` | pending |
+| 3 | `feat(api): add POST /api/policies/:id/terminate; expose terminatedAt / terminationReason; lock down all status bypass routes` | `apps/worker/src/routes/policies.ts` (terminate handler with D1 `batch()`, PUT auto-clear, terminal-status guards on POST/PUT policies + POST/PUT/DELETE/generate payments), `apps/worker/__tests__/e2e/setup.ts` (fake D1 `batch()` shim), `packages/api/...`, `apps/web/src/lib/types/policy.ts` PolicyDetail + PaymentStatus | pending |
+| 4 | `test(e2e): cover policy terminate endpoint and payments side-effect` | `apps/worker/__tests__/e2e/policies.e2e.test.ts` (terminate path + bypass guards + Overdue handling + atomicity) | pending |
 | 5 | `feat(ui): termination dialog component` | `apps/web/src/components/policy-detail/termination-dialog.tsx` + L1 test | pending |
-| 6 | `feat(ui): wire action buttons and status dropdown interception in MetaColumn` | `apps/web/src/components/policy-detail/meta-column.tsx`, `apps/web/src/app/policies/[id]/page.tsx` refresh callbacks | pending |
+| 6 | `feat(ui): wire action buttons and status dropdown interception in MetaColumn` | `apps/web/src/components/policy-detail/meta-column.tsx`, `apps/web/src/app/policies/[id]/page.tsx` refresh callbacks, `apps/web/src/app/policies/policy-sheet.tsx` 收窄 `statusOptions` 到 Active-only（line 65） | pending |
 | 7 | `feat(ui): render Cancelled payment status; lock down payment writes when policy is terminated` | `apps/web/src/components/policy-detail/payments-section.tsx` (StatusBadge / row readonly / hide add+generate buttons), `apps/web/src/lib/constants/policy.ts` (paymentStatusLabels), `apps/web/src/lib/types/policy.ts` (PaymentStatus = 4-tuple) | pending |
 | 8 | `feat(ui): timeline renders terminated milestone and cancels future events` | `apps/web/src/components/policy-detail/timeline-column.tsx` + L1 test | pending |
 
