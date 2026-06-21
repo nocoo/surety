@@ -162,14 +162,19 @@ export function isCoverageActiveStatus(
 }
 ```
 
-> **PendingSurrender 仍服从 expiry**：拟退保表达的是"用户想退保"的意向，不影响保单条款的到期事实。一张已过期的保单即使后来被标记 `PendingSurrender`，也不应在 dashboard / 保障速查 / 续保日历里复活 —— 用户的意向不能延长合同已结束的保障。`isCoverageActiveStatus` 因此对 `PendingSurrender` 和 `Active` 用同一套 expiry 检查，行为与 `deriveDisplayStatus` 保持一致。terminate / mark-pending-surrender 端点的"读 DB status 而非 display"规则只影响 **transition 准入**（已过期保单仍能被用户主动终止 / 标记退保），不影响 **coverage 是否生效** 的判断（已过期就是不生效）。
+> **PendingSurrender 仍服从 expiry**：拟退保表达的是"用户想退保"的意向，不影响保单条款的到期事实。一张已过期的保单即使后来被标记 `PendingSurrender`，也不应在 dashboard / 保障速查 / 续保日历里复活 —— 用户的意向不能延长合同已结束的保障。展示层和判定层在这里**有意分离**：
+>
+> - **展示层** (`deriveDisplayStatus`)：DB status = `PendingSurrender` 时直接返回 `PendingSurrender`，**不**降级到 `Expired`（这是当前规则，让 badge 始终展示用户意向，避免拟退保保单的过期日把"拟退保"标签覆盖成"已过期"，造成用户以为状态机退回去了）。
+> - **判定层** (`isCoverageActiveStatus`)：对 `Active` 和 `PendingSurrender` 都做 expiry 检查，过期就返回 false。
+>
+> 两者关注点不同：badge 表达"保单当前的状态意向"，coverage helper 回答"今天此保单是否还在提供保障"。terminate / mark-pending-surrender 端点的"读 DB status 而非 display"规则只影响 **transition 准入**（已过期保单仍能被用户主动终止 / 标记退保），不影响 **coverage 是否生效** 的判断（已过期就是不生效）。
 
 下游消费点必须按此表逐一对齐（每条都进 File Changes / L2 测试）：
 
 | 消费点 | 当前判定 | 改为 | 理由 |
 |--------|----------|------|------|
 | `packages/api/src/dashboard.ts:20` 活跃保单数 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保仍是用户当前持有的有效保单，统计应包含 |
-| `packages/api/src/coverage-lookup.ts:167, 190` 保障速查 | `p.status === "Active"` 字符串比较（输入为 display status，由 worker route line 38 `deriveDisplayStatus(...)` 先派生） | `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`（输入改为 raw DB status，详见下方"输入类型校准") | 拟退保下保障仍生效，意外 / 重疾 / 医疗触发理赔可正常用 |
+| `packages/api/src/coverage-lookup.ts:167, 190, 230` 保障速查 | `p.status === "Active"` 字符串比较（输入为 display status，由 worker route line 38 `deriveDisplayStatus(...)` 先派生） | `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`（输入改为 raw DB status，详见下方"输入类型校准"）；line 230 的 `isActive: policy.status === "Active"` 同步改成 helper，否则前端"是否在保"标记仍只认 Active，拟退保会被错标为失效 | 拟退保下保障仍生效，意外 / 重疾 / 医疗触发理赔可正常用；`isActive` 字段是前端保障列表、复制文本、急用联系人的判定依据 |
 | `packages/api/src/coverage-lookup.ts:119` `STATUS_LABELS` | 5 个键不含 `PendingSurrender` | 追加 `PendingSurrender: "拟退保"` | `buildPolicyCards` 用 `STATUS_LABELS[policy.status] ?? policy.status` (line 229) 生成展示文案，不补 label 用户会看到裸枚举值 |
 | `apps/worker/src/routes/renewal-calendar.ts:12` 续保提醒 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保期间续保提醒仍要发（用户没准确退完前需要决策） |
 | `packages/api/src/renewal-calendar.ts`（如有同名） | 同上 | 同上 | 同上 |
@@ -178,18 +183,24 @@ export function isCoverageActiveStatus(
 
 > **`isCoverageActiveStatus` 的输入类型校准**：helper 签名是 `(dbStatus: PolicyDbStatus, expiryDate)`，**必须接收 raw DB status**。`apps/worker/src/routes/coverage-lookup.ts:38` 当前把 `deriveDisplayStatus(...)` 派生后的 display string（可能含 `Expired`）塞进 `policy.status` 再传给 `buildPolicyCards`，这是错的语义入口 —— `buildPolicyCards` 拿到的 status 已经被 `Expired` 覆盖，再传给 helper 是 display string 而非 DB status。
 >
-> 改造方案（与 helper 切换同 commit）：worker route 改成把 `dbStatus` (raw) 和 `displayStatus` (派生) 作为两个独立字段塞进卡片对象：
+> 改造方案（与 helper 切换同 commit），三件事一起做：
 >
-> ```typescript
-> const pd = {
->   id: policy.id, productName: policy.productName, ...,
->   dbStatus: policy.status as PolicyDbStatus,                              // 原始 DB 值
->   status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate), // 展示用
->   expiryDate: policy.expiryDate,
-> };
-> ```
+> 1. **worker route** 把 `dbStatus` (raw) 和 `status` (display) 作为两个独立字段塞进卡片对象：
 >
-> `buildPolicyCards` 在过滤时用 `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`，渲染时用 `STATUS_LABELS[p.status]`，职责分离。`STATUS_LABELS` 仍保留 `Expired` / `PendingSurrender` 两个新 label，因为渲染路径需要展示派生后的状态文案。
+>    ```typescript
+>    const pd = {
+>      id: policy.id, productName: policy.productName, ...,
+>      dbStatus: policy.status as PolicyDbStatus,                              // 原始 DB 值
+>      status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate), // 展示用
+>      expiryDate: policy.expiryDate,
+>    };
+>    ```
+>
+> 2. **`PolicyForCoverage` interface**（`packages/api/src/coverage-lookup.ts:31`）增加 `dbStatus: PolicyDbStatus` 字段，与现有 `status` 字段共存（status 保持 display 用途）。
+>
+> 3. **`buildPolicyCards` 内部所有过滤 / `isActive` 计算**（line 167、190、230）一律用 `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`，**禁止**再写 `p.status === "Active"`。`PolicyCoverageCard.isActive` 由此 helper 计算，确保拟退保保单的 `isActive=true`，过期保单（含 PendingSurrender 已过期）的 `isActive=false`。
+>
+> `STATUS_LABELS` 渲染用 `policy.status`（display string），所以保留 `Expired` / `PendingSurrender` 两个 label，与过滤用的 dbStatus 路径职责分离。
 
 > **保留 `isEffectivelyActive`**：不删旧 helper，以备将来确实需要"狭义 Active"语义（例如某天加入"自动续保前的资格预检"——只能由真正 Active 触发，PendingSurrender 不行）。本次改动只是把所有已有消费点切到 `isCoverageActiveStatus`，使现有"活跃"语义保持原义（含拟退保）。一次 grep + replace 切换，零行为静默改变。
 
@@ -402,7 +413,7 @@ PUT **不** 自动恢复 `Cancelled` 缴费 —— 用户从终止态切回 Acti
 
 ### 通用 POST / PUT 禁写非 Active 状态（旁路封堵）
 
-数据模型约束规定非 Active 状态必须有 `terminated_at` / `termination_reason`（终止态必填、PendingSurrender 必填），否则审计就有空洞。光加 transition 路由不够 —— `POST /api/policies` (`apps/worker/src/routes/policies.ts:50`) 和 `PUT /api/policies/:id` (`apps/worker/src/routes/policies.ts:131`) 现在都直接接受 `body.status`，新建表单 `apps/web/src/app/policies/policy-sheet.tsx:65` 还把四个状态选项摆在用户面前；任何前端跳过 dialog 都能写出 `status=Surrendered, terminated_at=null` 的非法数据。
+数据模型约束规定**非 Active 状态必须有 `terminated_at`**（终止态必填、PendingSurrender 必填；`termination_reason` 可空，见 [Data Model](#data-model) 的约束表），否则审计就有空洞。光加 transition 路由不够 —— `POST /api/policies` (`apps/worker/src/routes/policies.ts:50`) 和 `PUT /api/policies/:id` (`apps/worker/src/routes/policies.ts:131`) 现在都直接接受 `body.status`，新建表单 `apps/web/src/app/policies/policy-sheet.tsx:65` 还把四个状态选项摆在用户面前；任何前端跳过 dialog 都能写出 `status=Surrendered, terminated_at=null` 的非法数据。
 
 API 层强约束：
 
@@ -725,7 +736,7 @@ interface TimelineEvent {
 | `packages/db/src/index.ts` | MODIFY | INIT_SQL 中 `policies` CREATE TABLE 同步追加两列 (line 280-313)；status enum 因无 CHECK 约束无需改 INIT_SQL |
 | `packages/db/src/types.ts` | MODIFY | `PolicyDbStatus` union 增加 `PendingSurrender`；新增 export `TerminalPolicyStatus = "Surrendered" \| "Claimed" \| "Lapsed"` 与 `NonActivePolicyStatus = "PendingSurrender" \| TerminalPolicyStatus`；新增 `isCoverageActiveStatus(dbStatus, expiryDate, now?)` helper（详见 [活跃判定 helper 与下游消费点](#活跃判定-helper-与下游消费点)） |
 | `packages/api/src/dashboard.ts` (line 20) | MODIFY | 活跃保单过滤 `isEffectivelyActive` → `isCoverageActiveStatus` |
-| `packages/api/src/coverage-lookup.ts` (line 167, 190) | MODIFY | `p.status === "Active"` 裸字符串比较 → `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`（输入是 raw DB status，**不是** display status；详见 [活跃判定 helper 与下游消费点](#活跃判定-helper-与下游消费点) 中的"输入类型校准"）；引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"`；同时 `STATUS_LABELS` (line 119) 追加 `PendingSurrender: "拟退保"` |
+| `packages/api/src/coverage-lookup.ts` (line 167, 190, 230) | MODIFY | 三个 `p.status === "Active"` 比较（line 167/190 过滤 + line 230 `isActive` 字段）一律改为 `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`；`PolicyForCoverage` interface (line 31) 增加 `dbStatus: PolicyDbStatus`；`STATUS_LABELS` (line 119) 追加 `PendingSurrender: "拟退保"`；引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"` |
 | `apps/worker/src/routes/coverage-lookup.ts` (line 38) | MODIFY | 卡片对象同时塞 `dbStatus`（raw, `policy.status as PolicyDbStatus`）和 `status`（display, `deriveDisplayStatus(...)`）两个字段；`buildPolicyCards` 过滤用前者，展示用后者，职责分离 |
 | `apps/worker/src/routes/renewal-calendar.ts` (line 12) | MODIFY | `isEffectivelyActive` → `isCoverageActiveStatus` |
 | `packages/db/src/repositories/payments.ts` | MODIFY | 新增 `cancelPendingAfter(policyId, dateStr)`：`UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`；返回受影响行数 |
@@ -825,12 +836,15 @@ interface TimelineEvent {
 | 用例 | 期望 |
 |------|------|
 | 创建保单 → mark-pending-surrender → GET `/api/dashboard` | 活跃保单数仍 +1（PendingSurrender 计入） |
-| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 该 member 的保障列表仍命中此保单，`statusLabel` 显示为 "拟退保"（不是裸枚举值） |
+| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 该 member 的保障列表仍命中此保单，`statusLabel` 显示为 "拟退保"（不是裸枚举值），`isActive=true` |
 | 同上 → GET `/api/renewal-calendar` | 续保日历仍列出此保单 |
-| 创建已过期保单（expiryDate < today）→ mark-pending-surrender → GET `/api/dashboard` | 活跃保单数 **不** +1（PendingSurrender 仍服从 expiry，过期就不计入） |
-| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 保障列表 **不** 命中此保单（已过期，coverage 不再生效） |
-| 同上 → POST terminate → GET `/api/dashboard` | 活跃保单数回退 -1（终止态不计入） |
-| 同上 → POST terminate → GET `/api/coverage-lookup?type=member&id=...` | 保障列表不再命中 |
+| 同上（未过期流）→ POST terminate → GET `/api/dashboard` | 活跃保单数回退 -1（终止态不计入） |
+| 同上（未过期流）→ POST terminate → GET `/api/coverage-lookup?type=member&id=...` | 保障列表不再命中 |
+| 创建**已过期**保单（expiryDate < today）→ GET `/api/dashboard` 基线 | 活跃保单数 **不** 计入此保单（display=Expired，coverage 已结束） |
+| 同上 → mark-pending-surrender → GET `/api/dashboard` | 活跃保单数仍不变（PendingSurrender 服从 expiry，过期就不计入） |
+| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 保障列表 **不** 命中（已过期，coverage 不再生效），`isActive=false` |
+| 同上 → POST terminate → GET `/api/dashboard` | 活跃保单数仍不变（基线就没计入，终止只是把 status 写实，不影响活跃数） |
+| 同上 → POST terminate → GET `/api/coverage-lookup?type=member&id=...` | 保障列表仍不命中 |
 
 **通用 CRUD 旁路：**
 
