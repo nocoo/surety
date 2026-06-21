@@ -155,6 +155,7 @@ export function isCoverageActiveStatus(
 |--------|----------|------|------|
 | `packages/api/src/dashboard.ts:20` 活跃保单数 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保仍是用户当前持有的有效保单，统计应包含 |
 | `packages/api/src/coverage-lookup.ts:167, 190` 保障速查 | `p.status === "Active"` 字符串比较 | `isCoverageActiveStatus(p.status, p.expiryDate)`（且去掉裸字符串比较，统一走 helper） | 拟退保下保障仍生效，意外 / 重疾 / 医疗触发理赔可正常用 |
+| `packages/api/src/coverage-lookup.ts:119` `STATUS_LABELS` | 5 个键不含 `PendingSurrender` | 追加 `PendingSurrender: "拟退保"` | `buildPolicyCards` 用 `STATUS_LABELS[policy.status] ?? policy.status` (line 229) 生成展示文案，不补 label 用户会看到裸枚举值 |
 | `apps/worker/src/routes/renewal-calendar.ts:12` 续保提醒 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保期间续保提醒仍要发（用户没准确退完前需要决策） |
 | `packages/api/src/renewal-calendar.ts`（如有同名） | 同上 | 同上 | 同上 |
 | Web 端 `dashboard` / `policy-filters` 的 "活跃" 快速过滤 | 任何裸 `=== "Active"` 比较 | 用 helper | 同上 |
@@ -388,12 +389,14 @@ UI 层呼应：
 
 ### PolicyDetail 响应
 
-`apps/worker/src/routes/policies.ts` GET single (line 125-128) + GET list 的返回 shape，以及 `apps/web/src/lib/types/policy.ts:9-41` 的 `PolicyDetail` interface，均新增：
+`apps/worker/src/routes/policies.ts` 的 **GET single** 响应 (line 125-128) 与 `apps/web/src/lib/types/policy.ts:9-41` 的 `PolicyDetail` interface 均新增：
 
 ```typescript
 terminatedAt: string | null;
 terminationReason: string | null;
 ```
+
+**GET list 响应保持不变**：列表视图（dashboard、policies 表格）只渲染 status badge + 关键展示字段（见 `PolicySummary` `apps/web/src/lib/types/policy.ts:46-63`），不需要 metadata。`PolicySummary` 仅 `status` 字段的类型联合通过 `PolicyStatus` 自动扩展到 `PendingSurrender`，不加新字段，列表查询和 list 路由的字段筛选都不变。所有需要 terminatedAt / terminationReason 的 UI 都通过详情接口拿（详情 dialog / Timeline / MetaColumn 都在详情页加载）。
 
 ### Payments 写入路径在非 Active 状态下的封禁
 
@@ -684,7 +687,7 @@ interface TimelineEvent {
 | `packages/db/src/index.ts` | MODIFY | INIT_SQL 中 `policies` CREATE TABLE 同步追加两列 (line 280-313)；status enum 因无 CHECK 约束无需改 INIT_SQL |
 | `packages/db/src/types.ts` | MODIFY | `PolicyDbStatus` union 增加 `PendingSurrender`；新增 export `TerminalPolicyStatus = "Surrendered" \| "Claimed" \| "Lapsed"` 与 `NonActivePolicyStatus = "PendingSurrender" \| TerminalPolicyStatus`；新增 `isCoverageActiveStatus(dbStatus, expiryDate, now?)` helper（详见 [活跃判定 helper 与下游消费点](#活跃判定-helper-与下游消费点)） |
 | `packages/api/src/dashboard.ts` (line 20) | MODIFY | 活跃保单过滤 `isEffectivelyActive` → `isCoverageActiveStatus` |
-| `packages/api/src/coverage-lookup.ts` (line 167, 190) | MODIFY | `p.status === "Active"` 裸字符串比较 → `isCoverageActiveStatus(p.status, p.expiryDate)`；同时引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"` |
+| `packages/api/src/coverage-lookup.ts` (line 167, 190) | MODIFY | `p.status === "Active"` 裸字符串比较 → `isCoverageActiveStatus(p.status, p.expiryDate)`；引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"`；同时 `STATUS_LABELS` (line 119) 追加 `PendingSurrender: "拟退保"`，否则 `buildPolicyCards` (line 229) 的 `statusLabel` fallback 会把裸枚举值 `PendingSurrender` 直接显示给用户 |
 | `apps/worker/src/routes/renewal-calendar.ts` (line 12) | MODIFY | `isEffectivelyActive` → `isCoverageActiveStatus` |
 | `packages/db/src/repositories/payments.ts` | MODIFY | 新增 `cancelPendingAfter(policyId, dateStr)`：`UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`；返回受影响行数 |
 | `packages/db/__tests__/payments.test.ts` | MODIFY/CREATE | 覆盖 `cancelPendingAfter` 边界（Pending 与 Overdue 都翻、Paid 不动、只翻 dueDate > terminatedAt、idempotency） |
@@ -694,7 +697,7 @@ interface TimelineEvent {
 
 | File | Action | Description |
 |------|--------|-------------|
-| `apps/worker/src/routes/policies.ts` | MODIFY | 新增 `POST /api/policies/:id/terminate` handler，紧挨 PUT 之后；用 `c.env.DB.batch([cancelPendingStmt, updatePolicyStmt])` 一次发出两条语句以保证原子性；新增 `POST /api/policies/:id/mark-pending-surrender` handler（无 batch，单条 UPDATE）；GET single / GET list 响应 shape 增加 `terminatedAt` / `terminationReason` (line 125-128) |
+| `apps/worker/src/routes/policies.ts` | MODIFY | 新增 `POST /api/policies/:id/terminate` handler，紧挨 PUT 之后；用 `c.env.DB.batch([cancelPendingStmt, updatePolicyStmt])` 一次发出两条语句以保证原子性；新增 `POST /api/policies/:id/mark-pending-surrender` handler（无 batch，单条 UPDATE）；**仅 GET single** 响应 shape 增加 `terminatedAt` / `terminationReason` (line 125-128)；GET list 字段不变（列表不渲染 metadata，见 [PolicyDetail 响应](#policydetail-响应)） |
 | `apps/worker/src/routes/policies.ts` | MODIFY | PUT handler 内追加规则：当 `body.status === "Active"` 且 DB 当前为任一非 Active 状态时，强制 `terminatedAt=null`, `terminationReason=null` (line 148-162) |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies` (line 50) 与 `PUT /api/policies/:id` (line 131) 加守卫拒绝通用 CRUD 直接写**非 Active 状态**（含 PendingSurrender 与三个终止态，详见 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵)） |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies/:id/payments` (line 232)、`PUT /api/policies/:id/payments/:paymentId` (line 258)、`DELETE /api/policies/:id/payments/:paymentId` (line 287)、`POST /api/policies/:id/payments/generate` (line 301) 四条路由头部加 `policy.status` 非 Active 守卫（PUT 仅在终止态下收紧 status 转换），返回 400（详见 [Payments 写入路径在非 Active 状态下的封禁](#payments-写入路径在非-active-状态下的封禁)） |
@@ -705,7 +708,7 @@ interface TimelineEvent {
 
 | File | Action | Description |
 |------|--------|-------------|
-| `apps/web/src/lib/types/policy.ts` | MODIFY | `PolicyDetail` 接口新增 `terminatedAt` / `terminationReason` (line 9-41)；`PolicyStatus` 联合通过 `@surety/db/types` 自动扩展 PendingSurrender |
+| `apps/web/src/lib/types/policy.ts` | MODIFY | `PolicyDetail` 接口新增 `terminatedAt` / `terminationReason` (line 9-41)；`PolicySummary` (line 46-63) 不动 —— `status` 字段类型联合通过 `@surety/db/types` 自动扩展 `PendingSurrender`，无需手改 |
 | `apps/web/src/lib/constants/policy.ts` | MODIFY | `statusConfig` 加 `PendingSurrender: { label: "拟退保", variant: "rose" }` (line 6-12)；variant union 加 `"rose"`；`statusStripeClass` 加 `case "rose"` (line 22-31)；新增 `paymentStatusLabels`（含 `Cancelled: "已取消"`）；如需为按钮配置 icon，集中放此处 |
 | `apps/web/src/components/ui/badge.tsx` | MODIFY | `badgeVariants.variant` 增加 `rose` 分支：`bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-foreground))]`（复用已存在的 css token，无需改 globals.css） |
 | `apps/web/src/components/policy-detail/transition-dialog.tsx` | CREATE | 统一 Dialog component（基于 `components/ui/dialog.tsx`），承载 PendingSurrender + 三种终止态共 4 条 transition；标题 / 文案 / placeholder / 提交端点按 `targetStatus` 分支；`PendingSurrender` 路径允许 `terminatedAt > today`，终止态路径不允许 |
@@ -783,10 +786,10 @@ interface TimelineEvent {
 | 用例 | 期望 |
 |------|------|
 | 创建保单 → mark-pending-surrender → GET `/api/dashboard` | 活跃保单数仍 +1（PendingSurrender 计入） |
-| 同上 → GET `/api/coverage-lookup?memberId=...` | 该 member 的保障列表仍命中此保单 |
+| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 该 member 的保障列表仍命中此保单，`statusLabel` 显示为 "拟退保"（不是裸枚举值） |
 | 同上 → GET `/api/renewal-calendar` | 续保日历仍列出此保单 |
 | 同上 → POST terminate → GET `/api/dashboard` | 活跃保单数回退 -1（终止态不计入） |
-| 同上 → POST terminate → GET `/api/coverage-lookup` | 保障列表不再命中 |
+| 同上 → POST terminate → GET `/api/coverage-lookup?type=member&id=...` | 保障列表不再命中 |
 
 **通用 CRUD 旁路：**
 
