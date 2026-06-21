@@ -18,7 +18,7 @@ In scope：
 - 三个终止态：`Surrendered` / `Claimed` / `Lapsed`，统一走同一条工作流（区别仅在按钮 / 标题文案 / 图标）
 - 新增列：`policies.terminated_at` (TEXT, ISO date) + `policies.termination_reason` (TEXT, nullable)
 - payments 枚举扩展：`Pending|Paid|Overdue` → `Pending|Paid|Overdue|Cancelled`
-- 终止后批量翻转 `Pending` 缴费 → `Cancelled`（只针对 `dueDate > terminated_at`）
+- 终止后批量翻转**未实际缴费**的缴费（`Pending` / `Overdue`）→ `Cancelled`（只针对 `dueDate > terminated_at`；`Paid` 永不动）
 - 新 API：`POST /api/policies/:id/terminate`，原子化执行 (policy 状态 + 元数据 + payments 批量翻转)
 - 终止对话框：捕获 `terminated_at` (必填) + `termination_reason` (可选)
 - 三个动作按钮 (退保 / 理赔 / 失效)，挂在 `MetaColumn` 顶部
@@ -214,7 +214,7 @@ terminationReason: string | null;
 | 路由 | 现状 | 变更 |
 |------|------|------|
 | `POST /api/policies/:id/payments` (`apps/worker/src/routes/policies.ts:232`) | 直接 create | 加守卫：当 `policy.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot add payments to a terminated policy` |
-| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：终止保单下，body 中若包含 `status="Pending"` 或将 `Cancelled` 改为其它非 `Paid` 状态，返回 400；仅允许将 `Cancelled`/`Pending` 行标记为 `Paid`（用户在终止日**之前**实际已缴的历史补录），以及编辑 paidDate / paidAmount / 备注 |
+| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：终止保单下，body 中若把 `Paid` 改回 `Pending` / `Overdue` / `Cancelled`，或把 `Cancelled` 改成除 `Paid` 以外的状态，返回 400。**允许的方向：任何非 `Paid` 状态（`Pending` / `Overdue` / `Cancelled`）→ `Paid`**，用于补录终止日**之前**实际已缴的真实历史（典型场景：用户已经线下交了一期但忘了在系统里 mark paid 就直接退保了）。同时允许编辑 paidDate / paidAmount / 备注 |
 | `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 直接 delete | 加守卫：终止保单下一律返回 400 `Cannot delete payments of a terminated policy`，保护 `Cancelled` 行作为审计痕迹永久留存；保留 `DELETE /api/policies/:id`（全保单级联删除）路径不变 |
 | `POST /api/policies/:id/payments/generate` (`apps/worker/src/routes/policies.ts:301`) | 按 schedule 生成 | 加守卫：终止保单直接返回 400 `Cannot generate payments for a terminated policy`；自动批量生成路径完全关闭 |
 | 反向 PUT policy → Active | 仅清字段 | 不主动恢复 Cancelled 缴费（详见 [反向操作](#反向操作复用-put-apipoliciesid)）；用户切回 Active 后才能继续走 generate 路径 |
@@ -222,7 +222,7 @@ terminationReason: string | null;
 UI 同步：
 
 - `apps/web/src/components/policy-detail/payments-section.tsx` 中"添加缴费记录" (line 455) 与"生成本年度缴费" (line 529) 两个按钮在 `policy.status` ∈ 终止态时隐藏
-- 已存在的缴费行：`Paid` 行保留"编辑 paidDate / 备注"入口；`Cancelled` 行整行 readonly（参见 [Payments Section 更新](#4-payments-section-更新)）
+- 已存在的缴费行：`Pending` / `Overdue` / `Cancelled` 行都保留"标记已缴"入口（对应允许 `* → Paid` 的补录方向）；`Paid` 行保留"编辑 paidDate / 备注"入口；编辑表单中状态字段在终止态下整体 readonly，只能通过"标记已缴"按钮触发 `→ Paid` 转换（参见 [Payments Section 更新](#4-payments-section-更新)）
 - 行级删除按钮在终止态下隐藏（呼应 DELETE 守卫）；用户若要批量清理只能删除整张保单
 
 L2 E2E 必须覆盖：终止后 POST payments → 400、generate → 400、PUT 把 Cancelled 改 Pending → 400。
@@ -329,8 +329,9 @@ interface PaymentFormData {
 
 - `StatusBadge` (~line 191) `switch` 增加一支 `case "Cancelled"`：灰色 `outline` badge，文案 "已取消"
 - `Cancelled` 行整行加 `line-through text-muted-foreground` 视觉降权
-- `Cancelled` 行**不渲染**"编辑"和"标记已缴"按钮（彻底 readonly），点击行也不会进入编辑态；hover tooltip 提示 "保单已终止，此期缴费已作废"
-- `Pending` / `Paid` / `Overdue` 行在保单终止态下也只保留"编辑 paidDate / 备注"和"标记已缴"入口（呼应 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)），无法把已有行改回 Pending 或 Overdue
+- 终止保单下所有行（`Pending` / `Overdue` / `Cancelled` / `Paid`）的"编辑"按钮**仅暴露非破坏字段**：`paidDate` / `paidAmount` / 备注；状态 `<Select>` 整体 readonly，不渲染交互；状态变更只能通过单独的"标记已缴"按钮触发 `* → Paid` 的单向转换（呼应 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)）
+- `Cancelled` 行的"标记已缴"按钮默认显示，用于补录终止日**之前**实际已缴的真实历史；hover 提示 "保单已终止，仅可标记已缴（用于历史补录）"
+- 行级删除按钮在终止保单下隐藏（呼应 DELETE 守卫）
 
 **新增 / 生成入口：**
 
@@ -419,7 +420,7 @@ interface TimelineEvent {
 | `apps/worker/src/routes/policies.ts` | MODIFY | PUT handler 内追加规则：当 `body.status === "Active"` 时强制 `terminatedAt=null`, `terminationReason=null` (line 148-162) |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies` (line 50) 与 `PUT /api/policies/:id` (line 131) 加守卫拒绝通用 CRUD 直接写终止态（详见 [通用 POST / PUT 禁写终止态](#通用-post--put-禁写终止态旁路封堵)） |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies/:id/payments` (line 232)、`PUT /api/policies/:id/payments/:paymentId` (line 258)、`DELETE /api/policies/:id/payments/:paymentId` (line 287)、`POST /api/policies/:id/payments/generate` (line 301) 四条路由头部加 `policy.status` 终止态守卫，返回 400（详见 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)） |
-| `apps/worker/__tests__/e2e/setup.ts` (line 88) | MODIFY | fake D1 当前只暴露 `prepare().first()`，没有 `batch()`。补一个最小 `batch(stmts)` 实现：顺序在 bun:sqlite `db.transaction(() => ...)` 内执行每条 statement，返回 `[{ meta: { changes } }, ...]` 形状；让 terminate handler 与所有 batch atomicity 测试可跑。模拟 batch 失败用 stmt 里塞一个会触发约束错误的 statement 验证回滚 |
+| `apps/worker/__tests__/e2e/setup.ts` (line 88) | MODIFY | fake D1 当前只暴露 `prepare(sql).first()` 一个分支，terminate handler 会调用 `prepare(sql).bind(...params)` 拿到 statement 再丢给 `batch([...])`。需要同时补两件事：(1) `prepare(sql)` 返回的对象增加 `bind(...params)` 方法，返回一个 `{ sql, params }` 形状的 statement 持有者；(2) 顶层 D1 上增加 `batch(stmts)`，顺序在 bun:sqlite `db.transaction(() => ...)` 内执行每条 statement，返回 `[{ meta: { changes } }, ...]` 形状。失败回滚靠 bun:sqlite 事务保证；用塞入一条违反约束的 statement 验证 atomicity 测试 |
 | `packages/api/src/policies.ts` (如存在) | MODIFY | 如有 framework-agnostic 业务层则在此实现 `terminatePolicy(repos, id, input)`，Worker 路由薄壳调用；坚守 CLAUDE.md "路由是薄壳" 原则。如不存在则直接写在 worker 路由内（与现有 PUT 一致风格） |
 
 ### Phase 3: UI Core
@@ -430,8 +431,8 @@ interface TimelineEvent {
 | `apps/web/src/lib/constants/policy.ts` | MODIFY | 新增 `paymentStatusLabels`（含 `Cancelled: "已取消"`）；如需为终止态按钮配置 icon，集中放此处 |
 | `apps/web/src/components/policy-detail/termination-dialog.tsx` | CREATE | Dialog component（基于 `components/ui/dialog.tsx`），三种终止态共用一个组件，标题 / 文案 / placeholder 按 `targetStatus` 分支 |
 | `apps/web/src/components/policy-detail/meta-column.tsx` | MODIFY | Header 下新增 "操作" 区块挂三个按钮 (line 1044-1077)；BasicInfoSection 的 status select onChange 拦截 (line 53-58, 257-264)；切回 Active 走 `AlertDialog` 二次确认 |
-| `apps/web/src/components/policy-detail/payments-section.tsx` | MODIFY | `StatusBadge` 增加 `Cancelled` 分支 (line ~191)；列表行加 line-through 样式；统计计数排除 `Cancelled`；`PaymentForm` 不暴露 `Cancelled` 作为用户可选项 (line ~142-146) |
-| `apps/web/src/app/policies/[id]/page.tsx` | MODIFY | `<MetaColumn>` 调用处传入 `onTerminationSuccess` 回调，内部 `refreshPolicy + refreshPayments` 并发刷新 (line 96-109, 155-194) |
+| `apps/web/src/components/policy-detail/payments-section.tsx` | MODIFY | `PaymentsSectionProps` 接口 (line 24) 新增必填 `policyStatus: PolicyStatus`（直接传整个 display status 而不是 `isTerminated: boolean`，让组件内部用 `["Surrendered","Claimed","Lapsed"].includes(policyStatus)` 自行判定，且 tooltip 文案能区分三态）；`StatusBadge` 增加 `Cancelled` 分支 (line ~191)；列表行加 line-through 样式；统计计数排除 `Cancelled`；`PaymentForm` 不暴露 `Cancelled` 作为用户可选项 (line ~142-146)；终止态下 add / generate 按钮整体不渲染，行级编辑表单 status 字段 readonly |
+| `apps/web/src/app/policies/[id]/page.tsx` | MODIFY | `<MetaColumn>` 调用处传入 `onTerminationSuccess` 回调，内部 `refreshPolicy + refreshPayments` 并发刷新 (line 96-109, 155-194)；`<PaymentsSection>` 调用 (line 183) 补传 `policyStatus={policy.status}` |
 
 ### Phase 4: Timeline Component
 
@@ -463,7 +464,7 @@ interface TimelineEvent {
 | 用例 | 期望 |
 |------|------|
 | POST terminate 成功 | 200，policy 状态变为目标终止态，`terminatedAt` / `terminationReason` 写入，返回 `cancelledPaymentCount` |
-| POST terminate 后 GET payments | 所有 `dueDate > terminatedAt` 的 Pending 变 Cancelled，其他状态不动 |
+| POST terminate 后 GET payments | 所有 `dueDate > terminatedAt` 的 `Pending` / `Overdue` 变 `Cancelled`，`Paid` 行保持不动 |
 | POST terminate 后 GET policy | `terminatedAt` / `terminationReason` 出现在响应里 |
 | POST terminate 幂等 | 二次调用同 status + 不同 reason，policy 元数据更新，`cancelledPaymentCount=0` (已经 Cancelled 的不再翻) |
 | POST terminate 非法 `terminatedAt`（早于 effective / `2026-99-99` / 未来日期） | 400 |
@@ -480,7 +481,10 @@ interface TimelineEvent {
 | 终止后 POST `/api/policies/:id/payments` | 400 `Cannot add payments to a terminated policy` |
 | 终止后 POST `/api/policies/:id/payments/generate` | 400 |
 | 终止后 PUT 把 Cancelled 行改 Pending | 400 |
+| 终止后 PUT 把 Paid 行改回 Pending | 400 |
 | 终止后 PUT 把 Pending 行改 Paid | 200（允许补录历史已缴） |
+| 终止后 PUT 把 Overdue 行改 Paid | 200（允许补录终止日前真实欠缴后来线下补缴的场景） |
+| 终止后 PUT 把 Cancelled 行改 Paid | 200（允许补录历史已缴） |
 | 终止后 DELETE 行级 payment | 400 `Cannot delete payments of a terminated policy` |
 | 终止后 DELETE 整张保单 | 200（级联删除路径不受守卫影响） |
 | PUT policy status=Active 反向切回 | terminatedAt / terminationReason 被清空；Cancelled 缴费保持 Cancelled（不自动恢复） |
