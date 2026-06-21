@@ -115,7 +115,7 @@ termination_reason TEXT,
 | `terminationReason.length > 500` | 400 `Reason too long` |
 | 当前已是终止态且 `existing.terminatedAt != null` 且新 `terminatedAt > existing.terminatedAt` | 400 `Cannot extend the termination date forward` |
 
-> **日期校验的可执行定义**：`parseLocalDate` 对越界数值容忍（`new Date("2026-99-99")` 会被 JS 引擎滚到 2034 年），不能单独使用。必须用 regex 先卡死格式，再做 round-trip：`const d = parseLocalDate(s); if (formatDateString(d) !== s) reject(...)`。`today` 一律走 `todayInTimeZone("Asia/Shanghai")`（`packages/db/src/lib/date-utils.ts:63`）取项目标准时区当日，避免 Worker 容器 UTC 与用户本地日期相差一天。
+> **日期校验的可执行定义**：`parseLocalDate` 对越界数值容忍（`new Date("2026-99-99")` 会被 JS 引擎滚到 2034 年），不能单独使用。必须用 regex 先卡死格式，再做 round-trip：`const d = parseLocalDate(s); if (formatLocalDate(d) !== s) reject(...)`（`formatLocalDate` 见 `packages/db/src/lib/date-utils.ts:40`）。`today` 一律走 `todayInTimeZone("Asia/Shanghai")`（`packages/db/src/lib/date-utils.ts:63`）取项目标准时区当日，避免 Worker 容器 UTC 与用户本地日期相差一天。
 
 > **terminatedAt 单调向前**：v1 不允许把已有的终止日期向后挪。原因：`cancelPendingAfter` 的 SQL 只把 `Pending → Cancelled`，不把 `Cancelled → Pending`；如果允许把 2026-03-01 改成 2026-06-01，3–6 月之间被取消的缴费会继续保持 Cancelled，与 "只取消 `dueDate > terminated_at`" 的约定相悖，产生静默不一致。允许的修改方向：(1) 同一终止日只改 reason / status；(2) 把 terminatedAt 向**更早**的日期挪 —— 这时只会有"更多"未来 Pending 被翻成 Cancelled，仍然单向收敛。把日期后移的真实需求按"先 PUT 回 Active 再重新 terminate"的路径处理（用户必须显式经过 reactivate 步骤，并自行重新生成需要的缴费）。
 >
@@ -214,7 +214,7 @@ terminationReason: string | null;
 | 路由 | 现状 | 变更 |
 |------|------|------|
 | `POST /api/policies/:id/payments` (`apps/worker/src/routes/policies.ts:232`) | 直接 create | 加守卫：当 `policy.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot add payments to a terminated policy` |
-| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：终止保单下，body 中若把 `Paid` 改回 `Pending` / `Overdue` / `Cancelled`，或把 `Cancelled` 改成除 `Paid` 以外的状态，返回 400。**允许的方向：任何非 `Paid` 状态（`Pending` / `Overdue` / `Cancelled`）→ `Paid`**，用于补录终止日**之前**实际已缴的真实历史（典型场景：用户已经线下交了一期但忘了在系统里 mark paid 就直接退保了）。同时允许编辑 paidDate / paidAmount / 备注 |
+| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：终止保单下，body 中若把 `Paid` 改回 `Pending` / `Overdue` / `Cancelled`，或把 `Cancelled` 改成除 `Paid` 以外的状态，返回 400。**允许的方向：任何非 `Paid` 状态（`Pending` / `Overdue` / `Cancelled`）→ `Paid`**，用于补录终止日**之前**实际已缴的真实历史（典型场景：用户已经线下交了一期但忘了在系统里 mark paid 就直接退保了）。同时允许编辑 paidDate / paidAmount |
 | `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 直接 delete | 加守卫：终止保单下一律返回 400 `Cannot delete payments of a terminated policy`，保护 `Cancelled` 行作为审计痕迹永久留存；保留 `DELETE /api/policies/:id`（全保单级联删除）路径不变 |
 | `POST /api/policies/:id/payments/generate` (`apps/worker/src/routes/policies.ts:301`) | 按 schedule 生成 | 加守卫：终止保单直接返回 400 `Cannot generate payments for a terminated policy`；自动批量生成路径完全关闭 |
 | 反向 PUT policy → Active | 仅清字段 | 不主动恢复 Cancelled 缴费（详见 [反向操作](#反向操作复用-put-apipoliciesid)）；用户切回 Active 后才能继续走 generate 路径 |
@@ -222,7 +222,7 @@ terminationReason: string | null;
 UI 同步：
 
 - `apps/web/src/components/policy-detail/payments-section.tsx` 中"添加缴费记录" (line 455) 与"生成本年度缴费" (line 529) 两个按钮在 `policy.status` ∈ 终止态时隐藏
-- 已存在的缴费行：`Pending` / `Overdue` / `Cancelled` 行都保留"标记已缴"入口（对应允许 `* → Paid` 的补录方向）；`Paid` 行保留"编辑 paidDate / 备注"入口；编辑表单中状态字段在终止态下整体 readonly，只能通过"标记已缴"按钮触发 `→ Paid` 转换（参见 [Payments Section 更新](#4-payments-section-更新)）
+- 已存在的缴费行：`Pending` / `Overdue` / `Cancelled` 行都保留"标记已缴"入口（对应允许 `* → Paid` 的补录方向）；`Paid` 行保留"编辑 paidDate / paidAmount"入口；编辑表单中状态字段在终止态下整体 readonly，只能通过"标记已缴"按钮触发 `→ Paid` 转换（参见 [Payments Section 更新](#4-payments-section-更新)）
 - 行级删除按钮在终止态下隐藏（呼应 DELETE 守卫）；用户若要批量清理只能删除整张保单
 
 L2 E2E 必须覆盖：终止后 POST payments → 400、generate → 400、PUT 把 Cancelled 改 Pending → 400。
@@ -329,7 +329,7 @@ interface PaymentFormData {
 
 - `StatusBadge` (~line 191) `switch` 增加一支 `case "Cancelled"`：灰色 `outline` badge，文案 "已取消"
 - `Cancelled` 行整行加 `line-through text-muted-foreground` 视觉降权
-- 终止保单下所有行（`Pending` / `Overdue` / `Cancelled` / `Paid`）的"编辑"按钮**仅暴露非破坏字段**：`paidDate` / `paidAmount` / 备注；状态 `<Select>` 整体 readonly，不渲染交互；状态变更只能通过单独的"标记已缴"按钮触发 `* → Paid` 的单向转换（呼应 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)）
+- 终止保单下所有行（`Pending` / `Overdue` / `Cancelled` / `Paid`）的"编辑"按钮**仅暴露非破坏字段**：`paidDate` / `paidAmount`；状态 `<Select>` 整体 readonly，不渲染交互；状态变更只能通过单独的"标记已缴"按钮触发 `* → Paid` 的单向转换（呼应 [Payments 写入路径在终止态下的封禁](#payments-写入路径在终止态下的封禁)）
 - `Cancelled` 行的"标记已缴"按钮默认显示，用于补录终止日**之前**实际已缴的真实历史；hover 提示 "保单已终止，仅可标记已缴（用于历史补录）"
 - 行级删除按钮在终止保单下隐藏（呼应 DELETE 守卫）
 
@@ -344,7 +344,7 @@ interface PaymentFormData {
 
 文案集中在 `apps/web/src/lib/constants/policy.ts` 新增 `paymentStatusLabels: Record<PaymentStatus, string>` 与 `statusConfig` 并列。
 
-> **TS 编译指南**：由于 `PaymentStatus` 是 string union，扩第 4 个值后，所有现存 `switch (status)` 或 `Record<PaymentStatus, T>` 会触发 exhaustiveness 检查，编译器会自动指引补全分支。`paymentToForm` 函数当前有 `status === "Overdue" ? "Pending" : p.status` 的特判，新增 `Cancelled` 时不进入这个三元（因为 Cancelled 行不会被编辑），但仍需要在类型上让 form 接收完整 union。
+> **TS 编译指南**：由于 `PaymentStatus` 是 string union，扩第 4 个值后，所有现存 `switch (status)` 或 `Record<PaymentStatus, T>` 会触发 exhaustiveness 检查，编译器会自动指引补全分支。`paymentToForm` 当前的 `status === "Overdue" ? "Pending" : p.status` 三元只在**非终止保单**的常规编辑路径上使用（让用户能把 Overdue 行直接 mark paid）；终止保单进入受限编辑/补录模式，不走通用 PaymentForm，而是单独的"标记已缴" handler（只发 `{ status: "Paid", paidDate, paidAmount }` 到 PUT），所以 `Cancelled` 也不会出现在该三元里。类型上 form 仍接收完整 4-tuple union，避免 exhaustiveness 报错；运行时分支由 `policyStatus` prop 决定。
 
 ## Timeline Rendering
 
