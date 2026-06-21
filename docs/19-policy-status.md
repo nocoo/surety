@@ -130,9 +130,16 @@ export type NonActivePolicyStatus = "PendingSurrender" | TerminalPolicyStatus;
 
 ```typescript
 /**
- * "Coverage is still in force" — true for both Active and PendingSurrender.
- * Use this for dashboards, coverage lookup, renewal reminders — anything
- * whose answer is "is this policy still protecting the member today?".
+ * "Coverage is still in force today" — true for both Active and
+ * PendingSurrender, BUT only if the policy is not past its expiry date.
+ *
+ * Use for dashboards, coverage lookup, renewal reminders — anything whose
+ * answer is "is this policy still protecting the member today?".
+ *
+ * PendingSurrender does NOT bypass expiry: a policy that already lapsed
+ * its expiry date is no longer providing coverage even if the user later
+ * decides they want to surrender it. The user's intent doesn't extend
+ * protection that has already ended on the contract.
  *
  * Distinct from isEffectivelyActive() which is the stricter "fully Active,
  * not in any transition state". Most user-facing surfaces want the looser
@@ -144,22 +151,45 @@ export function isCoverageActiveStatus(
   expiryDate: string | null,
   now: Date = new Date(),
 ): boolean {
-  const display = deriveDisplayStatus(dbStatus, expiryDate, now);
-  return display === "Active" || display === "PendingSurrender";
+  if (dbStatus !== "Active" && dbStatus !== "PendingSurrender") return false;
+  // Apply the same expiry decay as deriveDisplayStatus: an Active or
+  // PendingSurrender policy past its expiryDate is effectively expired.
+  if (expiryDate) {
+    const expiry = parseLocalDate(expiryDate);
+    if (expiry < now) return false;
+  }
+  return true;
 }
 ```
+
+> **PendingSurrender 仍服从 expiry**：拟退保表达的是"用户想退保"的意向，不影响保单条款的到期事实。一张已过期的保单即使后来被标记 `PendingSurrender`，也不应在 dashboard / 保障速查 / 续保日历里复活 —— 用户的意向不能延长合同已结束的保障。`isCoverageActiveStatus` 因此对 `PendingSurrender` 和 `Active` 用同一套 expiry 检查，行为与 `deriveDisplayStatus` 保持一致。terminate / mark-pending-surrender 端点的"读 DB status 而非 display"规则只影响 **transition 准入**（已过期保单仍能被用户主动终止 / 标记退保），不影响 **coverage 是否生效** 的判断（已过期就是不生效）。
 
 下游消费点必须按此表逐一对齐（每条都进 File Changes / L2 测试）：
 
 | 消费点 | 当前判定 | 改为 | 理由 |
 |--------|----------|------|------|
 | `packages/api/src/dashboard.ts:20` 活跃保单数 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保仍是用户当前持有的有效保单，统计应包含 |
-| `packages/api/src/coverage-lookup.ts:167, 190` 保障速查 | `p.status === "Active"` 字符串比较 | `isCoverageActiveStatus(p.status, p.expiryDate)`（且去掉裸字符串比较，统一走 helper） | 拟退保下保障仍生效，意外 / 重疾 / 医疗触发理赔可正常用 |
+| `packages/api/src/coverage-lookup.ts:167, 190` 保障速查 | `p.status === "Active"` 字符串比较（输入为 display status，由 worker route line 38 `deriveDisplayStatus(...)` 先派生） | `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`（输入改为 raw DB status，详见下方"输入类型校准") | 拟退保下保障仍生效，意外 / 重疾 / 医疗触发理赔可正常用 |
 | `packages/api/src/coverage-lookup.ts:119` `STATUS_LABELS` | 5 个键不含 `PendingSurrender` | 追加 `PendingSurrender: "拟退保"` | `buildPolicyCards` 用 `STATUS_LABELS[policy.status] ?? policy.status` (line 229) 生成展示文案，不补 label 用户会看到裸枚举值 |
 | `apps/worker/src/routes/renewal-calendar.ts:12` 续保提醒 | `isEffectivelyActive` | `isCoverageActiveStatus` | 拟退保期间续保提醒仍要发（用户没准确退完前需要决策） |
 | `packages/api/src/renewal-calendar.ts`（如有同名） | 同上 | 同上 | 同上 |
 | Web 端 `dashboard` / `policy-filters` 的 "活跃" 快速过滤 | 任何裸 `=== "Active"` 比较 | 用 helper | 同上 |
 | 终止动作的"取消未来 Pending/Overdue 缴费" | 仅在 `policy.status` ∈ {`Surrendered`,`Claimed`,`Lapsed`} 触发 | 不变（拟退保不翻转） | 见 [Payments 写入路径在非 Active 状态下的封禁](#payments-写入路径在非-active-状态下的封禁) |
+
+> **`isCoverageActiveStatus` 的输入类型校准**：helper 签名是 `(dbStatus: PolicyDbStatus, expiryDate)`，**必须接收 raw DB status**。`apps/worker/src/routes/coverage-lookup.ts:38` 当前把 `deriveDisplayStatus(...)` 派生后的 display string（可能含 `Expired`）塞进 `policy.status` 再传给 `buildPolicyCards`，这是错的语义入口 —— `buildPolicyCards` 拿到的 status 已经被 `Expired` 覆盖，再传给 helper 是 display string 而非 DB status。
+>
+> 改造方案（与 helper 切换同 commit）：worker route 改成把 `dbStatus` (raw) 和 `displayStatus` (派生) 作为两个独立字段塞进卡片对象：
+>
+> ```typescript
+> const pd = {
+>   id: policy.id, productName: policy.productName, ...,
+>   dbStatus: policy.status as PolicyDbStatus,                              // 原始 DB 值
+>   status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate), // 展示用
+>   expiryDate: policy.expiryDate,
+> };
+> ```
+>
+> `buildPolicyCards` 在过滤时用 `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`，渲染时用 `STATUS_LABELS[p.status]`，职责分离。`STATUS_LABELS` 仍保留 `Expired` / `PendingSurrender` 两个新 label，因为渲染路径需要展示派生后的状态文案。
 
 > **保留 `isEffectivelyActive`**：不删旧 helper，以备将来确实需要"狭义 Active"语义（例如某天加入"自动续保前的资格预检"——只能由真正 Active 触发，PendingSurrender 不行）。本次改动只是把所有已有消费点切到 `isCoverageActiveStatus`，使现有"活跃"语义保持原义（含拟退保）。一次 grep + replace 切换，零行为静默改变。
 
@@ -404,19 +434,26 @@ terminationReason: string | null;
 
 > **守卫触发集合**：以下所有"`policy.status` ∈ 非 Active 集合"指 `{PendingSurrender, Surrendered, Claimed, Lapsed}`。Pending 与 Paid 行的可编辑性等下游规则只针对终止态收紧；`PendingSurrender` 下原有 Pending/Overdue 行仍可正常编辑/标记已缴（保单还在跑）。
 
+> **Cancelled 行的全局保护（独立于 policy status）**：`status="Cancelled"` 是终止动作留下的审计痕迹，必须永久保留。policy 一旦从终止态恢复 Active，policy-level 守卫就会解除，没有这层行级保护的话，旧 Cancelled 行就能被 PUT 改回 Pending 或 DELETE 删除，审计断裂。所以在 PUT / DELETE 缴费路由的最前面**追加一条与 policy.status 无关的行级规则**：
+>
+> - `DELETE /api/policies/:id/payments/:paymentId`：若 `existingPayment.status === "Cancelled"` 一律返回 400 `Cannot delete a cancelled payment (audit trail)`
+> - `PUT /api/policies/:id/payments/:paymentId`：若 `existingPayment.status === "Cancelled"` 且 body 中 `status !== "Paid"` 一律返回 400 `Cancelled payments can only be reactivated by marking them paid`（保留 [Payments 写入路径](#payments-写入路径在非-active-状态下的封禁) 中"任何非 Paid → Paid"的补录通路）；同时禁止改 `dueDate` / `amount` / `periodNumber` 等结构字段（保留审计快照）
+>
+> UI 同步：`Cancelled` 行的行级删除按钮**全局**隐藏（不论 policy 状态），编辑按钮**全局**只暴露"标记已缴"。
+
 | 路由 | 现状 | 变更 |
 |------|------|------|
 | `POST /api/policies/:id/payments` (`apps/worker/src/routes/policies.ts:232`) | 直接 create | 加守卫：当 `policy.status` ∈ 非 Active 集合时返回 400 `Cannot add payments to a policy that is pending surrender or terminated` |
-| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 加守卫：**仅在终止保单**（`Surrendered`/`Claimed`/`Lapsed`）下，body 中若把 `Paid` 改回 `Pending` / `Overdue` / `Cancelled`，或把 `Cancelled` 改成除 `Paid` 以外的状态，返回 400。**允许的方向：任何非 `Paid` 状态（`Pending` / `Overdue` / `Cancelled`）→ `Paid`**，用于补录终止日**之前**实际已缴的真实历史。同时允许编辑 paidDate / paidAmount。`PendingSurrender` 下 PUT **不**收紧（保单还在跑，按 Active 行为） |
-| `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 直接 delete | 加守卫：当 `policy.status` ∈ 非 Active 集合时返回 400 `Cannot delete payments of a policy that is pending surrender or terminated`，保护 `Cancelled` 行作为审计痕迹永久留存；保留 `DELETE /api/policies/:id`（全保单级联删除）路径不变 |
+| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 任意更新 | 先过上方 **Cancelled 行级保护**；再过 policy 级：**仅在终止保单**（`Surrendered`/`Claimed`/`Lapsed`）下，body 中若把 `Paid` 改回 `Pending` / `Overdue` / `Cancelled` 返回 400。**允许的方向：任何非 `Paid` 状态 → `Paid`**，用于补录终止日**之前**实际已缴的真实历史。同时允许编辑 paidDate / paidAmount。`PendingSurrender` 下 PUT **不**做 policy 级收紧（保单还在跑，按 Active 行为），但行级 Cancelled 保护仍生效 |
+| `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 直接 delete | 先过上方 **Cancelled 行级保护**（任何状态下 Cancelled 都不可删）；再过 policy 级：当 `policy.status` ∈ 非 Active 集合时返回 400 `Cannot delete payments of a policy that is pending surrender or terminated`；保留 `DELETE /api/policies/:id`（全保单级联删除）路径不变 |
 | `POST /api/policies/:id/payments/generate` (`apps/worker/src/routes/policies.ts:301`) | 按 schedule 生成 | 加守卫：当 `policy.status` ∈ 非 Active 集合时直接返回 400 `Cannot generate payments for a policy that is pending surrender or terminated`；自动批量生成路径完全关闭 |
-| 反向 PUT policy → Active | 仅清字段 | 不主动恢复 Cancelled 缴费（详见 [反向操作](#反向操作复用-put-apipoliciesid)）；用户切回 Active 后才能继续走 generate 路径 |
+| 反向 PUT policy → Active | 仅清字段 | 不主动恢复 Cancelled 缴费（详见 [反向操作](#反向操作复用-put-apipoliciesid)）；用户切回 Active 后才能继续走 generate 路径，但**老 Cancelled 行仍受全局行级保护**，不会被误改/误删 |
 
 UI 同步：
 
 - `apps/web/src/components/policy-detail/payments-section.tsx` 中"添加缴费记录" (line 455) 与"生成本年度缴费" (line 529) 两个按钮在 `policy.status` ∈ 非 Active 集合时隐藏
 - 已存在的缴费行：仅在**终止保单**下进入受限编辑模式（`Pending` / `Overdue` / `Cancelled` 行都保留"标记已缴"入口，对应允许 `* → Paid` 的补录方向；`Paid` 行保留"编辑 paidDate / paidAmount"入口；状态 `<Select>` 整体 readonly）；`PendingSurrender` 下既有缴费行编辑能力同 Active（详见 [Payments Section 更新](#4-payments-section-更新)）
-- 行级删除按钮在非 Active 集合下隐藏（呼应 DELETE 守卫）；用户若要批量清理只能删除整张保单
+- 行级删除按钮在非 Active 集合下隐藏（呼应 DELETE 守卫）；**Cancelled 行的行级删除按钮全局隐藏**（不论 policy 状态），呼应行级保护；用户若要批量清理只能删除整张保单
 
 L2 E2E 必须覆盖：
 - 终止后 POST payments → 400、generate → 400、PUT 把 Cancelled 改 Pending → 400、DELETE 行级 → 400
@@ -588,8 +625,9 @@ interface PaymentFormData {
 - `Cancelled` 行整行加 `line-through text-muted-foreground` 视觉降权
 - **终止保单下**所有行（`Pending` / `Overdue` / `Cancelled` / `Paid`）的"编辑"按钮**仅暴露非破坏字段**：`paidDate` / `paidAmount`；状态 `<Select>` 整体 readonly，不渲染交互；状态变更只能通过单独的"标记已缴"按钮触发 `* → Paid` 的单向转换（呼应 [Payments 写入路径在非 Active 状态下的封禁](#payments-写入路径在非-active-状态下的封禁)）
 - **拟退保保单下**既有缴费行可正常编辑（同 Active），仅新增 / 生成入口被禁；这与文档主张一致：拟退保还在跑，已存在的缴费动作不停
-- `Cancelled` 行的"标记已缴"按钮默认显示，用于补录终止日**之前**实际已缴的真实历史；hover 提示 "保单已终止，仅可标记已缴（用于历史补录）"
-- 行级删除按钮在非 Active 集合下隐藏（呼应 DELETE 守卫）
+- `Cancelled` 行的"标记已缴"按钮**全局**显示（不论 policy 状态），用于补录终止日**之前**实际已缴的真实历史；hover 提示 "仅可标记已缴（用于历史补录）"。这是行级 Cancelled 保护开的唯一通路，与 policy.status 无关
+- 行级删除按钮在非 Active 集合下隐藏（呼应 policy 级 DELETE 守卫）；`Cancelled` 行的行级删除按钮**全局**隐藏（呼应行级保护）
+- `Cancelled` 行的字段编辑（`paidDate` / `paidAmount` / `dueDate` 等）**全局禁用**，编辑按钮仅暴露"标记已缴"一项
 
 **新增 / 生成入口：**
 
@@ -687,7 +725,8 @@ interface TimelineEvent {
 | `packages/db/src/index.ts` | MODIFY | INIT_SQL 中 `policies` CREATE TABLE 同步追加两列 (line 280-313)；status enum 因无 CHECK 约束无需改 INIT_SQL |
 | `packages/db/src/types.ts` | MODIFY | `PolicyDbStatus` union 增加 `PendingSurrender`；新增 export `TerminalPolicyStatus = "Surrendered" \| "Claimed" \| "Lapsed"` 与 `NonActivePolicyStatus = "PendingSurrender" \| TerminalPolicyStatus`；新增 `isCoverageActiveStatus(dbStatus, expiryDate, now?)` helper（详见 [活跃判定 helper 与下游消费点](#活跃判定-helper-与下游消费点)） |
 | `packages/api/src/dashboard.ts` (line 20) | MODIFY | 活跃保单过滤 `isEffectivelyActive` → `isCoverageActiveStatus` |
-| `packages/api/src/coverage-lookup.ts` (line 167, 190) | MODIFY | `p.status === "Active"` 裸字符串比较 → `isCoverageActiveStatus(p.status, p.expiryDate)`；引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"`；同时 `STATUS_LABELS` (line 119) 追加 `PendingSurrender: "拟退保"`，否则 `buildPolicyCards` (line 229) 的 `statusLabel` fallback 会把裸枚举值 `PendingSurrender` 直接显示给用户 |
+| `packages/api/src/coverage-lookup.ts` (line 167, 190) | MODIFY | `p.status === "Active"` 裸字符串比较 → `isCoverageActiveStatus(p.dbStatus, p.expiryDate)`（输入是 raw DB status，**不是** display status；详见 [活跃判定 helper 与下游消费点](#活跃判定-helper-与下游消费点) 中的"输入类型校准"）；引入 `import { isCoverageActiveStatus, type PolicyDbStatus } from "@surety/db/types"`；同时 `STATUS_LABELS` (line 119) 追加 `PendingSurrender: "拟退保"` |
+| `apps/worker/src/routes/coverage-lookup.ts` (line 38) | MODIFY | 卡片对象同时塞 `dbStatus`（raw, `policy.status as PolicyDbStatus`）和 `status`（display, `deriveDisplayStatus(...)`）两个字段；`buildPolicyCards` 过滤用前者，展示用后者，职责分离 |
 | `apps/worker/src/routes/renewal-calendar.ts` (line 12) | MODIFY | `isEffectivelyActive` → `isCoverageActiveStatus` |
 | `packages/db/src/repositories/payments.ts` | MODIFY | 新增 `cancelPendingAfter(policyId, dateStr)`：`UPDATE payments SET status='Cancelled' WHERE policy_id=? AND status IN ('Pending','Overdue') AND due_date > ?`；返回受影响行数 |
 | `packages/db/__tests__/payments.test.ts` | MODIFY/CREATE | 覆盖 `cancelPendingAfter` 边界（Pending 与 Overdue 都翻、Paid 不动、只翻 dueDate > terminatedAt、idempotency） |
@@ -788,6 +827,8 @@ interface TimelineEvent {
 | 创建保单 → mark-pending-surrender → GET `/api/dashboard` | 活跃保单数仍 +1（PendingSurrender 计入） |
 | 同上 → GET `/api/coverage-lookup?type=member&id=...` | 该 member 的保障列表仍命中此保单，`statusLabel` 显示为 "拟退保"（不是裸枚举值） |
 | 同上 → GET `/api/renewal-calendar` | 续保日历仍列出此保单 |
+| 创建已过期保单（expiryDate < today）→ mark-pending-surrender → GET `/api/dashboard` | 活跃保单数 **不** +1（PendingSurrender 仍服从 expiry，过期就不计入） |
+| 同上 → GET `/api/coverage-lookup?type=member&id=...` | 保障列表 **不** 命中此保单（已过期，coverage 不再生效） |
 | 同上 → POST terminate → GET `/api/dashboard` | 活跃保单数回退 -1（终止态不计入） |
 | 同上 → POST terminate → GET `/api/coverage-lookup?type=member&id=...` | 保障列表不再命中 |
 
@@ -817,6 +858,9 @@ interface TimelineEvent {
 | 终止后 DELETE 整张保单 | 200（级联删除不受守卫影响） |
 | PUT policy status=Active 反向切回 | terminatedAt / terminationReason 被清空；Cancelled 缴费保持 Cancelled |
 | 反向切回 Active 后再 POST payments | 200（守卫解除） |
+| 反向切回 Active 后 DELETE 旧 Cancelled 行 | 400 `Cannot delete a cancelled payment (audit trail)`（行级保护与 policy.status 无关） |
+| 反向切回 Active 后 PUT 旧 Cancelled 行改 Pending | 400 `Cancelled payments can only be reactivated by marking them paid` |
+| 反向切回 Active 后 PUT 旧 Cancelled 行改 Paid | 200（补录通路保留） |
 
 L2 HTTP 套件 `bun run test:l2:http` 同样运行一遍 terminate + mark-pending-surrender 路径，验证 D1 binding 与 sqlite-proxy 行为一致 —— 跑此套件前需先 `bun run db:push` 把新列推到 dev D1。
 
