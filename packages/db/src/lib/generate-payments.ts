@@ -142,23 +142,38 @@ export function generatePaymentRecords(
     }];
   }
 
-  // Recurring schedule: figure out which period number (relative to the
-  // anchor) period 1 occupies. We walk backwards from the anchor and
-  // count how many steps stay >= firstDueDate; that count + 1 (for the
-  // anchor itself) is the anchor's period number.
+  // Recurring schedule: figure out which period number the anchor occupies.
   //
+  // When the caller passes an explicit anchorDate (i.e. policy.nextDueDate
+  // is set) AND existing payments are already in DB, trust user authority:
+  // the anchor (= nextDueDate) is the next period after the highest
+  // existing period number. This handles policies whose historical
+  // schedule was seeded out-of-step with firstDueDate's calendar
+  // (e.g. policy #1: effective 2022-12-26 but periods recorded as
+  // 2022-06-26..2025-06-26, so anchor 2026-06-26 must be period 5).
+  //
+  // Otherwise (no explicit anchor, or no existing payments to anchor
+  // off), walk backwards from the anchor in `frequency` steps and count
+  // how many stay >= firstDueDate.
   // E.g. anchor 2026-06-29, firstDueDate 2022-12-29, Yearly:
   //   back=1: 2025-06-29 ≥ effective → count it
   //   back=2: 2024-06-29 ≥ effective → count it
   //   back=3: 2023-06-29 ≥ effective → count it
   //   back=4: 2022-06-29 < effective → stop
-  //   anchorPeriodNumber = 3 + 1 = 4  (period 1 = 2023-06-29)
+  //   anchorPeriodNumber = 4 (period 1 = 2023-06-29)
   let anchorPeriodNumber = 1;
-  for (let back = 1; back < 10_000; back++) {
-    const d = periodDate(aYear, aMonth, aDay, -back, paymentFrequency);
-    if (d < firstDueDateObj) {
-      anchorPeriodNumber = back; // back-1 steps were valid, +1 for anchor itself
-      break;
+  const hasExplicitAnchor =
+    input.anchorDate != null && input.anchorDate !== firstDueDate;
+  if (hasExplicitAnchor && existingPeriodNumbers.size > 0) {
+    const maxExisting = Math.max(...existingPeriodNumbers);
+    anchorPeriodNumber = maxExisting + 1;
+  } else {
+    for (let back = 1; back < 10_000; back++) {
+      const d = periodDate(aYear, aMonth, aDay, -back, paymentFrequency);
+      if (d < firstDueDateObj) {
+        anchorPeriodNumber = back;
+        break;
+      }
     }
   }
 

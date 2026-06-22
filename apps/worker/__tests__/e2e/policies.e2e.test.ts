@@ -390,6 +390,64 @@ describe("L2 E2E: policy sub-resources", () => {
     }
   });
 
+  test("payments generate respects historical periodNumbers when anchor is off-calendar", async () => {
+    // Reproduces policy #1: effectiveDate 2022-12-26 doesn't align with the
+    // user's actual billing day (6-26). Periods 1..4 were seeded as
+    // 2022..2025-06-26 even though backward-walking from nextDueDate
+    // would suggest different numbers. When the user clicks generate,
+    // the schedule must extend off the existing periods (nextDueDate =
+    // period 5), not collide with them or skip silently.
+    setSystemTime(new Date("2026-06-22T04:00:00.000Z"));
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const policyId = await seedPolicy(env, memberId, "POL-HIST", {
+        effectiveDate: "2022-12-26",
+        nextDueDate: "2026-06-26",
+        totalPayments: 20,
+        paymentFrequency: "Yearly",
+      });
+
+      // Seed periods 1..4 as 2022..2025-06-26 to mirror policy #1's state.
+      for (let i = 0; i < 4; i++) {
+        const r = await jsonRequest(
+          env,
+          "POST",
+          `/api/policies/${policyId}/payments`,
+          {
+            periodNumber: i + 1,
+            dueDate: `${2022 + i}-06-26`,
+            amount: 23110,
+            status: "Paid",
+            paidDate: `${2022 + i}-06-26`,
+            paidAmount: 23110,
+          },
+        );
+        expect(r.status).toBe(201);
+      }
+
+      const r = await jsonRequest(
+        env,
+        "POST",
+        `/api/policies/${policyId}/payments/generate`,
+        {},
+      );
+      expect(r.status).toBe(200);
+      const body = r.body as {
+        generated: number;
+        payments: Array<{ periodNumber: number; dueDate: string }>;
+      };
+
+      // Period 5 (nextDueDate = 2026-06-26) must be generated; period 6
+      // (2027-06-26) is past cutoff 2026-12-31.
+      expect(body.generated).toBe(1);
+      const newPeriod = body.payments.find((p) => p.periodNumber === 5);
+      expect(newPeriod?.dueDate).toBe("2026-06-26");
+    } finally {
+      setSystemTime();
+    }
+  });
+
   test("payments generate falls back to effectiveDate when nextDueDate is null", async () => {
     setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
     try {
