@@ -1133,7 +1133,7 @@ function PolicyActions({
               理赔结案
             </Button>
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
               onClick={() => setTermDialogTarget("Lapsed")}
             >
