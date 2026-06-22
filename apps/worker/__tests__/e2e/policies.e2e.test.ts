@@ -522,3 +522,690 @@ describe("L2 E2E: dashboard + coverage-lookup", () => {
     expect(r.status).toBe(200);
   });
 });
+
+// ============================================================================
+// Policy status transitions (terminate / planned-surrender / bypass guards /
+// payments lockdown / reactivate). See docs/19-policy-status.md.
+// ============================================================================
+
+const CST_2026_06_22 = new Date("2026-06-22T04:00:00.000Z"); // 12:00 CST
+
+async function seedTerminatable(env: ReturnType<typeof buildTestApp>) {
+  const memberId = await seedMember(env);
+  const policyId = await seedPolicy(env, memberId, "POL-T", {
+    effectiveDate: "2026-01-01",
+  });
+  return { memberId, policyId };
+}
+
+describe("L2 E2E: POST /api/policies/:id/terminate", () => {
+  test("happy path — Surrendered with reason and metadata response", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+        terminationReason: "客户主动退保",
+      });
+      expect(r.status).toBe(200);
+      const body = r.body as { status: string; terminatedAt: string; terminationReason: string };
+      expect(body.status).toBe("Surrendered");
+      expect(body.terminatedAt).toBe("2026-06-15");
+      expect(body.terminationReason).toBe("客户主动退保");
+
+      const get = await jsonRequest(env, "GET", `/api/policies/${policyId}`);
+      const detail = get.body as {
+        status: string;
+        terminatedAt: string | null;
+        plannedSurrenderAt: string | null;
+        plannedSurrenderNote: string | null;
+      };
+      expect(detail.status).toBe("Surrendered");
+      expect(detail.terminatedAt).toBe("2026-06-15");
+      expect(detail.plannedSurrenderAt).toBeNull();
+      expect(detail.plannedSurrenderNote).toBeNull();
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("idempotent: same terminal status second POST overwrites metadata", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-04-01",
+        terminationReason: "first",
+      });
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-01",
+        terminationReason: "edit later",
+      });
+      expect(r.status).toBe(200);
+      const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+        terminatedAt: string;
+        terminationReason: string;
+      };
+      expect(detail.terminatedAt).toBe("2026-06-01");
+      expect(detail.terminationReason).toBe("edit later");
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("backfill for legacy rows: status terminal + terminatedAt null is editable via same-status POST", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      // Simulate legacy data: terminal status but missing terminatedAt.
+      await env.repos.policies.update(policyId, {
+        status: "Lapsed",
+        terminatedAt: null,
+        terminationReason: null,
+      });
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Lapsed",
+        terminatedAt: "2026-05-20",
+      });
+      expect(r.status).toBe(200);
+      const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+        status: string;
+        terminatedAt: string;
+      };
+      expect(detail.status).toBe("Lapsed");
+      expect(detail.terminatedAt).toBe("2026-05-20");
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects invalid date format", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026/06/15",
+      });
+      expect(r.status).toBe(400);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects date that fails round-trip (e.g. 2026-99-99)", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-99-99",
+      });
+      expect(r.status).toBe(400);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects date before effectiveDate", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2025-12-31",
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/effective date/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects future date (after todayInTimeZone Asia/Shanghai)", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-07-01",
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/future/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects status=Active", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Active",
+        terminatedAt: "2026-06-15",
+      });
+      expect(r.status).toBe(400);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects unknown policy (404)", async () => {
+    const env = buildTestApp();
+    const r = await jsonRequest(env, "POST", "/api/policies/9999/terminate", {
+      status: "Surrendered",
+      terminatedAt: "2026-06-15",
+    });
+    expect(r.status).toBe(404);
+  });
+
+  test("rejects terminal-to-terminal transition (400)", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-04-01",
+      });
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Claimed",
+        terminatedAt: "2026-05-01",
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/terminal/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("DB Active with display Expired can still terminate", async () => {
+    // Past expiryDate but DB row still Active. Display layer would show
+    // Expired; terminate must use DB status, not display.
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const policyId = await seedPolicy(env, memberId, "POL-EXP", {
+        effectiveDate: "2024-01-01",
+        expiryDate: "2025-12-31",
+      });
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Lapsed",
+        terminatedAt: "2026-01-15",
+      });
+      expect(r.status).toBe(200);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("payments retain DB values after terminate (no tombstone, no mutation)", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      // Seed payments manually to dodge the terminated-policy guard on
+      // POST /payments — we want a pre-terminate state.
+      await env.repos.payments.create({
+        policyId,
+        periodNumber: 1,
+        dueDate: "2026-03-01",
+        amount: 100,
+        status: "Paid",
+      });
+      await env.repos.payments.create({
+        policyId,
+        periodNumber: 2,
+        dueDate: "2026-09-01",
+        amount: 100,
+        status: "Pending",
+      });
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+      });
+      const got = await jsonRequest(env, "GET", `/api/policies/${policyId}/payments`);
+      const rows = (got.body as Array<{ periodNumber: number; status: string }>).slice().sort(
+        (a, b) => a.periodNumber - b.periodNumber,
+      );
+      // DB values are untouched: read-path filtering happens at the UI layer.
+      expect(rows[0]?.status).toBe("Paid");
+      expect(rows[1]?.status).toBe("Pending");
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("terminatedAt can move forward and backward via repeated same-status POSTs", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-05-15",
+      });
+      // Move forward.
+      let r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+      });
+      expect(r.status).toBe(200);
+      // Move backward.
+      r = await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-04-01",
+      });
+      expect(r.status).toBe(200);
+    } finally {
+      setSystemTime();
+    }
+  });
+});
+
+describe("L2 E2E: PUT /api/policies/:id/planned-surrender", () => {
+  test("happy path: sets future date on Active policy", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+      plannedSurrenderAt: "2030-01-01",
+      plannedSurrenderNote: "想退",
+    });
+    expect(r.status).toBe(200);
+    const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+      plannedSurrenderAt: string;
+      plannedSurrenderNote: string;
+    };
+    expect(detail.plannedSurrenderAt).toBe("2030-01-01");
+    expect(detail.plannedSurrenderNote).toBe("想退");
+  });
+
+  test("clears with null payload", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+      plannedSurrenderAt: "2030-01-01",
+    });
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+      plannedSurrenderAt: null,
+      plannedSurrenderNote: null,
+    });
+    expect(r.status).toBe(200);
+    const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+      plannedSurrenderAt: string | null;
+      plannedSurrenderNote: string | null;
+    };
+    expect(detail.plannedSurrenderAt).toBeNull();
+    expect(detail.plannedSurrenderNote).toBeNull();
+  });
+
+  test("rejects on terminated policy (400)", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+      });
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+        plannedSurrenderAt: "2030-01-01",
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/Active/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("rejects invalid date format", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+      plannedSurrenderAt: "not-a-date",
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test("rejects plannedSurrenderAt before effectiveDate", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+      plannedSurrenderAt: "2025-12-31",
+    });
+    expect(r.status).toBe(400);
+    expect((r.body as { error: string }).error).toMatch(/effective date/);
+  });
+
+  test("terminate clears any pre-existing planned-surrender", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "PUT", `/api/policies/${policyId}/planned-surrender`, {
+        plannedSurrenderAt: "2030-01-01",
+        plannedSurrenderNote: "想退",
+      });
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+      });
+      const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+        plannedSurrenderAt: string | null;
+        plannedSurrenderNote: string | null;
+      };
+      expect(detail.plannedSurrenderAt).toBeNull();
+      expect(detail.plannedSurrenderNote).toBeNull();
+    } finally {
+      setSystemTime();
+    }
+  });
+});
+
+describe("L2 E2E: CRUD bypass guards", () => {
+  test("POST /api/policies with terminal status returns 400", async () => {
+    const env = buildTestApp();
+    const memberId = await seedMember(env);
+    const r = await jsonRequest(env, "POST", "/api/policies", {
+      applicantId: memberId,
+      insuredType: "Member",
+      insuredMemberId: memberId,
+      category: "Health",
+      insurerName: "Ins",
+      productName: "Prod",
+      policyNumber: "POL-Bypass-1",
+      effectiveDate: "2026-01-01",
+      sumAssured: 100,
+      premium: 50,
+      paymentFrequency: "Yearly",
+      status: "Surrendered",
+    });
+    expect(r.status).toBe(400);
+    expect((r.body as { error: string }).error).toMatch(/terminated state/);
+  });
+
+  test.each([
+    ["terminatedAt", "2026-05-01"],
+    ["terminationReason", "client request"],
+    ["plannedSurrenderAt", "2030-01-01"],
+    ["plannedSurrenderNote", "想退"],
+  ] as const)(
+    "POST /api/policies carrying %s returns 400",
+    async (field, value) => {
+      const env = buildTestApp();
+      const memberId = await seedMember(env);
+      const r = await jsonRequest(env, "POST", "/api/policies", {
+        applicantId: memberId,
+        insuredType: "Member",
+        insuredMemberId: memberId,
+        category: "Health",
+        insurerName: "Ins",
+        productName: "Prod",
+        policyNumber: `POL-Bypass-meta-${field}`,
+        effectiveDate: "2026-01-01",
+        sumAssured: 100,
+        premium: 50,
+        paymentFrequency: "Yearly",
+        [field]: value,
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/transition endpoints/);
+    },
+  );
+
+  test("PUT Active -> terminal status returns 400", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}`, {
+      status: "Claimed",
+    });
+    expect(r.status).toBe(400);
+  });
+
+  test.each([
+    ["terminatedAt", "2026-05-01"],
+    ["terminationReason", "sneak"],
+    ["plannedSurrenderAt", "2030-01-01"],
+    ["plannedSurrenderNote", "ignore me"],
+  ] as const)(
+    "PUT on Active carrying %s returns 400",
+    async (field, value) => {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}`, {
+        [field]: value,
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/status metadata/);
+    },
+  );
+});
+
+describe("L2 E2E: payments lockdown under terminated policy", () => {
+  async function seedTerminatedWithPayments(env: ReturnType<typeof buildTestApp>) {
+    setSystemTime(CST_2026_06_22);
+    const { policyId } = await seedTerminatable(env);
+    const paid = await env.repos.payments.create({
+      policyId,
+      periodNumber: 1,
+      dueDate: "2026-03-01",
+      amount: 100,
+      status: "Paid",
+    });
+    const pending = await env.repos.payments.create({
+      policyId,
+      periodNumber: 2,
+      dueDate: "2026-09-01",
+      amount: 100,
+      status: "Pending",
+    });
+    await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+      status: "Surrendered",
+      terminatedAt: "2026-06-15",
+    });
+    return { policyId, paidId: paid.id, pendingId: pending.id };
+  }
+
+  test("POST /payments after terminate returns 400", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/payments`, {
+        periodNumber: 3,
+        dueDate: "2026-12-01",
+        amount: 100,
+      });
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/terminated/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("POST /payments/generate after terminate returns 400", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "POST", `/api/policies/${policyId}/payments/generate`, {});
+      expect(r.status).toBe(400);
+      expect((r.body as { error: string }).error).toMatch(/terminated/);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("DELETE /payments/:id after terminate returns 400", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId, pendingId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "DELETE", `/api/policies/${policyId}/payments/${pendingId}`);
+      expect(r.status).toBe(400);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("DELETE /api/policies/:id (whole-policy cascade) still works for terminated", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "DELETE", `/api/policies/${policyId}`);
+      expect(r.status).toBe(200);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("PUT /payments/:id flipping Pending -> Paid returns 200", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId, pendingId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/payments/${pendingId}`, {
+        status: "Paid",
+        paidDate: "2026-06-10",
+        paidAmount: 100,
+      });
+      expect(r.status).toBe(200);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("PUT /payments/:id flipping Paid -> Pending returns 400", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId, paidId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/payments/${paidId}`, {
+        status: "Pending",
+      });
+      expect(r.status).toBe(400);
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test.each([
+    ["dueDate", "2026-08-01"],
+    ["amount", 999],
+    ["periodNumber", 99],
+  ] as const)(
+    "PUT /payments/:id with structural field %s returns 400 even with status=Paid",
+    async (field, value) => {
+      try {
+        const env = buildTestApp();
+        const { policyId, pendingId } = await seedTerminatedWithPayments(env);
+        const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/payments/${pendingId}`, {
+          status: "Paid",
+          [field]: value,
+        });
+        expect(r.status).toBe(400);
+        expect((r.body as { error: string }).error).toMatch(/structure/);
+      } finally {
+        setSystemTime();
+      }
+    },
+  );
+
+  test("PUT /payments/:id with only {status:Paid, paidDate, paidAmount} returns 200", async () => {
+    try {
+      const env = buildTestApp();
+      const { policyId, pendingId } = await seedTerminatedWithPayments(env);
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}/payments/${pendingId}`, {
+        status: "Paid",
+        paidDate: "2026-06-10",
+        paidAmount: 100,
+      });
+      expect(r.status).toBe(200);
+    } finally {
+      setSystemTime();
+    }
+  });
+});
+
+describe("L2 E2E: reactivate from terminal", () => {
+  test("PUT status=Active clears metadata even when body carries values", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+        terminationReason: "试一下",
+      });
+      const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}`, {
+        status: "Active",
+        plannedSurrenderAt: "2030-01-01",
+        plannedSurrenderNote: "ignore",
+        terminatedAt: "2099-01-01",
+        terminationReason: "ignore",
+      });
+      expect(r.status).toBe(200);
+      const detail = (await jsonRequest(env, "GET", `/api/policies/${policyId}`)).body as {
+        status: string;
+        terminatedAt: string | null;
+        terminationReason: string | null;
+        plannedSurrenderAt: string | null;
+        plannedSurrenderNote: string | null;
+      };
+      expect(detail.status).toBe("Active");
+      expect(detail.terminatedAt).toBeNull();
+      expect(detail.terminationReason).toBeNull();
+      expect(detail.plannedSurrenderAt).toBeNull();
+      expect(detail.plannedSurrenderNote).toBeNull();
+    } finally {
+      setSystemTime();
+    }
+  });
+
+  test("after reactivate, original Pending payment DB values intact and POST guard lifted", async () => {
+    setSystemTime(CST_2026_06_22);
+    try {
+      const env = buildTestApp();
+      const { policyId } = await seedTerminatable(env);
+      const pending = await env.repos.payments.create({
+        policyId,
+        periodNumber: 1,
+        dueDate: "2026-09-01",
+        amount: 100,
+        status: "Pending",
+      });
+      await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+        status: "Surrendered",
+        terminatedAt: "2026-06-15",
+      });
+      await jsonRequest(env, "PUT", `/api/policies/${policyId}`, { status: "Active" });
+
+      // DB row was never modified — read still shows the original Pending entry.
+      const rows = ((await jsonRequest(env, "GET", `/api/policies/${policyId}/payments`)).body as Array<{
+        id: number;
+        status: string;
+      }>);
+      const row = rows.find((p) => p.id === pending.id);
+      expect(row?.status).toBe("Pending");
+
+      // POST /payments guard lifts now that we're back to Active.
+      const post = await jsonRequest(env, "POST", `/api/policies/${policyId}/payments`, {
+        periodNumber: 99,
+        dueDate: "2027-01-01",
+        amount: 100,
+      });
+      expect(post.status).toBe(201);
+    } finally {
+      setSystemTime();
+    }
+  });
+});
