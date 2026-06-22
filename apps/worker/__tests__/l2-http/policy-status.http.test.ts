@@ -1,16 +1,26 @@
 /**
- * L2 HTTP — policy status transitions over real D1 + sqlite-proxy.
+ * L2 HTTP — policy status transitions over the local D1 binding via
+ * the wrangler dev emulator. Scoped to what `scripts/run-l2-http.ts`
+ * actually drives: `wrangler dev --local` boots miniflare's D1 emulator
+ * (a sqlite file under `.wrangler/state-l2-http`) and the schema is
+ * applied with `wrangler d1 execute --local`. This is **not** the
+ * remote dev D1 — coverage of that environment still depends on
+ * `bun run db:push` plus manual smoke / Playwright spec.
  *
- * Pins the same behaviour the in-memory e2e suite covers but against
- * the actual D1 binding the Worker uses in production. Plan
- * (docs/19-policy-status.md) explicitly requires this surface because
- * the project has been bitten by D1 vs bun:sqlite divergence before
- * (CLAUDE.md retrospective: NULL handling, date strings).
+ * Even at local-emulator level this suite catches things bun:sqlite
+ * cannot, because:
+ *   - it exercises the **D1 binding driver** (`packages/db/src/index.ts`
+ *     createDbFromD1), not the in-memory sqlite-proxy path
+ *   - requests go through real HTTP / Hono serialization, not a test
+ *     client
+ *   - sqlite-proxy "get" vs "all" row mapping has bitten this project
+ *     before (CLAUDE.md retrospective) and only fires on the binding
+ *     path
  *
  * Covers the high-leverage paths only — terminate happy + payment
- * lockdown + reactivation. The in-memory e2e already covers the long
- * matrix of validation cases; this suite asserts that what works
- * in-memory also works over the wire on real D1.
+ * lockdown (POST/PUT/DELETE/generate) + reactivation. The in-memory
+ * e2e already covers the long matrix of validation cases; this suite
+ * asserts the bits that actually do DB writes survive the wire.
  */
 import { afterAll, describe, expect, test } from "bun:test";
 import { httpJson } from "./setup";
@@ -112,6 +122,69 @@ describe("L2-HTTP: terminate + reactivation over real D1", () => {
       {},
     );
     expect(gen.status).toBe(400);
+  });
+
+  test("PUT/DELETE payment after terminate enforces body shape and immutability", async () => {
+    // Seed a Pending payment BEFORE terminating, so the terminal-state
+    // PUT / DELETE guards actually have a row to act on.
+    const memberId = await seedMember();
+    const policyId = await seedActivePolicy(memberId);
+
+    const addPay = await httpJson<{ id: number }>(
+      "POST",
+      `/api/policies/${policyId}/payments`,
+      {
+        periodNumber: 1,
+        dueDate: "2024-04-01",
+        amount: 5_000,
+      },
+    );
+    expect(addPay.status).toBe(201);
+    const paymentId = addPay.body.id;
+
+    await httpJson("POST", `/api/policies/${policyId}/terminate`, {
+      status: "Surrendered",
+      terminatedAt: "2024-06-15",
+    });
+
+    // Pending → Paid is the allowed补录 path.
+    const markPaid = await httpJson(
+      "PUT",
+      `/api/policies/${policyId}/payments/${paymentId}`,
+      { status: "Paid", paidDate: "2024-04-02" },
+    );
+    expect(markPaid.status).toBe(200);
+
+    // Paid → Pending must be rejected — the terminal-state body shape
+    // only allows status="Paid" transitions.
+    const revert = await httpJson(
+      "PUT",
+      `/api/policies/${policyId}/payments/${paymentId}`,
+      { status: "Pending" },
+    );
+    expect(revert.status).toBe(400);
+
+    // Structural fields are off-limits even with status="Paid".
+    for (const [field, value] of [
+      ["dueDate", "2024-05-01"],
+      ["amount", 9_999],
+      ["periodNumber", 2],
+    ] as const) {
+      const r = await httpJson(
+        "PUT",
+        `/api/policies/${policyId}/payments/${paymentId}`,
+        { status: "Paid", [field]: value },
+      );
+      expect(r.status).toBe(400);
+    }
+
+    // Row-level DELETE rejected for any payment status on a terminated
+    // policy (covers Paid here; Pending/Cancelled covered by in-memory e2e).
+    const del = await httpJson(
+      "DELETE",
+      `/api/policies/${policyId}/payments/${paymentId}`,
+    );
+    expect(del.status).toBe(400);
   });
 
   test("reactivation via PUT clears metadata even when body carries planned-surrender", async () => {
