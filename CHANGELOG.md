@@ -428,6 +428,11 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.2.1
+
+### Fixed
+- Generate uses nextDueDate as schedule anchor, backfills past periods
+
 ## v2.2.0
 
 ### Added
