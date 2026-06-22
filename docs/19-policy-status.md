@@ -122,7 +122,7 @@ export type NonActivePolicyStatus = "PendingSurrender" | TerminalPolicyStatus;
 `PendingSurrender` 在 Status Catalog 里写了"仍计入活跃统计"，但现有 `isEffectivelyActive` 只承认 display `Active`（`packages/db/src/types.ts:34`），并且业务层散落着两种过滤写法：
 
 - `isEffectivelyActive(p.status, p.expiryDate)` —— `packages/api/src/dashboard.ts:20`、`apps/worker/src/routes/renewal-calendar.ts:12`
-- `p.status === "Active"` 直接字符串比较 —— `packages/api/src/coverage-lookup.ts:167, 190`
+- `p.status === "Active"` 直接字符串比较 —— `packages/api/src/coverage-lookup.ts:167, 190, 230`
 
 如果不显式处理，新增 `PendingSurrender` 后 dashboard 总数、续保日历、保障速查会立刻把拟退保保单当成"已失效"忽略 —— 这与拟退保的语义（保单还在跑、缴费照常、保障仍有效）相悖。
 
@@ -152,8 +152,11 @@ export function isCoverageActiveStatus(
   now: Date = new Date(),
 ): boolean {
   if (dbStatus !== "Active" && dbStatus !== "PendingSurrender") return false;
-  // Apply the same expiry decay as deriveDisplayStatus: an Active or
-  // PendingSurrender policy past its expiryDate is effectively expired.
+  // Apply expiry decay independently of display status: an Active or
+  // PendingSurrender policy past its expiryDate is not covering anyone
+  // today, even though deriveDisplayStatus keeps the rose badge intact
+  // for PendingSurrender (display layer expresses user intent; this
+  // helper answers whether coverage is in force right now).
   if (expiryDate) {
     const expiry = parseLocalDate(expiryDate);
     if (expiry < now) return false;
@@ -896,7 +899,7 @@ L2 HTTP 套件 `bun run test:l2:http` 同样运行一遍 terminate + mark-pendin
 |---|---------|-------|--------|
 | 1 | `feat(db): add PendingSurrender status, terminated_at / termination_reason columns; extend payments enum with Cancelled` | `packages/db/src/schema.ts` (status enum + 2 columns + payment enum), `packages/db/src/index.ts` INIT_SQL, `packages/db/src/types.ts` (PolicyDbStatus + TerminalPolicyStatus + NonActivePolicyStatus + isCoverageActiveStatus helper), drizzle migration | pending |
 | 2 | `feat(db): add paymentsRepo.cancelPendingAfter` | `packages/db/src/repositories/payments.ts` + L1 test | pending |
-| 3 | `refactor(api): switch active-policy filters to isCoverageActiveStatus` | `packages/api/src/dashboard.ts`, `packages/api/src/coverage-lookup.ts` (both filter sites), `apps/worker/src/routes/renewal-calendar.ts` + L1/L2 tests verifying PendingSurrender is counted | pending |
+| 3 | `refactor(api): switch active-policy filters to isCoverageActiveStatus` | `packages/api/src/dashboard.ts`, `packages/api/src/coverage-lookup.ts` (line 167/190 filters + line 230 isActive + STATUS_LABELS + PolicyForCoverage.dbStatus), `apps/worker/src/routes/coverage-lookup.ts` (card object carries dbStatus + display status), `apps/worker/src/routes/renewal-calendar.ts` + L1/L2 tests verifying PendingSurrender is counted and expired-PendingSurrender is not | pending |
 | 4 | `feat(api): add /terminate + /mark-pending-surrender; expose terminatedAt / terminationReason; lock down all status bypass routes` | `apps/worker/src/routes/policies.ts` (both transition handlers, PUT auto-clear, status guards on POST/PUT policies + POST/PUT/DELETE/generate payments), `apps/worker/__tests__/e2e/setup.ts` (fake D1 prepare/bind/batch shim), `packages/api/...`, `apps/web/src/lib/types/policy.ts` PolicyDetail + PaymentStatus | pending |
 | 5 | `test(e2e): cover policy status transitions, bypass guards, and payments side-effects` | `apps/worker/__tests__/e2e/policies.e2e.test.ts` (terminate + mark-pending-surrender + bypass guards + Overdue handling + atomicity + PendingSurrender→terminal + DB-status-not-display validation) | pending |
 | 6 | `feat(ui): badge rose variant; transition dialog component` | `apps/web/src/components/ui/badge.tsx` (rose variant), `apps/web/src/lib/constants/policy.ts` (statusConfig + PendingSurrender row + stripe), `apps/web/src/components/policy-detail/transition-dialog.tsx` + L1 test | pending |
