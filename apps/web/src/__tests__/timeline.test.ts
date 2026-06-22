@@ -6,6 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildTimeline } from "../components/policy-detail/timeline-column";
+import { deriveDisplayStatus } from "@surety/db/types";
 import type { PolicyDetail } from "../lib/types/policy";
 
 function basePolicy(overrides: Partial<PolicyDetail> = {}): PolicyDetail {
@@ -171,6 +172,27 @@ describe("buildTimeline — planned surrender", () => {
       basePolicy({
         status: "Expired",
         expiryDate: "2025-12-31",
+        plannedSurrenderAt: "2027-03-01",
+      }),
+    );
+    expect(events.find((e) => e.label === "计划退保")).toBeDefined();
+  });
+
+  it("end-to-end: deriveDisplayStatus(Active, past expiryDate) → Expired → milestone still appears", () => {
+    // Anchor the upstream gate to the same derivation the API layer uses
+    // (apps/worker/src/routes/policies.ts wraps GET responses with
+    // deriveDisplayStatus). If that helper ever stops mapping
+    // (Active, past) → "Expired", the previous direct-Expired test would
+    // still pass; this one would not.
+    const dbStatus = "Active" as const;
+    const expiryDate = "2025-12-31";
+    const displayStatus = deriveDisplayStatus(dbStatus, expiryDate);
+    expect(displayStatus).toBe("Expired");
+
+    const events = buildTimeline(
+      basePolicy({
+        status: displayStatus,
+        expiryDate,
         plannedSurrenderAt: "2027-03-01",
       }),
     );
