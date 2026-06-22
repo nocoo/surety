@@ -445,7 +445,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 
 ### L1 单元测试 (`bun run test`)
 
-- `packages/db/__tests__/types.test.ts`（如不存在则 CREATE）：`isObsoletedByTermination` 的边界（terminatedAt 为 null / Paid 永不过滤 / dueDate 等于 / 早于 / 晚于 terminatedAt）
+- `packages/db/src/__tests__/types.test.ts`（如不存在则 CREATE）：`isObsoletedByTermination` 的边界（terminatedAt 为 null / Paid 永不过滤 / dueDate 等于 / 早于 / 晚于 terminatedAt）
 - `apps/web/src/__tests__/timeline.test.ts`：File Changes 中 Phase 4 列出的全部覆盖点（终止后未来事件过滤 / today 抑制 / 终止 milestone 位置 / display Active 下拟退保 milestone / display Expired 下拟退保 milestone）
 - `apps/web/src/__tests__/termination-dialog.test.ts`：表单 validation（日期范围、reason 长度、预填路径）
 - `apps/web/src/__tests__/planned-surrender-dialog.test.ts`：表单 validation + 清除按钮 emits `{plannedSurrenderAt: null, plannedSurrenderNote: null}`
@@ -574,19 +574,21 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 - 风险：INIT_SQL 与 schema.ts 列顺序不一致导致 bun-sqlite L1 跑通但 D1 行为不同（CLAUDE.md Retrospective 记录过）→ 跑 step 5 的 `PRAGMA table_info` 与 schema.ts 顺序对照
 - 回滚：
   - **代码侧**：`git revert` schema.ts + INIT_SQL + drizzle/000X + drizzle/meta 一起还原（4 个工件必须一起退，否则 generate 状态不一致）
-  - **dev D1 侧**：四个新列被退掉后 schema 仍多 4 个 dangling 列 —— 单纯 `DROP COLUMN` 是破坏性操作且绕过 Drizzle 管理路径（dev D1 上若已写了 terminated_at 数据会直接丢，且后续重新 forward 时 snapshot 与远端不一致）。**正确做法**：仅在 dev 环境、确认无价值数据后，要么 (a) 跑一个反向 forward migration（编一个 `0Y_drop_policy_termination.sql` 走正常 `bun run db:push`，保持 Drizzle 路径），要么 (b) 直接 `wrangler d1 delete surety-db` 后重建（dev 数据本就可重新 seed）
-  - **production 侧**：本 commit 落 prod 前出 issue 极不可能（DB-only commit，无消费者写值），但若 prod 已落，禁止 DROP COLUMN，按 forward-only migration 走
+  - **dev D1 侧**：四个新列被退掉后 schema 仍多 4 个 dangling 列 —— 单纯 `DROP COLUMN` 是破坏性操作且绕过 Drizzle 管理路径（dev D1 上若已写了 terminated_at 数据会直接丢）。**正确做法**：仅在 dev 环境、确认无价值数据后，二选一：
+    - (a) **保持 Drizzle push 模式**：代码侧 revert 后，schema.ts 已经回到旧定义，再跑一次 `bun run db:push`（脚本即 `drizzle-kit push`，按 TS schema diff 直推远端），drizzle 会自己算出 `DROP COLUMN` 并 push；先用 `bunx wrangler d1 export surety-db --remote --output backup.sql` 备份
+    - (b) **直接重建 dev DB**：`wrangler d1 delete surety-db` → 重新 `wrangler d1 create surety-db` → `bun run db:push` 推回旧 schema → `bun run db:seed` 重灌测试数据（dev 数据本就可重新 seed）
+  - **production 侧**：本 commit 落 prod 前出 issue 极不可能（DB-only commit，无消费者写值），但若 prod 已落，禁止 DROP COLUMN（D1/SQLite 上 DROP COLUMN 也是受限操作），按 forward-only migration 走
 
 ### Commit 2 — `feat(db): add isObsoletedByTermination helper + TerminalPolicyStatus type`
 
 **Scope**
 - `packages/db/src/types.ts`：新增 `TerminalPolicyStatus = "Surrendered" | "Claimed" | "Lapsed"` 类型 + `isObsoletedByTermination(payment, policyTerminatedAt)` helper
-- `packages/db/__tests__/types.test.ts`（如不存在则 CREATE）：覆盖 helper 边界
+- `packages/db/src/__tests__/types.test.ts`（如不存在则 CREATE）：覆盖 helper 边界
 
 **Steps**
 1. 在 `packages/db/src/types.ts` 与现有 `isEffectivelyActive` 同位置加 `TerminalPolicyStatus` 联合类型 export
 2. 紧接其后实现 `isObsoletedByTermination` —— 签名、文档注释、实现 100% 复制文档 [Payments 过滤规则](#payments-过滤规则纯读路径) 节中代码块
-3. CREATE 或扩展 `packages/db/__tests__/types.test.ts`，覆盖四个边界：
+3. CREATE 或扩展 `packages/db/src/__tests__/types.test.ts`，覆盖四个边界：
    - `policyTerminatedAt === null` → 一律 false
    - `payment.status === "Paid"` → 一律 false（无论 dueDate）
    - `dueDate === terminatedAt`（同日）→ false（规则是 `> terminatedAt`）
@@ -594,7 +596,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 
 **Verify**
 - `bun run test`：新 helper test 用例全绿；既有 307+ test 不应受影响
-- `bun run test:coverage`：helper 覆盖率应在 100%（≥ 95% 是项目门禁）
+- `bun run test:coverage`：项目全局门禁仍需 ≥ 95%（vitest 配置只对 `apps/*/src/**` 非 tsx 文件统计，且排除 `apps/web/src/lib/constants/**`、`apps/web/src/hooks/**`、`apps/worker/src/routes/**` 等，见 `vitest.config.ts:27-67`）；helper / dialog / 组件级的覆盖不在 coverage 统计范围内（packages/db、`*.tsx`、constants 都被排除），别期望 `test:coverage` 输出能 highlight 这些文件 —— 行为靠 L1 测试本身保证，不靠数字
 
 **Risks & Rollback**
 - 风险：用 `Date` 比较而非字符串比较 → ISO date `"YYYY-MM-DD"` 字典序与时序一致，直接 `>` 即可；文档代码块已用字符串比较，不要"自作主张"换成 parseLocalDate
@@ -657,7 +659,6 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 **Verify**
 - `bun run test`：新 e2e 用例 + 既有用例全绿
 - `bun run test:l2:http`：跑 L2 HTTP 套件（wrangler dev + 真 D1 dev）。前置：commit 1 的 `bun run db:push` 必须已落 dev D1
-- `bun run test:coverage`：行/函数覆盖率 ≥ 95%
 
 **Risks & Rollback**
 - 风险：L2 HTTP 套件跑前未推 dev D1 → 新列不存在，所有 terminate 测试 500。Verify 步骤先确认 `wrangler d1 execute --remote "PRAGMA table_info(policies)"` 含新列
@@ -680,8 +681,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 5. **L1 tests**：每个 dialog 一份 test，覆盖字段 validation（regex、长度、必填）、提交 payload 形状、清除按钮行为
 
 **Verify**
-- `bun run test`：dialog L1 全绿
-- `bun run test:coverage`：dialog 行/函数覆盖率 ≥ 95%
+- `bun run test`：dialog L1 全绿（dialog 组件本身是 `.tsx`，被 vitest coverage 排除规则 `**/*.tsx` 排除，不进 `test:coverage` 统计 —— 行为靠新 dialog 测试断言覆盖，不靠 coverage 数字）
 - 视觉抽测：dialog 颜色 / 玫红比 destructive 纯红柔和等浏览器观感留到 Commit 6 接线后随手测一起完成 —— **不要**在本 commit 临时挂 debug 块到 meta-column 验证颜色（会污染提交范围；若实现时确实需要现场观感，临时手动 import 到 Storybook / 一次性 playground 文件，提交前删除）
 
 **Risks & Rollback**
@@ -743,8 +743,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
    - **基线对照**：`policyStatus="Active"` 下，上述按钮 / 选项 / 计数全部恢复 Active 行为
 
 **Verify**
-- `bun run test`：新 `payments-section.test.tsx` 全绿；既有 web 单测全绿
-- `bun run test:coverage`：payments-section 行/函数覆盖率 ≥ 95%
+- `bun run test`：新 `payments-section.test.tsx` 全绿；既有 web 单测全绿（payments-section 与新测试本身都是 `.tsx`，不进 coverage 统计；行为完全靠新测试 4 大类用例 + Active 基线对照锁住）
 - `bun run typecheck`：调用方未补传 prop 会被 typecheck 拦下，逐个修
 - 浏览器手测：在一张 Surrendered 保单上：(a) 加号 + 生成按钮消失；(b) 列表底部 "N 笔已随终止失效" 折叠区出现；(c) 折叠区里的行不可删除；(d) 行级编辑只能改成 Paid
 
@@ -772,8 +771,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 6. CREATE `apps/web/src/__tests__/timeline.test.ts`：5 个用例对应 File Changes Phase 4 列出的全部覆盖点
 
 **Verify**
-- `bun run test`：新 timeline.test.ts 全绿；既有 L1 不应受影响
-- `bun run test:coverage`：timeline-column 行/函数覆盖率 ≥ 95%
+- `bun run test`：新 timeline.test.ts 全绿；既有 L1 不应受影响（timeline-column 本身是 `.tsx`，不进 coverage 统计 —— `buildTimeline` 的纯函数行为靠 5 个测试用例锁住）
 - 浏览器手测：(a) 退保保单 timeline 末尾出现 "退保" milestone，之后无未来事件，today 标记不再出现；(b) Active 保单标记拟退保后 timeline 中出现 "计划退保" 节点，其它事件不变；(c) Expired 保单标记拟退保后同样出现节点
 
 **Risks & Rollback**
