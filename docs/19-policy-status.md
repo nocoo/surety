@@ -210,7 +210,7 @@ await repos.policies.update(policyId, {
 
 ### 反向操作：复用 PUT /api/policies/:id
 
-切回 `Active` 走现有 PUT，body 里 `status="Active"`；PUT handler 当 `body.status === "Active"` 且 DB 当前为终止态时，强制 `terminatedAt=null` / `terminationReason=null`。
+切回 `Active` 走现有 PUT，body 里 `status="Active"`；PUT handler 按 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵) 的判定顺序，命中规则 1 (reactivation) 后**一律覆盖**写入 `terminated_at=null` / `termination_reason=null` / `planned_surrender_at=null` / `planned_surrender_note=null`，不论 body 是否携带这些字段。
 
 PUT **不**触碰 payments —— 不需要恢复任何东西，原 Pending/Overdue 行从未被改过 DB 值，过滤规则解除后自动重新可见。
 
@@ -221,8 +221,13 @@ PUT **不**触碰 payments —— 不需要恢复任何东西，原 Pending/Over
 API 层强约束：
 
 - `POST /api/policies`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot create a policy in a terminated state — use POST /api/policies/:id/terminate after creation`。新建只允许 Active（默认）。**同样禁止 POST body 携带 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 任一字段**，任一非 undefined 即返回 400 `Cannot set termination or planned-surrender metadata on create — use the dedicated transition endpoints after creation`。不走 silent-ignore 路径：silent-ignore 会让前端误以为数据已落地，对账时才发现字段没写入，更难排查。
-- `PUT /api/policies/:id`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 DB 不一致时返回 400 `Use POST /api/policies/:id/terminate to transition into a terminal status`；即便 `body.status` 与现有相等，也不允许通过 PUT 修改 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`（这四个字段只能由专用端点改），任一非 undefined 即 400。
-- `PUT` 切回 Active 仍强制清空 metadata。
+- `PUT /api/policies/:id` handler 按以下顺序判定（顺序固定，避免规则间歧义）：
+  1. **反向恢复 Active**：若 `body.status === "Active"` 且 `existing.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`}，进入恢复路径 —— 无视 body 是否同时携带 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`，handler 一律覆盖写入 NULL；其它字段按现有 PUT 行为更新。返回 200。
+  2. **终止态写入拦截**：若 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 DB 不一致，返回 400 `Use POST /api/policies/:id/terminate to transition into a terminal status`。
+  3. **Metadata 字段拦截**：若上面两条都未命中且 body 中 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 任一字段非 undefined，返回 400 `Cannot modify status metadata via PUT — use the dedicated transition endpoints`。
+  4. 其余情况按现有 PUT 行为执行（编辑产品信息、缴费配置、备注等普通字段）。
+
+  这条顺序解释了为什么"终止后 PUT status=Active 返回 200"（命中规则 1，metadata 字段即便携带也被 silently 清空）而"Active 保单 PUT 携带 plannedSurrenderAt 返回 400"（命中规则 3）—— 前者是 reactivation，后者是 metadata 写入旁路。
 
 UI 层呼应：
 
@@ -409,7 +414,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | File | Action | Description |
 |------|--------|-------------|
 | `apps/worker/src/routes/policies.ts` | MODIFY | 新增 `POST /api/policies/:id/terminate`（单表 UPDATE 风格同 PUT）；新增 `PUT /api/policies/:id/planned-surrender`；GET single 响应 shape 增加 4 个新字段 (line 125-128) |
-| `apps/worker/src/routes/policies.ts` | MODIFY | PUT handler 内追加：当 `body.status === "Active"` 时强制 `terminatedAt=null`, `terminationReason=null` |
+| `apps/worker/src/routes/policies.ts` | MODIFY | PUT handler 按文档 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵) 的 4 步判定顺序实现：reactivation（status=Active 从终止态恢复）→ 终止态拦截 → metadata 字段拦截 → 其余字段正常更新；reactivation 路径覆盖写入 4 个 metadata 字段为 NULL |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies` (line 50) 与 `PUT /api/policies/:id` (line 131) 加守卫拒绝通用 CRUD 直接写终止态；同时拒绝 PUT 修改 4 个 metadata 字段（必须走专用端点） |
 | `apps/worker/src/routes/policies.ts` | MODIFY | `POST /api/policies/:id/payments` (line 232)、`POST /api/policies/:id/payments/generate` (line 301)、`DELETE /api/policies/:id/payments/:paymentId` (line 287) 终止态返回 400；`PUT /api/policies/:id/payments/:paymentId` (line 258) 终止态仅允许 `* → Paid` |
 
@@ -441,7 +446,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 ### L1 单元测试 (`bun run test`)
 
 - `packages/db/__tests__/types.test.ts`（如不存在则 CREATE）：`isObsoletedByTermination` 的边界（terminatedAt 为 null / Paid 永不过滤 / dueDate 等于 / 早于 / 晚于 terminatedAt）
-- `apps/web/src/__tests__/timeline.test.ts`：上方 4 点
+- `apps/web/src/__tests__/timeline.test.ts`：File Changes 中 Phase 4 列出的全部覆盖点（终止后未来事件过滤 / today 抑制 / 终止 milestone 位置 / display Active 下拟退保 milestone / display Expired 下拟退保 milestone）
 - `apps/web/src/__tests__/termination-dialog.test.ts`：表单 validation（日期范围、reason 长度、预填路径）
 - `apps/web/src/__tests__/planned-surrender-dialog.test.ts`：表单 validation + 清除按钮 emits `{plannedSurrenderAt: null, plannedSurrenderNote: null}`
 
@@ -509,6 +514,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | 用例 | 期望 |
 |------|------|
 | 终止后 PUT status=Active | 200，metadata 清空 |
+| 终止后 PUT status=Active 同时 body 携带 `plannedSurrenderAt: "2030-01-01"` | 200，命中 reactivation 规则 1，body 携带值被忽略，DB 中 metadata 一律 NULL |
 | 反向切回 Active 后 GET payments | 原 Pending/Overdue 行的 DB status 始终保持原值（从未被改） |
 | 反向切回 Active 后 POST payments | 200（守卫解除） |
 
