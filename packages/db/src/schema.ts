@@ -129,6 +129,10 @@ export const policies = sqliteTable(
     })
       .notNull()
       .default("Active"),
+    terminatedAt: text("terminated_at"),
+    terminationReason: text("termination_reason"),
+    plannedSurrenderAt: text("planned_surrender_at"),
+    plannedSurrenderNote: text("planned_surrender_note"),
     deathBenefit: text("death_benefit"),
     archived: integer("archived", { mode: "boolean" }).default(false),
 

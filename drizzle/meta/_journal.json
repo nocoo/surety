@@ -29,6 +29,13 @@
       "when": 1771228800000,
       "tag": "0003_drop_policy_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1782095722841,
+      "tag": "0004_policy_status",
+      "breakpoints": true
     }
   ]
 }
