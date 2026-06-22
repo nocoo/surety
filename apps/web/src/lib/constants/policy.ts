@@ -11,6 +11,46 @@ export const statusConfig: Record<
   Claimed: { label: "已理赔", variant: "purple" },
 };
 
+export type StatusBadgeVariant =
+  | "success"
+  | "outline"
+  | "warning"
+  | "purple"
+  | "destructive"
+  | "rose";
+
+export interface PolicyStatusBadge {
+  label: string;
+  variant: StatusBadgeVariant;
+}
+
+/**
+ * Compose the primary status badge plus the optional "拟退保" secondary badge
+ * for a policy. The primary badge comes from `statusConfig`. The rose
+ * secondary appears only when the policy carries a `plannedSurrenderAt` and
+ * the displayed status is still actionable (Active or Expired). On any
+ * terminal display state the planned-surrender intent is irrelevant — the
+ * termination action has happened or the policy is no longer in force.
+ *
+ * `plannedSurrenderAt` is optional in the input shape so lighter list-view
+ * rows (which only carry the summary fields) silently fall back to a single
+ * primary badge.
+ */
+export function renderPolicyStatusBadges(policy: {
+  status: PolicyStatus;
+  plannedSurrenderAt?: string | null;
+}): PolicyStatusBadge[] {
+  const primary: PolicyStatusBadge = {
+    label: statusConfig[policy.status].label,
+    variant: statusConfig[policy.status].variant,
+  };
+  const planned = policy.plannedSurrenderAt;
+  const showPlanned =
+    !!planned && (policy.status === "Active" || policy.status === "Expired");
+  if (!showPlanned) return [primary];
+  return [primary, { label: `拟退保 ${planned}`, variant: "rose" }];
+}
+
 /**
  * Tailwind class for a thin left-border accent that represents the
  * policy's status as a visual stripe. Used by the dense list view in

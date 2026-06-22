@@ -31,6 +31,8 @@ const badgeVariants = cva(
           "bg-teal text-teal-foreground [a&]:hover:bg-teal/90",
         indigo:
           "bg-indigo text-indigo-foreground [a&]:hover:bg-indigo/90",
+        rose:
+          "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-foreground))] [a&]:hover:bg-[hsl(var(--badge-red)/0.9)]",
       },
     },
     defaultVariants: {
