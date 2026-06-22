@@ -11,6 +11,8 @@ interface TimelineEvent {
   type: "past" | "today" | "future";
 }
 
+export type { TimelineEvent };
+
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
@@ -28,9 +30,38 @@ function getToday(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
-function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
+export function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
   const today = getToday();
   const todayTime = today.getTime();
+
+  // Termination semantics — DB status used here so an expired Active
+  // policy doesn't get its future events silently dropped.
+  const dbStatus = policy.status === "Expired" ? "Active" : policy.status;
+  const isTerminated =
+    dbStatus === "Surrendered" ||
+    dbStatus === "Claimed" ||
+    dbStatus === "Lapsed";
+  const terminatedAtDate =
+    isTerminated && policy.terminatedAt
+      ? parseLocalDate(policy.terminatedAt)
+      : null;
+  const terminatedTime = terminatedAtDate?.getTime() ?? null;
+
+  /**
+   * Keep an event only when:
+   *  - the policy is not terminated, or
+   *  - the event falls on/before terminatedAt. Strictly-after events are
+   *    visually pruned (the underlying payments rows still exist in the
+   *    DB and reappear if the policy is reactivated; this filter is read-
+   *    only).
+   *
+   * Same-day events (eventTime === terminatedTime) remain visible so the
+   * termination milestone sits next to the day's other markers.
+   */
+  function keepEvent(eventDate: Date): boolean {
+    if (terminatedTime === null) return true;
+    return eventDate.getTime() <= terminatedTime;
+  }
 
   const events: TimelineEvent[] = [];
 
@@ -148,16 +179,64 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
     }
   }
 
-  // Insert "today" marker
-  events.push({
-    date: today,
-    dateStr: formatLocalDate(today),
-    label: "今天",
-    type: "today",
-  });
+  // Apply termination filter to all derived events. Filtering after
+  // collection (instead of guarding every push) keeps each event
+  // builder readable and ensures any future event source picks up the
+  // filter automatically.
+  const filtered = terminatedTime === null
+    ? events
+    : events.filter((e) => keepEvent(e.date));
+
+  // Termination milestone. Reuses `type: "today"` so the existing
+  // CalendarDays/primary styling makes it stand out, without growing a
+  // new TimelineEvent.type variant.
+  if (isTerminated && policy.terminatedAt && terminatedAtDate) {
+    const milestoneLabel =
+      dbStatus === "Surrendered"
+        ? "退保"
+        : dbStatus === "Claimed"
+          ? "理赔结案"
+          : "失效";
+    filtered.push({
+      date: terminatedAtDate,
+      dateStr: policy.terminatedAt,
+      label: milestoneLabel,
+      type: "today",
+    });
+  }
+
+  // Planned-surrender milestone. Mutually exclusive with the termination
+  // path — the dialog clears plannedSurrenderAt when termination fires,
+  // and renderPolicyStatusBadges only emits the rose badge for
+  // Active/Expired display states; mirror that gate here.
+  const displayStatus = policy.status;
+  if (
+    !isTerminated &&
+    policy.plannedSurrenderAt &&
+    (displayStatus === "Active" || displayStatus === "Expired")
+  ) {
+    const d = parseLocalDate(policy.plannedSurrenderAt);
+    filtered.push({
+      date: d,
+      dateStr: policy.plannedSurrenderAt,
+      label: "计划退保",
+      type: d.getTime() <= todayTime ? "past" : "future",
+    });
+  }
+
+  // Insert "today" marker — suppressed when the policy is terminated so
+  // the timeline visually anchors on the termination milestone instead.
+  if (!isTerminated) {
+    filtered.push({
+      date: today,
+      dateStr: formatLocalDate(today),
+      label: "今天",
+      type: "today",
+    });
+  }
 
   // Sort ascending by date, then by type so "today" comes after same-day past events
-  events.sort((a, b) => {
+  filtered.sort((a, b) => {
     const diff = a.date.getTime() - b.date.getTime();
     if (diff !== 0) return diff;
     // If same date, put "today" marker after past events but before future
@@ -165,7 +244,7 @@ function buildTimeline(policy: PolicyDetail): TimelineEvent[] {
     return order[a.type] - order[b.type];
   });
 
-  return events;
+  return filtered;
 }
 
 export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
