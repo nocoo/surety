@@ -29,7 +29,7 @@ In scope：
 - 三个动作按钮（退保 / 理赔 / 失效）+ 一个"标记拟退保"链接，挂在 `MetaColumn`
 - BasicInfoSection 状态下拉变为 readonly（避免与四个按钮 + dialog 形成两套互相拦截的入口）
 - 反向操作：从终止态切回 `Active` 走 `AlertDialog` 二次确认，清空 `terminated_at` / `termination_reason`；过滤规则自动失效，原 Pending/Overdue 行重新可见
-- Timeline 在 `terminated_at` 当天插入一个 milestone；终止态下未来事件统一加灰色样式，"今天"标记在终止日之后抑制
+- Timeline 在 `terminated_at` 当天插入一个 milestone；终止态下未来事件（payments / 续期 / 到期）整体过滤掉不渲染，"今天"标记在终止日之后抑制
 - `PolicyDetail` 接口新增 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 四个字段；`PolicySummary` 不动
 
 Out of scope (v2 候选)：
@@ -52,7 +52,14 @@ Out of scope (v2 候选)：
 | `Lapsed` | DB | 已失效 | 终止态：连续未缴 / 中止 / 其它原因失效 | `outline` | 同上 |
 | `Expired` | derived | 已过期 | `dbStatus="Active"` 且 `expiryDate < now` 时派生 | `destructive` | 不参与 DB 校验 |
 
-**"拟退保"标记**是 Active 保单上的一对可选字段（`planned_surrender_at` + `planned_surrender_note`），不进入 status 枚举。Badge 行为：当 status=Active 且 `planned_surrender_at` 非空时，badge 在主标签后追加一个玫红色 `rose` 副标签 "拟退保 YYYY-MM-DD"（共用已存在的 `--badge-red` token，无需新增 css 变量；Badge variant 增加 `rose` 一项）。所有业务判定（活跃统计、保障速查、续保提醒、缴费生成）**完全无视**这对字段。
+**"拟退保"标记**是 Active 保单上的一对可选字段（`planned_surrender_at` + `planned_surrender_note`），不进入 status 枚举。Badge 行为：当 **DB status = Active** 且 `planned_surrender_at` 非空时，badge 在主标签后追加一个玫红色 `rose` 副标签 "拟退保 YYYY-MM-DD"（共用已存在的 `--badge-red` token，无需新增 css 变量；Badge variant 增加 `rose` 一项）。所有业务判定（活跃统计、保障速查、续保提醒、缴费生成）**完全无视**这对字段。
+
+> **Display Active vs DB Active 的判定边界**：GET `/api/policies/:id` 返回的 `status` 已经被 `deriveDisplayStatus(...)` 派生过，过期的 Active 保单显示为 `Expired`（`apps/worker/src/routes/policies.ts:125`）。前端 / 后端在不同场景采用不同口径：
+>
+> - **后端准入**（terminate、planned-surrender、CRUD 旁路守卫）：一律读 DB 原值 `policy.status`，过期的 Active 保单**仍能**被 terminate / 标记拟退保（用户主动收尾过期保单是常见场景）
+> - **前端展示**（badge 渲染、按钮可见性、timeline milestone）：一律按 display status，**Active 与 Expired 两种 display 状态都允许展示拟退保副 badge / 显示拟退保链接 / 在 timeline 插入计划退保 milestone**（Expired 本质是 DB Active，业务上仍可承载拟退保意向）
+>
+> 终止三态（Surrendered / Claimed / Lapsed）不论 DB 还是 display 都不展示拟退保 UI（terminate 端点已自动清空两个标记字段）。
 
 ## Transition Matrix
 
@@ -133,7 +140,7 @@ planned_surrender_note TEXT,
 |------|----------|
 | `id` 不是数字 | 400 `Invalid id` |
 | 保单不存在 | 404 `Policy not found` |
-| `existing.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} | 400 `Cannot transition between terminal statuses; reactivate to Active first` |
+| `existing.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 body 中 `status` 不同 | 400 `Cannot transition between terminal statuses; reactivate to Active first` |
 | `status` 不是三种终止态之一 | 400 `Invalid termination status` |
 | `terminatedAt` 不符合 `^\d{4}-\d{2}-\d{2}$` regex | 400 `Invalid terminatedAt` |
 | `terminatedAt` regex 通过但 round-trip 不一致（如 `2026-99-99`） | 400 `Invalid terminatedAt` |
@@ -145,7 +152,9 @@ planned_surrender_note TEXT,
 >
 > **校验的是 DB status，不是 display**：判断"是否处于终止态"必须直接读 `policy.status`，**不要** `deriveDisplayStatus()`。Expired 是纯展示语义，业务层应允许过期 Active 保单走 terminate 流程。
 >
-> **terminatedAt 可改方向**：v1 允许任意修改（向前向后均可），因为没有 payments tombstone 要维护一致性。修改 terminatedAt 后读路径过滤窗口自动跟随，原本被过滤的 Pending/Overdue 会重新可见或重新隐藏。
+> **terminatedAt 可改方向**：v1 允许任意修改（向前向后均可），因为没有 payments tombstone 要维护一致性。修改 terminatedAt 后读路径过滤窗口自动跟随，原本被过滤的 Pending/Overdue 会重新可见或重新隐藏。同一终止态下二次 POST 视为"编辑终止信息"，允许覆写 `terminatedAt` / `terminationReason`。
+>
+> **老数据补录例外**：migration 只是把新列加成 nullable，不做 backfill。schema 升级前可能已存在 `status` 是终止态但 `terminated_at IS NULL` 的老数据，业务约束又要求终止态 `terminated_at` 必填 —— 不开例外这些保单会永久停在非法组合，且因为 status 相同（终止态 → 同一终止态），上方的"互转"检查不会拦它们。所以 terminate handler 显式允许：**当 `existing.status` 与 body `status` 相同时（含老数据 + 修改终止信息两条路径），无视 existing 的 metadata 状态，覆写 `terminatedAt` / `terminationReason` 即可**。前端在终止态保单上显示的"修改终止信息"按钮就是给这条路径用的；老数据用户首次打开 dialog 时 `terminatedAt` 字段为空（无预填），用户填好 today 或回忆的日期，提交即补录成功。
 
 **Behavior：**
 
@@ -281,10 +290,10 @@ export function isObsoletedByTermination(
 |------|------------|
 | `POST /api/policies/:id/payments` (`apps/worker/src/routes/policies.ts:232`) | 400 `Cannot add payments to a terminated policy` |
 | `POST /api/policies/:id/payments/generate` (`apps/worker/src/routes/policies.ts:301`) | 400 `Cannot generate payments for a terminated policy` |
-| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 终止态下仅允许 status 变更方向 `* → Paid`（补录历史已缴）；禁止 `Paid → 任何非 Paid`；允许编辑 paidDate / paidAmount |
+| `PUT /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:258`) | 终止态下 body 严格限定为 `{ status: "Paid", paidDate?, paidAmount? }` 形状：(1) `status` 字段缺失或非 `"Paid"` → 400；(2) 出现 `dueDate` / `amount` / `periodNumber` 等结构字段 → 400 `Cannot modify payment structure in a terminated policy`；(3) 允许 `paidDate` / `paidAmount` 任意值。用于补录历史已缴 |
 | `DELETE /api/policies/:id/payments/:paymentId` (`apps/worker/src/routes/policies.ts:287`) | 400 `Cannot delete payments of a terminated policy`；整张保单的 `DELETE /api/policies/:id` 级联删除不受影响 |
 
-L2 必须覆盖：终止后 POST/generate/DELETE → 400；PUT Paid→Pending → 400；PUT Pending→Paid → 200；PUT Overdue→Paid → 200。
+L2 必须覆盖：终止后 POST/generate/DELETE → 400；PUT body 含 `dueDate`/`amount`/`periodNumber` → 400；PUT Paid→Pending → 400；PUT 仅传 `{status:"Paid", paidDate}` → 200；PUT Overdue→Paid → 200。
 
 ## UI
 
@@ -298,7 +307,9 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 
 复用已存在的 `--badge-red` token（hue 340° 玫红，比 `--destructive` 0° 纯红柔和），无需改 globals.css。
 
-`apps/web/src/lib/constants/policy.ts` 的 `statusConfig` 不动（status 没扩）；新增小工具 `renderPolicyStatusBadges(policy)` 返回数组（主 badge 来自 `statusConfig[status]`；若 `policy.plannedSurrenderAt` 非空且 status=Active，追加 `{ variant: "rose", label: \`拟退保 ${plannedSurrenderAt}\` }`）。各处展示遍历渲染。
+`apps/web/src/lib/constants/policy.ts` 的 `statusConfig` 不动（status 没扩）；新增小工具 `renderPolicyStatusBadges(policy)` 返回数组（主 badge 来自 `statusConfig[status]`；若 `policy.plannedSurrenderAt` 非空且 `policy.status` ∈ {`Active`, `Expired`}，追加 `{ variant: "rose", label: \`拟退保 ${plannedSurrenderAt}\` }`）。
+
+> **副 badge 的可见范围**：拟退保副 badge **仅在保单详情页**显示（详情接口返回 `plannedSurrenderAt`）。列表 / dashboard / 速查卡片所用的 `PolicySummary` 不含 `plannedSurrenderAt` 字段，`renderPolicyStatusBadges` 在该字段为 `undefined` 时静默退化为单 badge —— 不抛错、不假阳性。这是有意取舍：列表视图本就是"扫一眼当前状态"，把 N 张 Active 保单全部挂"拟退保"副 badge 会污染视觉密度；用户想看哪一张谁标了拟退保，进详情页一目了然。哥若以后真的要在列表页显示拟退保旗标，再把 `plannedSurrenderAt` 升入 `PolicySummary` + list 路由返回。
 
 ### 2. Action Buttons in MetaColumn
 
@@ -378,7 +389,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
    - 过滤掉 `eventTime > terminatedTime` 的 payments / 续期事件（与 payments-section 的过滤规则同源）
    - 在 list 中插入一个 milestone：`{ date: terminatedDate, dateStr: terminatedAt, label: { Surrendered: "退保", Claimed: "理赔结案", Lapsed: "失效" }[status], type: "today" }`（复用现有 `today` 渲染分支的强调样式，无需新分支）
    - 抑制原本的 `today` 标记（保单已终止，"今天"在 timeline 语义里失效）
-3. 若 `policy.plannedSurrenderAt` 非空（status=Active）：在该日期插入一个 milestone `{ label: "计划退保", type: "future" }`，**不**抑制 today、**不**过滤未来事件 —— 仅作为视觉提示
+3. 若 `policy.plannedSurrenderAt` 非空且 display status ∈ {`Active`, `Expired`}：在该日期插入一个 milestone `{ label: "计划退保", type: "future" }`，**不**抑制 today、**不**过滤未来事件 —— 仅作为视觉提示
 
 不引入 `cancelled` / `terminated` / `plannedSurrender` 新事件类型，不需要扩展排序 map。简单实现，简单回退。
 
@@ -450,11 +461,12 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | 用例 | 期望 |
 |------|------|
 | POST terminate 成功 | 200，policy 状态变为目标终止态，metadata 写入；`plannedSurrenderAt` / `plannedSurrenderNote` 被自动清空 |
-| POST terminate 幂等 | 二次调用覆写 metadata，仍 200 |
+| POST terminate 幂等 | 二次调用同一终止态覆写 metadata，仍 200（"修改终止信息"路径） |
+| POST terminate 把 terminatedAt=NULL 的老数据补录 | 200，写入 metadata，不报互转错（前后 status 相同） |
 | POST terminate 非法 `terminatedAt`（regex / round-trip / 早于 effective / 未来日期） | 400 |
 | POST terminate 非法 status（Active） | 400 |
 | POST terminate 不存在的 policy | 404 |
-| POST terminate 在终止态之间互转 | 400 |
+| POST terminate 在不同终止态之间互转（如 Surrendered → Lapsed） | 400 |
 | POST terminate 对 DB Active 但 display Expired 的保单 | 200（校验 DB status） |
 | terminate 后 GET payments 原始数据 | 所有行 status 保持原值（不翻转） |
 | terminate 后再 terminate 同保单改 terminatedAt 前 / 后移 | 都允许（v1 不维护单调） |
@@ -488,6 +500,8 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | 终止后 PUT Pending 行改 Paid | 200 |
 | 终止后 PUT Overdue 行改 Paid | 200 |
 | 终止后 PUT Paid 行改 Pending | 400 |
+| 终止后 PUT body 含 `dueDate` / `amount` / `periodNumber` | 400 `Cannot modify payment structure in a terminated policy` |
+| 终止后 PUT 仅传 `{status:"Paid", paidDate, paidAmount}` | 200 |
 
 **反向切回：**
 
