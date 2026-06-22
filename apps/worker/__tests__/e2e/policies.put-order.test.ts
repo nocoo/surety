@@ -17,7 +17,7 @@ import { buildTestApp, jsonRequest, type TestEnv } from "./setup";
 async function seedMember(env: TestEnv) {
   const r = await jsonRequest(env, "POST", "/api/members", {
     name: "PUT-Order",
-    relation: "self",
+    relation: "Self",
   });
   return (r.body as { id: number }).id;
 }
@@ -27,7 +27,7 @@ async function seedActivePolicy(env: TestEnv, memberId: number) {
     applicantId: memberId,
     insuredType: "Member",
     insuredMemberId: memberId,
-    category: "Health",
+    category: "Medical",
     insurerName: "Ins",
     productName: "Prod",
     policyNumber: "PO-1",

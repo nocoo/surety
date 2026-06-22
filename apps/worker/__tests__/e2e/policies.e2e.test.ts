@@ -9,7 +9,7 @@ import { buildTestApp, jsonRequest } from "./setup";
 async function seedMember(env: ReturnType<typeof buildTestApp>) {
   const r = await jsonRequest(env, "POST", "/api/members", {
     name: "投保人",
-    relation: "self",
+    relation: "Self",
   });
   return (r.body as { id: number }).id;
 }
@@ -24,7 +24,7 @@ async function seedPolicy(
     applicantId: memberId,
     insuredType: "Member",
     insuredMemberId: memberId,
-    category: "Health",
+    category: "Medical",
     insurerName: "T-Ins",
     productName: "T-Product",
     policyNumber,
@@ -56,7 +56,7 @@ describe("L2 E2E: policies main CRUD", () => {
       applicantId: memberId,
       insuredType: "Member",
       insuredMemberId: memberId,
-      category: "Health",
+      category: "Medical",
       insurerName: "T-Ins",
       productName: "T-Product-v2",
       policyNumber: "POL-A",
@@ -103,7 +103,7 @@ describe("L2 E2E: policies main CRUD", () => {
       applicantId: memberId,
       insuredType: "Member",
       insuredMemberId: memberId,
-      category: "Health",
+      category: "Medical",
       insurerName: "T-Ins",
       productName: "T",
       policyNumber: "POL-DUP",
@@ -923,7 +923,7 @@ describe("L2 E2E: CRUD bypass guards", () => {
       applicantId: memberId,
       insuredType: "Member",
       insuredMemberId: memberId,
-      category: "Health",
+      category: "Medical",
       insurerName: "Ins",
       productName: "Prod",
       policyNumber: "POL-Bypass-1",
@@ -951,7 +951,7 @@ describe("L2 E2E: CRUD bypass guards", () => {
         applicantId: memberId,
         insuredType: "Member",
         insuredMemberId: memberId,
-        category: "Health",
+        category: "Medical",
         insurerName: "Ins",
         productName: "Prod",
         policyNumber: `POL-Bypass-meta-${field}`,
