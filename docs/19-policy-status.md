@@ -544,6 +544,230 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 
 每个 commit 独立通过 `bun run typecheck` + `bun run lint` + `bun run test`。Commit 1 (DB-only) 是 hot-path：单独 push 到 dev D1 + 跑 schema check。Commit 3-4 形成 API 闭环；Commit 5-8 形成 UI 闭环，互不阻塞。
 
+## Implementation Playbook
+
+每个 commit 一节，给出 **Scope / Steps / Verify / Risks & Rollback** 四块。内容严格从前文 Scope、API、UI、Verification 抽取，不引入新决策；步骤之间的"先后"由 commit 顺序决定（commit N 默认假定 commit 1..N-1 已 land 在工作树）。
+
+> **每个 commit 落地后的统一收尾**：(a) `bun run typecheck` + `bun run lint` + `bun run test` 全绿；(b) 该 commit 节下 Verify 子节列出的额外命令也跑过；(c) `git diff HEAD~1` 自查无超出 Scope 的文件改动；(d) 形成单一 commit，messsage 与表格 # 列一致。
+
+### Commit 1 — `feat(db): add 4 metadata columns`
+
+**Scope**
+- `packages/db/src/schema.ts`：`policies` table 追加 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 四列，全部 `text(...).nullable`
+- `packages/db/src/index.ts`：INIT_SQL 中 `policies` CREATE TABLE 同步追加 4 列
+- `drizzle/000X_policy_status.sql`：`bunx drizzle-kit generate` 产出的迁移文件（4 条 `ALTER TABLE policies ADD COLUMN ... TEXT`）
+
+**Steps**
+1. 编辑 `packages/db/src/schema.ts`，在现有 `status` 字段后插入 4 个新列定义；保留 status enum 原值不变
+2. 编辑 `packages/db/src/index.ts:280-313` 的 `INIT_SQL` 块，policies CREATE TABLE 末尾追加 4 列；保持现有列顺序，新列放最后
+3. 跑 `bunx drizzle-kit generate`，检查生成的 `drizzle/000X_policy_status.sql` 只包含 4 条 `ALTER TABLE policies ADD COLUMN`；如混入其它 diff（unrelated 列改动），手工删除并重新 generate
+4. 推 dev D1：`CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_DATABASE_ID=<id> CLOUDFLARE_D1_TOKEN=<token> bunx drizzle-kit push`
+5. 验证 dev D1 列已生效：`cd apps/worker && bunx wrangler d1 execute surety-db --remote --command "PRAGMA table_info(policies)"`，输出中应包含 4 个新列名
+
+**Verify**
+- `bun run typecheck`：drizzle-orm 推断 `Policy` 类型新增 4 字段，无消费者抛错（此 commit 没有 consumer 引用，应零变化）
+- `bun run test`：现有 L1 应全绿（schema 改动不影响业务逻辑）
+- L1 增量：无（commit 2 才引入 helper）
+- L2：无（commit 3 才引入消费者）
+
+**Risks & Rollback**
+- 风险：INIT_SQL 与 schema.ts 列顺序不一致导致 bun-sqlite L1 跑通但 D1 行为不同（CLAUDE.md Retrospective 记录过）→ 跑 step 5 的 `PRAGMA table_info` 与 schema.ts 顺序对照
+- 回滚：`git revert` + `bunx wrangler d1 execute --remote --command "ALTER TABLE policies DROP COLUMN ..."` × 4
+
+### Commit 2 — `feat(db): add isObsoletedByTermination helper + TerminalPolicyStatus type`
+
+**Scope**
+- `packages/db/src/types.ts`：新增 `TerminalPolicyStatus = "Surrendered" | "Claimed" | "Lapsed"` 类型 + `isObsoletedByTermination(payment, policyTerminatedAt)` helper
+- `packages/db/__tests__/types.test.ts`（如不存在则 CREATE）：覆盖 helper 边界
+
+**Steps**
+1. 在 `packages/db/src/types.ts` 与现有 `isEffectivelyActive` 同位置加 `TerminalPolicyStatus` 联合类型 export
+2. 紧接其后实现 `isObsoletedByTermination` —— 签名、文档注释、实现 100% 复制文档 [Payments 过滤规则](#payments-过滤规则纯读路径) 节中代码块
+3. CREATE 或扩展 `packages/db/__tests__/types.test.ts`，覆盖四个边界：
+   - `policyTerminatedAt === null` → 一律 false
+   - `payment.status === "Paid"` → 一律 false（无论 dueDate）
+   - `dueDate === terminatedAt`（同日）→ false（规则是 `> terminatedAt`）
+   - `dueDate > terminatedAt && status ∈ {Pending, Overdue}` → true
+
+**Verify**
+- `bun run test`：新 helper test 用例全绿；既有 307+ test 不应受影响
+- `bun run test:coverage`：helper 覆盖率应在 100%（≥ 95% 是项目门禁）
+
+**Risks & Rollback**
+- 风险：用 `Date` 比较而非字符串比较 → ISO date `"YYYY-MM-DD"` 字典序与时序一致，直接 `>` 即可；文档代码块已用字符串比较，不要"自作主张"换成 parseLocalDate
+- 回滚：`git revert`，无外部副作用
+
+### Commit 3 — `feat(api): add /terminate and /planned-surrender; lock down CRUD bypass routes`
+
+**Scope**
+- `apps/worker/src/routes/policies.ts`：
+  - 新增 `POST /api/policies/:id/terminate` handler
+  - 新增 `PUT /api/policies/:id/planned-surrender` handler
+  - GET single (line 125-128) 响应 shape 增加 4 个新字段
+  - 既有 `POST /api/policies` + `PUT /api/policies/:id` 加守卫：状态值 + metadata 字段写入旁路（按文档 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵) 的 4 步判定顺序实现）
+  - 既有 4 个 payment 路由加终止态守卫（POST / generate / DELETE 直接 400；PUT 严格限定 `{ status: "Paid", paidDate?, paidAmount? }` body 形状）
+- `apps/web/src/lib/types/policy.ts`：`PolicyDetail` interface 加 4 字段；`PolicySummary` 不动
+
+**Steps**
+1. **transition handlers**：在 `apps/worker/src/routes/policies.ts` 的 PUT 之后、DELETE 之前插入两个新 handler。terminate 用单条 Drizzle `repos.policies.update(policyId, {...})`，同时清空两个 planned 字段；planned-surrender 同样单条 UPDATE
+2. **terminate validation**：按文档 [POST /terminate Validation 表](#新增post-apipoliciesidterminate) 逐行实现，特别注意：
+   - 互转检查：`existing.status !== body.status && existing.status ∈ terminal` 才 400；same-status 一律放行（修改终止信息 + 老数据补录共用此路径）
+   - 日期校验用 regex + `formatLocalDate(parseLocalDate(s)) === s` round-trip；today 走 `todayInTimeZone("Asia/Shanghai")`
+   - 校验读 `policy.status`（DB 原值），**不要** `deriveDisplayStatus(...)`
+3. **planned-surrender validation**：DB status 必须 `=== "Active"`；`plannedSurrenderAt > today` 不校验
+4. **PUT handler 4 步判定顺序**（按文档 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵) 实现）：reactivation → 终止态拦截 → metadata 拦截 → 其余字段。reactivation 路径必须无条件把 4 个 metadata 写成 NULL，不论 body 携带与否
+5. **POST handler**：`body.status ∈ terminal` → 400；body 含 4 个 metadata 字段任一 → 400 `Cannot set termination or planned-surrender metadata on create`
+6. **GET single 响应** (line 109-128)：返回对象增加 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`
+7. **4 个 payment 路由守卫**（POST / PUT / DELETE / generate）按文档 [终止后非破坏字段的写入封禁](#终止后非破坏字段的写入封禁) 表实现；PUT 的 body shape 严格校验 —— 出现 `dueDate` / `amount` / `periodNumber` 即 400
+8. **PolicyDetail interface**：`apps/web/src/lib/types/policy.ts:9-41` 新增 4 字段（`string | null`）
+
+**Verify**
+- `bun run typecheck`：worker 路由 + web 端 consumer 应零类型错误
+- `bun run test`：现有 worker 单测 + web 单测全绿（L2 在 commit 4 补，本 commit 不在 e2e 上验证）
+- 手测：`bun run dev:worker` 起本地 Worker，curl 一次 `POST /terminate` 应返回 200；curl 一次 `POST /api/policies` body 携带 `terminatedAt` 应 400
+
+**Risks & Rollback**
+- 风险 1：PUT handler 判定顺序写错，rule 3 在 rule 1 之前 → terminate→Active 反向恢复时把 body 中的 planned-surrender metadata 误判为 400。**关键 ut 用例**：写一条 worker 单测专门覆盖 "PUT body 同时含 status=Active 与 plannedSurrenderAt 时返回 200 并清空字段"
+- 风险 2：日期 round-trip 校验漏 `formatLocalDate` 导入 → `formatLocalDate(d) !== s` 永真，所有日期校验失效。typecheck 应能拦下
+- 回滚：`git revert`；handler 是新增，POST/PUT 的守卫是新增条件分支，PolicyDetail 字段消费者尚未引入，无运行时副作用
+
+### Commit 4 — `test(e2e): cover terminate, planned-surrender, bypass guards, payments lockdown, reactivate`
+
+**Scope**
+- `apps/worker/__tests__/e2e/policies.e2e.test.ts`：扩充用例集，覆盖 [L2 集成测试](#l2-集成-bun-run-test-覆盖-appsworker__tests__e2epoliciese2etestts) 五张表（Terminate / Planned surrender / 通用 CRUD 旁路 / Payments 写入封禁 / 反向切回）的所有用例
+
+**Steps**
+1. 找到现有 `policies.e2e.test.ts` 中创建保单 + 生成 payments 的 helper（如 line 42-114 的 pattern），复用作为每个新 describe 的 setup
+2. 按文档五张 L2 表逐表添加 describe：
+   - `describe("POST /terminate")`：成功 / 幂等同终止态覆写 / 老数据补录（手工插入 `status="Surrendered", terminatedAt=null` 行再 terminate）/ 非法日期 / 非法 status / 404 / 互转 400 / DB Active+display Expired 仍 200 / 原始 payments 数据保持原值 / terminatedAt 前后移均允许
+   - `describe("PUT /planned-surrender")`：未来日 200 / null 清空 / 终止态 400 / 非法日期 400 / terminate 后两字段被清空
+   - `describe("POST/PUT /api/policies bypass")`：3 条
+   - `describe("payments lockdown")`：7 条（含 PUT body 含 dueDate/amount/periodNumber → 400 / 仅 `{status:"Paid", paidDate, paidAmount}` → 200）
+   - `describe("reactivate")`：3 条（含 PUT status=Active 同时带 plannedSurrenderAt → 200 + 字段被清空）
+3. 不要 mock D1 binding，复用 `apps/worker/__tests__/e2e/setup.ts` 的现有 fake D1 `prepare().first()` shim（v1 简化方案无 batch，shim 不改）
+
+**Verify**
+- `bun run test`：新 e2e 用例 + 既有用例全绿
+- `bun run test:l2:http`：跑 L2 HTTP 套件（wrangler dev + 真 D1 dev）。前置：commit 1 的 `bun run db:push` 必须已落 dev D1
+- `bun run test:coverage`：行/函数覆盖率 ≥ 95%
+
+**Risks & Rollback**
+- 风险：L2 HTTP 套件跑前未推 dev D1 → 新列不存在，所有 terminate 测试 500。Verify 步骤先确认 `wrangler d1 execute --remote "PRAGMA table_info(policies)"` 含新列
+- 回滚：纯测试 commit，`git revert` 无副作用
+
+### Commit 5 — `feat(ui): badge rose variant + dual-badge renderer; termination + planned-surrender dialogs`
+
+**Scope**
+- `apps/web/src/components/ui/badge.tsx`：`badgeVariants.variant` 增加 `rose` 分支
+- `apps/web/src/lib/constants/policy.ts`：新增 `renderPolicyStatusBadges(policy)` 工具函数
+- `apps/web/src/components/policy-detail/termination-dialog.tsx`：CREATE，三种终止态共用
+- `apps/web/src/components/policy-detail/planned-surrender-dialog.tsx`：CREATE
+- `apps/web/src/__tests__/termination-dialog.test.ts` + `planned-surrender-dialog.test.ts`：CREATE
+
+**Steps**
+1. **Badge rose variant**：在 `apps/web/src/components/ui/badge.tsx` 的 `badgeVariants` cva 配置中加 `rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-foreground))] hover:bg-[hsl(var(--badge-red)/0.9)]"`；token 已存在于 `apps/web/src/globals.css:210`，无需改 css
+2. **renderPolicyStatusBadges**：在 `apps/web/src/lib/constants/policy.ts` 与 `statusConfig` 同位置加工具函数。签名 `(policy: { status: PolicyStatus; plannedSurrenderAt?: string | null }) => Array<{ variant; label }>`。主 badge 从 `statusConfig[status]` 取；副 badge 仅当 `policy.plannedSurrenderAt` truthy 且 `policy.status ∈ {"Active", "Expired"}` 时追加；`plannedSurrenderAt` 为 `undefined` 时（PolicySummary 没字段）静默退化为单 badge
+3. **TerminationDialog**（CREATE）：基于 `apps/web/src/components/ui/dialog.tsx` 原语；props 如文档 [Dialogs](#3-dialogs) 节；字段 `terminatedAt` + `terminationReason`；预填路径（已是终止态打开 dialog "修改终止信息"）从 `policy.terminatedAt` / `policy.terminationReason` 读，老数据 null 时字段为空让用户手填；确认按钮 `variant="destructive"`，POST `/terminate`；成功 toast 文案前端按 payments 列表实时算 N
+4. **PlannedSurrenderDialog**（CREATE）：字段 `plannedSurrenderAt` + `plannedSurrenderNote`；底部加 ghost "清除拟退保标记" 按钮发 PUT `{ plannedSurrenderAt: null, plannedSurrenderNote: null }`
+5. **L1 tests**：每个 dialog 一份 test，覆盖字段 validation（regex、长度、必填）、提交 payload 形状、清除按钮行为
+
+**Verify**
+- `bun run test`：dialog L1 全绿
+- `bun run test:coverage`：dialog 行/函数覆盖率 ≥ 95%
+- 浏览器手测：临时在 meta-column 挂一个 `<TerminationDialog policy={...} open ...>` debug 块，确认 badge rose 色显示正确、玫红比 destructive 的纯红柔和
+
+**Risks & Rollback**
+- 风险：renderPolicyStatusBadges 在 PolicySummary 上调用时 `plannedSurrenderAt` 是 `undefined` 而非 `null`，判断务必用 truthy check 而非 `=== null` —— 否则列表页可能假阳性
+- 回滚：dialog 是 CREATE，删文件 + revert badge variant 即可
+
+### Commit 6 — `feat(ui): wire action buttons in MetaColumn; status field readonly`
+
+**Scope**
+- `apps/web/src/components/policy-detail/meta-column.tsx`：
+  - Header 下新增 "操作" 区块挂三按钮（退保 / 理赔 / 失效）+ "标记/编辑拟退保" 链接 + 反向恢复入口
+  - BasicInfoSection 的 status `EditableInfoRow` 改为 readonly 显示，渲染 `renderPolicyStatusBadges` 输出
+  - 终止态保单显示 "修改终止信息" + "恢复 Active"（AlertDialog 二次确认）
+- `apps/web/src/app/policies/[id]/page.tsx`：`<MetaColumn>` 调用处传入 `onTransitionSuccess` 回调
+- `apps/web/src/app/policies/policy-sheet.tsx`：`statusOptions` (line 65) 收窄为 Active-only
+
+**Steps**
+1. 在 `meta-column.tsx:1044-1077` Header 区块下方新增 "操作" 容器。按 [Action Buttons in MetaColumn](#2-action-buttons-in-metacolumn) 表渲染：
+   - display status ∈ {Active, Expired}：三按钮 + 拟退保链接
+   - 终止态：修改终止信息 + 恢复 Active
+2. 三按钮 onClick 打开 `<TerminationDialog targetStatus={...}>`；拟退保链接 onClick 打开 `<PlannedSurrenderDialog>`；恢复按钮触发 AlertDialog 二次确认后调用现有 PUT `{ status: "Active" }`（reactivation 路径）
+3. BasicInfoSection 的 status 行（line 53-58, 257-264）从 `EditableInfoRow` 改为 readonly `<div>`，内容用 `renderPolicyStatusBadges(policy)` 渲染主+副 badge
+4. `apps/web/src/app/policies/[id]/page.tsx:96-109, 155-194`：`<MetaColumn>` 调用传入 `onTransitionSuccess`，回调内 `Promise.all([refreshPolicy(), refreshPayments()])`
+5. `apps/web/src/app/policies/policy-sheet.tsx:62-69`：`statusOptions` 数组只保留 `{ value: "Active", label: "生效中" }`；新建 form 状态字段保留但只读 Active
+
+**Verify**
+- `bun run test`：现有 web 单测全绿
+- `bun run typecheck`：BasicInfoSection 改 readonly 后下拉相关代码全部应被 dead-code 删除
+- 浏览器手测：`bun dev`，进入一张 Active 保单详情页：(a) 四个动作按钮可见；(b) 状态下拉不可编辑；(c) 点退保 → 填表 → 提交 → badge 变 "已退保"，操作区切换成"修改终止信息 + 恢复 Active"；(d) 进入一张 Expired 保单 → 仍可标记拟退保 → 副 badge 出现
+
+**Risks & Rollback**
+- 风险：保留旧 status 下拉 + 新按钮"两套互拦截"入口 → 文档明确状态下拉改 readonly；commit 6 必须删除下拉编辑代码
+- 回滚：`git revert`；用户重新进入下拉编辑路径，新加的按钮变冗余但无害
+
+### Commit 7 — `feat(ui): payments section filters obsoleted rows in terminated state`
+
+**Scope**
+- `apps/web/src/components/policy-detail/payments-section.tsx`：
+  - `PaymentsSectionProps` 新增必填 `policyStatus: PolicyStatus` + `policyTerminatedAt: string | null`
+  - 行列表过滤：`isObsoletedByTermination` 为 true 的行折叠到表尾 "N 笔已随终止失效"（展开后整行 line-through 灰显）
+  - 统计：paidCount / 未结清等忽略被过滤行
+  - 终止态下 "添加缴费记录"（line 455）+ "生成本年度缴费"（line 529）整体隐藏
+  - 终止态下行级编辑：编辑表单 status `<Select>` 仅显示 `Paid`；行级删除按钮隐藏
+- `apps/web/src/app/policies/[id]/page.tsx`：`<PaymentsSection>` 调用 (line 183) 补传 `policyStatus` + `policyTerminatedAt`
+
+**Steps**
+1. `PaymentsSectionProps` interface (line 24) 加两个必填字段
+2. 在组件顶部计算 `isTerminated = ["Surrendered","Claimed","Lapsed"].includes(policyStatus)`
+3. 行列表渲染：用 `isObsoletedByTermination` 把 payments 数组分成 `live` + `obsoleted` 两段；`live` 正常渲染；`obsoleted` 包在 `<Collapsible>` 内（默认折叠），summary "N 笔已随终止失效"，展开后每行加 `line-through text-muted-foreground`
+4. 统计计数（line ~227-230）从 `payments` 改为 `live`
+5. 条件渲染收紧：`isTerminated` 时 add/generate 按钮 (line 455, 529) 不渲染；行级"编辑"按钮里的 status `<Select>` `<SelectItem>` 列表仅保留 `Paid` 一项；行级"删除"按钮不渲染
+6. 调用方 `apps/web/src/app/policies/[id]/page.tsx:183` 补 `policyStatus={policy.status} policyTerminatedAt={policy.terminatedAt}`
+
+**Verify**
+- `bun run test`：payments-section 既有单测全绿；commit 不新增 L1（折叠 UI 行为通过 L3 验证更直观）
+- `bun run typecheck`：调用方未补传 prop 会被 typecheck 拦下，逐个修
+- 浏览器手测：在一张 Surrendered 保单上：(a) 加号 + 生成按钮消失；(b) 列表底部 "N 笔已随终止失效" 折叠区出现；(c) 折叠区里的行不可删除；(d) 行级编辑只能改成 Paid
+
+**Risks & Rollback**
+- 风险：`isObsoletedByTermination` 的 import 路径错（应从 `@surety/db/types`）→ typecheck 会拦
+- 回滚：`git revert`，DB 数据未变，仅展示层回退
+
+### Commit 8 — `feat(ui): timeline filters future events in terminated state; planned-surrender milestone`
+
+**Scope**
+- `apps/web/src/components/policy-detail/timeline-column.tsx`：
+  - `buildTimeline` 接收 policy 后，终止态下过滤 `eventTime > terminatedTime` 的事件、抑制 today、插入终止 milestone（复用 `today` 渲染分支样式）
+  - display status ∈ {Active, Expired} 且 `plannedSurrenderAt` 非空时插入 "计划退保" milestone（type=`future`）
+- `apps/web/src/__tests__/timeline.test.ts`：CREATE，覆盖 5 个用例
+
+**Steps**
+1. `buildTimeline` 入口确认接收 `policy` 全量（已经在用，无需改 props）；读 `policy.status` / `policy.terminatedAt` / `policy.plannedSurrenderAt`
+2. 计算 `terminatedTime = policy.terminatedAt ? parseLocalDate(policy.terminatedAt).getTime() : null`
+3. 终止态分支（`policy.status ∈ terminal && terminatedTime != null`）：
+   - 过滤 events：`event.date.getTime() > terminatedTime` 的整体丢弃
+   - 抑制 today：跳过 `today` 事件 push
+   - 追加 milestone：`{ date: parseLocalDate(policy.terminatedAt), dateStr: policy.terminatedAt, label: { Surrendered: "退保", Claimed: "理赔结案", Lapsed: "失效" }[policy.status], type: "today" }`（复用 today 分支的强调样式，**不**新增 type 枚举）
+4. 拟退保分支（display status ∈ {Active, Expired} 且 `plannedSurrenderAt` 非空）：追加 `{ date, dateStr, label: "计划退保", type: "future" }`
+5. 排序 map / 渲染分支不动（无新 type）
+6. CREATE `apps/web/src/__tests__/timeline.test.ts`：5 个用例对应 File Changes Phase 4 列出的全部覆盖点
+
+**Verify**
+- `bun run test`：新 timeline.test.ts 全绿；既有 L1 不应受影响
+- `bun run test:coverage`：timeline-column 行/函数覆盖率 ≥ 95%
+- 浏览器手测：(a) 退保保单 timeline 末尾出现 "退保" milestone，之后无未来事件，today 标记不再出现；(b) Active 保单标记拟退保后 timeline 中出现 "计划退保" 节点，其它事件不变；(c) Expired 保单标记拟退保后同样出现节点
+
+**Risks & Rollback**
+- 风险：拟退保 milestone 在终止态下也被插入（应当不插，因为 terminate handler 自动清空了 plannedSurrenderAt）→ 但防御式编程：两个分支用 if/else 互斥，终止态分支命中后不再走拟退保分支
+- 回滚：`git revert`，timeline 回到不读 status 的旧行为
+
+---
+
+> **跨 commit 顺序约束**：commit 1 必须先 push 到 dev D1，否则 commit 4 的 L2 HTTP 套件、commit 6/7/8 的浏览器手测都会因为列不存在而失败。其余 commits 之间在工作树层面只有"声明使用 → 实现"的常规依赖，无环。
+
 ## Open Questions / Future Extensions
 
 | 议题 | v1 决策 | v2 候选 |
