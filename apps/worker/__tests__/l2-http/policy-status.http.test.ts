@@ -68,7 +68,7 @@ async function seedActivePolicy(memberId: number): Promise<number> {
   return r.body.id;
 }
 
-describe("L2-HTTP: terminate + reactivation over real D1", () => {
+describe("L2-HTTP: terminate + reactivation over local D1 binding", () => {
   test("POST /terminate writes status + metadata; GET reflects them", async () => {
     const memberId = await seedMember();
     const policyId = await seedActivePolicy(memberId);
@@ -179,7 +179,8 @@ describe("L2-HTTP: terminate + reactivation over real D1", () => {
     }
 
     // Row-level DELETE rejected for any payment status on a terminated
-    // policy (covers Paid here; Pending/Cancelled covered by in-memory e2e).
+    // policy (covers Paid here; the Pending row case is covered by the
+    // in-memory e2e matrix where seed → delete-before-terminate is cheap).
     const del = await httpJson(
       "DELETE",
       `/api/policies/${policyId}/payments/${paymentId}`,
@@ -237,7 +238,7 @@ describe("L2-HTTP: terminate + reactivation over real D1", () => {
   });
 });
 
-describe("L2-HTTP: planned-surrender over real D1", () => {
+describe("L2-HTTP: planned-surrender over local D1 binding", () => {
   test("PUT /planned-surrender round-trips; clearing with null nulls both fields", async () => {
     const memberId = await seedMember();
     const policyId = await seedActivePolicy(memberId);
