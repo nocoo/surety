@@ -548,7 +548,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 
 每个 commit 一节，给出 **Scope / Steps / Verify / Risks & Rollback** 四块。内容严格从前文 Scope、API、UI、Verification 抽取，不引入新决策；步骤之间的"先后"由 commit 顺序决定（commit N 默认假定 commit 1..N-1 已 land 在工作树）。
 
-> **每个 commit 落地后的统一收尾**：(a) `bun run typecheck` + `bun run lint` + `bun run test` 全绿；(b) 该 commit 节下 Verify 子节列出的额外命令也跑过；(c) `git diff HEAD~1` 自查无超出 Scope 的文件改动；(d) 形成单一 commit，messsage 与表格 # 列一致。
+> **每个 commit 落地后的统一收尾**：(a) `bun run typecheck` + `bun run lint` + `bun run test` 全绿；(b) 该 commit 节下 Verify 子节列出的额外命令也跑过；(c) `git diff HEAD~1` 自查无超出 Scope 的文件改动；(d) 形成单一 commit，message 与表格 # 列一致。
 
 ### Commit 1 — `feat(db): add 4 metadata columns`
 
@@ -560,7 +560,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 **Steps**
 1. 编辑 `packages/db/src/schema.ts`，在现有 `status` 字段后插入 4 个新列定义；保留 status enum 原值不变
 2. 编辑 `packages/db/src/index.ts:280-313` 的 `INIT_SQL` 块，policies CREATE TABLE 末尾追加 4 列；保持现有列顺序，新列放最后
-3. 跑 `bunx drizzle-kit generate`，检查生成的 `drizzle/000X_policy_status.sql` 只包含 4 条 `ALTER TABLE policies ADD COLUMN`；如混入其它 diff（unrelated 列改动），手工删除并重新 generate
+3. 跑 `bunx drizzle-kit generate` **前**：先 `git status` 确认 schema.ts 工作树只含本 commit 的列追加改动，没有其它未提交的 schema 编辑（drizzle generate 会对比工作树 schema 与 `drizzle/meta/_journal.json` + `drizzle/meta/000X_snapshot.json` 的差异，任何 unrelated schema 改动都会被一起写进新 migration）；generate 后产出三类工件：`drizzle/000X_policy_status.sql`（DDL）、`drizzle/meta/000X_snapshot.json`（snapshot）、`drizzle/meta/_journal.json`（追加一行）。三者必须同 commit 一起加入。若 generate 出来的 SQL 含 unrelated 列改动，**不要手删 SQL 或 snapshot**（会让三件套不同步、未来 migration diff 错乱），而是 stash / revert 工作树里的 unrelated schema 改动，复位后重新 generate
 4. 推 dev D1：`CLOUDFLARE_ACCOUNT_ID=<id> CLOUDFLARE_DATABASE_ID=<id> CLOUDFLARE_D1_TOKEN=<token> bunx drizzle-kit push`
 5. 验证 dev D1 列已生效：`cd apps/worker && bunx wrangler d1 execute surety-db --remote --command "PRAGMA table_info(policies)"`，输出中应包含 4 个新列名
 
@@ -572,7 +572,10 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 
 **Risks & Rollback**
 - 风险：INIT_SQL 与 schema.ts 列顺序不一致导致 bun-sqlite L1 跑通但 D1 行为不同（CLAUDE.md Retrospective 记录过）→ 跑 step 5 的 `PRAGMA table_info` 与 schema.ts 顺序对照
-- 回滚：`git revert` + `bunx wrangler d1 execute --remote --command "ALTER TABLE policies DROP COLUMN ..."` × 4
+- 回滚：
+  - **代码侧**：`git revert` schema.ts + INIT_SQL + drizzle/000X + drizzle/meta 一起还原（4 个工件必须一起退，否则 generate 状态不一致）
+  - **dev D1 侧**：四个新列被退掉后 schema 仍多 4 个 dangling 列 —— 单纯 `DROP COLUMN` 是破坏性操作且绕过 Drizzle 管理路径（dev D1 上若已写了 terminated_at 数据会直接丢，且后续重新 forward 时 snapshot 与远端不一致）。**正确做法**：仅在 dev 环境、确认无价值数据后，要么 (a) 跑一个反向 forward migration（编一个 `0Y_drop_policy_termination.sql` 走正常 `bun run db:push`，保持 Drizzle 路径），要么 (b) 直接 `wrangler d1 delete surety-db` 后重建（dev 数据本就可重新 seed）
+  - **production 侧**：本 commit 落 prod 前出 issue 极不可能（DB-only commit，无消费者写值），但若 prod 已落，禁止 DROP COLUMN，按 forward-only migration 走
 
 ### Commit 2 — `feat(db): add isObsoletedByTermination helper + TerminalPolicyStatus type`
 
@@ -607,6 +610,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
   - 既有 `POST /api/policies` + `PUT /api/policies/:id` 加守卫：状态值 + metadata 字段写入旁路（按文档 [通用 POST / PUT 禁写非 Active 状态](#通用-post--put-禁写非-active-状态旁路封堵) 的 4 步判定顺序实现）
   - 既有 4 个 payment 路由加终止态守卫（POST / generate / DELETE 直接 400；PUT 严格限定 `{ status: "Paid", paidDate?, paidAmount? }` body 形状）
 - `apps/web/src/lib/types/policy.ts`：`PolicyDetail` interface 加 4 字段；`PolicySummary` 不动
+- `apps/worker/__tests__/policies.put-order.test.ts`（CREATE）：worker 单测，专门锁住 PUT handler 4 步判定顺序（关键风险见 Risks）；L2 e2e 整套测试放在 Commit 4，这里只做最小决定性的单测兜底
 
 **Steps**
 1. **transition handlers**：在 `apps/worker/src/routes/policies.ts` 的 PUT 之后、DELETE 之前插入两个新 handler。terminate 用单条 Drizzle `repos.policies.update(policyId, {...})`，同时清空两个 planned 字段；planned-surrender 同样单条 UPDATE
@@ -620,14 +624,18 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 6. **GET single 响应** (line 109-128)：返回对象增加 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`
 7. **4 个 payment 路由守卫**（POST / PUT / DELETE / generate）按文档 [终止后非破坏字段的写入封禁](#终止后非破坏字段的写入封禁) 表实现；PUT 的 body shape 严格校验 —— 出现 `dueDate` / `amount` / `periodNumber` 即 400
 8. **PolicyDetail interface**：`apps/web/src/lib/types/policy.ts:9-41` 新增 4 字段（`string | null`）
+9. **PUT 顺序专项 ut**：CREATE `apps/worker/__tests__/policies.put-order.test.ts`，至少覆盖 3 个用例 ——
+   - (a) `PUT { status: "Active", plannedSurrenderAt: "2030-01-01" }` 在终止态保单上：200，DB 中 4 个 metadata 全为 NULL（命中规则 1 早于规则 3）
+   - (b) `PUT { plannedSurrenderAt: "2030-01-01" }` 在 Active 保单上：400（命中规则 3，未触发规则 1）
+   - (c) `PUT { status: "Lapsed" }` 在 Active 保单上：400（命中规则 2）
 
 **Verify**
 - `bun run typecheck`：worker 路由 + web 端 consumer 应零类型错误
-- `bun run test`：现有 worker 单测 + web 单测全绿（L2 在 commit 4 补，本 commit 不在 e2e 上验证）
+- `bun run test`：(1) 新 `policies.put-order.test.ts` 全绿（锁住规则顺序，规则反了会立刻挂）；(2) 既有 worker 单测 + web 单测全绿；L2 e2e 整套测试（terminate / planned-surrender / payments lockdown 等）放在 Commit 4 统一补
 - 手测：`bun run dev:worker` 起本地 Worker，curl 一次 `POST /terminate` 应返回 200；curl 一次 `POST /api/policies` body 携带 `terminatedAt` 应 400
 
 **Risks & Rollback**
-- 风险 1：PUT handler 判定顺序写错，rule 3 在 rule 1 之前 → terminate→Active 反向恢复时把 body 中的 planned-surrender metadata 误判为 400。**关键 ut 用例**：写一条 worker 单测专门覆盖 "PUT body 同时含 status=Active 与 plannedSurrenderAt 时返回 200 并清空字段"
+- 风险 1：PUT handler 判定顺序写错，rule 3 在 rule 1 之前 → terminate→Active 反向恢复时把 body 中的 planned-surrender metadata 误判为 400。**已在 Steps 9 落地专项 ut**（`policies.put-order.test.ts`）锁死规则顺序，规则反了立刻挂 —— 不再依赖 Commit 4 的 L2 兜底
 - 风险 2：日期 round-trip 校验漏 `formatLocalDate` 导入 → `formatLocalDate(d) !== s` 永真，所有日期校验失效。typecheck 应能拦下
 - 回滚：`git revert`；handler 是新增，POST/PUT 的守卫是新增条件分支，PolicyDetail 字段消费者尚未引入，无运行时副作用
 
@@ -674,7 +682,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 **Verify**
 - `bun run test`：dialog L1 全绿
 - `bun run test:coverage`：dialog 行/函数覆盖率 ≥ 95%
-- 浏览器手测：临时在 meta-column 挂一个 `<TerminationDialog policy={...} open ...>` debug 块，确认 badge rose 色显示正确、玫红比 destructive 的纯红柔和
+- 视觉抽测：dialog 颜色 / 玫红比 destructive 纯红柔和等浏览器观感留到 Commit 6 接线后随手测一起完成 —— **不要**在本 commit 临时挂 debug 块到 meta-column 验证颜色（会污染提交范围；若实现时确实需要现场观感，临时手动 import 到 Storybook / 一次性 playground 文件，提交前删除）
 
 **Risks & Rollback**
 - 风险：renderPolicyStatusBadges 在 PolicySummary 上调用时 `plannedSurrenderAt` 是 `undefined` 而非 `null`，判断务必用 truthy check 而非 `=== null` —— 否则列表页可能假阳性
@@ -718,6 +726,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
   - 终止态下 "添加缴费记录"（line 455）+ "生成本年度缴费"（line 529）整体隐藏
   - 终止态下行级编辑：编辑表单 status `<Select>` 仅显示 `Paid`；行级删除按钮隐藏
 - `apps/web/src/app/policies/[id]/page.tsx`：`<PaymentsSection>` 调用 (line 183) 补传 `policyStatus` + `policyTerminatedAt`
+- `apps/web/src/__tests__/payments-section.test.tsx`（CREATE）：组件单测，兜底 4 类核心行为
 
 **Steps**
 1. `PaymentsSectionProps` interface (line 24) 加两个必填字段
@@ -726,9 +735,16 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 4. 统计计数（line ~227-230）从 `payments` 改为 `live`
 5. 条件渲染收紧：`isTerminated` 时 add/generate 按钮 (line 455, 529) 不渲染；行级"编辑"按钮里的 status `<Select>` `<SelectItem>` 列表仅保留 `Paid` 一项；行级"删除"按钮不渲染
 6. 调用方 `apps/web/src/app/policies/[id]/page.tsx:183` 补 `policyStatus={policy.status} policyTerminatedAt={policy.terminatedAt}`
+7. CREATE `apps/web/src/__tests__/payments-section.test.tsx` 覆盖 4 类核心行为（每类至少 1 用例）：
+   - **live/obsoleted 分组**：传入 mixed payments + `policyStatus="Surrendered"` + `policyTerminatedAt="2026-06-01"`，断言 `dueDate > terminatedAt && status !== "Paid"` 的行落入折叠区，其它落入主列表
+   - **统计忽略失效行**：相同 fixture 下，paidCount / 未结清计数等只算 live 段
+   - **终止态隐藏 add/generate/delete**：断言 "添加缴费记录" 按钮、"生成本年度缴费" 按钮、行级删除按钮全部不在 DOM
+   - **终止态编辑 status select 只剩 Paid**：打开编辑表单，断言 `<SelectItem>` 唯一选项为 Paid
+   - **基线对照**：`policyStatus="Active"` 下，上述按钮 / 选项 / 计数全部恢复 Active 行为
 
 **Verify**
-- `bun run test`：payments-section 既有单测全绿；commit 不新增 L1（折叠 UI 行为通过 L3 验证更直观）
+- `bun run test`：新 `payments-section.test.tsx` 全绿；既有 web 单测全绿
+- `bun run test:coverage`：payments-section 行/函数覆盖率 ≥ 95%
 - `bun run typecheck`：调用方未补传 prop 会被 typecheck 拦下，逐个修
 - 浏览器手测：在一张 Surrendered 保单上：(a) 加号 + 生成按钮消失；(b) 列表底部 "N 笔已随终止失效" 折叠区出现；(c) 折叠区里的行不可删除；(d) 行级编辑只能改成 Paid
 
