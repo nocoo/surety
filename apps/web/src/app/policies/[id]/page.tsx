@@ -188,6 +188,8 @@ export default function PolicyDetailPage() {
               policyId={policy.id}
               payments={payments}
               paymentFrequency={policy.paymentFrequency}
+              policyStatus={policy.status}
+              policyTerminatedAt={policy.terminatedAt}
               onPaymentsChange={(p) => {
                 setPayments(p);
                 void refreshPayments();

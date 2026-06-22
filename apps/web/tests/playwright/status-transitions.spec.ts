@@ -208,4 +208,85 @@ test.describe("policy-detail status transitions UI", () => {
       page.getByRole("button", { name: "标记拟退保" }),
     ).toBeVisible();
   });
+
+  test("terminated row edit form: status select reduces to Paid only and back-fill succeeds", async ({
+    page,
+    request,
+  }) => {
+    const memberId = await seedMember(request, "editpaid");
+    const policy = await seedPolicy(request, memberId, "L3-TX-A6");
+
+    // Seed a Pending payment whose dueDate is on/before the terminated
+    // date so it stays in the live list after termination — otherwise it
+    // would land in the obsoleted collapsible and the Pencil button
+    // wouldn't render. Using the same day satisfies
+    // `isObsoletedByTermination(p, terminatedAt) === false`.
+    const paymentRes = await request.post(
+      `/api/policies/${policy.id}/payments`,
+      {
+        data: {
+          periodNumber: 1,
+          dueDate: "2026-06-15",
+          amount: 1000,
+          status: "Pending",
+        },
+      },
+    );
+    expect(paymentRes.status()).toBe(201);
+
+    const terminateRes = await request.post(
+      `/api/policies/${policy.id}/terminate`,
+      {
+        data: {
+          status: "Surrendered",
+          terminatedAt: "2026-06-15",
+          terminationReason: "L3 paid-only edit",
+        },
+      },
+    );
+    expect(terminateRes.status()).toBe(200);
+
+    await page.goto(`/policies/${policy.id}`);
+    await expect(page.getByText("返回保单列表")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // PaymentsSection is identified by its 缴费记录 heading. The
+    // MetaColumn 修改终止信息 button uses a Pencil icon too, but it is a
+    // size-sm outline button with the visible 修改终止信息 label.
+    // Row-edit Pencils are size-6 ghost icon buttons — filter on the
+    // size-6 class so we never pick the MetaColumn button.
+    await expect(page.getByText("第1期").first()).toBeVisible();
+    await page
+      .locator("button.size-6:has(svg.lucide-pencil)")
+      .first()
+      .click({ force: true });
+
+    // The edit form mounts inline after the Pencil click. Its Select
+    // trigger uses role="combobox" with currently-displayed value
+    // "已缴" (because terminated mode forces status into Paid). Filter
+    // by that displayed text — MetaColumn's category/asset comboboxes
+    // never show "已缴" so this disambiguates without coupling to row
+    // order or nth().
+    const statusTrigger = page
+      .getByRole("combobox")
+      .filter({ hasText: "已缴" });
+    await expect(statusTrigger).toBeVisible();
+    await statusTrigger.click();
+    await expect(
+      page.getByRole("option", { name: "已缴" }),
+    ).toBeVisible();
+    await expect(page.getByRole("option", { name: "待缴" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+
+    // Submit — the PUT body excludes structural fields (verified by the
+    // task #8 builder unit test and the task #4 API contract). Save
+    // success means the API accepted the back-fill payload.
+    await page.getByRole("button", { name: /^保存$/ }).click();
+
+    // After save, the row badge flips to 已缴.
+    await expect(page.getByText("已缴").first()).toBeVisible({
+      timeout: 10_000,
+    });
+  });
 });

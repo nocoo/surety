@@ -1,6 +1,16 @@
 
 import { useState } from "react";
-import { Plus, Trash2, Wand2, Check, X, Pencil, Banknote } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Wand2,
+  Check,
+  X,
+  Pencil,
+  Banknote,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +27,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -25,13 +40,22 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { formatCurrencyFull } from "@surety/api/lib/format";
-import type { Payment } from "@/lib/types/policy";
+import { isObsoletedByTermination } from "@surety/db/types";
+import type { Payment, PolicyStatus } from "@/lib/types/policy";
 
 interface PaymentsSectionProps {
   policyId: number;
   payments: Payment[];
   paymentFrequency: string;
+  /** Display status — used to decide whether write entries are visible. */
+  policyStatus: PolicyStatus;
+  /** ISO terminated date or null. Drives the obsoleted-rows filter. */
+  policyTerminatedAt: string | null;
   onPaymentsChange: (payments: Payment[]) => void;
+}
+
+function isTerminalDisplayStatus(s: PolicyStatus): boolean {
+  return s === "Surrendered" || s === "Claimed" || s === "Lapsed";
 }
 
 interface PaymentFormData {
@@ -68,6 +92,69 @@ function paymentToForm(p: Payment): PaymentFormData {
   };
 }
 
+/**
+ * Terminated-state edit: force the form into the Paid back-fill path so
+ * the only thing the user can submit is the back-fill payload the API
+ * accepts (`{status:"Paid", paidDate?, paidAmount?}`).
+ *
+ * Even though we visually disable the structural inputs, mirroring the
+ * existing values here keeps the form valid for the legacy validators
+ * (canSave needs non-empty periodNumber/dueDate/amount).
+ */
+export function paymentToFormForTerminatedEdit(p: Payment): PaymentFormData {
+  return {
+    periodNumber: String(p.periodNumber),
+    dueDate: p.dueDate,
+    amount: String(p.amount),
+    status: "Paid",
+    paidDate: p.paidDate ?? today(),
+    originalStatus: p.status,
+  };
+}
+
+/**
+ * Build the PUT body for `/api/policies/:id/payments/:paymentId`.
+ *
+ * Pure derivation surfaced for unit testing. When the policy is in a
+ * terminal state, the body is restricted to the API-accepted shape
+ * `{status:"Paid", paidDate, paidAmount}` — no structural fields. When
+ * the policy is active, the legacy structural body is preserved so
+ * edits to dueDate / amount / periodNumber still flow through. The
+ * Pending→Overdue preservation rule for active rows lives here too.
+ */
+export function buildPaymentUpdatePayload(
+  form: PaymentFormData,
+  ctx: { isTerminated: boolean; originalAmount: number },
+): Record<string, unknown> {
+  if (ctx.isTerminated) {
+    return {
+      status: "Paid",
+      paidDate: form.paidDate || today(),
+      paidAmount: Number(form.amount) > 0 ? Number(form.amount) : ctx.originalAmount,
+    };
+  }
+
+  let submitStatus: "Pending" | "Paid" | "Overdue" = form.status;
+  if (form.status === "Pending" && form.originalStatus === "Overdue") {
+    submitStatus = "Overdue";
+  }
+
+  const body: Record<string, unknown> = {
+    periodNumber: Number(form.periodNumber),
+    dueDate: form.dueDate,
+    amount: Number(form.amount),
+    status: submitStatus,
+  };
+  if (form.status === "Paid") {
+    body.paidDate = form.paidDate || today();
+    body.paidAmount = Number(form.amount);
+  } else {
+    body.paidDate = null;
+    body.paidAmount = null;
+  }
+  return body;
+}
+
 // ---------------------------------------------------------------------------
 // Inline form (shared between add & edit)
 // ---------------------------------------------------------------------------
@@ -79,6 +166,7 @@ function PaymentForm({
   onCancel,
   saving,
   saveLabel,
+  paidOnly = false,
 }: {
   form: PaymentFormData;
   onChange: (f: PaymentFormData) => void;
@@ -86,6 +174,12 @@ function PaymentForm({
   onCancel: () => void;
   saving: boolean;
   saveLabel: string;
+  /**
+   * When true the status select offers only "已缴" — used in the
+   * terminated-policy back-fill flow where the API rejects anything
+   * other than `{status: "Paid", paidDate?, paidAmount?}`.
+   */
+  paidOnly?: boolean;
 }) {
   const update = (field: keyof PaymentFormData, value: string) =>
     onChange({ ...form, [field]: value });
@@ -104,6 +198,7 @@ function PaymentForm({
             value={form.periodNumber}
             onChange={(e) => update("periodNumber", e.target.value)}
             className="h-8 text-sm"
+            disabled={paidOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -113,6 +208,7 @@ function PaymentForm({
             value={form.dueDate}
             onChange={(e) => update("dueDate", e.target.value)}
             className="h-8 text-sm"
+            disabled={paidOnly}
           />
         </div>
       </div>
@@ -126,6 +222,7 @@ function PaymentForm({
             value={form.amount}
             onChange={(e) => update("amount", e.target.value)}
             className="h-8 text-sm"
+            disabled={paidOnly}
           />
         </div>
         <div className="space-y-1.5">
@@ -140,7 +237,7 @@ function PaymentForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Pending">待缴</SelectItem>
+              {!paidOnly && <SelectItem value="Pending">待缴</SelectItem>}
               <SelectItem value="Paid">已缴</SelectItem>
             </SelectContent>
           </Select>
@@ -207,6 +304,8 @@ export function PaymentsSection({
   policyId,
   payments,
   paymentFrequency,
+  policyStatus,
+  policyTerminatedAt,
   onPaymentsChange,
 }: PaymentsSectionProps) {
   const [addingForm, setAddingForm] = useState<PaymentFormData | null>(null);
@@ -218,18 +317,34 @@ export function PaymentsSection({
   const [editingForm, setEditingForm] = useState<PaymentFormData>(emptyPaymentForm);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [obsoletedExpanded, setObsoletedExpanded] = useState(false);
 
-  const sorted = [...payments].sort(
+  // Partition the row list: `live` rows render normally and feed all
+  // counts / totals; `obsoleted` rows fall into a collapsible bucket at
+  // the bottom. `isObsoletedByTermination` keeps Paid rows in `live` even
+  // if their dueDate is after terminatedAt.
+  const liveRows = payments.filter(
+    (p) => !isObsoletedByTermination(p, policyTerminatedAt),
+  );
+  const obsoletedRows = payments.filter((p) =>
+    isObsoletedByTermination(p, policyTerminatedAt),
+  );
+  const sortedLive = [...liveRows].sort(
+    (a, b) => a.periodNumber - b.periodNumber,
+  );
+  const sortedObsoleted = [...obsoletedRows].sort(
     (a, b) => a.periodNumber - b.periodNumber,
   );
 
-  // --- summary ---
-  const paidCount = payments.filter((p) => p.status === "Paid").length;
-  const totalCount = payments.length;
-  const paidAmount = payments
+  const isTerminated = isTerminalDisplayStatus(policyStatus);
+
+  // --- summary (live rows only) ---
+  const paidCount = liveRows.filter((p) => p.status === "Paid").length;
+  const totalCount = liveRows.length;
+  const paidAmount = liveRows
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.paidAmount ?? p.amount), 0);
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+  const totalAmount = liveRows.reduce((sum, p) => sum + p.amount, 0);
 
   // --- mutual exclusion ---
   const startAdd = () => {
@@ -238,7 +353,11 @@ export function PaymentsSection({
   };
   const startEdit = (payment: Payment) => {
     setEditingId(payment.id);
-    setEditingForm(paymentToForm(payment));
+    setEditingForm(
+      isTerminated
+        ? paymentToFormForTerminatedEdit(payment)
+        : paymentToForm(payment),
+    );
     setAddingForm(null);
   };
 
@@ -286,28 +405,11 @@ export function PaymentsSection({
     setSaving(true);
     setResultMessage(null);
     try {
-      // Determine the status to submit:
-      // - If user changed to Paid, use Paid
-      // - If user kept as Pending but original was Overdue, preserve Overdue
-      // - Otherwise use the form status
-      let submitStatus: "Pending" | "Paid" | "Overdue" = editingForm.status;
-      if (editingForm.status === "Pending" && editingForm.originalStatus === "Overdue") {
-        submitStatus = "Overdue";
-      }
-
-      const body: Record<string, unknown> = {
-        periodNumber: Number(editingForm.periodNumber),
-        dueDate: editingForm.dueDate,
-        amount: Number(editingForm.amount),
-        status: submitStatus,
-      };
-      if (editingForm.status === "Paid") {
-        body.paidDate = editingForm.paidDate || today();
-        body.paidAmount = Number(editingForm.amount);
-      } else {
-        body.paidDate = null;
-        body.paidAmount = null;
-      }
+      const original = payments.find((p) => p.id === editingId);
+      const body = buildPaymentUpdatePayload(editingForm, {
+        isTerminated,
+        originalAmount: original?.amount ?? Number(editingForm.amount),
+      });
       const res = await fetch(
         `/api/policies/${policyId}/payments/${editingId}`,
         {
@@ -430,14 +532,14 @@ export function PaymentsSection({
         <h3 className="text-sm font-medium text-muted-foreground">
           <Banknote className="mr-1.5 inline size-4 align-text-bottom" />
           缴费记录
-          {payments.length > 0 && (
+          {liveRows.length > 0 && (
             <Badge variant="secondary" className="ml-2 text-xs">
-              {payments.length}
+              {liveRows.length}
             </Badge>
           )}
         </h3>
         <div className="flex gap-2">
-          {paymentFrequency !== "Single" && (
+          {!isTerminated && paymentFrequency !== "Single" && (
             <Button
               type="button"
               variant="outline"
@@ -452,7 +554,7 @@ export function PaymentsSection({
               生成缴费记录
             </Button>
           )}
-          {!addingForm && editingId === null && (
+          {!isTerminated && !addingForm && editingId === null && (
             <Button
               type="button"
               variant="ghost"
@@ -466,8 +568,8 @@ export function PaymentsSection({
         </div>
       </div>
 
-      {/* Summary bar */}
-      {payments.length > 0 && (
+      {/* Summary bar — counts/totals ignore obsoleted rows. */}
+      {liveRows.length > 0 && (
         <div className="mb-3 rounded-lg bg-muted/30 px-3 py-2 text-sm">
           已缴{" "}
           <span className="font-medium">
@@ -493,10 +595,12 @@ export function PaymentsSection({
         </p>
       )}
 
-      {/* Payment list */}
-      {sorted.length > 0 && (
+      {/* Payment list (live rows). Obsoleted rows render in a separate
+          collapsible section below so terminal-state users still see the
+          history but don't mistake those rows for current obligations. */}
+      {sortedLive.length > 0 && (
         <div className="space-y-3">
-          {sorted.map((p) => (
+          {sortedLive.map((p) => (
             <div key={p.id}>
               {editingId === p.id ? (
                 <PaymentForm
@@ -506,6 +610,7 @@ export function PaymentsSection({
                   onCancel={() => setEditingId(null)}
                   saving={saving}
                   saveLabel="保存"
+                  paidOnly={isTerminated}
                 />
               ) : (
                 <div className="group rounded-lg bg-muted/30 p-3">
@@ -526,7 +631,7 @@ export function PaymentsSection({
                       >
                         <Pencil className="size-3" />
                       </Button>
-                      {p.status !== "Paid" && (
+                      {!isTerminated && p.status !== "Paid" && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -539,15 +644,17 @@ export function PaymentsSection({
                           <Check className="size-3" />
                         </Button>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteTarget(p.id)}
-                      >
-                        <Trash2 className="size-3" />
-                      </Button>
+                      {!isTerminated && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 text-destructive hover:text-destructive"
+                          onClick={() => setDeleteTarget(p.id)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -580,8 +687,58 @@ export function PaymentsSection({
         </div>
       )}
 
+      {/* Obsoleted rows — collapsed by default, dimmed with line-through
+          when expanded so users can verify the row exists without
+          confusing it with an active obligation. */}
+      {sortedObsoleted.length > 0 && (
+        <div className="mt-3">
+          <Collapsible open={obsoletedExpanded} onOpenChange={setObsoletedExpanded}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-1.5 rounded-lg bg-muted/30 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50"
+              >
+                {obsoletedExpanded ? (
+                  <ChevronDown className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                <span>{sortedObsoleted.length} 笔已随终止失效</span>
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-2">
+              {sortedObsoleted.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-lg bg-muted/30 p-3 text-sm line-through text-muted-foreground"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold">
+                      第{p.periodNumber}期
+                      <span className="ml-2">
+                        <StatusBadge status={p.status} />
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    <div className="flex justify-between">
+                      <span>应缴日期</span>
+                      <span className="font-mono">{p.dueDate}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>金额</span>
+                      <span>{formatCurrencyFull(p.amount)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
       {/* Empty state */}
-      {sorted.length === 0 && !addingForm && (
+      {sortedLive.length === 0 && sortedObsoleted.length === 0 && !addingForm && (
         <div className="rounded-lg bg-muted/30 p-4 text-center">
           <p className="text-sm text-muted-foreground">暂无缴费记录</p>
         </div>
@@ -589,7 +746,7 @@ export function PaymentsSection({
 
       {/* Add form */}
       {addingForm && (
-        <div className={cn(sorted.length > 0 && "mt-3")}>
+        <div className={cn(sortedLive.length > 0 && "mt-3")}>
           <PaymentForm
             form={addingForm}
             onChange={setAddingForm}
