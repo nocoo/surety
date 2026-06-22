@@ -115,30 +115,68 @@ describe("buildTerminationPayload", () => {
 });
 
 describe("getInitialTerminationForm", () => {
-  it("reuses existing terminatedAt + terminationReason when present (edit path)", () => {
+  it("reuses existing terminatedAt + terminationReason on a terminal row (edit path)", () => {
     expect(
-      getInitialTerminationForm({
-        terminatedAt: "2026-04-01",
-        terminationReason: "原因",
-      }),
+      getInitialTerminationForm(
+        {
+          status: "Surrendered",
+          terminatedAt: "2026-04-01",
+          terminationReason: "原因",
+        },
+        "2026-06-01",
+      ),
     ).toEqual({ terminatedAt: "2026-04-01", terminationReason: "原因" });
   });
 
-  it("legacy row (null terminatedAt) leaves the date blank — does NOT auto-fill today", () => {
+  it("legacy terminal row (null terminatedAt) leaves date blank — does NOT auto-fill today", () => {
     expect(
-      getInitialTerminationForm({
-        terminatedAt: null,
-        terminationReason: null,
-      }),
+      getInitialTerminationForm(
+        {
+          status: "Surrendered",
+          terminatedAt: null,
+          terminationReason: null,
+        },
+        "2026-06-01",
+      ),
     ).toEqual({ terminatedAt: "", terminationReason: "" });
+  });
+
+  it("fresh termination from Active defaults date to today", () => {
+    expect(
+      getInitialTerminationForm(
+        {
+          status: "Active",
+          terminatedAt: null,
+          terminationReason: null,
+        },
+        "2026-06-01",
+      ),
+    ).toEqual({ terminatedAt: "2026-06-01", terminationReason: "" });
+  });
+
+  it("fresh termination from Expired (display) also defaults to today", () => {
+    expect(
+      getInitialTerminationForm(
+        {
+          status: "Expired",
+          terminatedAt: null,
+          terminationReason: null,
+        },
+        "2026-06-01",
+      ),
+    ).toEqual({ terminatedAt: "2026-06-01", terminationReason: "" });
   });
 
   it("blank reason is empty string even when terminatedAt is present", () => {
     expect(
-      getInitialTerminationForm({
-        terminatedAt: "2026-04-01",
-        terminationReason: null,
-      }),
+      getInitialTerminationForm(
+        {
+          status: "Surrendered",
+          terminatedAt: "2026-04-01",
+          terminationReason: null,
+        },
+        "2026-06-01",
+      ),
     ).toEqual({ terminatedAt: "2026-04-01", terminationReason: "" });
   });
 });

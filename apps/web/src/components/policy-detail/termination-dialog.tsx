@@ -86,16 +86,32 @@ export function buildTerminationPayload(input: {
 }
 
 /**
- * Produce the initial form state for the termination dialog. Legacy rows
- * (terminal status + null `terminatedAt`) must NOT auto-fill today —
- * forcing the user to type the date keeps the backfill explicit. A row
- * that already carries a `terminatedAt` is being edited; reuse the value.
+ * Produce the initial form state for the termination dialog.
+ *
+ * Three cases driven by the policy's current DB status:
+ * - **Editing an existing termination** (`Surrendered`/`Claimed`/`Lapsed`
+ *   with `terminatedAt` set): prefill with the existing value so the
+ *   user can tweak it.
+ * - **Legacy backfill** (terminal status with `terminatedAt == null`):
+ *   leave the field blank. Auto-filling today would silently rewrite
+ *   history and hide the fact this is a missing-data fix.
+ * - **Fresh termination from Active/Expired**: default to `today` so
+ *   the common "terminate as of today" flow needs zero clicks on the
+ *   date field.
  */
 export function getInitialTerminationForm(
-  policy: { terminatedAt: string | null; terminationReason: string | null },
+  policy: { status: string; terminatedAt: string | null; terminationReason: string | null },
+  today: string,
 ): { terminatedAt: string; terminationReason: string } {
+  const isLegacyTerminalRow =
+    (policy.status === "Surrendered" ||
+      policy.status === "Claimed" ||
+      policy.status === "Lapsed") &&
+    !policy.terminatedAt;
   return {
-    terminatedAt: policy.terminatedAt ?? "",
+    terminatedAt: isLegacyTerminalRow
+      ? ""
+      : policy.terminatedAt ?? today,
     terminationReason: policy.terminationReason ?? "",
   };
 }
@@ -108,11 +124,11 @@ export function TerminationDialog({
   onSuccess,
 }: TerminationDialogProps) {
   const today = todayInTimeZone();
-  // Prefill from existing termination metadata when the user re-opens the
-  // dialog on an already-terminated row. Legacy rows (terminal status but
-  // null terminatedAt) intentionally leave the date blank so the user must
-  // type it — auto-filling today would silently rewrite history.
-  const initial = getInitialTerminationForm(policy);
+  // Prefill driven by getInitialTerminationForm:
+  //   - Active/Expired → fresh termination → today
+  //   - terminal row with metadata → editing → reuse existing value
+  //   - terminal row missing terminatedAt → legacy backfill → blank (user types)
+  const initial = getInitialTerminationForm(policy, today);
   const [terminatedAt, setTerminatedAt] = useState(initial.terminatedAt);
   const [terminationReason, setTerminationReason] = useState(
     initial.terminationReason,
@@ -124,12 +140,12 @@ export function TerminationDialog({
   // policy or after a successful submission resets the parent's state.
   useEffect(() => {
     if (open) {
-      const next = getInitialTerminationForm(policy);
+      const next = getInitialTerminationForm(policy, today);
       setTerminatedAt(next.terminatedAt);
       setTerminationReason(next.terminationReason);
       setError(null);
     }
-  }, [open, policy]);
+  }, [open, policy, today]);
 
   const title = `${TITLE_BY_TARGET[targetStatus]} - ${policy.productName}`;
 
