@@ -62,11 +62,12 @@ const defaultFormData: PolicyFormData = {
   status: "Active",
 };
 
+// Create-only sheet: new policies must start in Active. Any terminal
+// status transition is gated by POST /api/policies/:id/terminate and the
+// MetaColumn action buttons. See docs/19-policy-status.md §通用-post--put-
+// 禁写非-active-状态旁路封堵.
 const statusOptions = [
   { value: "Active", label: "生效中" },
-  { value: "Lapsed", label: "已失效" },
-  { value: "Surrendered", label: "已退保" },
-  { value: "Claimed", label: "已理赔" },
 ];
 
 function PolicyForm({

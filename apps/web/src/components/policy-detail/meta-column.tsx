@@ -1,23 +1,50 @@
 
 import { useState } from "react";
-import { Copy, Check, Pencil, Building2, Loader2, ShieldCheck } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Pencil,
+  Building2,
+  Loader2,
+  ShieldCheck,
+  CircleSlash,
+  BadgeCheck,
+  CircleX,
+  Clock,
+  RotateCcw,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { formatCurrency } from "@surety/api/lib/format";
 import {
-  statusConfig,
   categoryLabels,
   paymentFrequencyLabels,
   renewalTypeLabels,
+  renderPolicyStatusBadges,
 } from "@/lib/constants/policy";
 import type { PolicyDetail, Beneficiary, PolicyStatus } from "@/lib/types/policy";
 import { formatDateWithDays } from "@surety/db/lib/date-utils";
 import { EditableInfoRow } from "./editable-info-row";
+import {
+  TerminationDialog,
+  type TerminationTarget,
+} from "./termination-dialog";
+import { PlannedSurrenderDialog } from "./planned-surrender-dialog";
 
 interface MetaColumnProps {
   policy: PolicyDetail;
@@ -25,6 +52,13 @@ interface MetaColumnProps {
   members: { id: number; name: string }[];
   assets: { id: number; name: string }[];
   onPolicyUpdate?: () => void;
+  /**
+   * Fires after a successful status transition (terminate /
+   * planned-surrender / reactivate). Caller is expected to refresh both
+   * policy and payments because terminate clears planned-surrender and
+   * payments visibility is derived from policy.terminatedAt.
+   */
+  onTransitionSuccess?: () => void;
 }
 
 const categories = [
@@ -49,22 +83,13 @@ const renewalTypes = [
   { value: "Yearly", label: "一年期" },
 ] as const;
 
-// DB-persisted statuses (Expired is derived, not directly settable)
-const statuses = [
-  { value: "Active", label: "生效中" },
-  { value: "Lapsed", label: "已失效" },
-  { value: "Surrendered", label: "已退保" },
-  { value: "Claimed", label: "已理赔" },
-] as const;
-
-// Persistable status type (excludes Expired which is derived)
-type PersistableStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
-
-// Map display status to the appropriate form status for editing
-// Expired maps to Active (the source status before expiry was derived)
-function toEditableStatus(status: PolicyStatus): PersistableStatus {
-  if (status === "Expired") return "Active";
-  return status;
+// All status transitions go through the action buttons + dialogs in
+// `<PolicyActions>`. BasicInfoSection no longer exposes status as an
+// editable field. See docs/19-policy-status.md.
+function isTerminalStatus(
+  s: PolicyStatus,
+): s is "Surrendered" | "Claimed" | "Lapsed" {
+  return s === "Surrendered" || s === "Claimed" || s === "Lapsed";
 }
 
 function PersonRow({
@@ -108,7 +133,6 @@ function BasicInfoSection({
     category: string;
     subCategory: string;
     channel: string;
-    status: PersistableStatus;
   };
 
   const [isEditing, setIsEditing] = useState(false);
@@ -121,7 +145,6 @@ function BasicInfoSection({
     category: policy.category,
     subCategory: policy.subCategory ?? "",
     channel: policy.channel ?? "",
-    status: toEditableStatus(policy.status),
   });
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
@@ -142,7 +165,6 @@ function BasicInfoSection({
           category: formData.category,
           subCategory: formData.subCategory || null,
           channel: formData.channel || null,
-          status: formData.status,
         }),
       });
 
@@ -167,7 +189,6 @@ function BasicInfoSection({
       category: policy.category,
       subCategory: policy.subCategory ?? "",
       channel: policy.channel ?? "",
-      status: toEditableStatus(policy.status),
     });
     setIsEditing(false);
     setError(null);
@@ -256,11 +277,15 @@ function BasicInfoSection({
         />
         <EditableInfoRow
           label="状态"
-          value={<Badge variant={statusConfig[policy.status].variant}>{statusConfig[policy.status].label}</Badge>}
-          type="select"
-          options={statuses}
-          editValue={formData.status}
-          onEditChange={isEditing ? (v) => updateField("status", v as PersistableStatus) : undefined}
+          value={
+            <div className="flex flex-wrap items-center gap-1.5">
+              {renderPolicyStatusBadges(policy).map((b) => (
+                <Badge key={b.label} variant={b.variant}>
+                  {b.label}
+                </Badge>
+              ))}
+            </div>
+          }
         />
       </div>
       {error && <p className="text-xs text-destructive mt-2">{error}</p>}
@@ -1030,7 +1055,184 @@ function NotesSection({
   );
 }
 
-export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpdate }: MetaColumnProps) {
+/**
+ * Status-transition action area, rendered between the policy header and
+ * the editable sections in MetaColumn. Layout depends on DB status:
+ *
+ *   - Active or display-Expired (DB Active, just past expiry) — three
+ *     terminate buttons (退保 / 理赔结案 / 标记失效) plus a planned-
+ *     surrender link/edit-link.
+ *   - Terminal (Surrendered / Claimed / Lapsed) — "修改终止信息" reuses
+ *     the same TerminationDialog with prefilled values, and "恢复 Active"
+ *     opens an AlertDialog confirm before PUTing `{status:"Active"}`.
+ *
+ * All transitions invoke `onSuccess` after the API call succeeds so the
+ * caller can refresh policy + payments.
+ */
+function PolicyActions({
+  policy,
+  onSuccess,
+}: {
+  policy: PolicyDetail;
+  onSuccess: () => void;
+}) {
+  const [termDialogTarget, setTermDialogTarget] =
+    useState<TerminationTarget | null>(null);
+  const [plannedOpen, setPlannedOpen] = useState(false);
+  const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
+
+  const dbStatusIsTerminal = isTerminalStatus(policy.status);
+
+  async function handleReactivate() {
+    setReactivating(true);
+    setReactivateError(null);
+    try {
+      const res = await fetch(`/api/policies/${policy.id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Active" }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setReactivateError(
+          (body as { error?: string } | null)?.error ?? "恢复失败",
+        );
+        return;
+      }
+      setReactivateOpen(false);
+      onSuccess();
+    } catch {
+      setReactivateError("网络错误，请重试");
+    } finally {
+      setReactivating(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        {!dbStatusIsTerminal ? (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTermDialogTarget("Surrendered")}
+            >
+              <CircleSlash className="size-3.5" />
+              退保
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTermDialogTarget("Claimed")}
+            >
+              <BadgeCheck className="size-3.5" />
+              理赔结案
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTermDialogTarget("Lapsed")}
+            >
+              <CircleX className="size-3.5" />
+              标记失效
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
+              className="text-[hsl(var(--badge-red))] hover:text-[hsl(var(--badge-red))]"
+              onClick={() => setPlannedOpen(true)}
+            >
+              <Clock className="size-3.5" />
+              {policy.plannedSurrenderAt ? "编辑拟退保" : "标记拟退保"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setTermDialogTarget(policy.status as TerminationTarget)
+              }
+            >
+              <Pencil className="size-3.5" />
+              修改终止信息
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReactivateOpen(true)}
+            >
+              <RotateCcw className="size-3.5" />
+              恢复 Active
+            </Button>
+          </>
+        )}
+      </div>
+
+      {termDialogTarget !== null && (
+        <TerminationDialog
+          policy={policy}
+          open
+          targetStatus={termDialogTarget}
+          onOpenChange={(open) => {
+            if (!open) setTermDialogTarget(null);
+          }}
+          onSuccess={onSuccess}
+        />
+      )}
+
+      <PlannedSurrenderDialog
+        policy={policy}
+        open={plannedOpen}
+        onOpenChange={setPlannedOpen}
+        onSuccess={onSuccess}
+      />
+
+      <AlertDialog open={reactivateOpen} onOpenChange={setReactivateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>恢复为 Active？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将把保单状态恢复为 Active，并清空终止日期 / 终止原因 / 拟退保标记。
+              终止期间隐藏的未来未缴费用会重新可见。该操作可再次终止保单撤回。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {reactivateError && (
+            <p className="text-sm text-destructive" role="alert">
+              {reactivateError}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reactivating}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleReactivate();
+              }}
+              disabled={reactivating}
+            >
+              恢复
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+export function MetaColumn({
+  policy,
+  beneficiaries,
+  members,
+  assets,
+  onPolicyUpdate,
+  onTransitionSuccess,
+}: MetaColumnProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -1039,7 +1241,7 @@ export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpd
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const status = statusConfig[policy.status];
+  const statusBadges = renderPolicyStatusBadges(policy);
 
   return (
     <div className="space-y-6">
@@ -1051,8 +1253,12 @@ export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpd
             {policy.productName}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={status.variant}>{status.label}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          {statusBadges.map((b) => (
+            <Badge key={b.label} variant={b.variant}>
+              {b.label}
+            </Badge>
+          ))}
           <span className="text-sm text-muted-foreground">
             {policy.policyNumber}
           </span>
@@ -1070,6 +1276,10 @@ export function MetaColumn({ policy, beneficiaries, members, assets, onPolicyUpd
           </button>
         </div>
       </div>
+
+      {onTransitionSuccess && (
+        <PolicyActions policy={policy} onSuccess={onTransitionSuccess} />
+      )}
 
       <Separator />
 

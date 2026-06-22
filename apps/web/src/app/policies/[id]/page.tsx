@@ -160,6 +160,10 @@ export default function PolicyDetailPage() {
             members={members}
             assets={assets}
             onPolicyUpdate={refreshPolicy}
+            onTransitionSuccess={() => {
+              void refreshPolicy();
+              void refreshPayments();
+            }}
           />
         </div>
 
