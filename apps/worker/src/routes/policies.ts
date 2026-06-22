@@ -544,26 +544,18 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
   // past due.
   const cutoffDate = parseLocalDate(endOfYearInTimeZone());
 
-  // First due date anchors the schedule. **Always** use `effectiveDate` as
-  // period 1's dueDate so past periods get backfilled — a 4-year-old policy
-  // with no payments recorded should generate periods 1..N to today, not
-  // just the next upcoming period.
-  //
-  // Why not use `policy.nextDueDate`? Because it's the user-recorded "next
-  // time premium is due" — it answers "when do I pay next?", not "when was
-  // period 1?". Using it as anchor silently strips every past period whose
-  // dueDate fell between effectiveDate and nextDueDate, which is exactly
-  // the bug users hit on long-running policies (see policy #24: effective
-  // 2022, next-due 2026 → would produce 1 period instead of the expected
-  // 5).
-  //
-  // Waiting-period policies (cover starts 90 days after the contract date)
-  // should set `effectiveDate` to the first-premium-owed date directly
-  // rather than rely on nextDueDate to absorb the gap.
+  // Period numbering anchors on effectiveDate (period 1 = effective day);
+  // the schedule itself is anchored on the user-recorded nextDueDate so
+  // billing-day drift is honored (typical case: a policy that took effect
+  // 2022-12-29 but the user pays on 6/29 every year). Past periods between
+  // effectiveDate and nextDueDate are backfilled as Pending, so a long-
+  // running policy with no payment records doesn't silently produce only
+  // the next single period (the bug哥 reported on policy #24).
   const firstDueDate = policy.effectiveDate;
+  const anchorDate = policy.nextDueDate ?? null;
 
   const newRecords = generatePaymentRecords(
-    { policyId, firstDueDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
+    { policyId, firstDueDate, anchorDate, paymentFrequency: policy.paymentFrequency, totalPayments: policy.totalPayments, premium: policy.premium },
     { cutoffDate, existingPeriodNumbers },
   );
   // createMany uses onConflictDoNothing on (policyId, periodNumber), so

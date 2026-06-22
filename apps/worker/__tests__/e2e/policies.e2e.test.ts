@@ -302,16 +302,17 @@ describe("L2 E2E: policy sub-resources", () => {
     periodNumbers.forEach((p, i) => expect(p).toBe(i + 1));
   });
 
-  test("payments generate ignores nextDueDate; anchors on effectiveDate so past periods backfill", async () => {
+  test("payments generate uses nextDueDate as schedule anchor while backfilling past periods", async () => {
     // Freeze the clock so test is deterministic; cutoff → 2024-12-31.
     setSystemTime(new Date("2024-06-15T04:00:00.000Z"));
     try {
       const env = buildTestApp();
       const memberId = await seedMember(env);
-      // effectiveDate sits in Jan, nextDueDate is recorded as Apr (the
-      // user's note of "when do I pay next"). generate must still treat
-      // effectiveDate as period 1 so Jan and any other past periods get
-      // backfilled; nextDueDate is for UI/reminders, not anchoring.
+      // effectiveDate sits in Jan, nextDueDate is recorded as Apr (user's
+      // billing-day choice). The generated schedule must follow nextDueDate's
+      // month/day (4/15), but period 1 must still be the closest pre-cutoff
+      // installment on/after effectiveDate (also 2024-04-15 here, since the
+      // previous Apr would land before effectiveDate).
       const policyId = await seedPolicy(env, memberId, "POL-NDD", {
         effectiveDate: "2024-01-15",
         nextDueDate: "2024-04-15",
@@ -331,12 +332,12 @@ describe("L2 E2E: policy sub-resources", () => {
         payments: Array<{ periodNumber: number; dueDate: string }>;
       };
 
-      // Yearly schedule anchored on effectiveDate: period 1 = 2024-01-15;
-      // period 2 = 2025-01-15 (past cutoff 2024-12-31) → only period 1.
+      // anchor 2024-04-15 walks back: 2023-04-15 < effectiveDate, so anchor
+      // = period 1; next period 2025-04-15 > cutoff → only one period.
       expect(body.generated).toBe(1);
       const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
       expect(sorted).toEqual([
-        expect.objectContaining({ periodNumber: 1, dueDate: "2024-01-15" }),
+        expect.objectContaining({ periodNumber: 1, dueDate: "2024-04-15" }),
       ]);
     } finally {
       setSystemTime();
@@ -344,16 +345,20 @@ describe("L2 E2E: policy sub-resources", () => {
   });
 
   test("payments generate backfills past periods on a long-running policy with no payment history", async () => {
-    // Reproduces the policy #24 case哥 reported: effective 2022-12-29,
-    // Yearly, totalPayments 20, no payments yet, today around 2026-06-22.
-    // Expected: 5 periods generated (4 past + 1 this year, the 5th in Dec).
+    // Reproduces the policy #24 case: effective 2022-12-29, Yearly,
+    // totalPayments 20, no payments yet, today around 2026-06-22, the user
+    // has billing-aligned to 6/29 (nextDueDate=2026-06-29).
+    // Expected: 4 periods anchored on 6/29 — backfills 2023..2025 then
+    // emits 2026 (the upcoming installment this year). The 12/29 dates
+    // implied by raw effectiveDate offsetting never appear because the
+    // schedule follows the user's recorded billing day.
     setSystemTime(new Date("2026-06-22T04:00:00.000Z"));
     try {
       const env = buildTestApp();
       const memberId = await seedMember(env);
       const policyId = await seedPolicy(env, memberId, "POL-BACKFILL", {
         effectiveDate: "2022-12-29",
-        nextDueDate: "2026-06-29", // Drifted user-recorded value — ignored by generator.
+        nextDueDate: "2026-06-29",
         totalPayments: 20,
         paymentFrequency: "Yearly",
       });
@@ -370,14 +375,13 @@ describe("L2 E2E: policy sub-resources", () => {
         payments: Array<{ periodNumber: number; dueDate: string; status: string }>;
       };
 
-      expect(body.generated).toBe(5);
+      expect(body.generated).toBe(4);
       const sorted = [...body.payments].sort((a, b) => a.periodNumber - b.periodNumber);
       expect(sorted.map((p) => p.dueDate)).toEqual([
-        "2022-12-29",
-        "2023-12-29",
-        "2024-12-29",
-        "2025-12-29",
-        "2026-12-29",
+        "2023-06-29",
+        "2024-06-29",
+        "2025-06-29",
+        "2026-06-29",
       ]);
       // All emitted as Pending — the user marks which were actually paid.
       expect(sorted.every((p) => p.status === "Pending")).toBe(true);
