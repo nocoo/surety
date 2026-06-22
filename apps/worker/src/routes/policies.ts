@@ -15,6 +15,9 @@ const app = new Hono<AppEnv>();
 const TERMINAL_STATUSES = ["Surrendered", "Claimed", "Lapsed"] as const;
 type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
 
+const ALL_STATUSES = ["Active", ...TERMINAL_STATUSES] as const;
+type DbStatus = (typeof ALL_STATUSES)[number];
+
 const STATUS_METADATA_FIELDS = [
   "terminatedAt",
   "terminationReason",
@@ -24,6 +27,10 @@ const STATUS_METADATA_FIELDS = [
 
 function isTerminalStatus(s: unknown): s is TerminalStatus {
   return typeof s === "string" && (TERMINAL_STATUSES as readonly string[]).includes(s);
+}
+
+function isValidDbStatus(s: unknown): s is DbStatus {
+  return typeof s === "string" && (ALL_STATUSES as readonly string[]).includes(s);
 }
 
 /**
@@ -99,6 +106,10 @@ app.post("/api/policies", async (c) => {
 
   const applicant = await repos.members.findById(body.applicantId);
   if (!applicant) return c.json({ error: "投保人不存在" }, 400);
+
+  if (body.status !== undefined && !isValidDbStatus(body.status)) {
+    return c.json({ error: "Invalid status" }, 400);
+  }
 
   let insuredMemberId = body.insuredMemberId ?? null;
   let insuredAssetId = body.insuredAssetId ?? null;
@@ -186,14 +197,23 @@ app.put("/api/policies/:id", async (c) => {
   // Status / metadata bypass guards. Order is fixed (see docs/19-policy-status.md
   // §通用-post--put-禁写非-active-状态旁路封堵):
   //   1. Reactivation (status=Active from a terminal DB status)
-  //   2. Terminal-status write intercept
+  //   2a. Status enum validation
+  //   2b. Terminal-status write intercept (different terminal OR same terminal)
   //   3. Status-metadata field intercept
   //   4. Normal update
   const existingIsTerminal = isTerminalStatus(existing.status);
   const isReactivation = body.status === "Active" && existingIsTerminal;
   if (!isReactivation) {
-    if (isTerminalStatus(body.status) && body.status !== existing.status) {
-      return c.json({ error: "Use POST /api/policies/:id/terminate to transition into a terminal status" }, 400);
+    if (body.status !== undefined && !isValidDbStatus(body.status)) {
+      return c.json({ error: "Invalid status" }, 400);
+    }
+    if (isTerminalStatus(body.status)) {
+      // Different terminal → cross-terminal transition forbidden.
+      // Same terminal → metadata edits must go through POST /terminate.
+      const msg = body.status !== existing.status
+        ? "Use POST /api/policies/:id/terminate to transition into a terminal status"
+        : "Use POST /api/policies/:id/terminate to edit termination metadata";
+      return c.json({ error: msg }, 400);
     }
     if (bodyHasStatusMetadata(body)) {
       return c.json({ error: "Cannot modify status metadata via PUT — use the dedicated transition endpoints" }, 400);
@@ -281,7 +301,7 @@ app.post("/api/policies/:id/terminate", async (c) => {
 
   if (terminationReason !== undefined && terminationReason !== null) {
     if (typeof terminationReason !== "string") {
-      return c.json({ error: "Invalid terminationReason" }, 400);
+      return c.json({ error: "Reason too long" }, 400);
     }
     if (terminationReason.length > 500) {
       return c.json({ error: "Reason too long" }, 400);

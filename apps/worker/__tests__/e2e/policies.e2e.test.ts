@@ -975,6 +975,53 @@ describe("L2 E2E: CRUD bypass guards", () => {
     expect(r.status).toBe(400);
   });
 
+  test("PUT same terminal status returns 400 (must go through /terminate)", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    // Terminate first so DB is Surrendered.
+    await jsonRequest(env, "POST", `/api/policies/${policyId}/terminate`, {
+      status: "Surrendered",
+      terminatedAt: "2026-05-01",
+    });
+    // Now a PUT with same terminal status must be refused.
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}`, {
+      status: "Surrendered",
+    });
+    expect(r.status).toBe(400);
+    expect((r.body as { error: string }).error).toMatch(/terminate/);
+  });
+
+  test("PUT with invalid status enum returns 400", async () => {
+    const env = buildTestApp();
+    const { policyId } = await seedTerminatable(env);
+    const r = await jsonRequest(env, "PUT", `/api/policies/${policyId}`, {
+      status: "Banana",
+    });
+    expect(r.status).toBe(400);
+    expect((r.body as { error: string }).error).toMatch(/Invalid status/);
+  });
+
+  test("POST with invalid status enum returns 400", async () => {
+    const env = buildTestApp();
+    const memberId = await seedMember(env);
+    const r = await jsonRequest(env, "POST", "/api/policies", {
+      applicantId: memberId,
+      insuredType: "Member",
+      insuredMemberId: memberId,
+      category: "Accident",
+      insurerName: "Ins",
+      productName: "Prod",
+      policyNumber: "POL-Bypass-status-enum",
+      effectiveDate: "2026-01-01",
+      sumAssured: 100,
+      premium: 50,
+      paymentFrequency: "Yearly",
+      status: "Banana",
+    });
+    expect(r.status).toBe(400);
+    expect((r.body as { error: string }).error).toMatch(/Invalid status/);
+  });
+
   test.each([
     ["terminatedAt", "2026-05-01"],
     ["terminationReason", "sneak"],
