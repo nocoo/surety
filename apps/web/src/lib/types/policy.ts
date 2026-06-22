@@ -38,6 +38,10 @@ export interface PolicyDetail {
   deathBenefit: string | null;
   policyFilePath: string | null;
   notes: string | null;
+  terminatedAt: string | null;
+  terminationReason: string | null;
+  plannedSurrenderAt: string | null;
+  plannedSurrenderNote: string | null;
 }
 
 /**

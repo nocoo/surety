@@ -1,11 +1,45 @@
 import { Hono } from "hono";
 import { deriveDisplayStatus, type PolicyDbStatus } from "@surety/db/types";
 import { generatePaymentRecords } from "@surety/db/lib/generate-payments";
-import { parseLocalDate, endOfYearInTimeZone } from "@surety/db/lib/date-utils";
+import {
+  parseLocalDate,
+  endOfYearInTimeZone,
+  formatLocalDate,
+  todayInTimeZone,
+} from "@surety/db/lib/date-utils";
 import { validateFile, validateMagicBytes, generateR2Key, MAX_ATTACHMENTS_PER_POLICY } from "@surety/api/lib/attachment-validation";
 import type { AppEnv } from "../lib/types";
 
 const app = new Hono<AppEnv>();
+
+const TERMINAL_STATUSES = ["Surrendered", "Claimed", "Lapsed"] as const;
+type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
+
+const STATUS_METADATA_FIELDS = [
+  "terminatedAt",
+  "terminationReason",
+  "plannedSurrenderAt",
+  "plannedSurrenderNote",
+] as const;
+
+function isTerminalStatus(s: unknown): s is TerminalStatus {
+  return typeof s === "string" && (TERMINAL_STATUSES as readonly string[]).includes(s);
+}
+
+/**
+ * Strict ISO date validator. Returns true only when the input is exactly
+ * "YYYY-MM-DD" and survives a parse/format round-trip — guards against
+ * `parseLocalDate("2026-99-99")` silently rolling over.
+ */
+function isValidIsoDate(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  return formatLocalDate(parseLocalDate(s)) === s;
+}
+
+function bodyHasStatusMetadata(body: Record<string, unknown>): boolean {
+  return STATUS_METADATA_FIELDS.some((f) => body[f] !== undefined);
+}
 
 // -- List policies --
 app.get("/api/policies", async (c) => {
@@ -53,6 +87,14 @@ app.post("/api/policies", async (c) => {
 
   if (!body.applicantId || !body.category || !body.insurerName || !body.productName || !body.policyNumber || !body.effectiveDate) {
     return c.json({ error: "applicantId, category, insurerName, productName, policyNumber, effectiveDate are required" }, 400);
+  }
+
+  if (isTerminalStatus(body.status)) {
+    return c.json({ error: "Cannot create a policy in a terminated state — use POST /api/policies/:id/terminate after creation" }, 400);
+  }
+
+  if (bodyHasStatusMetadata(body)) {
+    return c.json({ error: "Cannot set termination or planned-surrender metadata on create — use the dedicated transition endpoints after creation" }, 400);
   }
 
   const applicant = await repos.members.findById(body.applicantId);
@@ -124,6 +166,10 @@ app.get("/api/policies/:id", async (c) => {
     guaranteedRenewalYears: policy.guaranteedRenewalYears,
     status: deriveDisplayStatus(policy.status as PolicyDbStatus, policy.expiryDate),
     deathBenefit: policy.deathBenefit, policyFilePath: policy.policyFilePath, notes: policy.notes,
+    terminatedAt: policy.terminatedAt ?? null,
+    terminationReason: policy.terminationReason ?? null,
+    plannedSurrenderAt: policy.plannedSurrenderAt ?? null,
+    plannedSurrenderNote: policy.plannedSurrenderNote ?? null,
   });
 });
 
@@ -136,6 +182,23 @@ app.put("/api/policies/:id", async (c) => {
   const body = await c.req.json();
   const existing = await repos.policies.findById(policyId);
   if (!existing) return c.json({ error: "Policy not found" }, 404);
+
+  // Status / metadata bypass guards. Order is fixed (see docs/19-policy-status.md
+  // §通用-post--put-禁写非-active-状态旁路封堵):
+  //   1. Reactivation (status=Active from a terminal DB status)
+  //   2. Terminal-status write intercept
+  //   3. Status-metadata field intercept
+  //   4. Normal update
+  const existingIsTerminal = isTerminalStatus(existing.status);
+  const isReactivation = body.status === "Active" && existingIsTerminal;
+  if (!isReactivation) {
+    if (isTerminalStatus(body.status) && body.status !== existing.status) {
+      return c.json({ error: "Use POST /api/policies/:id/terminate to transition into a terminal status" }, 400);
+    }
+    if (bodyHasStatusMetadata(body)) {
+      return c.json({ error: "Cannot modify status metadata via PUT — use the dedicated transition endpoints" }, 400);
+    }
+  }
 
   let { insuredMemberId, insuredAssetId } = body;
   if (body.insuredType === "Member") insuredAssetId = null;
@@ -159,6 +222,13 @@ app.put("/api/policies/:id", async (c) => {
       hesitationEndDate: body.hesitationEndDate, waitingDays: body.waitingDays,
       guaranteedRenewalYears: body.guaranteedRenewalYears, status: body.status,
       deathBenefit: body.deathBenefit, policyFilePath: body.policyFilePath, notes: body.notes,
+      // Reactivation force-clears all status metadata, regardless of body.
+      ...(isReactivation && {
+        terminatedAt: null,
+        terminationReason: null,
+        plannedSurrenderAt: null,
+        plannedSurrenderNote: null,
+      }),
     });
     if (!updated) {
       if (insurer?.created) await repos.insurers.delete(insurer.id).catch(() => {});
@@ -171,6 +241,119 @@ app.put("/api/policies/:id", async (c) => {
     const isDupe = message.includes("UNIQUE") && message.includes("policy_number");
     return c.json({ error: isDupe ? "保单编号已存在" : "更新保单失败" }, isDupe ? 409 : 500);
   }
+});
+
+// -- Terminate policy (Surrendered / Claimed / Lapsed) --
+app.post("/api/policies/:id/terminate", async (c) => {
+  const repos = c.get("repos");
+  const policyId = parseInt(c.req.param("id"), 10);
+  if (isNaN(policyId)) return c.json({ error: "Invalid id" }, 400);
+
+  const existing = await repos.policies.findById(policyId);
+  if (!existing) return c.json({ error: "Policy not found" }, 404);
+
+  const body = await c.req.json();
+  const { status, terminatedAt, terminationReason } = body as {
+    status?: unknown;
+    terminatedAt?: unknown;
+    terminationReason?: unknown;
+  };
+
+  // Terminal-status validity. Uses DB status (not display) so an expired
+  // Active policy can still flow through terminate.
+  if (!isTerminalStatus(status)) {
+    return c.json({ error: "Invalid termination status" }, 400);
+  }
+  if (isTerminalStatus(existing.status) && existing.status !== status) {
+    return c.json({ error: "Cannot transition between terminal statuses; reactivate to Active first" }, 400);
+  }
+
+  if (!isValidIsoDate(terminatedAt)) {
+    return c.json({ error: "Invalid terminatedAt" }, 400);
+  }
+  if (terminatedAt < existing.effectiveDate) {
+    return c.json({ error: "Terminated date must be on or after effective date" }, 400);
+  }
+  const today = todayInTimeZone("Asia/Shanghai");
+  if (terminatedAt > today) {
+    return c.json({ error: "Terminated date cannot be in the future" }, 400);
+  }
+
+  if (terminationReason !== undefined && terminationReason !== null) {
+    if (typeof terminationReason !== "string") {
+      return c.json({ error: "Invalid terminationReason" }, 400);
+    }
+    if (terminationReason.length > 500) {
+      return c.json({ error: "Reason too long" }, 400);
+    }
+  }
+
+  const updated = await repos.policies.update(policyId, {
+    status,
+    terminatedAt,
+    terminationReason: typeof terminationReason === "string" ? terminationReason : null,
+    // Termination satisfies any standing planned-surrender intent.
+    plannedSurrenderAt: null,
+    plannedSurrenderNote: null,
+  });
+  if (!updated) return c.json({ error: "Policy not found" }, 404);
+  return c.json({
+    id: updated.id,
+    status: updated.status,
+    terminatedAt: updated.terminatedAt,
+    terminationReason: updated.terminationReason ?? null,
+  });
+});
+
+// -- Planned surrender (UI-only marker on Active policies) --
+app.put("/api/policies/:id/planned-surrender", async (c) => {
+  const repos = c.get("repos");
+  const policyId = parseInt(c.req.param("id"), 10);
+  if (isNaN(policyId)) return c.json({ error: "Invalid id" }, 400);
+
+  const existing = await repos.policies.findById(policyId);
+  if (!existing) return c.json({ error: "Policy not found" }, 404);
+
+  if (existing.status !== "Active") {
+    return c.json({ error: "Planned surrender can only be set on Active policies" }, 400);
+  }
+
+  const body = await c.req.json();
+  const { plannedSurrenderAt, plannedSurrenderNote } = body as {
+    plannedSurrenderAt?: unknown;
+    plannedSurrenderNote?: unknown;
+  };
+
+  if (plannedSurrenderAt !== null) {
+    if (!isValidIsoDate(plannedSurrenderAt)) {
+      return c.json({ error: "Invalid plannedSurrenderAt" }, 400);
+    }
+    if (plannedSurrenderAt < existing.effectiveDate) {
+      return c.json({ error: "Planned surrender date must be on or after effective date" }, 400);
+    }
+  }
+
+  let normalizedNote: string | null = null;
+  if (plannedSurrenderNote !== undefined && plannedSurrenderNote !== null) {
+    if (typeof plannedSurrenderNote !== "string") {
+      return c.json({ error: "Invalid plannedSurrenderNote" }, 400);
+    }
+    if (plannedSurrenderNote.length > 500) {
+      return c.json({ error: "Note too long" }, 400);
+    }
+    normalizedNote = plannedSurrenderNote;
+  }
+
+  const updated = await repos.policies.update(policyId, {
+    plannedSurrenderAt: plannedSurrenderAt as string | null,
+    plannedSurrenderNote: normalizedNote,
+  });
+  if (!updated) return c.json({ error: "Policy not found" }, 404);
+  return c.json({
+    id: updated.id,
+    plannedSurrenderAt: updated.plannedSurrenderAt ?? null,
+    plannedSurrenderNote: updated.plannedSurrenderNote ?? null,
+  });
 });
 
 // -- Delete policy (cascade) --
@@ -237,6 +420,10 @@ app.post("/api/policies/:id/payments", async (c) => {
   const policy = await repos.policies.findById(policyId);
   if (!policy) return c.json({ error: "Policy not found" }, 404);
 
+  if (isTerminalStatus(policy.status)) {
+    return c.json({ error: "Cannot add payments to a terminated policy" }, 400);
+  }
+
   const body = await c.req.json();
   if (!body.dueDate || body.amount == null || body.periodNumber == null) {
     return c.json({ error: "dueDate, amount, and periodNumber are required" }, 400);
@@ -266,6 +453,19 @@ app.put("/api/policies/:id/payments/:paymentId", async (c) => {
 
   const body = await c.req.json();
 
+  const policy = await repos.policies.findById(policyId);
+  if (policy && isTerminalStatus(policy.status)) {
+    // Terminated policies allow only Paid back-fills:
+    //   { status: "Paid", paidDate?, paidAmount? } — any structural field
+    //   (dueDate, amount, periodNumber) is rejected.
+    if (body.status !== "Paid") {
+      return c.json({ error: "Only Paid updates are allowed for terminated policies" }, 400);
+    }
+    if (body.dueDate !== undefined || body.amount !== undefined || body.periodNumber !== undefined) {
+      return c.json({ error: "Cannot modify payment structure in a terminated policy" }, 400);
+    }
+  }
+
   if (body.periodNumber !== undefined && body.periodNumber !== existing.periodNumber) {
     const policyPayments = await repos.payments.findByPolicyId(policyId);
     const duplicate = policyPayments.find((p: { periodNumber: number; id: number }) => p.periodNumber === body.periodNumber && p.id !== paymentIdNum);
@@ -293,6 +493,11 @@ app.delete("/api/policies/:id/payments/:paymentId", async (c) => {
   const existing = await repos.payments.findById(paymentIdNum);
   if (!existing || existing.policyId !== policyId) return c.json({ error: "Payment not found" }, 404);
 
+  const policy = await repos.policies.findById(policyId);
+  if (policy && isTerminalStatus(policy.status)) {
+    return c.json({ error: "Cannot delete payments of a terminated policy" }, 400);
+  }
+
   const deleted = await repos.payments.delete(paymentIdNum);
   if (!deleted) return c.json({ error: "Payment not found" }, 404);
   return c.json({ success: true });
@@ -305,6 +510,9 @@ app.post("/api/policies/:id/payments/generate", async (c) => {
 
   const policy = await repos.policies.findById(policyId);
   if (!policy) return c.json({ error: "Policy not found" }, 404);
+  if (isTerminalStatus(policy.status)) {
+    return c.json({ error: "Cannot generate payments for a terminated policy" }, 400);
+  }
   if (!policy.effectiveDate) return c.json({ error: "Policy has no effective date" }, 400);
 
   const existingPayments = await repos.payments.findByPolicyId(policyId);
