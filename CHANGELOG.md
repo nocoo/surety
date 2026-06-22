@@ -428,6 +428,11 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.2.2
+
+### Fixed
+- Generate trusts existing periodNumbers when anchor is off-calendar
+
 ## v2.2.1
 
 ### Fixed
