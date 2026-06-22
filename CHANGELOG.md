@@ -428,6 +428,63 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.2.0
+
+### Added
+- Timeline filters future events in terminated state; planned-surrender milestone
+- Payments section filters obsoleted rows in terminated state
+- Wire action buttons in MetaColumn; status field readonly
+- Badge rose variant + dual-badge renderer; termination + planned-surrender dialogs
+- Add /terminate and /planned-surrender; lock down CRUD bypass routes
+- Add isObsoletedByTermination helper + TerminalPolicyStatus type
+- Add terminated_at / termination_reason / planned_surrender_at / planned_surrender_note columns
+
+### Changed
+- Scrub stale "real D1" / "Cancelled" wording in describes and comments
+- Cover terminate / planned-surrender / payment lockdown on real D1
+- Anchor Expired display-state to real deriveDisplayStatus
+- Fix illegal enum fixtures in policies e2e/put-order tests
+- Cover terminate, planned-surrender, bypass guards, payments lockdown, reactivate
+- Align test paths and coverage claims with vitest config
+- Tighten Playbook — safer drizzle generate / rollback, ut alignment, payments-section coverage
+- Add Implementation Playbook — per-commit scope/steps/verify/rollback
+- Bump @cloudflare/workers-types to 4.20260621.1
+- Pin PUT handler rule order so reactivation and metadata-bypass don't collide
+- Close POST metadata bypass; align File Changes / timeline test with Expired parity
+- Fix terminate-on-same-status, legacy backfill, expired UI parity, planned badge scope, PUT structure lock, timeline wording
+- Scrub stray "two filter sites" / "same as deriveDisplayStatus" wording
+- Coverage card isActive uses helper; expired-flow expectations are self-consistent; display vs coverage split spelled out
+- Protect Cancelled rows globally; PendingSurrender respects expiry; coverage-lookup feeds helper raw DB status
+- Fix coverage-lookup label gap, URL params, and PolicySummary scope
+- Close PendingSurrender gaps — validation, active filters, dialog defaults, scope
+- Rename to 19-policy-status; add PendingSurrender state with rose badge
+- Align Overdue→Paid rule, terminology, fake-D1 prepare/bind, PaymentsSection prop
+- Tighten termination plan after review (atomicity, payment lockdown, date semantics)
+- Add policy termination workflow plan (19)
+- Upgrade lint-staged 17.0.7 → 17.0.8
+- Upgrade @cloudflare/workers-types 4.20260619.1 → 4.20260620.1
+- Upgrade @types/node 25.9.3 → 26.0.0
+- Upgrade @cloudflare/workers-types 4.20260617.1 → 4.20260619.1
+- Upgrade wrangler 4.102.0 → 4.103.0
+- Upgrade react-router 8.0.0 → 8.0.1
+- Upgrade lucide-react 1.20.0 → 1.21.0
+- Upgrade hono 4.12.25 → 4.12.26
+- Upgrade wrangler 4.101.0 → 4.102.0
+- Override undici to ^7.28.0 to clear OSV advisories
+- Pin base-ci reusable workflow to v2026.5 SHA
+
+### Fixed
+- Generate anchors on effectiveDate; backfills past periods
+- "标记失效" button uses destructive variant per plan
+- Termination dialog defaults terminatedAt to today on fresh terminations
+- Validate body.status enum; reject same-terminal PUT; fix reason error message
+
+### Removed
+- Tighten policy-status header + cover PUT/DELETE payment lockdown
+- Simplify to v1 minimum — drop PendingSurrender status, payments Cancelled enum, batch + bind ceremony
+- Drop nonexistent payment notes field, fix date helper name, clarify edit-mode interlock
+- Close remaining termination bypasses (CRUD, DELETE, Overdue, raw-D1 bind, fake batch)
+
 ## v2.1.3
 
 ### Changed
