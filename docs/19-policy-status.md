@@ -220,8 +220,8 @@ PUT **不**触碰 payments —— 不需要恢复任何东西，原 Pending/Over
 
 API 层强约束：
 
-- `POST /api/policies`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot create a policy in a terminated state — use POST /api/policies/:id/terminate after creation`。新建只允许 Active（默认）。
-- `PUT /api/policies/:id`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 DB 不一致时返回 400 `Use POST /api/policies/:id/terminate to transition into a terminal status`；即便 `body.status` 与现有相等，也不允许通过 PUT 修改 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`（这四个字段只能由专用端点改）。
+- `POST /api/policies`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 时返回 400 `Cannot create a policy in a terminated state — use POST /api/policies/:id/terminate after creation`。新建只允许 Active（默认）。**同样禁止 POST body 携带 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 任一字段**，任一非 undefined 即返回 400 `Cannot set termination or planned-surrender metadata on create — use the dedicated transition endpoints after creation`。不走 silent-ignore 路径：silent-ignore 会让前端误以为数据已落地，对账时才发现字段没写入，更难排查。
+- `PUT /api/policies/:id`：当 `body.status` ∈ {`Surrendered`, `Claimed`, `Lapsed`} 且与 DB 不一致时返回 400 `Use POST /api/policies/:id/terminate to transition into a terminal status`；即便 `body.status` 与现有相等，也不允许通过 PUT 修改 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote`（这四个字段只能由专用端点改），任一非 undefined 即 400。
 - `PUT` 切回 Active 仍强制清空 metadata。
 
 UI 层呼应：
@@ -423,7 +423,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | `apps/web/src/components/ui/badge.tsx` | MODIFY | `badgeVariants.variant` 增加 `rose` 分支 |
 | `apps/web/src/lib/constants/policy.ts` | MODIFY | 新增 `renderPolicyStatusBadges(policy)` 工具函数返回主+副 badge 数组 |
 | `apps/web/src/components/policy-detail/termination-dialog.tsx` | CREATE | 三种终止态共用 |
-| `apps/web/src/components/policy-detail/planned-surrender-dialog.tsx` | CREATE | 仅 Active 可见 |
+| `apps/web/src/components/policy-detail/planned-surrender-dialog.tsx` | CREATE | display status ∈ {`Active`, `Expired`} 时可见（按钮 / 链接同步） |
 | `apps/web/src/components/policy-detail/meta-column.tsx` | MODIFY | Header 下新增 "操作" 区块挂三按钮 + 拟退保链接 + 反向恢复；BasicInfoSection 的 status `EditableInfoRow` 改为 readonly 显示，含主+副 badge；切回 Active 走 `AlertDialog` 二次确认 |
 | `apps/web/src/components/policy-detail/payments-section.tsx` | MODIFY | `PaymentsSectionProps` 新增 `policyStatus` + `policyTerminatedAt`；未来未缴行折叠到表尾 "已随终止失效" 区；统计排除被过滤行；终止态下 add/generate 按钮隐藏，行级编辑 status select 仅留 Paid，删除按钮隐藏 |
 | `apps/web/src/app/policies/[id]/page.tsx` | MODIFY | `<MetaColumn>` 传入 `onTransitionSuccess` 回调；`<PaymentsSection>` 补传 `policyStatus`、`policyTerminatedAt` |
@@ -433,8 +433,8 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 
 | File | Action | Description |
 |------|--------|-------------|
-| `apps/web/src/components/policy-detail/timeline-column.tsx` | MODIFY | `buildTimeline` 接收 policy 后，终止态下过滤 `eventTime > terminatedTime` 的事件、抑制 today、插入终止 milestone（复用 `today` 渲染分支）；Active 下若 `plannedSurrenderAt` 非空插入 "计划退保" milestone（type=`future`） |
-| `apps/web/src/__tests__/timeline.test.ts` | CREATE | 覆盖：终止后未来事件被过滤 / today 标记被抑制 / 终止 milestone 出现在正确位置 / 拟退保 milestone 在 Active 下出现且不影响其它事件 |
+| `apps/web/src/components/policy-detail/timeline-column.tsx` | MODIFY | `buildTimeline` 接收 policy 后，终止态下过滤 `eventTime > terminatedTime` 的事件、抑制 today、插入终止 milestone（复用 `today` 渲染分支）；display status ∈ {`Active`, `Expired`} 且 `plannedSurrenderAt` 非空时插入 "计划退保" milestone（type=`future`） |
+| `apps/web/src/__tests__/timeline.test.ts` | CREATE | 覆盖：终止后未来事件被过滤 / today 标记被抑制 / 终止 milestone 出现在正确位置 / 拟退保 milestone 在 display Active 下出现且不影响其它事件 / 拟退保 milestone 在 display Expired 下同样出现（DB Active + expiryDate 已过）|
 
 ## Verification
 
@@ -486,6 +486,7 @@ rose: "border-transparent bg-[hsl(var(--badge-red))] text-[hsl(var(--badge-red-f
 | 用例 | 期望 |
 |------|------|
 | POST `/api/policies` body.status="Surrendered" | 400 |
+| POST `/api/policies` body 携带 `terminatedAt` / `terminationReason` / `plannedSurrenderAt` / `plannedSurrenderNote` 任一字段 | 400 `Cannot set termination or planned-surrender metadata on create — use the dedicated transition endpoints after creation` |
 | PUT `/api/policies/:id` 把 Active 直接改成 Lapsed | 400 |
 | PUT `/api/policies/:id` 修改 `terminatedAt` / `plannedSurrenderAt` 等 metadata | 400（必须走专用端点） |
 
