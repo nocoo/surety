@@ -428,6 +428,23 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.2.3
+
+### Added
+- Sunday-start weeks, denser cells, wider grid
+
+### Changed
+- Unify currency display to ¥ + thousands separator
+- Upgrade wrangler 4.103.0 → 4.104.0
+- Upgrade vite 8.0.16 → 8.1.0
+- Upgrade recharts to 3.9.0
+- Upgrade hono 4.12.26 → 4.12.27
+- Upgrade @vitejs/plugin-react 6.0.2 → 6.0.3
+- Upgrade @playwright/test 1.61.0 → 1.61.1
+- Upgrade @cloudflare/workers-types 4.20260621.1 → 4.20260623.1
+- Upgrade typescript-eslint 8.61.1 → 8.62.0
+- Upgrade swr 2.4.1 → 2.4.2
+
 ## v2.2.2
 
 ### Fixed
