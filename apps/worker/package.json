@@ -10,7 +10,7 @@
   "dependencies": {
     "@surety/api": "workspace:*",
     "@surety/db": "workspace:*",
-    "hono": "4.12.26",
+    "hono": "4.12.27",
     "jose": "6.2.3"
   },
   "devDependencies": {
