@@ -28,14 +28,14 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
-    "hono": "4.12.26",
+    "hono": "4.12.27",
     "lucide-react": "1.21.0",
     "path-to-regexp": "^8.4.0",
     "radix-ui": "1.6.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-dropzone": "^15.0.0",
-    "recharts": "3.8.1",
+    "recharts": "3.9.0",
     "tailwind-merge": "3.6.0",
     "ws": "8.21.0"
   },
@@ -71,7 +71,7 @@
     "postcss": "^8.5.10",
     "undici": "^7.28.0",
     "ws": "^8.21.0",
-    "wrangler": "4.103.0"
+    "wrangler": "4.104.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
