@@ -140,15 +140,10 @@ export const CATEGORY_ORDER: PolicyCategory[] = [
 // ============================================================================
 
 /**
- * Format sum assured for display (compact form: 万)
+ * Format sum assured for display. Delegates to the shared currency
+ * formatter so every amount in the UI renders identically.
  */
-export function formatSumAssured(value: number): string {
-  if (value >= 10000) {
-    const wan = value / 10000;
-    return wan % 1 === 0 ? `${wan}万` : `${wan.toFixed(1)}万`;
-  }
-  return value.toLocaleString();
-}
+export const formatSumAssured = formatCurrency;
 
 /**
  * Format premium for display - delegates to shared formatCurrency

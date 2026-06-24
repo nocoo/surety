@@ -89,33 +89,24 @@ export const BAR_RADIUS = {
 } as const;
 
 /**
- * Format currency for display.
- *
- * Defensive against `undefined` / `null` / `NaN` so a missing field
- * from a stale backend can't crash the dashboard with `Cannot read
- * properties of undefined (reading 'toLocaleString')`. Most call
- * sites do pre-check, but the dashboard joins multiple stats and one
- * stale rollout broke it once.
+ * Currency formatting is centralised in `@surety/api/lib/format`.
+ * Re-exported here so chart code (which imports lots of helpers from
+ * this module) can still grab it from a single place — but the rule
+ * itself lives in one file only.
  */
-export function formatCurrency(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "¥0";
-  if (value >= 10000) {
-    return `¥${(value / 10000).toFixed(value % 10000 === 0 ? 0 : 1)}万`;
-  }
-  return `¥${value.toLocaleString()}`;
-}
+export { formatCurrency } from "@surety/api/lib/format";
 
 /**
- * Format number compactly (for axis labels)
+ * Compact form for chart axis labels.
+ *
+ * Same rule as `formatCurrency` but strips the ¥ — axis ticks share
+ * one visible "¥" on the axis title; repeating it on every tick adds
+ * visual noise. Defensive against null / NaN for the same reason as
+ * `formatCurrency`.
  */
-export function formatCompact(value: number): string {
-  if (value >= 100000000) {
-    return `${(value / 100000000).toFixed(1)}亿`;
-  }
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(0)}万`;
-  }
-  return value.toLocaleString();
+export function formatCompact(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "0";
+  return value.toLocaleString("zh-CN");
 }
 
 /**

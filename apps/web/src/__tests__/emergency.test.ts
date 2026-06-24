@@ -105,7 +105,7 @@ describe("buildCoverageClipboardText", () => {
     expect(text).toContain("▎定期寿");
     expect(text).toContain("终身寿");
     expect(text).toContain("百万医疗");
-    expect(text).toContain("合计保额：600万");
+    expect(text).toContain("合计保额：¥6,000,000");
   });
 
   it("skips inactive policies", () => {

@@ -2,6 +2,7 @@ import type {
   CategoryGroup,
   PolicyCoverageCard,
 } from "@surety/api/coverage-lookup";
+import { formatCurrency } from "@surety/api/lib/format";
 
 export interface EmergencyContact {
   insurerName: string;
@@ -66,26 +67,18 @@ export function buildCoverageClipboardText(
     const groupTotal = group.policies.reduce((sum, p) => sum + p.sumAssured, 0);
     grandTotal += groupTotal;
     lines.push("");
-    lines.push(`▎${group.categoryLabel}（${group.policies.length} 份 · 总保额 ${formatWan(groupTotal)}）`);
+    lines.push(`▎${group.categoryLabel}（${group.policies.length} 份 · 总保额 ${formatCurrency(groupTotal)}）`);
     for (const policy of group.policies) {
       lines.push(formatPolicyLine(policy));
     }
   }
 
   lines.push("");
-  lines.push(`合计保额：${formatWan(grandTotal)}`);
+  lines.push(`合计保额：${formatCurrency(grandTotal)}`);
   return lines.join("\n");
 }
 
 function formatPolicyLine(p: PolicyCoverageCard): string {
   const phone = p.insurerPhone ? ` ☎ ${p.insurerPhone}` : "";
   return `  · ${p.productName}（${p.insurerName}）保额 ${p.sumAssuredFormatted}${phone}`;
-}
-
-function formatWan(value: number): string {
-  if (value >= 10000) {
-    const wan = value / 10000;
-    return wan % 1 === 0 ? `${wan}万` : `${wan.toFixed(1)}万`;
-  }
-  return value.toLocaleString();
 }

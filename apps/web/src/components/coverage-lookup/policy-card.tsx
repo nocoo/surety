@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { ChevronDown, ChevronRight, Phone, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
+import { formatCurrency } from "@surety/api/lib/format";
 import type { PolicyCoverageCard } from "@surety/api/coverage-lookup";
 
 interface PolicyCardProps {
@@ -149,7 +150,7 @@ export function CategorySection({
           </span>
         </div>
         <span className="text-sm font-medium">
-          总保额 {formatSumAssuredLarge(totalSumAssured)}
+          总保额 {formatCurrency(totalSumAssured)}
         </span>
       </div>
       <div className="space-y-2">
@@ -159,12 +160,4 @@ export function CategorySection({
       </div>
     </div>
   );
-}
-
-function formatSumAssuredLarge(value: number): string {
-  if (value >= 10000) {
-    const wan = value / 10000;
-    return wan % 1 === 0 ? `${wan}万` : `${wan.toFixed(1)}万`;
-  }
-  return value.toLocaleString();
 }
