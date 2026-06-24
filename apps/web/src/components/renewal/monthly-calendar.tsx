@@ -82,8 +82,8 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
   }
 
   return (
-    <div className="rounded-card bg-secondary p-4">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="rounded-card bg-secondary p-3 sm:p-4">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
         {data.map((month) => (
           <MonthCalendar
             key={month.month}
@@ -109,27 +109,27 @@ function MonthCalendar({ month, onPickDay }: MonthCalendarProps) {
   const accent = monthAccentClasses(month.count);
 
   return (
-    <article className={cn("rounded-widget bg-card p-4 border-l-2", accent.border)}>
-      <header className="mb-4 flex items-baseline justify-between gap-2">
-        <h3 className={cn("font-display text-base font-semibold tabular-nums", accent.title)}>
+    <article className={cn("rounded-widget bg-card p-3 border-l-2", accent.border)}>
+      <header className="mb-2 flex items-baseline justify-between gap-2">
+        <h3 className={cn("font-display text-sm font-semibold tabular-nums", accent.title)}>
           {month.monthLabel}
         </h3>
         {month.count > 0 ? (
-          <span className="text-xs text-muted-foreground tabular-nums">
+          <span className="text-[11px] text-muted-foreground tabular-nums">
             {month.count} 次 · {formatCurrency(month.totalPremium)}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground/60">无续保</span>
+          <span className="text-[11px] text-muted-foreground/60">无续保</span>
         )}
       </header>
 
-      <div className="grid grid-cols-7 gap-y-1.5 text-center text-[11px] text-muted-foreground">
+      <div className="grid grid-cols-7 gap-x-0.5 text-center text-[10px] text-muted-foreground">
         {WEEKDAY_LABELS.map((d) => (
           <span key={d} className="leading-none">{d}</span>
         ))}
       </div>
 
-      <div className="mt-2 grid grid-cols-7 gap-1">
+      <div className="mt-1 grid grid-cols-7 gap-0.5">
         {cells.map((cell, i) => (
           <DayCell
             key={i}
@@ -155,14 +155,14 @@ function monthAccentClasses(count: number): { border: string; title: string } {
   return { border: "border-l-primary", title: "text-primary" };
 }
 
-const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
+const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 
 interface GridCell {
   day: number | null;
 }
 
 /**
- * Build a 6×7 (= 42) cell grid for a YYYY-MM key, week starting Monday.
+ * Build a 6×7 (= 42) cell grid for a YYYY-MM key, week starting Sunday.
  * Cells outside the month carry `day: null` and render as spacers.
  */
 function buildMonthGrid(yearMonth: string): GridCell[] {
@@ -173,8 +173,8 @@ function buildMonthGrid(yearMonth: string): GridCell[] {
 
   const firstDay = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
-  // JS getDay(): 0=Sunday..6=Saturday. Shift so Monday=0.
-  const leadingBlanks = (firstDay.getDay() + 6) % 7;
+  // JS getDay(): 0=Sunday..6=Saturday — already aligned with Sunday-start.
+  const leadingBlanks = firstDay.getDay();
 
   const cells: GridCell[] = [];
   for (let i = 0; i < leadingBlanks; i++) cells.push({ day: null });
@@ -210,7 +210,7 @@ function DayCell({
 
   if (events.length === 0) {
     return (
-      <span className="aspect-square flex items-center justify-center text-xs text-muted-foreground/70 tabular-nums">
+      <span className="aspect-square flex items-center justify-center text-[11px] text-muted-foreground/70 tabular-nums">
         {day}
       </span>
     );
@@ -238,14 +238,14 @@ function DayCell({
       title={`${tooltip}\n合计 ${formatCurrency(total)}`}
       aria-label={ariaLabel}
       className={cn(
-        "relative aspect-square flex items-center justify-center rounded-sm tabular-nums text-xs",
+        "relative aspect-square flex items-center justify-center rounded-sm tabular-nums text-[11px]",
         "bg-primary/15 text-foreground font-medium",
         "hover:bg-primary/25 transition-colors",
       )}
     >
       {day}
       {events.length > 1 && (
-        <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground leading-none">
+        <span className="absolute -top-0.5 -right-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-medium text-primary-foreground leading-none">
           {events.length}
         </span>
       )}

@@ -9,21 +9,24 @@ describe("buildMonthGrid", () => {
     expect(buildMonthGrid("")).toEqual([]);
   });
 
-  it("returns 35 cells for a 30-day month starting Monday (Feb 2027)", () => {
-    // 2027-02-01 is a Monday → 0 leading blanks → 28 days → padded to 28 (already a multiple of 7)
+  it("returns 35 cells for a 28-day month starting Monday (Feb 2027), Sunday-leading", () => {
+    // 2027-02-01 is a Monday → Sunday-start grid has 1 leading blank → 1 + 28 = 29 → padded to 35
     const cells = buildMonthGrid("2027-02");
+    expect(cells.length).toBe(35);
     expect(cells.length % 7).toBe(0);
     const realDays = cells.filter((c) => c.day !== null).length;
     expect(realDays).toBe(28);
-    expect(cells[0]?.day).toBe(1);
-    expect(cells[27]?.day).toBe(28);
-  });
-
-  it("places day 1 at the correct weekday slot", () => {
-    // 2026-09-01 is a Tuesday → leadingBlanks=1
-    const cells = buildMonthGrid("2026-09");
     expect(cells[0]?.day).toBe(null);
     expect(cells[1]?.day).toBe(1);
+    expect(cells[28]?.day).toBe(28);
+  });
+
+  it("places day 1 at the correct weekday slot (Sunday-start)", () => {
+    // 2026-09-01 is a Tuesday → Sunday-start grid has 2 leading blanks → day 1 at index 2
+    const cells = buildMonthGrid("2026-09");
+    expect(cells[0]?.day).toBe(null);
+    expect(cells[1]?.day).toBe(null);
+    expect(cells[2]?.day).toBe(1);
   });
 
   it("pads to a multiple of 7 with trailing nulls", () => {
