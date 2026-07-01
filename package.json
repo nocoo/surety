@@ -31,11 +31,11 @@
     "hono": "4.12.27",
     "lucide-react": "1.22.0",
     "path-to-regexp": "^8.4.0",
-    "radix-ui": "1.6.0",
+    "radix-ui": "1.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-dropzone": "^15.0.0",
-    "recharts": "3.9.0",
+    "recharts": "3.9.1",
     "tailwind-merge": "3.6.0",
     "ws": "8.21.0"
   },
@@ -71,7 +71,7 @@
     "postcss": "^8.5.10",
     "undici": "^7.28.0",
     "ws": "^8.21.0",
-    "wrangler": "4.105.0"
+    "wrangler": "4.106.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
