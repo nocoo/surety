@@ -7,7 +7,7 @@ import {
   resolveLoginUrl,
   resolveToken,
 } from "../src/config";
-import type { ConfigManager } from "@nocoo/cli-base";
+import type { ConfigManager } from "@nocoo/base-cli";
 import type { SuretyConfig } from "../src/config";
 
 function stubConfig(data: SuretyConfig): ConfigManager<SuretyConfig> {

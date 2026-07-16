@@ -196,7 +196,7 @@ surety/
    ```
    https://surety.hexly.ai/api/auth/cli?callback_url=http://127.0.0.1:7777/cb&state=NONCE
    ```
-   （`?callback=` 亦可作为 `?callback_url=` 的别名，兼容 `@nocoo/cli-base`。）
+   （`?callback=` 亦可作为 `?callback_url=` 的别名，兼容 `@nocoo/base-cli`。）
 3. Worker 通过 CF Access 鉴权后铸造一个绑定当前邮箱的 token，302 重定向回
    `callback_url`，查询参数里带上 `api_key`、`state`、`email`。`callback_url`
    必须是 `http://127.0.0.1:*` 或 `http://localhost:*`。

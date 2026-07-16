@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { ConfigManager } from "@nocoo/cli-base";
+import { ConfigManager } from "@nocoo/base-cli";
 
 export interface SuretyConfig {
   apiUrl?: string;

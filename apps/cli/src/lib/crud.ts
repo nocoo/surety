@@ -1,4 +1,4 @@
-import { defineCommand } from "@nocoo/cli-base";
+import { defineCommand } from "@nocoo/base-cli";
 import type { ApiClient } from "../api.js";
 import { emit, emitList, emitRecord, type Summarizer } from "../output.js";
 import { buildClient } from "./client.js";

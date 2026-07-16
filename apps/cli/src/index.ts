@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { defineCommand, runMain } from "@nocoo/cli-base";
+import { defineCommand, runMain } from "@nocoo/base-cli";
 import { authCommand } from "./commands/auth.js";
 import { membersCommand } from "./commands/members.js";
 import { insurersCommand } from "./commands/insurers.js";

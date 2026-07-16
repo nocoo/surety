@@ -25,7 +25,7 @@ export function isLocalhostUrl(value: string): boolean {
  * Flow:
  *   1. CLI opens GET /api/auth/cli?callback_url=http://127.0.0.1:PORT/cb&state=NONCE
  *      (`?callback=` is accepted as an alias for `?callback_url=` to match
- *      the convention used by @nocoo/cli-base's performLogin helper.)
+ *      the convention used by @nocoo/base-cli's performLogin helper.)
  *   2. CF Access intercepts; user authenticates via Google and is bounced back
  *      with a Cf-Access-Jwt-Assertion header. accessAuth middleware verifies
  *      the JWT and writes payload.email into context as `accessEmail`.
@@ -34,7 +34,7 @@ export function isLocalhostUrl(value: string): boolean {
  *
  * Security:
  *   - callback_url must point to http://127.0.0.1:* or http://localhost:*.
- *   - `state` is echoed back unchanged. The CLI side (@nocoo/cli-base's
+ *   - `state` is echoed back unchanged. The CLI side (@nocoo/base-cli's
  *     performLogin) generates the nonce, stores it in the local loopback
  *     listener, and compares it against the `state` query param on the
  *     callback hit — that is where CSRF binding lives. The server has no

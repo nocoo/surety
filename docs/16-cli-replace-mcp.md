@@ -15,7 +15,7 @@ Status: **Phase 1–5 文档部分完成**，剩余 `npm publish` + git tag 由�
 ## 原则
 
 - **薄壳**：CLI 只做 (参数解析 + API 调用 + 输出格式化)，业务逻辑仍在 Worker / `@surety/api`。
-- **与 `@nocoo/cli-base` 生态对齐**：复用 `performLogin` loopback、`ConfigManager`、`citty`、`createUpdateCommand`。
+- **与 `@nocoo/base-cli` 生态对齐**：复用 `performLogin` loopback、`ConfigManager`、`citty`、`createUpdateCommand`。
 - **发布友好**：`npm install -g @nocoo/surety`，内部不依赖 monorepo 其他包（独立 fetch wrapper）。
 - **AI-first 输出契约**：**始终 JSON**，默认摘要（节约 context），`--full` 返完整。不提供"人类可读表格"模式——CLI 是给 AI 用的工具，人类用 web UI。
 
@@ -100,7 +100,7 @@ surety/
     "test": "bun test __tests__/",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": { "@nocoo/cli-base": "^0.2.4" },
+  "dependencies": { "@nocoo/base-cli": "^0.2.4" },
   "devDependencies": { "@types/bun": "...", "typescript": "..." }
 }
 ```
@@ -111,7 +111,7 @@ surety/
 
 ### 1. `/api/auth/cli` 同时接受 `callback` 与 `callback_url` ✅ 已完成
 
-cli-base 的 `performLogin` 默认用 `?callback=…`；原代码用 `?callback_url=…`。已加兼容：
+base-cli 的 `performLogin` 默认用 `?callback=…`；原代码用 `?callback_url=…`。已加兼容：
 
 ```typescript
 const callbackUrl = c.req.query("callback_url") ?? c.req.query("callback");
@@ -177,7 +177,7 @@ Surety 有**两个独立域**：
 `surety login` 走 `loginUrl`，完成后把 token 和两个 URL 都落到 config；之后所有业务命令走 `apiUrl`。
 
 1. `performLogin({ apiUrl: loginUrl, loginPath: "/api/auth/cli", tokenParam: "api_key" })`
-   （cli-base 的参数名叫 `apiUrl`，但这里传的是"铸 token 入口"的 origin，即 loginUrl）
+   （base-cli 的参数名叫 `apiUrl`，但这里传的是"铸 token 入口"的 origin，即 loginUrl）
 2. 浏览器走 CF Access（Google OAuth）→ Worker 用 `accessEmail` 铸 token → 302 到 loopback `/callback?api_key=...&state=...&email=...`
 3. 写 `~/.config/surety/config.json`：`apiUrl`、`loginUrl`、`token`、`email`
 4. stdout `{"ok": true, "apiUrl": "...", "loginUrl": "...", "email": "..."}`

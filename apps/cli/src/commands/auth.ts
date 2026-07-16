@@ -1,4 +1,4 @@
-import { defineCommand, openBrowser, performLogin } from "@nocoo/cli-base";
+import { defineCommand, openBrowser, performLogin } from "@nocoo/base-cli";
 import { ApiClient } from "../api.js";
 import {
   createConfig,

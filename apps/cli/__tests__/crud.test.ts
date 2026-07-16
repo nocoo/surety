@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach } from "vitest";
 import { defineCrudCommand } from "../src/lib/crud";
 import { ApiClient } from "../src/api";
-import type { CommandDef } from "@nocoo/cli-base";
+import type { CommandDef } from "@nocoo/base-cli";
 
 interface Row extends Record<string, unknown> {
   id: number;

@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach } from "vitest";
 import { definePoliciesCommand } from "../src/commands/policies";
 import { ApiClient } from "../src/api";
-import type { CommandDef } from "@nocoo/cli-base";
+import type { CommandDef } from "@nocoo/base-cli";
 
 function mockFetch(
   handler: (url: string, init: RequestInit) => { status: number; body: string },
