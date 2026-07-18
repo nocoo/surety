@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "hono": "4.12.30",
-    "lucide-react": "1.24.0",
+    "lucide-react": "1.25.0",
     "path-to-regexp": "^8.4.0",
     "radix-ui": "1.6.2",
     "react": "^19.2.7",
