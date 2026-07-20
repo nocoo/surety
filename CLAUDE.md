@@ -145,9 +145,17 @@ cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 
 ### 本地开发环境变量
 
-`.env`（用于 Vite dev proxy）：
+本地入口域名（Caddy → `:7012`）：**`https://surety.dev.hexly.ai`**（不要用 `localhost:7012` 当日常入口）。
+
+`.env`（用于 Vite dev proxy，根目录）：
 ```
-SURETY_API_URL=https://surety-api.hexly.ai   # 或 http://localhost:7016
+# 三域分离 — 勿混用
+# APP:   https://surety.dev.hexly.ai   本地 SPA（Caddy）
+# AUTH:  https://surety.hexly.ai       CF Access + CLI 铸 token
+# API:   https://surety-api.hexly.ai   Bearer 数据面（prod Worker）
+
+SURETY_API_URL=https://surety-api.hexly.ai   # 或本地 Worker http://localhost:7016
+SURETY_LOGIN_URL=https://surety.hexly.ai     # 仅 CF Access 域；禁止写成 *.dev.hexly.ai
 SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 ```
 
