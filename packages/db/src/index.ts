@@ -7,9 +7,14 @@
  */
 
 import * as schema from "./schema";
-import { WorkerDbClient, type TargetDb } from "./worker-db-client";
+import { type TargetDb, WorkerDbClient } from "./worker-db-client";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * Dual-driver Drizzle handle (D1 | bun:sqlite). Aliased to `any` because the
+ * union over Drizzle's generics is impractical to spell without dragging
+ * heavy generics into every repo signature — same escape hatch as lyre.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: dual-driver Drizzle escape hatch — see doc above
 export type DbInstance = any;
 
 // Re-export TargetDb for consumers
@@ -24,29 +29,29 @@ export type { TargetDb };
  * Accepts any object conforming to the D1Database interface
  * (typed loosely to avoid requiring @cloudflare/workers-types here).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: D1 binding typed loosely to avoid @cloudflare/workers-types dep
 export function createDbFromD1(d1: any): DbInstance {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/d1");
-  return drizzle(d1, { schema });
+	// Dynamic require keeps workers-types optional for non-Worker consumers.
+	const { drizzle } = require("drizzle-orm/d1") as typeof import("drizzle-orm/d1");
+	return drizzle(d1, { schema });
 }
 
 // ---------- Environment helpers ----------
 
 function isTestEnv(): boolean {
-  return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
+	return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
 }
 
 function getWorkerUrl(): string {
-  const url = process.env.SURETY_WORKER_URL;
-  if (!url) throw new Error("SURETY_WORKER_URL is not set");
-  return url;
+	const url = process.env.SURETY_WORKER_URL;
+	if (!url) throw new Error("SURETY_WORKER_URL is not set");
+	return url;
 }
 
 function getWorkerSecret(): string {
-  const secret = process.env.SURETY_WORKER_SECRET;
-  if (!secret) throw new Error("SURETY_WORKER_SECRET is not set");
-  return secret;
+	const secret = process.env.SURETY_WORKER_SECRET;
+	if (!secret) throw new Error("SURETY_WORKER_SECRET is not set");
+	return secret;
 }
 
 /**
@@ -57,23 +62,23 @@ function getWorkerSecret(): string {
  * This prevents E2E tests from accidentally hitting production D1.
  */
 export function resolveTargetDb(cookieValue?: string): TargetDb {
-  const envTarget = process.env.SURETY_TARGET_DB;
+	const envTarget = process.env.SURETY_TARGET_DB;
 
-  // Guard: E2E runner must explicitly choose a target DB
-  if (process.env.E2E_SKIP_AUTH === "true" && !envTarget) {
-    throw new Error(
-      "E2E safety guard: SURETY_TARGET_DB must be set when E2E_SKIP_AUTH=true. " +
-      "This prevents E2E tests from accidentally connecting to production D1.",
-    );
-  }
+	// Guard: E2E runner must explicitly choose a target DB
+	if (process.env.E2E_SKIP_AUTH === "true" && !envTarget) {
+		throw new Error(
+			"E2E safety guard: SURETY_TARGET_DB must be set when E2E_SKIP_AUTH=true. " +
+				"This prevents E2E tests from accidentally connecting to production D1.",
+		);
+	}
 
-  if (envTarget && isValidTargetDb(envTarget)) return envTarget;
-  if (cookieValue && isValidTargetDb(cookieValue)) return cookieValue;
-  return "production";
+	if (envTarget && isValidTargetDb(envTarget)) return envTarget;
+	if (cookieValue && isValidTargetDb(cookieValue)) return cookieValue;
+	return "production";
 }
 
 function isValidTargetDb(value: string): value is TargetDb {
-  return ["production", "test"].includes(value);
+	return ["production", "test"].includes(value);
 }
 
 // ---------- Remote database (sqlite-proxy → Worker proxy) ----------
@@ -83,33 +88,30 @@ function isValidTargetDb(value: string): value is TargetDb {
  * This is the production path — all queries go over HTTP.
  */
 export function createRemoteDb(targetDb: TargetDb = "production"): DbInstance {
-  const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
-  return createRemoteDbFromClient(client);
+	const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
+	return createRemoteDbFromClient(client);
 }
 
 export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/sqlite-proxy");
+	const { drizzle } = require("drizzle-orm/sqlite-proxy");
 
-  return drizzle(
-    // single query callback
-    async (sql: string, params: unknown[], method: string) => {
-      const result = await client.query(sql, params);
-      const rows = result.rows.map((row) => Object.values(row));
-      // sqlite-proxy: "get" expects a single flat row, "all" expects array-of-arrays
-      return { rows: method === "get" ? rows[0] : rows };
-    },
-    // batch callback
-    async (queries: Array<{ sql: string; params: unknown[]; method: string }>) => {
-      const results = await client.batch(
-        queries.map((q) => ({ sql: q.sql, params: q.params })),
-      );
-      return results.map((r) => ({
-        rows: r.rows.map((row) => Object.values(row)),
-      }));
-    },
-    { schema },
-  );
+	return drizzle(
+		// single query callback
+		async (sql: string, params: unknown[], method: string) => {
+			const result = await client.query(sql, params);
+			const rows = result.rows.map((row) => Object.values(row));
+			// sqlite-proxy: "get" expects a single flat row, "all" expects array-of-arrays
+			return { rows: method === "get" ? rows[0] : rows };
+		},
+		// batch callback
+		async (queries: Array<{ sql: string; params: unknown[]; method: string }>) => {
+			const results = await client.batch(queries.map((q) => ({ sql: q.sql, params: q.params })));
+			return results.map((r) => ({
+				rows: r.rows.map((row) => Object.values(row)),
+			}));
+		},
+		{ schema },
+	);
 }
 
 // ---------- Request-scoped database access ----------
@@ -124,24 +126,24 @@ export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
  * @param requestOrTargetDb - Either a Request (reads cookie) or a TargetDb string
  */
 export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInstance {
-  if (isTestEnv()) {
-    return getTestDb();
-  }
+	if (isTestEnv()) {
+		return getTestDb();
+	}
 
-  // Non-test: always use remote D1
-  let targetDb: TargetDb;
+	// Non-test: always use remote D1
+	let targetDb: TargetDb;
 
-  if (typeof requestOrTargetDb === "string") {
-    targetDb = resolveTargetDb(requestOrTargetDb);
-  } else if (requestOrTargetDb instanceof Request) {
-    const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
-    const match = cookieHeader.match(/surety-database=([^;]+)/);
-    targetDb = resolveTargetDb(match?.[1]);
-  } else {
-    targetDb = resolveTargetDb();
-  }
+	if (typeof requestOrTargetDb === "string") {
+		targetDb = resolveTargetDb(requestOrTargetDb);
+	} else if (requestOrTargetDb instanceof Request) {
+		const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
+		const match = cookieHeader.match(/surety-database=([^;]+)/);
+		targetDb = resolveTargetDb(match?.[1]);
+	} else {
+		targetDb = resolveTargetDb();
+	}
 
-  return createRemoteDb(targetDb);
+	return createRemoteDb(targetDb);
 }
 
 /**
@@ -151,19 +153,19 @@ export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInsta
  * Returns undefined in test environment (bun-sqlite uses local transactions).
  */
 export function createBatchExecutor(
-  targetDb: TargetDb = "production",
+	targetDb: TargetDb = "production",
 ): ((statements: Array<{ sql: string; params: unknown[] }>) => Promise<void>) | undefined {
-  if (isTestEnv()) return undefined;
+	if (isTestEnv()) return undefined;
 
-  const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
-  return async (statements) => {
-    await client.batch(statements.map((s) => ({ sql: s.sql, params: s.params })));
-  };
+	const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
+	return async (statements) => {
+		await client.batch(statements.map((s) => ({ sql: s.sql, params: s.params })));
+	};
 }
 
 // ---------- Test database (bun:sqlite :memory:) ----------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: bun:sqlite Database type via require only in tests
 let testSqlite: any = null;
 let testDbInstance: DbInstance = null;
 
@@ -172,8 +174,8 @@ let testDbInstance: DbInstance = null;
  * Used in test environment only.
  */
 function getTestDb(): DbInstance {
-  if (testDbInstance) return testDbInstance;
-  return createTestDb();
+	if (testDbInstance) return testDbInstance;
+	return createTestDb();
 }
 
 /**
@@ -181,24 +183,22 @@ function getTestDb(): DbInstance {
  * Closes any existing test connection first.
  */
 export function createTestDb(): DbInstance {
-  if (testSqlite) {
-    testSqlite.close();
-    testSqlite = null;
-    testDbInstance = null;
-  }
+	if (testSqlite) {
+		testSqlite.close();
+		testSqlite = null;
+		testDbInstance = null;
+	}
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Database } = require("bun:sqlite");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { drizzle } = require("drizzle-orm/bun-sqlite");
+	const { Database } = require("bun:sqlite") as typeof import("bun:sqlite");
+	const { drizzle } = require("drizzle-orm/bun-sqlite") as typeof import("drizzle-orm/bun-sqlite");
 
-  testSqlite = new Database(":memory:");
-  testDbInstance = drizzle(testSqlite, { schema });
+	testSqlite = new Database(":memory:");
+	testDbInstance = drizzle(testSqlite, { schema });
 
-  // Auto-initialize schema
-  initSchema();
+	// Auto-initialize schema
+	initSchema();
 
-  return testDbInstance;
+	return testDbInstance;
 }
 
 /**
@@ -206,15 +206,15 @@ export function createTestDb(): DbInstance {
  * Creates a new :memory: db if none exists.
  */
 export function resetTestDb(): void {
-  if (!testSqlite) {
-    createTestDb();
-    return;
-  }
+	if (!testSqlite) {
+		createTestDb();
+		return;
+	}
 
-  // Ensure schema is up-to-date
-  initSchema();
+	// Ensure schema is up-to-date
+	initSchema();
 
-  testSqlite.exec(`
+	testSqlite.exec(`
     DELETE FROM api_tokens;
     DELETE FROM medical_visits;
     DELETE FROM doctors;
@@ -453,31 +453,31 @@ export const INIT_SQL = `
  * All CREATE TABLE IF NOT EXISTS — idempotent.
  */
 export function initSchema(): void {
-  if (!testSqlite) throw new Error("No test database connection");
-  testSqlite.exec(INIT_SQL);
+	if (!testSqlite) throw new Error("No test database connection");
+	testSqlite.exec(INIT_SQL);
 }
 
 /**
  * Get the raw test SQLite driver instance.
  * Used by backup/restore tests to run raw SQL.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: returns bun:sqlite Database; typed any to avoid test-only dep leak
 export function getRawSqlite(): any {
-  if (!testSqlite) {
-    throw new Error("No test database connection. Call createTestDb() first.");
-  }
-  return testSqlite;
+	if (!testSqlite) {
+		throw new Error("No test database connection. Call createTestDb() first.");
+	}
+	return testSqlite;
 }
 
 /**
  * Close the test database connection.
  */
 export function closeDb(): void {
-  if (testSqlite) {
-    testSqlite.close();
-    testSqlite = null;
-    testDbInstance = null;
-  }
+	if (testSqlite) {
+		testSqlite.close();
+		testSqlite = null;
+		testDbInstance = null;
+	}
 }
 
 // ---------- Proxy for backward compatibility ----------
@@ -489,12 +489,12 @@ export function closeDb(): void {
  * In production: remote D1 via sqlite-proxy.
  */
 export const db = new Proxy({} as DbInstance, {
-  get(_, prop) {
-    if (isTestEnv()) {
-      if (!testDbInstance) createTestDb();
-      return testDbInstance[prop];
-    }
-    const remoteDb = createRemoteDb(resolveTargetDb());
-    return remoteDb[prop];
-  },
+	get(_, prop) {
+		if (isTestEnv()) {
+			if (!testDbInstance) createTestDb();
+			return testDbInstance[prop];
+		}
+		const remoteDb = createRemoteDb(resolveTargetDb());
+		return remoteDb[prop];
+	},
 });

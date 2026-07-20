@@ -14,32 +14,24 @@
 export type Summarizer<T> = (record: T) => Record<string, unknown>;
 
 export interface EmitOptions {
-  full: boolean;
+	full: boolean;
 }
 
 export function emit(value: unknown): void {
-  process.stdout.write(`${JSON.stringify(value)}\n`);
+	process.stdout.write(`${JSON.stringify(value)}\n`);
 }
 
-export function emitRecord<T>(
-  record: T,
-  summarize: Summarizer<T>,
-  opts: EmitOptions,
-): void {
-  emit(opts.full ? record : summarize(record));
+export function emitRecord<T>(record: T, summarize: Summarizer<T>, opts: EmitOptions): void {
+	emit(opts.full ? record : summarize(record));
 }
 
-export function emitList<T>(
-  records: T[],
-  summarize: Summarizer<T>,
-  opts: EmitOptions,
-): void {
-  emit(opts.full ? records : records.map(summarize));
+export function emitList<T>(records: T[], summarize: Summarizer<T>, opts: EmitOptions): void {
+	emit(opts.full ? records : records.map(summarize));
 }
 
 export function emitError(message: string, detail?: unknown): never {
-  const payload: Record<string, unknown> = { ok: false, error: message };
-  if (detail !== undefined) payload.detail = detail;
-  process.stderr.write(`${JSON.stringify(payload)}\n`);
-  process.exit(1);
+	const payload: Record<string, unknown> = { ok: false, error: message };
+	if (detail !== undefined) payload.detail = detail;
+	process.stderr.write(`${JSON.stringify(payload)}\n`);
+	process.exit(1);
 }

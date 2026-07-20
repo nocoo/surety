@@ -1,5 +1,5 @@
-import { Routes, Route } from "react-router";
 import { lazy, Suspense } from "react";
+import { Route, Routes } from "react-router";
 import LoadingScreen from "@/components/loading-screen";
 
 const Dashboard = lazy(() => import("@/app/dashboard"));
@@ -17,23 +17,23 @@ const Settings = lazy(() => import("@/app/settings/page"));
 const Cli = lazy(() => import("@/app/cli/page"));
 
 export function App() {
-  return (
-    <Suspense fallback={<LoadingScreen />}>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/members" element={<Members />} />
-        <Route path="/policies" element={<Policies />} />
-        <Route path="/policies/:id" element={<PolicyDetail />} />
-        <Route path="/insurers" element={<Insurers />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/hospitals" element={<Hospitals />} />
-        <Route path="/doctors" element={<Doctors />} />
-        <Route path="/medical-visits" element={<MedicalVisits />} />
-        <Route path="/coverage-lookup" element={<CoverageLookup />} />
-        <Route path="/renewal-calendar" element={<RenewalCalendar />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/cli" element={<Cli />} />
-      </Routes>
-    </Suspense>
-  );
+	return (
+		<Suspense fallback={<LoadingScreen />}>
+			<Routes>
+				<Route path="/" element={<Dashboard />} />
+				<Route path="/members" element={<Members />} />
+				<Route path="/policies" element={<Policies />} />
+				<Route path="/policies/:id" element={<PolicyDetail />} />
+				<Route path="/insurers" element={<Insurers />} />
+				<Route path="/assets" element={<Assets />} />
+				<Route path="/hospitals" element={<Hospitals />} />
+				<Route path="/doctors" element={<Doctors />} />
+				<Route path="/medical-visits" element={<MedicalVisits />} />
+				<Route path="/coverage-lookup" element={<CoverageLookup />} />
+				<Route path="/renewal-calendar" element={<RenewalCalendar />} />
+				<Route path="/settings" element={<Settings />} />
+				<Route path="/cli" element={<Cli />} />
+			</Routes>
+		</Suspense>
+	);
 }

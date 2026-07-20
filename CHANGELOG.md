@@ -428,6 +428,85 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Database protection guards preventing accidental production data loss
 - CSV import script for real policy data migration
 
+## v2.3.0
+
+### Changed
+- Document surety.dev.hexly.ai and auth/api domain split
+- Strengthen pre-commit biome gates
+- Raise branch coverage threshold to 95.5
+- Update quality docs for biome and 95.5 coverage
+- Raise coverage gates to 95.5 and document biome
+- Upgrade typescript to 7.0.2
+- Replace eslint + typescript-eslint with biome
+- Bump react-dropzone 17.0.0 → 19.0.2
+- Bump lint-staged 17.0.8 → 17.1.0
+- Bump hono 4.12.30 → 4.12.31
+- Bump @cloudflare/workers-types 5.20260717.1 → 5.20260718.1
+- Bump wrangler 4.111.0 → 4.112.0
+- Bump lucide-react 1.24.0 → 1.25.0
+- Bump @cloudflare/workers-types 5.20260716.1 → 5.20260717.1
+- Bump vite 8.1.4 → 8.1.5
+- Bump tailwindcss 4.3.2 → 4.3.3
+- Bump @tailwindcss/vite 4.3.2 → 4.3.3
+- Bump @tailwindcss/postcss 4.3.2 → 4.3.3
+- Bump @cloudflare/workers-types 5.20260715.1 → 5.20260716.1
+- Migrate @nocoo/cli-base → @nocoo/base-cli ^0.3.0
+- Bump wrangler 4.110.0 → 4.111.0
+- Bump @cloudflare/workers-types 5.20260713.1 → 5.20260715.1
+- Bump ws 8.21.0 → 8.21.1
+- Bump @cloudflare/workers-types 5.20260712.1 → 5.20260713.1
+- Bump typescript-eslint 8.63.0 → 8.64.0
+- Bump react-dropzone 15.0.0 → 17.0.0
+- Bump @cloudflare/workers-types 5.20260711.1 → 5.20260712.1
+- Bump hono 4.12.29 → 4.12.30
+- Bump @cloudflare/workers-types 5.20260710.1 → 5.20260711.1
+- Bump hono, eslint, @cloudflare/workers-types (minor/patch)
+- Bump wrangler, vite, lucide-react (minor/patch)
+- Bump react-router 8.1.0 → 8.2.0
+- Bump wrangler 4.107.0 → 4.107.1
+- Bump @cloudflare/workers-types 5.20260706.1 → 5.20260708.1
+- Bump @types/node 26.1.0 → 26.1.1
+- Bump typescript-eslint 8.62.1 → 8.63.0
+- Bump radix-ui 1.6.1 → 1.6.2
+- Bump hono 4.12.27 → 4.12.28
+- Bump vitest and @vitest/coverage-v8 4.1.9 → 4.1.10
+- Bump @cloudflare/workers-types 5.20260705.1 → 5.20260706.1
+- Bump @cloudflare/workers-types 5.20260704.1 → 5.20260705.1
+- Bump @cloudflare/workers-types 5.20260703.1 → 5.20260704.1
+- Bump recharts 3.9.1 → 3.9.2
+- Upgrade @cloudflare/workers-types 4.20260702.1 → 5.20260703.1
+- Upgrade dependencies (batch 2026-07-03)
+- Upgrade wrangler 4.106.0 → 4.107.0
+- Upgrade vite 8.1.2 → 8.1.3
+- Upgrade @cloudflare/workers-types 4.20260701.1 → 4.20260702.1
+- Add root .npmrc for supply chain security baseline
+- Upgrade lucide-react 1.22.0 → 1.23.0
+- Upgrade @types/node 26.0.1 → 26.1.0
+- Upgrade @cloudflare/workers-types 4.20260630.1 → 4.20260701.1
+- Upgrade wrangler 4.105.0 → 4.106.0
+- Upgrade vite 8.1.0 → 8.1.2
+- Upgrade recharts 3.9.0 → 3.9.1
+- Upgrade radix-ui 1.6.0 → 1.6.1
+- Upgrade @cloudflare/workers-types 4.20260629.1 → 4.20260630.1
+- Upgrade dependencies (batch 2026-06-30) (#176)
+- Upgrade lucide-react 1.21.0 → 1.22.0
+- Upgrade @cloudflare/workers-types 4.20260626.1 → 4.20260628.1
+- Upgrade @cloudflare/workers-types 4.20260625.1 → 4.20260626.1
+- Upgrade eslint 10.5.0 → 10.6.0
+- Route dev:worker through workspace bun script
+- Upgrade wrangler 4.104.0 → 4.105.0
+- Upgrade @cloudflare/workers-types 4.20260624.1 → 4.20260625.1
+- Upgrade @types/node 26.0.0 → 26.0.1
+- Upgrade @cloudflare/workers-types 4.20260623.1 → 4.20260624.1
+
+### Fixed
+- Load monorepo root .env in vite dev proxy
+- Hash scripts, cli tests, vite.config in g1a cache
+- Run lint-staged before parallel pre-commit gates
+- Run coverage gate via vitest
+- Bust g1a typecheck cache on toolchain changes
+- Include worker in root typecheck
+
 ## v2.2.3
 
 ### Added

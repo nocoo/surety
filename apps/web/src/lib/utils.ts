@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+	return twMerge(clsx(inputs));
 }
 
 /**
@@ -10,13 +10,13 @@ export function cn(...inputs: ClassValue[]) {
  * Uses a simple but effective algorithm that works well with Chinese characters.
  */
 export function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash = hash & hash; // Convert to 32-bit integer
+	}
+	return Math.abs(hash);
 }
 
 /**
@@ -39,22 +39,22 @@ export function hashString(str: string): number {
  * `hsl(var(--avatar-N))` for inline styles.
  */
 const AVATAR_COLORS = [
-  "bg-avatar-1",
-  "bg-avatar-2",
-  "bg-avatar-3",
-  "bg-avatar-4",
-  "bg-avatar-5",
-  "bg-avatar-6",
-  "bg-avatar-7",
-  "bg-avatar-8",
-  "bg-avatar-9",
-  "bg-avatar-10",
-  "bg-avatar-11",
-  "bg-avatar-12",
-  "bg-avatar-13",
-  "bg-avatar-14",
-  "bg-avatar-15",
-  "bg-avatar-16",
+	"bg-avatar-1",
+	"bg-avatar-2",
+	"bg-avatar-3",
+	"bg-avatar-4",
+	"bg-avatar-5",
+	"bg-avatar-6",
+	"bg-avatar-7",
+	"bg-avatar-8",
+	"bg-avatar-9",
+	"bg-avatar-10",
+	"bg-avatar-11",
+	"bg-avatar-12",
+	"bg-avatar-13",
+	"bg-avatar-14",
+	"bg-avatar-15",
+	"bg-avatar-16",
 ] as const;
 
 /**
@@ -62,9 +62,9 @@ const AVATAR_COLORS = [
  * Same name always returns the same color.
  */
 export function getAvatarColor(name: string): string {
-  const hash = hashString(name);
-  const index = hash % AVATAR_COLORS.length;
-  return AVATAR_COLORS[index] ?? AVATAR_COLORS[0];
+	const hash = hashString(name);
+	const index = hash % AVATAR_COLORS.length;
+	return AVATAR_COLORS[index] ?? AVATAR_COLORS[0];
 }
 
 /**
@@ -72,11 +72,41 @@ export function getAvatarColor(name: string): string {
  * Used to skip generic location words and pick a more distinctive character.
  */
 const CITY_PREFIXES = [
-  "北京", "上海", "广州", "深圳", "天津", "重庆", "成都", "杭州",
-  "南京", "武汉", "西安", "苏州", "长沙", "郑州", "青岛", "大连",
-  "沈阳", "哈尔滨", "济南", "昆明", "福州", "合肥", "厦门", "贵阳",
-  "石家庄", "南昌", "太原", "南宁", "兰州", "海口", "呼和浩特",
-  "乌鲁木齐", "银川", "西宁", "拉萨",
+	"北京",
+	"上海",
+	"广州",
+	"深圳",
+	"天津",
+	"重庆",
+	"成都",
+	"杭州",
+	"南京",
+	"武汉",
+	"西安",
+	"苏州",
+	"长沙",
+	"郑州",
+	"青岛",
+	"大连",
+	"沈阳",
+	"哈尔滨",
+	"济南",
+	"昆明",
+	"福州",
+	"合肥",
+	"厦门",
+	"贵阳",
+	"石家庄",
+	"南昌",
+	"太原",
+	"南宁",
+	"兰州",
+	"海口",
+	"呼和浩特",
+	"乌鲁木齐",
+	"银川",
+	"西宁",
+	"拉萨",
 ] as const;
 
 /**
@@ -85,11 +115,11 @@ const CITY_PREFIXES = [
  * E.g., "北京协和医院" → "协", "上海瑞金医院" → "瑞"
  */
 export function getHospitalInitial(name: string): string {
-  if (!name) return "?";
-  for (const prefix of CITY_PREFIXES) {
-    if (name.startsWith(prefix) && name.length > prefix.length) {
-      return name[prefix.length] ?? name[0] ?? "?";
-    }
-  }
-  return name[0] ?? "?";
+	if (!name) return "?";
+	for (const prefix of CITY_PREFIXES) {
+		if (name.startsWith(prefix) && name.length > prefix.length) {
+			return name[prefix.length] ?? name[0] ?? "?";
+		}
+	}
+	return name[0] ?? "?";
 }

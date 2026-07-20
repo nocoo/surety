@@ -26,54 +26,54 @@
 export type CoverageLevel = "unknown" | "underinsured" | "healthy" | "overspent";
 
 export interface CoverageHealth {
-  ratio: number | null;
-  level: CoverageLevel;
-  title: string;
-  detail: string;
+	ratio: number | null;
+	level: CoverageLevel;
+	title: string;
+	detail: string;
 }
 
 const LOW = 0.05;
 const HIGH = 0.15;
 
 export function computeCoverageHealth(
-  protectionPremium: number,
-  annualIncome: number,
+	protectionPremium: number,
+	annualIncome: number,
 ): CoverageHealth {
-  if (!annualIncome || annualIncome <= 0) {
-    return {
-      ratio: null,
-      level: "unknown",
-      title: "尚未设置家庭年收入",
-      detail: "在「系统设置」中填写年收入，可以看到保障型保费占比是否处于建议区间",
-    };
-  }
+	if (!annualIncome || annualIncome <= 0) {
+		return {
+			ratio: null,
+			level: "unknown",
+			title: "尚未设置家庭年收入",
+			detail: "在「系统设置」中填写年收入，可以看到保障型保费占比是否处于建议区间",
+		};
+	}
 
-  const ratio = protectionPremium / annualIncome;
-  const pct = (ratio * 100).toFixed(1);
-  const recommend = `建议区间 ${LOW * 100}% ~ ${HIGH * 100}%（不含储蓄型）`;
+	const ratio = protectionPremium / annualIncome;
+	const pct = (ratio * 100).toFixed(1);
+	const recommend = `建议区间 ${LOW * 100}% ~ ${HIGH * 100}%（不含储蓄型）`;
 
-  if (ratio < LOW) {
-    return {
-      ratio,
-      level: "underinsured",
-      title: `保障型保费占年收入 ${pct}%，可能偏低`,
-      detail: `${recommend}。家庭可能存在保障缺口，建议补充重疾、医疗、定期寿等核心险种`,
-    };
-  }
-  if (ratio > HIGH) {
-    return {
-      ratio,
-      level: "overspent",
-      title: `保障型保费占年收入 ${pct}%，偏高`,
-      detail: `${recommend}。即使已剔除储蓄型，保障支出仍偏高，注意挤压日常现金流`,
-    };
-  }
-  return {
-    ratio,
-    level: "healthy",
-    title: `保障型保费占年收入 ${pct}%，处于健康区间`,
-    detail: `${recommend}。继续保持当前配置`,
-  };
+	if (ratio < LOW) {
+		return {
+			ratio,
+			level: "underinsured",
+			title: `保障型保费占年收入 ${pct}%，可能偏低`,
+			detail: `${recommend}。家庭可能存在保障缺口，建议补充重疾、医疗、定期寿等核心险种`,
+		};
+	}
+	if (ratio > HIGH) {
+		return {
+			ratio,
+			level: "overspent",
+			title: `保障型保费占年收入 ${pct}%，偏高`,
+			detail: `${recommend}。即使已剔除储蓄型，保障支出仍偏高，注意挤压日常现金流`,
+		};
+	}
+	return {
+		ratio,
+		level: "healthy",
+		title: `保障型保费占年收入 ${pct}%，处于健康区间`,
+		detail: `${recommend}。继续保持当前配置`,
+	};
 }
 
 /**
@@ -94,54 +94,54 @@ export function computeCoverageHealth(
  */
 
 export interface ActionItem {
-  key: string;
-  title: string;
-  detail: string;
-  tone: "warning" | "info";
+	key: string;
+	title: string;
+	detail: string;
+	tone: "warning" | "info";
 }
 
 interface TimelineCategoryMap {
-  data: Array<{ label: string; [category: string]: string | number }>;
-  categories: string[];
+	data: Array<{ label: string; [category: string]: string | number }>;
+	categories: string[];
 }
 
 export function buildActionItems(
-  renewal: TimelineCategoryMap,
-  expiry: TimelineCategoryMap,
-  limit = 6,
+	renewal: TimelineCategoryMap,
+	expiry: TimelineCategoryMap,
+	limit = 6,
 ): ActionItem[] {
-  const renewalFirst = renewal.data[0];
-  const expiryFirst = expiry.data[0];
+	const renewalFirst = renewal.data[0];
+	const expiryFirst = expiry.data[0];
 
-  const items: ActionItem[] = [];
+	const items: ActionItem[] = [];
 
-  if (renewalFirst) {
-    for (const cat of renewal.categories) {
-      const count = Number(renewalFirst[cat]);
-      if (count > 0) {
-        items.push({
-          key: `renew-${cat}`,
-          title: `${cat}有 ${count} 份保单本月需续费`,
-          detail: `提前确认账户余额避免失效`,
-          tone: "warning",
-        });
-      }
-    }
-  }
+	if (renewalFirst) {
+		for (const cat of renewal.categories) {
+			const count = Number(renewalFirst[cat]);
+			if (count > 0) {
+				items.push({
+					key: `renew-${cat}`,
+					title: `${cat}有 ${count} 份保单本月需续费`,
+					detail: `提前确认账户余额避免失效`,
+					tone: "warning",
+				});
+			}
+		}
+	}
 
-  if (expiryFirst) {
-    for (const cat of expiry.categories) {
-      const count = Number(expiryFirst[cat]);
-      if (count > 0) {
-        items.push({
-          key: `expire-${cat}`,
-          title: `${cat}有 ${count} 份保单本月到期`,
-          detail: `提前评估是否需要续保或更换`,
-          tone: "info",
-        });
-      }
-    }
-  }
+	if (expiryFirst) {
+		for (const cat of expiry.categories) {
+			const count = Number(expiryFirst[cat]);
+			if (count > 0) {
+				items.push({
+					key: `expire-${cat}`,
+					title: `${cat}有 ${count} 份保单本月到期`,
+					detail: `提前评估是否需要续保或更换`,
+					tone: "info",
+				});
+			}
+		}
+	}
 
-  return items.slice(0, limit);
+	return items.slice(0, limit);
 }

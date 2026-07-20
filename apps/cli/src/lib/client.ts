@@ -7,11 +7,11 @@ import { emitError } from "../output.js";
  * error envelope if no token is available.
  */
 export function buildClient(env: NodeJS.ProcessEnv = process.env): ApiClient {
-  const config = createConfig(env);
-  const apiUrl = resolveApiUrl(config, env);
-  const token = resolveToken(config, env);
-  if (!token) {
-    emitError("not logged in — run `surety login`");
-  }
-  return new ApiClient({ apiUrl, token });
+	const config = createConfig(env);
+	const apiUrl = resolveApiUrl(config, env);
+	const token = resolveToken(config, env);
+	if (!token) {
+		emitError("not logged in — run `surety login`");
+	}
+	return new ApiClient({ apiUrl, token });
 }

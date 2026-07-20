@@ -51,11 +51,11 @@ surety/
 
 | 维度 | 工具 | 触发时机 | 要求 |
 |------|------|----------|------|
-| L1 单测 | vitest run | pre-commit | 行 ≥ 95%、函数 ≥ 95%（web/cli/worker 全覆盖） |
+| L1 单测 | vitest run | pre-commit | 行 ≥ 95.5%、函数 ≥ 95.5%（web/cli/worker 全覆盖） |
 | L2 integration | `vitest run apps/worker/__tests__/e2e` | pre-push | Hono test client + bun:sqlite `:memory:` 跑全链路 |
 | L2 HTTP | `bun run scripts/run-l2-http.ts` | pre-push | wrangler dev `--local` (port 7017) 真 fetch + 真 D1/R2 binding |
 | L3 浏览器 E2E | `bun run test:e2e:browser` | on-demand | Playwright 10 spec / chromium-only / port 27012 |
-| G1 静态 | tsc --noEmit + eslint strict | pre-commit | 零类型错误、零 lint 警告、`*.skip`/`*.only` 禁用 |
+| G1 静态 | tsc --noEmit + biome check --error-on-warnings | pre-commit | 零类型错误、零 lint 警告、`*.skip`/`*.only` 禁用 |
 | G2 安全 | gitleaks + osv-scanner | pre-commit (gitleaks) + pre-push (双保险) | 零泄漏、无已知漏洞 |
 | Worker 单测 | vitest run apps/worker/__tests__ | pre-push | 中间件、路由、auth 边界 |
 
@@ -78,10 +78,11 @@ bun dev                  # Vite dev server (7012)，代理 /api → 线上 Worke
 bun run dev:worker       # 本地 Hono Worker (wrangler dev --port 7016)
 bun run build            # Vite 构建 → apps/worker/static/
 bun run test             # 全部单元测试 vitest (web + worker + cli)
-bun run test:coverage    # 测试覆盖率（行/函数 ≥ 95）
+bun run test:coverage    # 测试覆盖率（行/函数 ≥ 95.5）
 bun run test:l2:http     # L2 HTTP 套件（wrangler dev :7017，真 D1/R2）
 bun run test:e2e:browser # L3 Playwright 浏览器回归（port 27012）
-bun run lint             # ESLint
+bun run lint             # biome check --error-on-warnings
+bun run lint:fix         # biome check --write
 bun run typecheck        # tsc --noEmit (root + web + cli)
 bun run db:push          # 推送 schema 到 D1
 bun run db:studio        # 数据库可视化
@@ -144,9 +145,17 @@ cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 
 ### 本地开发环境变量
 
-`.env`（用于 Vite dev proxy）：
+本地入口域名（Caddy → `:7012`）：**`https://surety.dev.hexly.ai`**（不要用 `localhost:7012` 当日常入口）。
+
+`.env`（用于 Vite dev proxy，根目录）：
 ```
-SURETY_API_URL=https://surety-api.hexly.ai   # 或 http://localhost:7016
+# 三域分离 — 勿混用
+# APP:   https://surety.dev.hexly.ai   本地 SPA（Caddy）
+# AUTH:  https://surety.hexly.ai       CF Access + CLI 铸 token
+# API:   https://surety-api.hexly.ai   Bearer 数据面（prod Worker）
+
+SURETY_API_URL=https://surety-api.hexly.ai   # 或本地 Worker http://localhost:7016
+SURETY_LOGIN_URL=https://surety.hexly.ai     # 仅 CF Access 域；禁止写成 *.dev.hexly.ai
 SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 ```
 

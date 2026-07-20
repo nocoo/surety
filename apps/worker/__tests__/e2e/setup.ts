@@ -29,12 +29,9 @@ import type { AppEnv } from "../../src/lib/types";
 
 export interface TestEnv {
   app: Hono<AppEnv>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  repos: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bindings: Record<string, any>;
+    db: unknown;
+    repos: unknown;
+    bindings: Record<string, any>;
 }
 
 /**

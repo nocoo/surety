@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { expect, test } from "./fixtures";
 
 /**
  * Baseline auth contract for the L3 webServer.
@@ -14,15 +14,13 @@ import { test, expect } from "./fixtures";
  */
 
 test("/api/live is always reachable (no auth)", async ({ request }) => {
-  const res = await request.get("/api/live");
-  expect(res.status()).toBe(200);
+	const res = await request.get("/api/live");
+	expect(res.status()).toBe(200);
 });
 
-test("protected /api/members succeeds when E2E_SKIP_AUTH=true", async ({
-  request,
-}) => {
-  const res = await request.get("/api/members");
-  expect(res.status()).toBe(200);
-  const body = (await res.json()) as Array<{ id: number }>;
-  expect(Array.isArray(body)).toBe(true);
+test("protected /api/members succeeds when E2E_SKIP_AUTH=true", async ({ request }) => {
+	const res = await request.get("/api/members");
+	expect(res.status()).toBe(200);
+	const body = (await res.json()) as Array<{ id: number }>;
+	expect(Array.isArray(body)).toBe(true);
 });
