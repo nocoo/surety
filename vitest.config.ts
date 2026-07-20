@@ -57,10 +57,10 @@ export default defineConfig({
 				"apps/web/src/lib/constants/**",
 			],
 			thresholds: {
-				statements: 95,
+				statements: 95.5,
 				branches: 90,
-				functions: 95,
-				lines: 95,
+				functions: 95.5,
+				lines: 95.5,
 			},
 		},
 	},

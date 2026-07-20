@@ -26,8 +26,8 @@ const spawned = [
 	}),
 }));
 
-const LINE_THRESHOLD = 95;
-const FUNC_THRESHOLD = 95;
+const LINE_THRESHOLD = 95.5;
+const FUNC_THRESHOLD = 95.5;
 
 interface Result {
 	name: string;
