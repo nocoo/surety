@@ -4,8 +4,11 @@
  * G1a cache: skip `tsc --noEmit` when no input has changed since the last
  * green run.
  *
- * Inputs hashed:
- *   - every .ts / .tsx file under apps (web, worker, cli) and packages/
+ * Inputs hashed (mirrors each workspace tsconfig include set):
+ *   - apps/web/src, apps/web/vite.config.ts
+ *   - apps/worker/src
+ *   - apps/cli/src + apps/cli/__tests__
+ *   - packages/ and scripts/ trees
  *   - every tsconfig*.json under the repo root and each workspace package
  *   - package.json + bun.lock (TypeScript upgrades must invalidate the cache)
  *
@@ -18,9 +21,17 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join, relative, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
-const SOURCE_ROOTS = ["apps/web/src", "apps/worker/src", "apps/cli/src", "packages"].map((p) =>
-	join(REPO_ROOT, p),
-);
+// Directory roots walked for .ts/.tsx (align with typecheck project includes).
+const SOURCE_ROOTS = [
+	"apps/web/src",
+	"apps/worker/src",
+	"apps/cli/src",
+	"apps/cli/__tests__",
+	"packages",
+	"scripts",
+].map((p) => join(REPO_ROOT, p));
+// Single files included by tsconfig but outside SOURCE_ROOTS.
+const EXTRA_SOURCE_FILES = ["apps/web/vite.config.ts"].map((p) => join(REPO_ROOT, p));
 
 const TYPECHECK_CMD = ["bun", "run", "typecheck"];
 
@@ -75,6 +86,9 @@ function collectFiles(): string[] {
 	const exts = new Set([".ts", ".tsx"]);
 	const files: string[] = [];
 	for (const root of SOURCE_ROOTS) walk(root, exts, files);
+	for (const extra of EXTRA_SOURCE_FILES) {
+		if (existsSync(extra)) files.push(extra);
+	}
 	for (const tsc of tsconfigFiles()) files.push(tsc);
 	// Dep/toolchain changes must bust the cache (TS upgrades, workspace pins).
 	for (const extra of ["package.json", "bun.lock"]) {
