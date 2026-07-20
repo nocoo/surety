@@ -1,121 +1,29 @@
 #!/usr/bin/env bun
 /**
- * Coverage gate across the whole monorepo.
+ * Coverage gate — delegates to vitest (same runner as pre-commit L1).
  *
- * Spawns the per-app `bun test --coverage` invocations FIRST (top-level,
- * before any other parsing/IO) so the slow child procs start as early as
- * possible. Then enforces line ≥ LINE_THRESHOLD and function ≥ FUNC_THRESHOLD
- * on the aggregate "All files" line per group.
+ * Historically this script spawned `bun test --coverage` per app, which
+ * cannot execute Vitest-only suites and reported misleading failures after
+ * the vitest migration. Now it is a thin wrapper around
+ * `vitest run --coverage`, whose thresholds live in vitest.config.ts
+ * (statements/branches/functions/lines ≥ 95.5).
  */
 
-const repoRoot = `${import.meta.dir}/..`;
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
 
-// Hoist spawn to top-level: kicks off the 3 child bun procs immediately,
-// before we declare types, helpers, or print the banner. Saves the parsing
-// cost of the rest of this script that would otherwise be on the critical path.
-const spawned = [
-	["web", "apps/web/src/__tests__/"],
-	["worker", "apps/worker/__tests__/"],
-	["cli", "apps/cli/__tests__/"],
-].map(([name, path]) => ({
-	name: name as string,
-	proc: Bun.spawn(["bun", "--bun", "test", path as string, "--coverage"], {
-		stdout: "pipe",
-		stderr: "pipe",
-		cwd: repoRoot,
-	}),
-}));
+const REPO_ROOT = resolve(import.meta.dir, "..");
 
-const LINE_THRESHOLD = 95.5;
-const FUNC_THRESHOLD = 95.5;
+console.log("🧪 Coverage gate via vitest (thresholds in vitest.config.ts)\n");
 
-interface Result {
-	name: string;
-	funcs: number;
-	lines: number;
-	output: string;
-	ok: boolean;
-}
+const proc = spawnSync("bunx", ["vitest", "run", "--coverage"], {
+	cwd: REPO_ROOT,
+	stdio: "inherit",
+});
 
-async function collect(s: { name: string; proc: ReturnType<typeof Bun.spawn> }): Promise<Result> {
-	const [out, err] = await Promise.all([
-		new Response(s.proc.stdout as ReadableStream).text(),
-		new Response(s.proc.stderr as ReadableStream).text(),
-	]);
-	await s.proc.exited;
-	const full = out + err;
-
-	// For worker group, compute coverage only from files that have unit tests.
-	// Route handlers without unit tests (covered by L2/L3 E2E) are excluded
-	// because bun ≥1.3.13 reports all transitively-imported files in coverage.
-	if (s.name === "worker") {
-		const lines = full.split("\n");
-		const fileLineRe = /^\s*(.+?)\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/;
-		// Only count middleware + tested routes + index
-		const includePrefixes = [
-			"apps/worker/src/middleware/",
-			"apps/worker/src/routes/auth-cli.ts",
-			"apps/worker/src/routes/auth.ts",
-			"apps/worker/src/routes/live.ts",
-			"apps/worker/src/routes/me.ts",
-			"apps/worker/src/index.ts",
-			"apps/worker/src/lib/",
-		];
-		let totalFuncs = 0,
-			totalLines = 0,
-			fileCount = 0;
-		for (const line of lines) {
-			const m = line.match(fileLineRe);
-			if (!m) continue;
-			const filePath = (m[1] ?? "").trim();
-			if (filePath === "All files" || filePath.startsWith("---")) continue;
-			const matchesInclude = includePrefixes.some((p) => filePath.startsWith(p));
-			if (!matchesInclude) continue;
-			totalFuncs += parseFloat(m[2] ?? "0");
-			totalLines += parseFloat(m[3] ?? "0");
-			fileCount++;
-		}
-		if (fileCount === 0) {
-			return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-		}
-		const funcs = totalFuncs / fileCount;
-		const lines2 = totalLines / fileCount;
-		const ok = lines2 >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD;
-		return { name: s.name, funcs, lines: lines2, output: full, ok };
-	}
-
-	const allFilesLine = full.split("\n").find((l) => l.includes("All files"));
-	if (!allFilesLine) {
-		return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-	}
-	const match = allFilesLine.match(/All files\s*\|\s*([\d.]+)\s*\|\s*([\d.]+)\s*\|/);
-	if (!match) {
-		return { name: s.name, funcs: 0, lines: 0, output: full, ok: false };
-	}
-	const funcs = parseFloat(match[1] ?? "0");
-	const lines = parseFloat(match[2] ?? "0");
-	const ok = lines >= LINE_THRESHOLD && funcs >= FUNC_THRESHOLD;
-	return { name: s.name, funcs, lines, output: full, ok };
-}
-
-console.log(`🧪 Coverage gate (line ≥ ${LINE_THRESHOLD}%, func ≥ ${FUNC_THRESHOLD}%)\n`);
-
-const results = await Promise.all(spawned.map(collect));
-
-let failed = false;
-for (const r of results) {
-	const status = r.ok ? "✅" : "❌";
-	console.log(
-		`${status} ${r.name.padEnd(12)} funcs=${r.funcs.toFixed(2)}%  lines=${r.lines.toFixed(2)}%`,
-	);
-	if (!r.ok) {
-		failed = true;
-		console.log(r.output);
-	}
-}
-
-if (failed) {
+if (proc.status !== 0) {
 	console.error("\n❌ Coverage gate failed");
-	process.exit(1);
+	process.exit(proc.status ?? 1);
 }
+
 console.log("\n✅ Coverage gate passed");
