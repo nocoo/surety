@@ -127,7 +127,10 @@
 			"!apps/web/src/components/ui",
 			"!**/*.d.ts",
 			"!bun.lock",
-			"!**/e2e"
+			"!**/e2e",
+			"!**/test-results",
+			"!**/playwright-report",
+			"!**/.superset"
 		]
 	}
 }
