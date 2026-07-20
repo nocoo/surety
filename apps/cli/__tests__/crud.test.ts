@@ -195,4 +195,33 @@ describe("defineCrudCommand", () => {
 		expect(method).toBe("DELETE");
 		expect(lastJson()).toEqual({ ok: true, id: "9" });
 	});
+
+	test("uses default buildClient when factory is omitted", async () => {
+		const prev = process.env.SURETY_API_TOKEN;
+		const prevUrl = process.env.SURETY_API_URL;
+		process.env.SURETY_API_TOKEN = "sk_test";
+		process.env.SURETY_API_URL = "https://api.test";
+		try {
+			const originalFetch = globalThis.fetch;
+			globalThis.fetch = mockFetch((url) => {
+				expect(url).toBe("https://api.test/api/rows");
+				return { status: 200, body: "[]" };
+			});
+			const cmd = defineCrudCommand<Row>({
+				name: "rows",
+				description: "Test rows",
+				basePath: "/api/rows",
+				summarize: (r) => ({ id: r.id, name: r.name }),
+			});
+			const s = await sub(cmd, "ls");
+			await s.run?.({ rawArgs: [], args: { full: false } as never, cmd: s });
+			expect(lastJson()).toEqual([]);
+			globalThis.fetch = originalFetch;
+		} finally {
+			if (prev === undefined) delete process.env.SURETY_API_TOKEN;
+			else process.env.SURETY_API_TOKEN = prev;
+			if (prevUrl === undefined) delete process.env.SURETY_API_URL;
+			else process.env.SURETY_API_URL = prevUrl;
+		}
+	});
 });

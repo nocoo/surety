@@ -69,6 +69,47 @@ describe("ApiClient", () => {
 		expect(sentBody).toBe(JSON.stringify({ name: "Zhang" }));
 	});
 
+	test("network failure with exitOnError=false rethrows", async () => {
+		const client = new ApiClient({
+			apiUrl: "https://api.test",
+			exitOnError: false,
+			fetchImpl: (async () => {
+				throw new Error("ECONNRESET");
+			}) as unknown as typeof fetch,
+		});
+		await expect(client.get("/api/members")).rejects.toThrow("ECONNRESET");
+	});
+
+	test("network failure with exitOnError=true emits and exits", async () => {
+		const origStderr = process.stderr.write;
+		const origExit = process.exit;
+		let stderrOut = "";
+		class ExitCalled extends Error {}
+		process.stderr.write = ((chunk: string) => {
+			stderrOut += chunk;
+			return true;
+		}) as typeof process.stderr.write;
+		process.exit = (() => {
+			throw new ExitCalled();
+		}) as typeof process.exit;
+		const client = new ApiClient({
+			apiUrl: "https://api.test",
+			fetchImpl: (async () => {
+				throw new Error("ECONNRESET");
+			}) as unknown as typeof fetch,
+		});
+		try {
+			await client.get("/api/members");
+			expect.unreachable();
+		} catch (err) {
+			expect(err).toBeInstanceOf(ExitCalled);
+		} finally {
+			process.stderr.write = origStderr;
+			process.exit = origExit;
+		}
+		expect(stderrOut).toContain("network error");
+	});
+
 	test("throws ApiError on non-2xx when exitOnError=false", async () => {
 		const client = new ApiClient({
 			apiUrl: "https://api.test",

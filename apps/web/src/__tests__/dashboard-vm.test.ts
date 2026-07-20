@@ -132,6 +132,26 @@ describe("createStatCards", () => {
 		);
 		expect(cards[0]?.sub).toBeUndefined();
 	});
+
+	it("家庭成员: rounds average when ≥10 policies per member", () => {
+		const cards = createStatCards({ ...baseStats, policyCount: 55, memberCount: 5 }, makeCharts());
+		expect(cards[1]?.sub).toBe("人均 11 份保单");
+	});
+
+	it("omits percentage subs when chart rows are zero despite positive totals", () => {
+		const cards = createStatCards(
+			baseStats,
+			makeCharts({
+				premiumByCategory: [cat({ label: "x", premium: 0 }), cat({ label: "y", premium: 0 })],
+				coverageByCategory: [
+					cov({ label: "x", sumAssured: 0 }),
+					cov({ label: "y", sumAssured: 0 }),
+				],
+			}),
+		);
+		expect(cards[2]?.sub).toBeUndefined();
+		expect(cards[3]?.sub).toBeUndefined();
+	});
 });
 
 describe("fetchDashboardData", () => {

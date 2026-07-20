@@ -72,6 +72,20 @@ describe("readonly commands", () => {
 		expect(lastJson()).toEqual({});
 	});
 
+	test("coverage without type or id hits overview path", async () => {
+		const client = new ApiClient({
+			apiUrl: "https://api.test",
+			token: "t",
+			fetchImpl: mockFetch((url) => {
+				expect(url).toBe("https://api.test/api/coverage-lookup");
+				return { status: 200, body: JSON.stringify({ overview: true }) };
+			}),
+		});
+		const cmds = defineReadonlyCommands(() => client);
+		await runCmd(cmds.coverage, {});
+		expect(lastJson()).toEqual({ overview: true });
+	});
+
 	test("renewals calls renewal-calendar", async () => {
 		const client = new ApiClient({
 			apiUrl: "https://api.test",

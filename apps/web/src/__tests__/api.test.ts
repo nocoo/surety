@@ -49,4 +49,13 @@ describe("fetchAPI", () => {
 			new Response("oops", { status: 502 })) as unknown as typeof fetch;
 		await expect(fetchAPI("/api/broken")).rejects.toThrow("HTTP 502");
 	});
+
+	test("falls back to HTTP N when JSON body has no error field", async () => {
+		globalThis.fetch = (async () =>
+			new Response(JSON.stringify({ message: "denied" }), {
+				status: 403,
+				headers: { "content-type": "application/json" },
+			})) as unknown as typeof fetch;
+		await expect(fetchAPI("/api/forbidden")).rejects.toThrow("HTTP 403");
+	});
 });

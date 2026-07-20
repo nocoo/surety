@@ -148,6 +148,54 @@ describe("apiKeyAuth middleware", () => {
 		expect(res.status).toBe(401);
 	});
 
+	test("prod host with non-Bearer Authorization → 401", async () => {
+		const app = makeApp(apiKeyAuth, {
+			apiTokens: { verify: async () => null, updateLastUsed: async () => {} },
+		});
+		const res = await app.request("/api/probe", {
+			headers: {
+				host: "surety.hexly.ai",
+				authorization: "Basic abc",
+			},
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("prod host with malformed Bearer (wrong arity) → 401", async () => {
+		const app = makeApp(apiKeyAuth, {
+			apiTokens: { verify: async () => null, updateLastUsed: async () => {} },
+		});
+		const res = await app.request("/api/probe", {
+			headers: {
+				host: "surety.hexly.ai",
+				authorization: "Bearer",
+			},
+		});
+		expect(res.status).toBe(401);
+	});
+
+	test("already accessAuthenticated skips token verification", async () => {
+		const app = new Hono<AppEnv>();
+		app.use("*", async (c, next) => {
+			c.set("accessAuthenticated", true);
+			c.set("accessEmail", "cf@hexly.ai");
+			return next();
+		});
+		app.use("*", apiKeyAuth);
+		app.get("/api/probe", (c) =>
+			c.json({
+				accessAuthenticated: c.get("accessAuthenticated") === true,
+				accessEmail: c.get("accessEmail") ?? null,
+			}),
+		);
+		const res = await app.request("/api/probe", {
+			headers: { host: "surety.hexly.ai" },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as { accessEmail: string | null };
+		expect(body.accessEmail).toBe("cf@hexly.ai");
+	});
+
 	test("prod host with invalid Bearer token → 403", async () => {
 		const app = makeApp(apiKeyAuth, {
 			apiTokens: { verify: async () => null, updateLastUsed: async () => {} },
