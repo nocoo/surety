@@ -5,8 +5,9 @@
  * green run.
  *
  * Inputs hashed:
- *   - every *.ts / *.tsx file under src/ and packages/
- *   - every tsconfig*.json under the repo root
+ *   - every .ts / .tsx file under apps (web, worker, cli) and packages/
+ *   - every tsconfig*.json under the repo root and each workspace package
+ *   - package.json + bun.lock (TypeScript upgrades must invalidate the cache)
  *
  * Cache file: <git-common-dir>/info/g1a-cache.json
  */
@@ -50,8 +51,21 @@ function walk(root: string, exts: Set<string>, out: string[]): void {
 
 function tsconfigFiles(): string[] {
 	const out: string[] = [];
+	// Root tsconfig*.json
 	for (const name of readdirSync(REPO_ROOT)) {
 		if (/^tsconfig.*\.json$/.test(name)) out.push(join(REPO_ROOT, name));
+	}
+	// Per-workspace tsconfigs (web / worker / cli / packages/*)
+	for (const group of ["apps", "packages"]) {
+		const groupDir = join(REPO_ROOT, group);
+		if (!existsSync(groupDir)) continue;
+		for (const entry of readdirSync(groupDir, { withFileTypes: true })) {
+			if (!entry.isDirectory()) continue;
+			const dir = join(groupDir, entry.name);
+			for (const name of readdirSync(dir)) {
+				if (/^tsconfig.*\.json$/.test(name)) out.push(join(dir, name));
+			}
+		}
 	}
 	out.sort();
 	return out;
@@ -62,6 +76,11 @@ function collectFiles(): string[] {
 	const files: string[] = [];
 	for (const root of SOURCE_ROOTS) walk(root, exts, files);
 	for (const tsc of tsconfigFiles()) files.push(tsc);
+	// Dep/toolchain changes must bust the cache (TS upgrades, workspace pins).
+	for (const extra of ["package.json", "bun.lock"]) {
+		const full = join(REPO_ROOT, extra);
+		if (existsSync(full)) files.push(full);
+	}
 	files.sort();
 	return files;
 }
