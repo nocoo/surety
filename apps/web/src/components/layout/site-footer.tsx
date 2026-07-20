@@ -5,27 +5,27 @@
  */
 
 interface SiteFooterProps {
-  projectName?: string;
-  projectUrl?: string;
+	projectName?: string;
+	projectUrl?: string;
 }
 
 export function SiteFooter({
-  projectName = "surety",
-  projectUrl = "https://github.com/nocoo/surety",
+	projectName = "surety",
+	projectUrl = "https://github.com/nocoo/surety",
 }: SiteFooterProps) {
-  return (
-    <footer className="py-4 text-center">
-      <p className="text-xs text-muted-foreground">
-        Powered by{" "}
-        <a
-          href={projectUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:text-primary/80 transition-colors"
-        >
-          {projectName}
-        </a>
-      </p>
-    </footer>
-  );
+	return (
+		<footer className="py-4 text-center">
+			<p className="text-xs text-muted-foreground">
+				Powered by{" "}
+				<a
+					href={projectUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="text-primary hover:text-primary/80 transition-colors"
+				>
+					{projectName}
+				</a>
+			</p>
+		</footer>
+	);
 }

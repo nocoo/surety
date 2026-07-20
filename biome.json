@@ -1,0 +1,133 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"correctness": {
+				"noUnusedImports": "error",
+				"noUnusedVariables": "error",
+				"noNodejsModules": "off",
+				"useImportExtensions": "off",
+				"noUndeclaredDependencies": "off",
+				"noUndeclaredVariables": "off"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "error"
+			},
+			"style": {
+				"noNonNullAssertion": "error",
+				"useConst": "error",
+				"useNamingConvention": "off",
+				"noDefaultExport": "off",
+				"useFilenamingConvention": "off",
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"patterns": [
+							{
+								"group": ["next", "next/*", "next-auth", "next-auth/*", "next-themes"],
+								"message": "Next.js / NextAuth / next-themes are not part of this stack."
+							}
+						]
+					}
+				}
+			},
+			"complexity": {
+				"noExcessiveCognitiveComplexity": "off"
+			},
+			"suspicious": {
+				"noConsole": "off",
+				"noReactSpecificProps": "off",
+				"useAwait": "off",
+				"noExplicitAny": "error",
+				"noFocusedTests": "error",
+				"noSkippedTests": "error",
+				"noArrayIndexKey": "off"
+			},
+			"performance": {
+				"useTopLevelRegex": "off",
+				"noBarrelFile": "off"
+			},
+			"nursery": {}
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineWidth": 100
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double",
+			"semicolons": "always"
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["apps/web/src/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"next",
+											"next/*",
+											"next-auth",
+											"next-auth/*",
+											"next-themes",
+											"@auth/*"
+										],
+										"message": "SPA must not import Next.js / NextAuth / next-themes / @auth/*."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["packages/api/src/**", "packages/db/src/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noConsole": {
+							"level": "error",
+							"options": {
+								"allow": ["warn", "error"]
+							}
+						}
+					}
+				}
+			}
+		}
+	],
+	"files": {
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/dist",
+			"!**/coverage",
+			"!**/.wrangler",
+			"!**/build",
+			"!apps/worker/static",
+			"!apps/web/dist",
+			"!apps/web/src/components/ui",
+			"!**/*.d.ts",
+			"!bun.lock",
+			"!**/e2e"
+		]
+	}
+}

@@ -1,13 +1,13 @@
 import { parseLocalDate } from "./lib/date-utils";
 
 export type PolicyCategory =
-  | "Life"
-  | "WholeLife"
-  | "CriticalIllness"
-  | "Medical"
-  | "Accident"
-  | "Annuity"
-  | "Property";
+	| "Life"
+	| "WholeLife"
+	| "CriticalIllness"
+	| "Medical"
+	| "Accident"
+	| "Annuity"
+	| "Property";
 export type PolicyDbStatus = "Active" | "Lapsed" | "Surrendered" | "Claimed";
 export type PolicyStatus = PolicyDbStatus | "Expired";
 
@@ -19,26 +19,26 @@ export type TerminalPolicyStatus = "Surrendered" | "Claimed" | "Lapsed";
  * This is a pure presentation concern — DB value is never mutated.
  */
 export function deriveDisplayStatus(
-  dbStatus: PolicyDbStatus,
-  expiryDate: string | null,
-  now: Date = new Date(),
+	dbStatus: PolicyDbStatus,
+	expiryDate: string | null,
+	now: Date = new Date(),
 ): PolicyStatus {
-  if (dbStatus === "Active" && expiryDate) {
-    const expiry = parseLocalDate(expiryDate);
-    if (expiry < now) return "Expired";
-  }
-  return dbStatus;
+	if (dbStatus === "Active" && expiryDate) {
+		const expiry = parseLocalDate(expiryDate);
+		if (expiry < now) return "Expired";
+	}
+	return dbStatus;
 }
 
 /**
  * Check if a policy is effectively active (Active in DB and not expired).
  */
 export function isEffectivelyActive(
-  dbStatus: PolicyDbStatus,
-  expiryDate: string | null,
-  now: Date = new Date(),
+	dbStatus: PolicyDbStatus,
+	expiryDate: string | null,
+	now: Date = new Date(),
 ): boolean {
-  return deriveDisplayStatus(dbStatus, expiryDate, now) === "Active";
+	return deriveDisplayStatus(dbStatus, expiryDate, now) === "Active";
 }
 
 /**
@@ -49,10 +49,10 @@ export function isEffectivelyActive(
  * terminatedAt. Paid rows are real history and never filtered.
  */
 export function isObsoletedByTermination(
-  payment: { dueDate: string; status: "Pending" | "Paid" | "Overdue" },
-  policyTerminatedAt: string | null,
+	payment: { dueDate: string; status: "Pending" | "Paid" | "Overdue" },
+	policyTerminatedAt: string | null,
 ): boolean {
-  if (!policyTerminatedAt) return false;
-  if (payment.status === "Paid") return false;
-  return payment.dueDate > policyTerminatedAt;
+	if (!policyTerminatedAt) return false;
+	if (payment.status === "Paid") return false;
+	return payment.dueDate > policyTerminatedAt;
 }

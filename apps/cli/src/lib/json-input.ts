@@ -11,60 +11,59 @@ import { emitError } from "../output.js";
  * and exits if input is present but is not valid JSON.
  */
 export function readJsonInput(args: Record<string, unknown>): unknown {
-  const inline = args.data;
-  if (typeof inline === "string" && inline.length > 0) {
-    return parseOrExit(inline, "--data");
-  }
-  const file = args["data-file"];
-  if (typeof file === "string" && file.length > 0) {
-    const raw =
-      file === "-" ? readStdin() : readFileSync(file, "utf8");
-    return parseOrExit(raw, file === "-" ? "stdin" : `--data-file ${file}`);
-  }
-  if (!process.stdin.isTTY) {
-    const raw = readStdin();
-    if (raw.trim().length > 0) return parseOrExit(raw, "stdin");
-  }
-  return undefined;
+	const inline = args.data;
+	if (typeof inline === "string" && inline.length > 0) {
+		return parseOrExit(inline, "--data");
+	}
+	const file = args["data-file"];
+	if (typeof file === "string" && file.length > 0) {
+		const raw = file === "-" ? readStdin() : readFileSync(file, "utf8");
+		return parseOrExit(raw, file === "-" ? "stdin" : `--data-file ${file}`);
+	}
+	if (!process.stdin.isTTY) {
+		const raw = readStdin();
+		if (raw.trim().length > 0) return parseOrExit(raw, "stdin");
+	}
+	return undefined;
 }
 
 export function requireJsonInput(args: Record<string, unknown>): unknown {
-  const body = readJsonInput(args);
-  if (body === undefined) {
-    emitError(
-      "missing JSON payload — pass --data '<json>' or --data-file <path> (or pipe via stdin)",
-    );
-  }
-  return body;
+	const body = readJsonInput(args);
+	if (body === undefined) {
+		emitError(
+			"missing JSON payload — pass --data '<json>' or --data-file <path> (or pipe via stdin)",
+		);
+	}
+	return body;
 }
 
 function parseOrExit(raw: string, source: string): unknown {
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    emitError(`invalid JSON from ${source}`, (err as Error).message);
-  }
+	try {
+		return JSON.parse(raw);
+	} catch (err) {
+		emitError(`invalid JSON from ${source}`, (err as Error).message);
+	}
 }
 
 function readStdin(): string {
-  // Bun exposes a sync file reader on fd 0
-  try {
-    return readFileSync(0, "utf8");
-  } catch {
-    return "";
-  }
+	// Bun exposes a sync file reader on fd 0
+	try {
+		return readFileSync(0, "utf8");
+	} catch {
+		return "";
+	}
 }
 
 /**
  * Shared citty args definition for commands that accept a JSON payload.
  */
 export const jsonInputArgs = {
-  data: {
-    type: "string" as const,
-    description: "Inline JSON payload",
-  },
-  "data-file": {
-    type: "string" as const,
-    description: "Path to JSON file (use `-` for stdin)",
-  },
+	data: {
+		type: "string" as const,
+		description: "Inline JSON payload",
+	},
+	"data-file": {
+		type: "string" as const,
+		description: "Path to JSON file (use `-` for stdin)",
+	},
 } as const;

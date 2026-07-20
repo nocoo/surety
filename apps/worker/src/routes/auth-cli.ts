@@ -9,14 +9,14 @@ const app = new Hono<AppEnv>();
  * is allowed and only on the loopback hostnames.
  */
 export function isLocalhostUrl(value: string): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(value);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== "http:") return false;
-  return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+	let parsed: URL;
+	try {
+		parsed = new URL(value);
+	} catch {
+		return false;
+	}
+	if (parsed.protocol !== "http:") return false;
+	return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
 }
 
 /**
@@ -80,77 +80,61 @@ const SAFE_FETCH_DESTS = new Set(["document"]);
 const SAFE_FETCH_SITES = new Set(["none", "same-origin"]);
 
 app.get("/api/auth/cli", async (c) => {
-  const callbackUrl =
-    c.req.query("callback_url") ?? c.req.query("callback");
-  const state = c.req.query("state") ?? "";
+	const callbackUrl = c.req.query("callback_url") ?? c.req.query("callback");
+	const state = c.req.query("state") ?? "";
 
-  if (!callbackUrl) {
-    return c.json({ error: "callback_url is required" }, 400);
-  }
-  if (!isLocalhostUrl(callbackUrl)) {
-    return c.json({ error: "callback_url must be a localhost URL" }, 400);
-  }
+	if (!callbackUrl) {
+		return c.json({ error: "callback_url is required" }, 400);
+	}
+	if (!isLocalhostUrl(callbackUrl)) {
+		return c.json({ error: "callback_url must be a localhost URL" }, 400);
+	}
 
-  // Require all three Sec-Fetch-* signals to be present and safe. There is
-  // no legitimate non-browser caller of this endpoint — the CLI opens the
-  // URL in the OS default browser, it does not call this directly. Missing
-  // headers (curl, old webviews, header-stripping intermediaries) are
-  // rejected rather than fall through, removing the only remaining
-  // downgrade path.
-  const fetchMode = c.req.header("Sec-Fetch-Mode") ?? "";
-  const fetchDest = c.req.header("Sec-Fetch-Dest") ?? "";
-  const fetchSite = c.req.header("Sec-Fetch-Site") ?? "";
-  if (!SAFE_FETCH_MODES.has(fetchMode)) {
-    return c.json(
-      { error: "CLI token mint requires a top-level navigation" },
-      400,
-    );
-  }
-  if (!SAFE_FETCH_DESTS.has(fetchDest)) {
-    return c.json(
-      { error: "CLI token mint requires a top-level navigation" },
-      400,
-    );
-  }
-  if (!SAFE_FETCH_SITES.has(fetchSite)) {
-    return c.json(
-      { error: "CLI token mint cannot be triggered cross-site" },
-      400,
-    );
-  }
+	// Require all three Sec-Fetch-* signals to be present and safe. There is
+	// no legitimate non-browser caller of this endpoint — the CLI opens the
+	// URL in the OS default browser, it does not call this directly. Missing
+	// headers (curl, old webviews, header-stripping intermediaries) are
+	// rejected rather than fall through, removing the only remaining
+	// downgrade path.
+	const fetchMode = c.req.header("Sec-Fetch-Mode") ?? "";
+	const fetchDest = c.req.header("Sec-Fetch-Dest") ?? "";
+	const fetchSite = c.req.header("Sec-Fetch-Site") ?? "";
+	if (!SAFE_FETCH_MODES.has(fetchMode)) {
+		return c.json({ error: "CLI token mint requires a top-level navigation" }, 400);
+	}
+	if (!SAFE_FETCH_DESTS.has(fetchDest)) {
+		return c.json({ error: "CLI token mint requires a top-level navigation" }, 400);
+	}
+	if (!SAFE_FETCH_SITES.has(fetchSite)) {
+		return c.json({ error: "CLI token mint cannot be triggered cross-site" }, 400);
+	}
 
-  // Minting a token must be initiated by a real Access session (browser
-  // user signed in via Google), never by a caller who already holds a
-  // Bearer token. Otherwise a leaked token could mint fresh tokens for
-  // the same email in a self-replication loop — surviving any revoke of
-  // the original. `sessionAuthenticated` is set only by accessAuth's
-  // localhost-no-bearer and verified-JWT branches; the machine-endpoint
-  // bypass and E2E bypass do not set it, so this check naturally rejects
-  // Bearer-only callers on `surety-api.hexly.ai`.
-  if (!c.get("sessionAuthenticated")) {
-    return c.json(
-      { error: "CF Access session required to mint a CLI token" },
-      403,
-    );
-  }
+	// Minting a token must be initiated by a real Access session (browser
+	// user signed in via Google), never by a caller who already holds a
+	// Bearer token. Otherwise a leaked token could mint fresh tokens for
+	// the same email in a self-replication loop — surviving any revoke of
+	// the original. `sessionAuthenticated` is set only by accessAuth's
+	// localhost-no-bearer and verified-JWT branches; the machine-endpoint
+	// bypass and E2E bypass do not set it, so this check naturally rejects
+	// Bearer-only callers on `surety-api.hexly.ai`.
+	if (!c.get("sessionAuthenticated")) {
+		return c.json({ error: "CF Access session required to mint a CLI token" }, 403);
+	}
 
-  const email = c.get("accessEmail");
-  if (!email) {
-    return c.json(
-      { error: "CF Access session required to mint a CLI token" },
-      400,
-    );
-  }
+	const email = c.get("accessEmail");
+	if (!email) {
+		return c.json({ error: "CF Access session required to mint a CLI token" }, 400);
+	}
 
-  const repos = c.get("repos");
-  const { token } = await repos.apiTokens.create(email, "CLI");
+	const repos = c.get("repos");
+	const { token } = await repos.apiTokens.create(email, "CLI");
 
-  const redirect = new URL(callbackUrl);
-  redirect.searchParams.set("api_key", token);
-  if (state) redirect.searchParams.set("state", state);
-  redirect.searchParams.set("email", email);
+	const redirect = new URL(callbackUrl);
+	redirect.searchParams.set("api_key", token);
+	if (state) redirect.searchParams.set("state", state);
+	redirect.searchParams.set("email", email);
 
-  return c.redirect(redirect.toString(), 302);
+	return c.redirect(redirect.toString(), 302);
 });
 
 export default app;

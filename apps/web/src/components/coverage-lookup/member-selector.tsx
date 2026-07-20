@@ -1,137 +1,125 @@
-
-import { useRef, useEffect, useState } from "react";
+import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
+import { getNameInitial } from "@surety/api/lib/category-config";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn, getAvatarColor } from "@/lib/utils";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getNameInitial } from "@surety/api/lib/category-config";
-import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
+import { cn, getAvatarColor } from "@/lib/utils";
 
 interface MemberSelectorProps {
-  members: MemberCoverageCard[];
-  selectedMemberId: number | null;
-  onSelectMember: (memberId: number) => void;
+	members: MemberCoverageCard[];
+	selectedMemberId: number | null;
+	onSelectMember: (memberId: number) => void;
 }
 
-export function MemberSelector({
-  members,
-  selectedMemberId,
-  onSelectMember,
-}: MemberSelectorProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+export function MemberSelector({ members, selectedMemberId, onSelectMember }: MemberSelectorProps) {
+	const scrollRef = useRef<HTMLDivElement>(null);
+	const [canScrollLeft, setCanScrollLeft] = useState(false);
+	const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
-    }
-  };
+	const checkScroll = useCallback(() => {
+		if (scrollRef.current) {
+			const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+			setCanScrollLeft(scrollLeft > 0);
+			setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+		}
+	}, []);
 
-  useEffect(() => {
-    checkScroll();
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, [members]);
+	useEffect(() => {
+		checkScroll();
+		window.addEventListener("resize", checkScroll);
+		return () => window.removeEventListener("resize", checkScroll);
+	}, [checkScroll]);
 
-  const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 200;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
+	const scroll = (direction: "left" | "right") => {
+		if (scrollRef.current) {
+			const scrollAmount = 200;
+			scrollRef.current.scrollBy({
+				left: direction === "left" ? -scrollAmount : scrollAmount,
+				behavior: "smooth",
+			});
+		}
+	};
 
-  if (members.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground py-8">
-        暂无家庭成员
-      </div>
-    );
-  }
+	if (members.length === 0) {
+		return <div className="text-center text-muted-foreground py-8">暂无家庭成员</div>;
+	}
 
-  return (
-    <div className="relative">
-      {/* Left scroll button */}
-      {canScrollLeft && (
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
-          onClick={() => scroll("left")}
-          aria-label="向左滚动成员列表"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-      )}
+	return (
+		<div className="relative">
+			{/* Left scroll button */}
+			{canScrollLeft && (
+				<Button
+					variant="outline"
+					size="icon"
+					className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
+					onClick={() => scroll("left")}
+					aria-label="向左滚动成员列表"
+				>
+					<ChevronLeft className="h-4 w-4" />
+				</Button>
+			)}
 
-      {/* Scrollable container */}
-      <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-1"
-        onScroll={checkScroll}
-      >
-        {members.map((member) => {
-          const isSelected = member.id === selectedMemberId;
-          // Use the web's verified-contrast avatar palette (bg-avatar-N,
-          // each ≥ 5.3:1 vs white). The packages/api MEMBER_AVATAR_COLORS
-          // table mixed bg+fg pairs which produced unreadable cards for
-          // names that hashed onto fg ≠ white slots.
-          const bgClass = getAvatarColor(member.name);
+			{/* Scrollable container */}
+			<div
+				ref={scrollRef}
+				className="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-1"
+				onScroll={checkScroll}
+			>
+				{members.map((member) => {
+					const isSelected = member.id === selectedMemberId;
+					// Use the web's verified-contrast avatar palette (bg-avatar-N,
+					// each ≥ 5.3:1 vs white). The packages/api MEMBER_AVATAR_COLORS
+					// table mixed bg+fg pairs which produced unreadable cards for
+					// names that hashed onto fg ≠ white slots.
+					const bgClass = getAvatarColor(member.name);
 
-          return (
-            <button
-              key={member.id}
-              onClick={() => onSelectMember(member.id)}
-              className={cn(
-                "flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-card transition-all min-w-[120px]",
-                isSelected
-                  ? "bg-primary/5 ring-2 ring-primary/20"
-                  : "bg-secondary hover:bg-muted/50"
-              )}
-            >
-              <Avatar size="lg">
-                <AvatarFallback className={cn(bgClass, "text-white")}>
-                  {getNameInitial(member.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center">
-                <p className="text-sm font-medium">{member.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {member.relationLabel}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">
-                  {member.activePolicyCount} 份保单
-                </p>
-                {member.totalSumAssured > 0 && (
-                  <p className="text-xs font-medium text-primary">
-                    保额 {formatSumAssured(member.totalSumAssured)}
-                  </p>
-                )}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+					return (
+						<button
+							type="button"
+							key={member.id}
+							onClick={() => onSelectMember(member.id)}
+							className={cn(
+								"flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-card transition-all min-w-[120px]",
+								isSelected
+									? "bg-primary/5 ring-2 ring-primary/20"
+									: "bg-secondary hover:bg-muted/50",
+							)}
+						>
+							<Avatar size="lg">
+								<AvatarFallback className={cn(bgClass, "text-white")}>
+									{getNameInitial(member.name)}
+								</AvatarFallback>
+							</Avatar>
+							<div className="text-center">
+								<p className="text-sm font-medium">{member.name}</p>
+								<p className="text-xs text-muted-foreground">{member.relationLabel}</p>
+							</div>
+							<div className="text-center">
+								<p className="text-xs text-muted-foreground">{member.activePolicyCount} 份保单</p>
+								{member.totalSumAssured > 0 && (
+									<p className="text-xs font-medium text-primary">
+										保额 {formatSumAssured(member.totalSumAssured)}
+									</p>
+								)}
+							</div>
+						</button>
+					);
+				})}
+			</div>
 
-      {/* Right scroll button */}
-      {canScrollRight && (
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
-          onClick={() => scroll("right")}
-          aria-label="向右滚动成员列表"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      )}
-    </div>
-  );
+			{/* Right scroll button */}
+			{canScrollRight && (
+				<Button
+					variant="outline"
+					size="icon"
+					className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
+					onClick={() => scroll("right")}
+					aria-label="向右滚动成员列表"
+				>
+					<ChevronRight className="h-4 w-4" />
+				</Button>
+			)}
+		</div>
+	);
 }

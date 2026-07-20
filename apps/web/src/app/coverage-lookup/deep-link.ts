@@ -1,8 +1,8 @@
 import type { SelectionType } from "@surety/api/coverage-lookup";
 
 export interface CoverageDeepLink {
-  type: SelectionType;
-  id: number | null;
+	type: SelectionType;
+	id: number | null;
 }
 
 /**
@@ -24,24 +24,22 @@ export interface CoverageDeepLink {
  * If both keys appear, asset wins (defensive: only one should ever be
  * set, but we should not silently merge them).
  */
-export function readCoverageDeepLink(
-  params: URLSearchParams,
-): CoverageDeepLink {
-  if (params.has("asset")) {
-    const raw = params.get("asset");
-    return { type: "asset", id: parseId(raw) };
-  }
-  if (params.has("member")) {
-    const raw = params.get("member");
-    return { type: "member", id: parseId(raw) };
-  }
-  return { type: "member", id: null };
+export function readCoverageDeepLink(params: URLSearchParams): CoverageDeepLink {
+	if (params.has("asset")) {
+		const raw = params.get("asset");
+		return { type: "asset", id: parseId(raw) };
+	}
+	if (params.has("member")) {
+		const raw = params.get("member");
+		return { type: "member", id: parseId(raw) };
+	}
+	return { type: "member", id: null };
 }
 
 function parseId(raw: string | null): number | null {
-  if (raw === null || raw === "") return null;
-  const id = Number(raw);
-  return Number.isFinite(id) && id > 0 ? id : null;
+	if (raw === null || raw === "") return null;
+	const id = Number(raw);
+	return Number.isFinite(id) && id > 0 ? id : null;
 }
 
 /**
@@ -50,7 +48,7 @@ function parseId(raw: string | null): number | null {
  * URL → component-choice mapping without spinning up the full page.
  */
 export function selectorKindForDeepLink(
-  link: CoverageDeepLink,
+	link: CoverageDeepLink,
 ): "member-selector" | "asset-selector" {
-  return link.type === "asset" ? "asset-selector" : "member-selector";
+	return link.type === "asset" ? "asset-selector" : "member-selector";
 }

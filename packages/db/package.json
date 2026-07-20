@@ -1,19 +1,19 @@
 {
-  "name": "@surety/db",
-  "version": "0.0.0",
-  "private": true,
-  "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema.ts",
-    "./types": "./src/types.ts",
-    "./repositories": "./src/repositories/index.ts",
-    "./backup": "./src/backup.ts",
-    "./seed": "./src/seed.ts",
-    "./lib/date-utils": "./src/lib/date-utils.ts",
-    "./lib/generate-payments": "./src/lib/generate-payments.ts",
-    "./worker-db-client": "./src/worker-db-client.ts"
-  },
-  "dependencies": {
-    "drizzle-orm": "^0.45.2"
-  }
+	"name": "@surety/db",
+	"version": "0.0.0",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts",
+		"./schema": "./src/schema.ts",
+		"./types": "./src/types.ts",
+		"./repositories": "./src/repositories/index.ts",
+		"./backup": "./src/backup.ts",
+		"./seed": "./src/seed.ts",
+		"./lib/date-utils": "./src/lib/date-utils.ts",
+		"./lib/generate-payments": "./src/lib/generate-payments.ts",
+		"./worker-db-client": "./src/worker-db-client.ts"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.45.2"
+	}
 }

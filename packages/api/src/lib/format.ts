@@ -12,13 +12,13 @@
  * the UI with `Cannot read properties of undefined`.
  */
 export function formatCurrency(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "¥0";
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+	if (value == null || !Number.isFinite(value)) return "¥0";
+	return new Intl.NumberFormat("zh-CN", {
+		style: "currency",
+		currency: "CNY",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	}).format(value);
 }
 
 /**
@@ -26,11 +26,11 @@ export function formatCurrency(value: number | null | undefined): string {
  * Used in payment records where every cent matters.
  */
 export function formatCurrencyFull(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "¥0.00";
-  return new Intl.NumberFormat("zh-CN", {
-    style: "currency",
-    currency: "CNY",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+	if (value == null || !Number.isFinite(value)) return "¥0.00";
+	return new Intl.NumberFormat("zh-CN", {
+		style: "currency",
+		currency: "CNY",
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	}).format(value);
 }

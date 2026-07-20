@@ -11,12 +11,12 @@
  * cover every bucket without faking the clock.
  */
 export function greetingForHour(hour: number): string {
-  if (hour < 0 || hour > 23 || !Number.isFinite(hour)) return "你好";
-  if (hour < 5) return "凌晨好";
-  if (hour < 11) return "早上好";
-  if (hour < 13) return "上午好";
-  if (hour < 18) return "下午好";
-  return "晚上好";
+	if (hour < 0 || hour > 23 || !Number.isFinite(hour)) return "你好";
+	if (hour < 5) return "凌晨好";
+	if (hour < 11) return "早上好";
+	if (hour < 13) return "上午好";
+	if (hour < 18) return "下午好";
+	return "晚上好";
 }
 
 /**
@@ -30,7 +30,7 @@ export function greetingForHour(hour: number): string {
  *   (n, 0)  → "已有 n 位家庭成员，添加保单开始守护"
  */
 export function familySubtitle(memberCount: number, policyCount: number): string {
-  if (memberCount <= 0) return "添加家庭成员开始守护他们";
-  if (policyCount <= 0) return `已有 ${memberCount} 位家庭成员，添加保单开始守护`;
-  return `已为家中 ${memberCount} 位成员守护 ${policyCount} 份保单`;
+	if (memberCount <= 0) return "添加家庭成员开始守护他们";
+	if (policyCount <= 0) return `已有 ${memberCount} 位家庭成员，添加保单开始守护`;
+	return `已为家中 ${memberCount} 位成员守护 ${policyCount} 份保单`;
 }

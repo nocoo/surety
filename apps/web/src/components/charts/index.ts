@@ -1,9 +1,9 @@
+export {
+	HorizontalBarChart,
+	InsurerChart,
+	MemberCategoryChart,
+	StackedTimelineChart,
+	StackedValueChart,
+} from "./bar-chart";
 export { ChartCard } from "./chart-card";
 export { DonutChart } from "./donut-chart";
-export {
-  HorizontalBarChart,
-  InsurerChart,
-  MemberCategoryChart,
-  StackedValueChart,
-  StackedTimelineChart,
-} from "./bar-chart";

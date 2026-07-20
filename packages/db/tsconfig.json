@@ -1,11 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "lib": ["esnext", "dom"],
-    "paths": {
-      "@surety/db": ["./src/index.ts"],
-      "@surety/db/*": ["./src/*"]
-    }
-  },
-  "include": ["src/**/*.ts"]
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["esnext", "dom"],
+		"paths": {
+			"@surety/db": ["./src/index.ts"],
+			"@surety/db/*": ["./src/*"]
+		}
+	},
+	"include": ["src/**/*.ts"]
 }

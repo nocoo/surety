@@ -10,72 +10,66 @@
  * completion; e2e output is streamed live since it dwarfs everything else.
  */
 
-import { spawn, type Subprocess } from "bun";
+import { type Subprocess, spawn } from "bun";
 
 interface Step {
-  name: string;
-  cmd: string[];
-  /** When true, inherit stdio so output streams live. */
-  live?: boolean;
+	name: string;
+	cmd: string[];
+	/** When true, inherit stdio so output streams live. */
+	live?: boolean;
 }
 
 const STEPS: Step[] = [
-  { name: "osv-scanner", cmd: ["osv-scanner", "--lockfile=bun.lock"] },
-  { name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
-  // Worker + CLI unit suites via vitest (test files migrated to vitest).
-  // vitest.config.ts includes/excludes are authoritative; no path args needed.
-  {
-    name: "vitest unit",
-    cmd: ["bunx", "vitest", "run"],
-    live: true,
-  },
-  // L2 E2E for the Hono worker — uses the in-memory D1 harness in
-  // __tests__/e2e/setup.ts. Listed separately so the bunfig E2E path-ignore
-  // can be overridden for this step only.
-  {
-    name: "worker e2e",
-    cmd: [
-      "bun",
-      "test",
-      "apps/worker/__tests__/e2e",
-      "--path-ignore-patterns",
-      "__none__",
-    ],
-    live: true,
-  },
-  // L2 HTTP — boots `wrangler dev --local` on :7017 and drives
-  // the worker through real fetch() over the loopback. Catches D1/R2
-  // binding regressions that the in-memory harness cannot.
-  {
-    name: "l2 http",
-    cmd: ["bun", "run", "scripts/run-l2-http.ts"],
-    live: true,
-  },
+	{ name: "osv-scanner", cmd: ["osv-scanner", "--lockfile=bun.lock"] },
+	{ name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
+	// Worker + CLI unit suites via vitest (test files migrated to vitest).
+	// vitest.config.ts includes/excludes are authoritative; no path args needed.
+	{
+		name: "vitest unit",
+		cmd: ["bunx", "vitest", "run"],
+		live: true,
+	},
+	// L2 E2E for the Hono worker — uses the in-memory D1 harness in
+	// __tests__/e2e/setup.ts. Listed separately so the bunfig E2E path-ignore
+	// can be overridden for this step only.
+	{
+		name: "worker e2e",
+		cmd: ["bun", "test", "apps/worker/__tests__/e2e", "--path-ignore-patterns", "__none__"],
+		live: true,
+	},
+	// L2 HTTP — boots `wrangler dev --local` on :7017 and drives
+	// the worker through real fetch() over the loopback. Catches D1/R2
+	// binding regressions that the in-memory harness cannot.
+	{
+		name: "l2 http",
+		cmd: ["bun", "run", "scripts/run-l2-http.ts"],
+		live: true,
+	},
 ];
 
 interface Outcome {
-  name: string;
-  ok: boolean;
-  ms: number;
-  output?: string;
+	name: string;
+	ok: boolean;
+	ms: number;
+	output?: string;
 }
 
 async function run(step: Step): Promise<Outcome> {
-  const start = performance.now();
-  const proc: Subprocess = spawn(step.cmd, {
-    stdout: step.live ? "inherit" : "pipe",
-    stderr: step.live ? "inherit" : "pipe",
-  });
-  let output = "";
-  if (!step.live) {
-    const [out, err] = await Promise.all([
-      new Response(proc.stdout as ReadableStream).text(),
-      new Response(proc.stderr as ReadableStream).text(),
-    ]);
-    output = (out + err).trim();
-  }
-  const code = await proc.exited;
-  return { name: step.name, ok: code === 0, ms: performance.now() - start, output };
+	const start = performance.now();
+	const proc: Subprocess = spawn(step.cmd, {
+		stdout: step.live ? "inherit" : "pipe",
+		stderr: step.live ? "inherit" : "pipe",
+	});
+	let output = "";
+	if (!step.live) {
+		const [out, err] = await Promise.all([
+			new Response(proc.stdout as ReadableStream).text(),
+			new Response(proc.stderr as ReadableStream).text(),
+		]);
+		output = (out + err).trim();
+	}
+	const code = await proc.exited;
+	return { name: step.name, ok: code === 0, ms: performance.now() - start, output };
 }
 
 const results = await Promise.all(STEPS.map(run));
@@ -83,14 +77,14 @@ const results = await Promise.all(STEPS.map(run));
 let failed = false;
 console.log("\n──────── pre-push summary ────────");
 for (const r of results) {
-  const status = r.ok ? "✅" : "❌";
-  console.log(`${status} ${r.name} (${Math.round(r.ms)}ms)`);
-  if (!r.ok && r.output) {
-    console.log(r.output);
-    failed = true;
-  } else if (!r.ok) {
-    failed = true;
-  }
+	const status = r.ok ? "✅" : "❌";
+	console.log(`${status} ${r.name} (${Math.round(r.ms)}ms)`);
+	if (!r.ok && r.output) {
+		console.log(r.output);
+		failed = true;
+	} else if (!r.ok) {
+		failed = true;
+	}
 }
 
 if (failed) process.exit(1);

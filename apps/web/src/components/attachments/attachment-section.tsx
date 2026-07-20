@@ -1,163 +1,146 @@
-
-import { useState, useEffect, useCallback } from "react";
+import type { Attachment } from "@surety/db/schema";
+import { useCallback, useEffect, useState } from "react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AttachmentDropZone } from "./attachment-drop-zone";
 import { AttachmentList } from "./attachment-list";
 import { AttachmentPreviewDialog } from "./attachment-preview-dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import type { Attachment } from "@surety/db/schema";
 
 interface AttachmentSectionProps {
-  policyId: number;
+	policyId: number;
 }
 
 export function AttachmentSection({ policyId }: AttachmentSectionProps) {
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(
-    null,
-  );
-  const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
-  const [deleting, setDeleting] = useState(false);
+	const [attachments, setAttachments] = useState<Attachment[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
+	const [deleting, setDeleting] = useState(false);
 
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const fetchAttachments = useCallback(async () => {
-    setLoadError(null);
-    try {
-      const res = await fetch(`/api/policies/${policyId}/attachments`);
-      if (res.ok) {
-        const data = (await res.json()) as Attachment[];
-        setAttachments(data);
-      } else {
-        setLoadError(`加载附件失败 (${res.status})`);
-      }
-    } catch {
-      setLoadError("网络错误，无法加载附件");
-    } finally {
-      setLoading(false);
-    }
-  }, [policyId]);
+	const fetchAttachments = useCallback(async () => {
+		setLoadError(null);
+		try {
+			const res = await fetch(`/api/policies/${policyId}/attachments`);
+			if (res.ok) {
+				const data = (await res.json()) as Attachment[];
+				setAttachments(data);
+			} else {
+				setLoadError(`加载附件失败 (${res.status})`);
+			}
+		} catch {
+			setLoadError("网络错误，无法加载附件");
+		} finally {
+			setLoading(false);
+		}
+	}, [policyId]);
 
-  useEffect(() => {
-    fetchAttachments();
-  }, [fetchAttachments]);
+	useEffect(() => {
+		fetchAttachments();
+	}, [fetchAttachments]);
 
-  const handleUploadComplete = useCallback(() => {
-    fetchAttachments();
-  }, [fetchAttachments]);
+	const handleUploadComplete = useCallback(() => {
+		fetchAttachments();
+	}, [fetchAttachments]);
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      const res = await fetch(
-        `/api/policies/${policyId}/attachments/${deleteTarget.id}`,
-        { method: "DELETE" },
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        const msg =
-          (body as { error?: string } | null)?.error ??
-          `删除失败 (${res.status})`;
-        setDeleteError(msg);
-        return;
-      }
-      setDeleteTarget(null);
-      fetchAttachments();
-    } catch {
-      setDeleteError("网络错误，请重试");
-    } finally {
-      setDeleting(false);
-    }
-  };
+	const handleDelete = async () => {
+		if (!deleteTarget) return;
+		setDeleting(true);
+		setDeleteError(null);
+		try {
+			const res = await fetch(`/api/policies/${policyId}/attachments/${deleteTarget.id}`, {
+				method: "DELETE",
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => null);
+				const msg = (body as { error?: string } | null)?.error ?? `删除失败 (${res.status})`;
+				setDeleteError(msg);
+				return;
+			}
+			setDeleteTarget(null);
+			fetchAttachments();
+		} catch {
+			setDeleteError("网络错误，请重试");
+		} finally {
+			setDeleting(false);
+		}
+	};
 
-  return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-medium">保单附件</h3>
+	return (
+		<div className="space-y-4">
+			<h3 className="text-sm font-medium">保单附件</h3>
 
-      <AttachmentDropZone
-        policyId={policyId}
-        onUploadComplete={handleUploadComplete}
-      />
+			<AttachmentDropZone policyId={policyId} onUploadComplete={handleUploadComplete} />
 
-      {loading ? (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          加载中...
-        </p>
-      ) : loadError ? (
-        <div className="rounded-lg bg-destructive/10 p-4 text-center">
-          <p className="text-sm text-destructive">{loadError}</p>
-          <button
-            type="button"
-            onClick={() => {
-              setLoading(true);
-              fetchAttachments();
-            }}
-            className="mt-2 text-sm text-primary hover:underline"
-          >
-            点击重试
-          </button>
-        </div>
-      ) : (
-        <AttachmentList
-          attachments={attachments}
-          policyId={policyId}
-          onPreview={setPreviewAttachment}
-          onDelete={setDeleteTarget}
-        />
-      )}
+			{loading ? (
+				<p className="text-sm text-muted-foreground text-center py-4">加载中...</p>
+			) : loadError ? (
+				<div className="rounded-lg bg-destructive/10 p-4 text-center">
+					<p className="text-sm text-destructive">{loadError}</p>
+					<button
+						type="button"
+						onClick={() => {
+							setLoading(true);
+							fetchAttachments();
+						}}
+						className="mt-2 text-sm text-primary hover:underline"
+					>
+						点击重试
+					</button>
+				</div>
+			) : (
+				<AttachmentList
+					attachments={attachments}
+					policyId={policyId}
+					onPreview={setPreviewAttachment}
+					onDelete={setDeleteTarget}
+				/>
+			)}
 
-      <AttachmentPreviewDialog
-        attachment={previewAttachment}
-        policyId={policyId}
-        open={!!previewAttachment}
-        onOpenChange={(open) => {
-          if (!open) setPreviewAttachment(null);
-        }}
-      />
+			<AttachmentPreviewDialog
+				attachment={previewAttachment}
+				policyId={policyId}
+				open={!!previewAttachment}
+				onOpenChange={(open) => {
+					if (!open) setPreviewAttachment(null);
+				}}
+			/>
 
-      <AlertDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteTarget(null);
-            setDeleteError(null);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              确定要删除附件 &quot;{deleteTarget?.filename}&quot; 吗？此操作不可撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {deleteError && (
-            <p className="text-sm text-destructive px-6">{deleteError}</p>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              variant="destructive"
-            >
-              {deleting ? "删除中..." : "删除"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
+			<AlertDialog
+				open={!!deleteTarget}
+				onOpenChange={(open) => {
+					if (!open) {
+						setDeleteTarget(null);
+						setDeleteError(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>确认删除</AlertDialogTitle>
+						<AlertDialogDescription>
+							确定要删除附件 &quot;{deleteTarget?.filename}&quot; 吗？此操作不可撤销。
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{deleteError && <p className="text-sm text-destructive px-6">{deleteError}</p>}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
+						<AlertDialogAction onClick={handleDelete} disabled={deleting} variant="destructive">
+							{deleting ? "删除中..." : "删除"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
+	);
 }

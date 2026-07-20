@@ -7,10 +7,10 @@ let jwksCache: ReturnType<typeof createRemoteJWKSet> | null = null;
 let jwksCacheTeamDomain: string | null = null;
 
 function getJWKS(teamDomain: string) {
-  if (jwksCache && jwksCacheTeamDomain === teamDomain) return jwksCache;
-  jwksCache = createRemoteJWKSet(new URL(`https://${teamDomain}/cdn-cgi/access/certs`));
-  jwksCacheTeamDomain = teamDomain;
-  return jwksCache;
+	if (jwksCache && jwksCacheTeamDomain === teamDomain) return jwksCache;
+	jwksCache = createRemoteJWKSet(new URL(`https://${teamDomain}/cdn-cgi/access/certs`));
+	jwksCacheTeamDomain = teamDomain;
+	return jwksCache;
 }
 
 // The bearer-token API host bypasses CF Access entirely; apiKeyAuth handles it.
@@ -22,10 +22,10 @@ function getJWKS(teamDomain: string) {
 // On the CF edge the Host header reflects the actual bound custom domain,
 // so spoofing is not viable.
 function isMachineEndpoint(c: Context<AppEnv>): boolean {
-  const onCfEdge = Boolean((c.req.raw as { cf?: unknown }).cf);
-  if (!onCfEdge) return false;
-  const host = c.req.header("host") ?? "";
-  return host === "surety-api.hexly.ai";
+	const onCfEdge = Boolean((c.req.raw as { cf?: unknown }).cf);
+	if (!onCfEdge) return false;
+	const host = c.req.header("host") ?? "";
+	return host === "surety-api.hexly.ai";
 }
 
 /**
@@ -51,67 +51,61 @@ function isMachineEndpoint(c: Context<AppEnv>): boolean {
  *   - JWT signature / issuer / audience invalid → 403
  */
 export async function accessAuth(c: Context<AppEnv>, next: Next) {
-  if (c.req.path === "/api/live") return next();
+	if (c.req.path === "/api/live") return next();
 
-  if (isLocalhost(c)) {
-    // Don't short-circuit when the caller sent a bearer token — let
-    // apiKeyAuth verify it so `accessEmail` gets populated for /api/me.
-    const hasBearer = (c.req.header("Authorization") ?? "").startsWith(
-      "Bearer ",
-    );
-    if (!hasBearer) {
-      c.set("accessAuthenticated", true);
-      c.set("sessionAuthenticated", true);
-    }
-    return next();
-  }
+	if (isLocalhost(c)) {
+		// Don't short-circuit when the caller sent a bearer token — let
+		// apiKeyAuth verify it so `accessEmail` gets populated for /api/me.
+		const hasBearer = (c.req.header("Authorization") ?? "").startsWith("Bearer ");
+		if (!hasBearer) {
+			c.set("accessAuthenticated", true);
+			c.set("sessionAuthenticated", true);
+		}
+		return next();
+	}
 
-  if (isMachineEndpoint(c)) return next();
+	if (isMachineEndpoint(c)) return next();
 
-  // L2-HTTP harness (wrangler dev) sets E2E_SKIP_AUTH=true so the
-  // browser-host code path is reachable without a real CF Access JWT.
-  // Match the apiKeyAuth/originGuard bypass shape: only honoured when
-  // ENVIRONMENT is not production, so a leaked var on prod cannot
-  // re-open the fail-open hole this commit closes.
-  if (
-    c.env?.E2E_SKIP_AUTH === "true" &&
-    c.env?.ENVIRONMENT !== "production"
-  ) {
-    return next();
-  }
+	// L2-HTTP harness (wrangler dev) sets E2E_SKIP_AUTH=true so the
+	// browser-host code path is reachable without a real CF Access JWT.
+	// Match the apiKeyAuth/originGuard bypass shape: only honoured when
+	// ENVIRONMENT is not production, so a leaked var on prod cannot
+	// re-open the fail-open hole this commit closes.
+	if (c.env?.E2E_SKIP_AUTH === "true" && c.env?.ENVIRONMENT !== "production") {
+		return next();
+	}
 
-  const teamDomain = c.env.CF_ACCESS_TEAM_DOMAIN;
-  const aud = c.env.CF_ACCESS_AUD;
+	const teamDomain = c.env.CF_ACCESS_TEAM_DOMAIN;
+	const aud = c.env.CF_ACCESS_AUD;
 
-  if (!(teamDomain && aud)) {
-    return c.json(
-      {
-        error:
-          "Access authentication not configured. Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD.",
-      },
-      500,
-    );
-  }
+	if (!(teamDomain && aud)) {
+		return c.json(
+			{
+				error: "Access authentication not configured. Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD.",
+			},
+			500,
+		);
+	}
 
-  const jwt = c.req.header("Cf-Access-Jwt-Assertion");
-  if (!jwt) {
-    return c.json({ error: "Missing Access JWT" }, 401);
-  }
+	const jwt = c.req.header("Cf-Access-Jwt-Assertion");
+	if (!jwt) {
+		return c.json({ error: "Missing Access JWT" }, 401);
+	}
 
-  try {
-    const jwks = getJWKS(teamDomain);
-    const { payload } = await jwtVerify(jwt, jwks, {
-      issuer: `https://${teamDomain}`,
-      audience: aud,
-    });
-    c.set("accessAuthenticated", true);
-    c.set("sessionAuthenticated", true);
-    if (typeof payload.email === "string") {
-      c.set("accessEmail", payload.email);
-    }
-  } catch {
-    return c.json({ error: "Invalid Access JWT" }, 403);
-  }
+	try {
+		const jwks = getJWKS(teamDomain);
+		const { payload } = await jwtVerify(jwt, jwks, {
+			issuer: `https://${teamDomain}`,
+			audience: aud,
+		});
+		c.set("accessAuthenticated", true);
+		c.set("sessionAuthenticated", true);
+		if (typeof payload.email === "string") {
+			c.set("accessEmail", payload.email);
+		}
+	} catch {
+		return c.json({ error: "Invalid Access JWT" }, 403);
+	}
 
-  return next();
+	return next();
 }

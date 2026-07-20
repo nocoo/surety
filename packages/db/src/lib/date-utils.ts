@@ -22,11 +22,11 @@
  * (e.g. America/Los_Angeles) and can cause off-by-one errors.
  */
 export function parseLocalDate(dateStr: string): Date {
-  const parts = dateStr.split("-").map(Number);
-  const year = parts[0] ?? 0;
-  const month = (parts[1] ?? 1) - 1;
-  const day = parts[2] ?? 1;
-  return new Date(year, month, day);
+	const parts = dateStr.split("-").map(Number);
+	const year = parts[0] ?? 0;
+	const month = (parts[1] ?? 1) - 1;
+	const day = parts[2] ?? 1;
+	return new Date(year, month, day);
 }
 
 /**
@@ -38,17 +38,17 @@ export function parseLocalDate(dateStr: string): Date {
  * in UTC-east timezones (e.g. Asia/Shanghai).
  */
 export function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
 }
 
 /**
  * Get today's date as a "YYYY-MM-DD" string in the local timezone.
  */
 export function todayStr(): string {
-  return formatLocalDate(new Date());
+	return formatLocalDate(new Date());
 }
 
 /**
@@ -61,14 +61,14 @@ export function todayStr(): string {
  * day in the requested timezone via Intl.
  */
 export function todayInTimeZone(timeZone = "Asia/Shanghai"): string {
-  // 'en-CA' formats as YYYY-MM-DD; combined with timeZone it gives a
-  // stable calendar date regardless of the host timezone.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+	// 'en-CA' formats as YYYY-MM-DD; combined with timeZone it gives a
+	// stable calendar date regardless of the host timezone.
+	return new Intl.DateTimeFormat("en-CA", {
+		timeZone,
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	}).format(new Date());
 }
 
 /**
@@ -78,9 +78,9 @@ export function todayInTimeZone(timeZone = "Asia/Shanghai"): string {
  * in the future, so users see what's coming this year without waiting.
  */
 export function endOfYearInTimeZone(timeZone = "Asia/Shanghai"): string {
-  const today = todayInTimeZone(timeZone);
-  const yearStr = today.slice(0, 4);
-  return `${yearStr}-12-31`;
+	const today = todayInTimeZone(timeZone);
+	const yearStr = today.slice(0, 4);
+	return `${yearStr}-12-31`;
 }
 
 /**
@@ -88,13 +88,13 @@ export function endOfYearInTimeZone(timeZone = "Asia/Shanghai"): string {
  * Positive = future, negative = past.
  */
 export function getDaysFromToday(dateStr: string | null): number | null {
-  if (!dateStr) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = parseLocalDate(dateStr);
-  target.setHours(0, 0, 0, 0);
-  const diffTime = target.getTime() - today.getTime();
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+	if (!dateStr) return null;
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const target = parseLocalDate(dateStr);
+	target.setHours(0, 0, 0, 0);
+	const diffTime = target.getTime() - today.getTime();
+	return Math.round(diffTime / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -105,10 +105,10 @@ export function getDaysFromToday(dateStr: string | null): number | null {
  * - Future dates: "X 天后"
  */
 export function formatDaysFromToday(days: number | null): string | null {
-  if (days === null) return null;
-  if (days === 0) return "今天";
-  if (days < 0) return `${Math.abs(days)}天前`;
-  return `${days}天后`;
+	if (days === null) return null;
+	if (days === 0) return "今天";
+	if (days < 0) return `${Math.abs(days)}天前`;
+	return `${days}天后`;
 }
 
 /**
@@ -118,9 +118,9 @@ export function formatDaysFromToday(days: number | null): string | null {
  * Example: "2025-06-28 (365天前)" or "2026-06-27 (92天后)"
  */
 export function formatDateWithDays(dateStr: string | null): string | null {
-  if (!dateStr) return null;
-  const days = getDaysFromToday(dateStr);
-  const annotation = formatDaysFromToday(days);
-  if (!annotation) return dateStr;
-  return `${dateStr} (${annotation})`;
+	if (!dateStr) return null;
+	const days = getDaysFromToday(dateStr);
+	const annotation = formatDaysFromToday(days);
+	if (!annotation) return dateStr;
+	return `${dateStr} (${annotation})`;
 }

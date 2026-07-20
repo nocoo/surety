@@ -7,63 +7,59 @@
 
 // Icon names as strings, mapped to Lucide components in sidebar.tsx
 export interface NavItemDef {
-  href: string;
-  label: string;
-  icon: string;
+	href: string;
+	label: string;
+	icon: string;
 }
 
 export interface NavGroupDef {
-  label: string;
-  items: NavItemDef[];
-  defaultOpen?: boolean;
+	label: string;
+	items: NavItemDef[];
+	defaultOpen?: boolean;
 }
 
 export const NAV_GROUPS: NavGroupDef[] = [
-  {
-    label: "总览",
-    defaultOpen: true,
-    items: [
-      { href: "/", label: "仪表盘", icon: "LayoutDashboard" },
-      { href: "/coverage-lookup", label: "保障速查", icon: "ShieldCheck" },
-      { href: "/renewal-calendar", label: "续保日历", icon: "CalendarClock" },
-    ],
-  },
-  {
-    label: "数据管理",
-    defaultOpen: true,
-    items: [
-      { href: "/policies", label: "保单管理", icon: "FileText" },
-      { href: "/members", label: "家庭成员", icon: "Users" },
-      { href: "/insurers", label: "保险公司", icon: "Landmark" },
-      { href: "/assets", label: "资产管理", icon: "Building2" },
-    ],
-  },
-  {
-    label: "就诊管理",
-    defaultOpen: true,
-    items: [
-      { href: "/medical-visits", label: "就诊记录", icon: "Stethoscope" },
-      { href: "/hospitals", label: "医院管理", icon: "Hospital" },
-      { href: "/doctors", label: "医生管理", icon: "UserRound" },
-    ],
-  },
-  {
-    label: "系统",
-    defaultOpen: true,
-    items: [
-      { href: "/settings", label: "系统设置", icon: "Settings" },
-    ],
-  },
-  {
-    // CLI is intended for AI assistants and shell scripts, not for the
-    // 99% of end users who just want to manage policies. Hide it in a
-    // collapsed group so the sidebar stays focused on core tasks.
-    label: "开发者",
-    defaultOpen: false,
-    items: [
-      { href: "/cli", label: "CLI", icon: "Terminal" },
-    ],
-  },
+	{
+		label: "总览",
+		defaultOpen: true,
+		items: [
+			{ href: "/", label: "仪表盘", icon: "LayoutDashboard" },
+			{ href: "/coverage-lookup", label: "保障速查", icon: "ShieldCheck" },
+			{ href: "/renewal-calendar", label: "续保日历", icon: "CalendarClock" },
+		],
+	},
+	{
+		label: "数据管理",
+		defaultOpen: true,
+		items: [
+			{ href: "/policies", label: "保单管理", icon: "FileText" },
+			{ href: "/members", label: "家庭成员", icon: "Users" },
+			{ href: "/insurers", label: "保险公司", icon: "Landmark" },
+			{ href: "/assets", label: "资产管理", icon: "Building2" },
+		],
+	},
+	{
+		label: "就诊管理",
+		defaultOpen: true,
+		items: [
+			{ href: "/medical-visits", label: "就诊记录", icon: "Stethoscope" },
+			{ href: "/hospitals", label: "医院管理", icon: "Hospital" },
+			{ href: "/doctors", label: "医生管理", icon: "UserRound" },
+		],
+	},
+	{
+		label: "系统",
+		defaultOpen: true,
+		items: [{ href: "/settings", label: "系统设置", icon: "Settings" }],
+	},
+	{
+		// CLI is intended for AI assistants and shell scripts, not for the
+		// 99% of end users who just want to manage policies. Hide it in a
+		// collapsed group so the sidebar stays focused on core tasks.
+		label: "开发者",
+		defaultOpen: false,
+		items: [{ href: "/cli", label: "CLI", icon: "Terminal" }],
+	},
 ];
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
@@ -76,7 +72,7 @@ export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
  * stay in sync, and so we can unit-test the group-expansion rule.
  */
 export function isItemActive(href: string, pathname: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+	return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
 /**
@@ -89,9 +85,9 @@ export function isItemActive(href: string, pathname: string): boolean {
  * (NavGroup in sidebar.tsx) and the static NavGroupDef both work.
  */
 export function shouldGroupBeOpenOnMount(
-  group: { items: { href: string }[]; defaultOpen?: boolean | undefined },
-  pathname: string,
+	group: { items: { href: string }[]; defaultOpen?: boolean | undefined },
+	pathname: string,
 ): boolean {
-  if (group.items.some((item) => isItemActive(item.href, pathname))) return true;
-  return group.defaultOpen ?? true;
+	if (group.items.some((item) => isItemActive(item.href, pathname))) return true;
+	return group.defaultOpen ?? true;
 }

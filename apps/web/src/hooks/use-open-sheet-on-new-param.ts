@@ -13,18 +13,18 @@ import { useSearchParams } from "react-router";
  * its local "editing" / "currentItem" state before opening.
  */
 export function useOpenSheetOnNewParam(open: () => void) {
-  const [params, setParams] = useSearchParams();
-  // Pin the latest open callback in a ref so the effect can stay
-  // keyed on `params` only — re-running just because the caller
-  // redefined the callback inline would burn cycles for no reason.
-  const openRef = useRef(open);
-  openRef.current = open;
+	const [params, setParams] = useSearchParams();
+	// Pin the latest open callback in a ref so the effect can stay
+	// keyed on `params` only — re-running just because the caller
+	// redefined the callback inline would burn cycles for no reason.
+	const openRef = useRef(open);
+	openRef.current = open;
 
-  useEffect(() => {
-    if (params.get("new") !== "1") return;
-    openRef.current();
-    const next = new URLSearchParams(params);
-    next.delete("new");
-    setParams(next, { replace: true });
-  }, [params, setParams]);
+	useEffect(() => {
+		if (params.get("new") !== "1") return;
+		openRef.current();
+		const next = new URLSearchParams(params);
+		next.delete("new");
+		setParams(next, { replace: true });
+	}, [params, setParams]);
 }

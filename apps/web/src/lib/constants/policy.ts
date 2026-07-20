@@ -1,27 +1,27 @@
 import type { PolicyStatus } from "@surety/db/types";
 
 export const statusConfig: Record<
-  PolicyStatus,
-  { label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }
+	PolicyStatus,
+	{ label: string; variant: "success" | "outline" | "warning" | "purple" | "destructive" }
 > = {
-  Active: { label: "生效中", variant: "success" },
-  Expired: { label: "已过期", variant: "destructive" },
-  Lapsed: { label: "已失效", variant: "outline" },
-  Surrendered: { label: "已退保", variant: "warning" },
-  Claimed: { label: "已理赔", variant: "purple" },
+	Active: { label: "生效中", variant: "success" },
+	Expired: { label: "已过期", variant: "destructive" },
+	Lapsed: { label: "已失效", variant: "outline" },
+	Surrendered: { label: "已退保", variant: "warning" },
+	Claimed: { label: "已理赔", variant: "purple" },
 };
 
 export type StatusBadgeVariant =
-  | "success"
-  | "outline"
-  | "warning"
-  | "purple"
-  | "destructive"
-  | "rose";
+	| "success"
+	| "outline"
+	| "warning"
+	| "purple"
+	| "destructive"
+	| "rose";
 
 export interface PolicyStatusBadge {
-  label: string;
-  variant: StatusBadgeVariant;
+	label: string;
+	variant: StatusBadgeVariant;
 }
 
 /**
@@ -37,18 +37,17 @@ export interface PolicyStatusBadge {
  * primary badge.
  */
 export function renderPolicyStatusBadges(policy: {
-  status: PolicyStatus;
-  plannedSurrenderAt?: string | null;
+	status: PolicyStatus;
+	plannedSurrenderAt?: string | null;
 }): PolicyStatusBadge[] {
-  const primary: PolicyStatusBadge = {
-    label: statusConfig[policy.status].label,
-    variant: statusConfig[policy.status].variant,
-  };
-  const planned = policy.plannedSurrenderAt;
-  const showPlanned =
-    !!planned && (policy.status === "Active" || policy.status === "Expired");
-  if (!showPlanned) return [primary];
-  return [primary, { label: `拟退保 ${planned}`, variant: "rose" }];
+	const primary: PolicyStatusBadge = {
+		label: statusConfig[policy.status].label,
+		variant: statusConfig[policy.status].variant,
+	};
+	const planned = policy.plannedSurrenderAt;
+	const showPlanned = !!planned && (policy.status === "Active" || policy.status === "Expired");
+	if (!showPlanned) return [primary];
+	return [primary, { label: `拟退保 ${planned}`, variant: "rose" }];
 }
 
 /**
@@ -60,14 +59,18 @@ export function renderPolicyStatusBadges(policy: {
  * the stripe is recognition, not the source of truth.
  */
 export function statusStripeClass(status: PolicyStatus): string {
-  switch (statusConfig[status].variant) {
-    case "success": return "border-l-2 border-l-success";
-    case "destructive": return "border-l-2 border-l-destructive";
-    case "warning": return "border-l-2 border-l-warning";
-    case "purple": return "border-l-2 border-l-purple";
-    case "outline":
-    default: return "border-l-2 border-l-muted-foreground/30";
-  }
+	switch (statusConfig[status].variant) {
+		case "success":
+			return "border-l-2 border-l-success";
+		case "destructive":
+			return "border-l-2 border-l-destructive";
+		case "warning":
+			return "border-l-2 border-l-warning";
+		case "purple":
+			return "border-l-2 border-l-purple";
+		default:
+			return "border-l-2 border-l-muted-foreground/30";
+	}
 }
 
 /**
@@ -81,23 +84,23 @@ export function statusStripeClass(status: PolicyStatus): string {
  * the policy-sheet form's category Select to render the option list.
  */
 export const categoryLabels: Record<string, string> = {
-  Life: "定期寿",
-  WholeLife: "终身寿",
-  CriticalIllness: "重疾险",
-  Medical: "医疗险",
-  Accident: "意外险",
-  Annuity: "年金险",
-  Property: "财产险",
+	Life: "定期寿",
+	WholeLife: "终身寿",
+	CriticalIllness: "重疾险",
+	Medical: "医疗险",
+	Accident: "意外险",
+	Annuity: "年金险",
+	Property: "财产险",
 };
 
 export const paymentFrequencyLabels: Record<string, string> = {
-  Single: "趸交",
-  Monthly: "月缴",
-  Yearly: "年缴",
+	Single: "趸交",
+	Monthly: "月缴",
+	Yearly: "年缴",
 };
 
 export const renewalTypeLabels: Record<string, string> = {
-  Manual: "手动续保",
-  Auto: "自动续保",
-  Yearly: "一年期",
+	Manual: "手动续保",
+	Auto: "自动续保",
+	Yearly: "一年期",
 };

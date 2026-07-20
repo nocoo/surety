@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider, createBrowserRouter } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import { App } from "./App";
 import "./globals.css";
 
@@ -11,12 +11,10 @@ if (!root) throw new Error("Root element not found");
 // We need a data router (not <BrowserRouter>) so child pages can use
 // useBlocker for unsaved-edit guards (settings page); Routes/Route
 // inside <App/> stay unchanged.
-const router = createBrowserRouter([
-  { path: "*", element: <App /> },
-]);
+const router = createBrowserRouter([{ path: "*", element: <App /> }]);
 
 createRoot(root).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>,
+	<StrictMode>
+		<RouterProvider router={router} />
+	</StrictMode>,
 );

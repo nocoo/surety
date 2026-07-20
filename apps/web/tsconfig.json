@@ -1,14 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "jsx": "react-jsx",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@surety/api": ["../../packages/api/src/index.ts"],
-      "@surety/api/*": ["../../packages/api/src/*"]
-    }
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
-  "exclude": ["node_modules"]
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"jsx": "react-jsx",
+		"paths": {
+			"@/*": ["./src/*"],
+			"@surety/api": ["../../packages/api/src/index.ts"],
+			"@surety/api/*": ["../../packages/api/src/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+	"exclude": ["node_modules"]
 }
