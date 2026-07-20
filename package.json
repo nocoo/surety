@@ -79,7 +79,7 @@
 	},
 	"lint-staged": {
 		"*.{ts,tsx,js,jsx,json,css}": [
-			"biome check --error-on-warnings --no-errors-on-unmatched"
+			"biome check --write --error-on-warnings --no-errors-on-unmatched"
 		]
 	}
 }

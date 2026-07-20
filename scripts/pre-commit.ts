@@ -15,7 +15,10 @@ interface Step {
 
 const STEPS: Step[] = [
 	{ name: "test", cmd: ["bun", "run", "scripts/run-l1.ts"] },
+	// Format+lint staged files first (write), then full-repo biome gate so
+	// unstaged drift cannot sneak past with a staged-only green path.
 	{ name: "lint-staged", cmd: ["./node_modules/.bin/lint-staged"] },
+	{ name: "lint", cmd: ["bun", "run", "lint"] },
 	{ name: "typecheck", cmd: ["bun", "run", "scripts/run-g1a.ts"] },
 	{ name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
 ];
