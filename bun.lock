@@ -14,7 +14,7 @@
         "radix-ui": "1.6.2",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
-        "react-dropzone": "^19.0.2",
+        "react-dropzone": "^19.1.1",
         "recharts": "3.9.2",
         "tailwind-merge": "3.6.0",
         "ws": "8.21.1",
@@ -62,7 +62,7 @@
         "radix-ui": "1.6.2",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
-        "react-dropzone": "^19.0.2",
+        "react-dropzone": "^19.1.1",
         "react-router": "8.2.0",
         "recharts": "3.9.2",
         "swr": "2.4.2",
@@ -89,7 +89,7 @@
         "jose": "6.2.3",
       },
       "devDependencies": {
-        "@cloudflare/workers-types": "5.20260718.1",
+        "@cloudflare/workers-types": "5.20260719.1",
         "wrangler": "4.112.0",
       },
     },
@@ -166,7 +166,7 @@
 
     "@cloudflare/workerd-windows-64": ["@cloudflare/workerd-windows-64@1.20260714.1", "", { "os": "win32", "cpu": "x64" }, "sha512-cGqnU3Hg2YZS/k3SAqrMp1DjpdsyFde72tWltdl6ZT9+SFz/Zrk/8gyTU1TcxC4YApXeNVH5TyU5cOGPgUJ0pg=="],
 
-    "@cloudflare/workers-types": ["@cloudflare/workers-types@5.20260718.1", "", {}, "sha512-PSeVPF0ZPsqv7snSwiywQX/c4jNDSXClOvFwxWoVysoltQEr6oPnOh7oRh1GoAUnVxkzzrqXbsPRTxzb3LIbag=="],
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@5.20260719.1", "", {}, "sha512-DcGasbfUuczQilc80vhL2MPPdWcaxWkx0hN5IW9UdNDBdrRvWcal3akSJ6Ccm7e8+/OGeR+8tYrqkykA3YGSZw=="],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -794,7 +794,7 @@
 
     "react-dom": ["react-dom@19.2.7", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.7" } }, "sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ=="],
 
-    "react-dropzone": ["react-dropzone@19.0.2", "", { "dependencies": { "attr-accept": "^2.2.5", "file-selector": "^4.0.1" }, "peerDependencies": { "@types/react": "*", "react": ">= 18" }, "optionalPeers": ["@types/react"] }, "sha512-WZI5Dgg2xvmP7WcKWlmTDIDT2C8VTHfe/CEZp5adWG5vzii3tSDdiZAEzBMmYxrAQay7U6lsehF75HlisW6bVQ=="],
+    "react-dropzone": ["react-dropzone@19.1.1", "", { "dependencies": { "attr-accept": "^2.2.5", "file-selector": "^4.0.1" }, "peerDependencies": { "@types/react": "*", "react": ">= 18" }, "optionalPeers": ["@types/react"] }, "sha512-zxuTwbyvP+FSdesiHafT/0UMTX/Ne1ri8XPTn7KM97ZinHKFy3N6KiKEGRiG28ibYV+nG6sHxoJlkVoDxIMHxQ=="],
 
     "react-is": ["react-is@16.13.1", "", {}, "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ=="],
 
