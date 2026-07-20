@@ -12,7 +12,7 @@
 		"build": "cd apps/web && bun run build",
 		"lint": "biome check --error-on-warnings .",
 		"lint:fix": "biome check --write .",
-		"typecheck": "tsc --noEmit && cd apps/web && tsc --noEmit && cd ../cli && tsc --noEmit",
+		"typecheck": "tsc --noEmit && cd apps/web && tsc --noEmit && cd ../cli && tsc --noEmit && cd ../worker && tsc --noEmit",
 		"lint:typecheck:cached": "bun run scripts/run-g1a.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",

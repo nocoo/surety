@@ -84,7 +84,7 @@ app.delete("/api/insurers/:id", async (c) => {
 	const id = parseInt(c.req.param("id"), 10);
 	if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 	const policies = await repos.policies.findAll();
-	const linked = policies.filter((p: { insurerId: number }) => p.insurerId === id);
+	const linked = policies.filter((p) => p.insurerId === id);
 	if (linked.length > 0)
 		return c.json({ error: `该保险公司关联了 ${linked.length} 份保单，无法删除` }, 409);
 	const deleted = await repos.insurers.delete(id);
