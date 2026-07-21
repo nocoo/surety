@@ -35,11 +35,11 @@
 		"hono": "4.12.31",
 		"lucide-react": "1.25.0",
 		"path-to-regexp": "^8.4.0",
-		"radix-ui": "1.6.2",
+		"radix-ui": "1.6.4",
 		"react": "^19.2.7",
 		"react-dom": "^19.2.7",
 		"react-dropzone": "^19.1.1",
-		"recharts": "3.9.2",
+		"recharts": "3.10.0",
 		"tailwind-merge": "3.6.0",
 		"ws": "8.21.1"
 	},
