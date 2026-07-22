@@ -11,7 +11,7 @@
 		"@surety/api": "workspace:*",
 		"@surety/db": "workspace:*",
 		"hono": "4.12.31",
-		"jose": "6.2.3"
+		"jose": "6.2.4"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "5.20260721.1",
