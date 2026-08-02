@@ -38,7 +38,7 @@
 		"radix-ui": "1.6.7",
 		"react": "^19.2.8",
 		"react-dom": "^19.2.8",
-		"react-dropzone": "^19.1.1",
+		"react-dropzone": "^19.2.0",
 		"recharts": "3.10.1",
 		"tailwind-merge": "3.6.0",
 		"ws": "8.21.1"
