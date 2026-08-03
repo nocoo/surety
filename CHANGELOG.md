@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.1
+
+### Added
+
+- **Medical visits temporal UI** — table and timeline split into 即将到来 / 今天 / 已发生, with left-border chrome, 待就诊/今天 badges, and 全部/待就诊/已发生 filter chips
+- Visit temporal helpers (`partitionVisitsByTemporal`, filter/count/badge) and todo-tone future copy (`还有 N 天`)
+
+### Fixed
+
+- Parse visit dates as local calendar days so western timezones no longer mis-bucket "today" as past
+- Refresh temporal chip counts and partitions at local midnight / tab wake
+
+### Changed
+
+- Dependency bumps since v2.3.0 (react-dropzone, jose, wrangler, vite, radix-ui, postcss GHSA fix, and related tooling)
+
 ## [Unreleased]
 
 ### Added
