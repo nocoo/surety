@@ -3,7 +3,18 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
-import { formatVisitDate, groupVisitsByMonth, UNKNOWN_DATE_KEY } from "@/lib/visit-grouping";
+import {
+	calculateDaysAgo,
+	formatDaysAgo,
+	formatVisitDate,
+	getTemporalBadge,
+	getVisitTemporal,
+	groupUpcomingVisitsByMonth,
+	groupVisitsByMonth,
+	partitionVisitsByTemporal,
+	UNKNOWN_DATE_KEY,
+	type VisitTemporal,
+} from "@/lib/visit-grouping";
 
 // Mirror of the page-local type — kept structural to avoid a circular import.
 export interface VisitForTimeline {
@@ -83,11 +94,34 @@ function parseSymptoms(symptoms: string | null | undefined): string[] {
 		.filter((s) => s.length > 0);
 }
 
+function temporalCardClass(temporal: VisitTemporal): string {
+	if (temporal === "upcoming") return "border-l-2 border-l-info";
+	if (temporal === "today") return "border-l-2 border-l-warning bg-primary/5";
+	return "";
+}
+
+function temporalRelativeClass(temporal: VisitTemporal): string {
+	if (temporal === "upcoming") return "text-info-text";
+	if (temporal === "today") return "text-warning-text";
+	return "text-muted-foreground";
+}
+
 interface VisitTimelineProps {
 	visits: VisitForTimeline[];
 	onEdit: (visitId: number) => void;
 	onDelete: (visitId: number) => void;
 }
+
+const TEMPORAL_SECTIONS: {
+	key: "upcoming" | "today" | "past" | "unknown";
+	label: string;
+	titleClass: string;
+}[] = [
+	{ key: "upcoming", label: "即将到来", titleClass: "text-info-text" },
+	{ key: "today", label: "今天", titleClass: "text-warning-text" },
+	{ key: "past", label: "已发生", titleClass: "text-muted-foreground" },
+	{ key: "unknown", label: "日期未识别", titleClass: "text-warning-text" },
+];
 
 export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) {
 	if (visits.length === 0) {
@@ -99,43 +133,80 @@ export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) 
 		);
 	}
 
-	const months = groupVisitsByMonth(visits);
+	const partitioned = partitionVisitsByTemporal(visits);
 
 	return (
-		<div className="space-y-8">
-			{months.map((bucket) => (
-				<section key={bucket.key}>
-					<div className="mb-3 flex items-center gap-3">
-						<h2
-							className={cn(
-								"font-display text-lg font-semibold tabular-nums",
-								bucket.key === UNKNOWN_DATE_KEY && "text-warning-text",
-							)}
-						>
-							{bucket.label}
-						</h2>
-						<span className="text-xs text-muted-foreground">{bucket.visits.length} 条</span>
-						{bucket.key === UNKNOWN_DATE_KEY && (
-							<span className="text-xs text-muted-foreground">
-								· 这些记录的就诊日期为空或格式不合法，请编辑修复
-							</span>
-						)}
-						<div className="flex-1 border-t border-border/60" />
-					</div>
+		<div className="space-y-10">
+			{TEMPORAL_SECTIONS.map(({ key, label, titleClass }) => {
+				const sectionVisits = partitioned[key];
+				if (sectionVisits.length === 0) return null;
 
-					{/*
-					 * Each card mirrors the same data the row used to expose but
-					 * groups it visually: header (people + type + actions), then a
-					 * 2-line body with reason / diagnosis / treatment / symptoms
-					 * inline — much easier to scan than a 12-column row.
-					 */}
-					<div className="space-y-3">
-						{bucket.visits.map((visit) => (
-							<VisitCard key={visit.id} visit={visit} onEdit={onEdit} onDelete={onDelete} />
-						))}
-					</div>
-				</section>
-			))}
+				// Upcoming: soonest-first months; past/unknown: newest-first archive.
+				const months =
+					key === "upcoming"
+						? groupUpcomingVisitsByMonth(sectionVisits)
+						: key === "today"
+							? null
+							: groupVisitsByMonth(sectionVisits);
+
+				return (
+					<section key={key} aria-label={label}>
+						<div className="mb-4 flex items-center gap-3">
+							<h2 className={cn("shrink-0 text-base font-semibold", titleClass)}>
+								{label}
+								<span className="ml-1.5 tabular-nums text-sm font-normal text-muted-foreground">
+									{sectionVisits.length}
+								</span>
+							</h2>
+							<div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+							{key === "unknown" && (
+								<span className="text-xs text-muted-foreground">
+									这些记录的就诊日期为空或格式不合法，请编辑修复
+								</span>
+							)}
+						</div>
+
+						{months === null ? (
+							<div className="space-y-3">
+								{sectionVisits.map((visit) => (
+									<VisitCard key={visit.id} visit={visit} onEdit={onEdit} onDelete={onDelete} />
+								))}
+							</div>
+						) : (
+							<div className="space-y-6">
+								{months.map((bucket) => (
+									<div key={bucket.key}>
+										<div className="mb-3 flex items-center gap-3">
+											<h3
+												className={cn(
+													"font-display text-sm font-semibold tabular-nums text-muted-foreground",
+													bucket.key === UNKNOWN_DATE_KEY && "text-warning-text",
+												)}
+											>
+												{bucket.label}
+											</h3>
+											<span className="text-xs text-muted-foreground">
+												{bucket.visits.length} 条
+											</span>
+											<div className="flex-1 border-t border-border/60" />
+										</div>
+										<div className="space-y-3">
+											{bucket.visits.map((visit) => (
+												<VisitCard
+													key={visit.id}
+													visit={visit}
+													onEdit={onEdit}
+													onDelete={onDelete}
+												/>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</section>
+				);
+			})}
 		</div>
 	);
 }
@@ -150,9 +221,12 @@ function VisitCard({
 	onDelete: (visitId: number) => void;
 }) {
 	const symptoms = parseSymptoms(visit.symptoms);
+	const temporal = getVisitTemporal(visit.visitDate);
+	const temporalBadge = getTemporalBadge(temporal);
+	const daysAgo = calculateDaysAgo(visit.visitDate);
 
 	return (
-		<article className="rounded-card bg-secondary p-4">
+		<article className={cn("rounded-card bg-secondary p-4", temporalCardClass(temporal))}>
 			<header className="flex items-start justify-between gap-3">
 				<div className="flex items-center gap-3 min-w-0">
 					<Avatar className="h-8 w-8 shrink-0">
@@ -168,18 +242,27 @@ function VisitCard({
 							<Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>
 								{visit.visitType}
 							</Badge>
+							{temporalBadge && (
+								<Badge variant={temporalBadge.variant}>{temporalBadge.label}</Badge>
+							)}
 						</div>
 						<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
 							<span className="inline-flex items-center gap-1">
 								<Calendar className="h-3 w-3" />
 								{formatVisitDate(visit.visitDate)}
 							</span>
-							{(visit.visitTimeStart || visit.visitTimeEnd) && (
-								<span className="inline-flex items-center gap-1">
-									<Clock className="h-3 w-3" />
-									{visit.visitTimeStart || "?"} - {visit.visitTimeEnd || "?"}
-								</span>
-							)}
+							<span
+								className={cn("inline-flex items-center gap-1", temporalRelativeClass(temporal))}
+							>
+								<Clock className="h-3 w-3" />
+								{formatDaysAgo(daysAgo)}
+								{(visit.visitTimeStart || visit.visitTimeEnd) && (
+									<>
+										<span className="mx-0.5">·</span>
+										{visit.visitTimeStart || "?"} - {visit.visitTimeEnd || "?"}
+									</>
+								)}
+							</span>
 							{visit.hospitalName && (
 								<span className="inline-flex items-center gap-1">
 									<Building2 className="h-3 w-3" />
