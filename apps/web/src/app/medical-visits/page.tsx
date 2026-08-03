@@ -42,6 +42,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useLocalDateKey } from "@/hooks/use-local-date-key";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
@@ -342,6 +343,9 @@ export default function MedicalVisitsPage() {
 		"surety-medical-view",
 		"table",
 	);
+	// Bust temporal memos at local midnight / tab wake so chips & sections
+	// do not keep yesterday's classification (Codex P2).
+	const localDateKey = useLocalDateKey();
 
 	const fetchData = () => {
 		Promise.all([
@@ -408,17 +412,20 @@ export default function MedicalVisitsPage() {
 		return visits.filter((v) => v.memberId === parseInt(selectedMemberId, 10));
 	}, [visits, selectedMemberId]);
 
-	const temporalCounts = useMemo(
-		() => countVisitsByTemporal(memberFilteredVisits),
-		[memberFilteredVisits],
-	);
+	const temporalCounts = useMemo(() => {
+		void localDateKey;
+		return countVisitsByTemporal(memberFilteredVisits);
+	}, [memberFilteredVisits, localDateKey]);
 
-	const filteredVisits = useMemo(
-		() => filterVisitsByTemporal(memberFilteredVisits, temporalFilter),
-		[memberFilteredVisits, temporalFilter],
-	);
+	const filteredVisits = useMemo(() => {
+		void localDateKey;
+		return filterVisitsByTemporal(memberFilteredVisits, temporalFilter);
+	}, [memberFilteredVisits, temporalFilter, localDateKey]);
 
-	const partitioned = useMemo(() => partitionVisitsByTemporal(filteredVisits), [filteredVisits]);
+	const partitioned = useMemo(() => {
+		void localDateKey;
+		return partitionVisitsByTemporal(filteredVisits);
+	}, [filteredVisits, localDateKey]);
 
 	const handleAdd = () => {
 		setEditingVisit(null);
