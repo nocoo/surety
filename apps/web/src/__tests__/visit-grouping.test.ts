@@ -2,11 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	calculateAgeInMonths,
 	calculateDaysAgo,
+	countVisitsByTemporal,
+	filterVisitsByTemporal,
 	formatAgeInMonths,
 	formatDaysAgo,
 	formatMonthLabel,
 	formatVisitDate,
+	getTemporalBadge,
+	getVisitTemporal,
+	groupUpcomingVisitsByMonth,
 	groupVisitsByMonth,
+	partitionVisitsByTemporal,
 	UNKNOWN_DATE_KEY,
 } from "@/lib/visit-grouping";
 
@@ -167,7 +173,94 @@ describe("calculateDaysAgo / formatDaysAgo", () => {
 		expect(formatDaysAgo(14)).toBe("2周前");
 		expect(formatDaysAgo(60)).toBe("2月前");
 		expect(formatDaysAgo(800)).toBe("2年前");
-		expect(formatDaysAgo(-3)).toBe("3天后");
+		// Future uses todo-tone "还有 N …" rather than "N天后"
+		expect(formatDaysAgo(-3)).toBe("还有 3 天");
+		expect(formatDaysAgo(-14)).toBe("还有 2 周");
+		expect(formatDaysAgo(-60)).toBe("还有 2 个月");
+		expect(formatDaysAgo(-800)).toBe("还有 2 年");
+	});
+});
+
+describe("getVisitTemporal / partitionVisitsByTemporal", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
+	});
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("classifies dates relative to today", () => {
+		expect(getVisitTemporal("2026-06-20")).toBe("upcoming");
+		expect(getVisitTemporal("2026-06-15")).toBe("today");
+		expect(getVisitTemporal("2026-06-01")).toBe("past");
+		expect(getVisitTemporal("garbage")).toBe("unknown");
+		expect(getVisitTemporal(null)).toBe("unknown");
+	});
+
+	it("partitions with upcoming ascending and past descending", () => {
+		const visits = [
+			{ id: 1, visitDate: "2026-06-01" },
+			{ id: 2, visitDate: "2026-06-20" },
+			{ id: 3, visitDate: "2026-06-15" },
+			{ id: 4, visitDate: "2026-07-01" },
+			{ id: 5, visitDate: "2026-05-01" },
+			{ id: 6, visitDate: "garbage" },
+		];
+		const p = partitionVisitsByTemporal(visits);
+		expect(p.upcoming.map((v) => v.id)).toEqual([2, 4]); // soonest first
+		expect(p.today.map((v) => v.id)).toEqual([3]);
+		expect(p.past.map((v) => v.id)).toEqual([1, 5]); // most recent first
+		expect(p.unknown.map((v) => v.id)).toEqual([6]);
+	});
+
+	it("filterVisitsByTemporal maps chips correctly", () => {
+		const visits = [
+			{ id: 1, visitDate: "2026-06-01" },
+			{ id: 2, visitDate: "2026-06-20" },
+			{ id: 3, visitDate: "2026-06-15" },
+			{ id: 4, visitDate: "garbage" },
+		];
+		expect(
+			filterVisitsByTemporal(visits, "all")
+				.map((v) => v.id)
+				.sort(),
+		).toEqual([1, 2, 3, 4]);
+		// 待就诊 = upcoming + today; unknown excluded
+		expect(
+			filterVisitsByTemporal(visits, "upcoming")
+				.map((v) => v.id)
+				.sort(),
+		).toEqual([2, 3]);
+		expect(filterVisitsByTemporal(visits, "past").map((v) => v.id)).toEqual([1]);
+	});
+
+	it("countVisitsByTemporal rolls today into upcoming chip count", () => {
+		const visits = [
+			{ id: 1, visitDate: "2026-06-01" },
+			{ id: 2, visitDate: "2026-06-20" },
+			{ id: 3, visitDate: "2026-06-15" },
+			{ id: 4, visitDate: "garbage" },
+		];
+		expect(countVisitsByTemporal(visits)).toEqual({ all: 4, upcoming: 2, past: 1 });
+	});
+
+	it("groupUpcomingVisitsByMonth is soonest-first", () => {
+		const visits = [
+			{ id: 1, visitDate: "2026-08-10" },
+			{ id: 2, visitDate: "2026-07-05" },
+			{ id: 3, visitDate: "2026-07-20" },
+		];
+		const months = groupUpcomingVisitsByMonth(visits);
+		expect(months.map((m) => m.key)).toEqual(["2026-07", "2026-08"]);
+		expect(months[0]?.visits.map((v) => v.id)).toEqual([2, 3]); // within month ascending
+	});
+
+	it("getTemporalBadge only labels upcoming and today", () => {
+		expect(getTemporalBadge("upcoming")).toEqual({ label: "待就诊", variant: "info" });
+		expect(getTemporalBadge("today")).toEqual({ label: "今天", variant: "warning" });
+		expect(getTemporalBadge("past")).toBeNull();
+		expect(getTemporalBadge("unknown")).toBeNull();
 	});
 });
 

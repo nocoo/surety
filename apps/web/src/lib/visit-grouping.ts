@@ -142,7 +142,8 @@ export function formatAgeInMonths(months: number | null): string {
 	return `${years}岁${remainingMonths}月`;
 }
 
-/** Render days-ago / days-from-now in CN-friendly units. `null` → "-". */
+/** Render days-ago / days-from-now in CN-friendly units. `null` → "-".
+ *  Future phrasing uses "还有 N …" (todo tone) rather than "N天后". */
 export function formatDaysAgo(days: number | null): string {
 	if (days === null) return "-";
 	if (days === 0) return "今天";
@@ -150,13 +151,131 @@ export function formatDaysAgo(days: number | null): string {
 	if (days === -1) return "明天";
 	if (days < 0) {
 		const abs = -days;
-		if (abs < 7) return `${abs}天后`;
-		if (abs < 30) return `${Math.floor(abs / 7)}周后`;
-		if (abs < 365) return `${Math.floor(abs / 30)}月后`;
-		return `${Math.floor(abs / 365)}年后`;
+		if (abs < 7) return `还有 ${abs} 天`;
+		if (abs < 30) return `还有 ${Math.floor(abs / 7)} 周`;
+		if (abs < 365) return `还有 ${Math.floor(abs / 30)} 个月`;
+		return `还有 ${Math.floor(abs / 365)} 年`;
 	}
 	if (days < 7) return `${days}天前`;
 	if (days < 30) return `${Math.floor(days / 7)}周前`;
 	if (days < 365) return `${Math.floor(days / 30)}月前`;
 	return `${Math.floor(days / 365)}年前`;
+}
+
+/** Relative position of a visit date vs local today. */
+export type VisitTemporal = "upcoming" | "today" | "past" | "unknown";
+
+/**
+ * Classify a visit date against local midnight today.
+ * Invalid / missing dates are "unknown" so callers can still surface them.
+ */
+export function getVisitTemporal(dateStr: string | null | undefined): VisitTemporal {
+	const days = calculateDaysAgo(dateStr);
+	if (days === null) return "unknown";
+	if (days < 0) return "upcoming";
+	if (days === 0) return "today";
+	return "past";
+}
+
+export interface TemporalPartition<T> {
+	/** Future visits, soonest first. */
+	upcoming: T[];
+	/** Visits dated today. */
+	today: T[];
+	/** Past visits, most recent first. */
+	past: T[];
+	/** Unparseable visitDate — kept so records are never silently dropped. */
+	unknown: T[];
+}
+
+/**
+ * Split visits into upcoming / today / past / unknown.
+ * Sort policy A: upcoming ascending (handle nearest first), past descending.
+ */
+export function partitionVisitsByTemporal<T extends VisitForGrouping>(
+	visits: readonly T[],
+): TemporalPartition<T> {
+	const upcoming: T[] = [];
+	const today: T[] = [];
+	const past: T[] = [];
+	const unknown: T[] = [];
+
+	for (const visit of visits) {
+		const temporal = getVisitTemporal(visit.visitDate);
+		if (temporal === "upcoming") upcoming.push(visit);
+		else if (temporal === "today") today.push(visit);
+		else if (temporal === "past") past.push(visit);
+		else unknown.push(visit);
+	}
+
+	upcoming.sort((a, b) => a.visitDate.localeCompare(b.visitDate));
+	past.sort((a, b) => b.visitDate.localeCompare(a.visitDate));
+	// today / unknown: stable by date string (today all equal; unknown may vary)
+	today.sort((a, b) => a.visitDate.localeCompare(b.visitDate));
+	unknown.sort((a, b) => a.visitDate.localeCompare(b.visitDate));
+
+	return { upcoming, today, past, unknown };
+}
+
+/**
+ * Chip filter on the medical-visits page.
+ * - all: everything
+ * - upcoming: 待就诊 = future + today
+ * - past: 已发生
+ */
+export type TemporalFilter = "all" | "upcoming" | "past";
+
+/** Apply a temporal chip filter. Unknown dates only appear under "all". */
+export function filterVisitsByTemporal<T extends VisitForGrouping>(
+	visits: readonly T[],
+	filter: TemporalFilter,
+): T[] {
+	if (filter === "all") return visits.slice();
+	return visits.filter((v) => {
+		const t = getVisitTemporal(v.visitDate);
+		if (filter === "upcoming") return t === "upcoming" || t === "today";
+		return t === "past";
+	});
+}
+
+export interface TemporalCounts {
+	all: number;
+	/** upcoming + today (待就诊 chip) */
+	upcoming: number;
+	past: number;
+}
+
+export function countVisitsByTemporal<T extends VisitForGrouping>(
+	visits: readonly T[],
+): TemporalCounts {
+	const p = partitionVisitsByTemporal(visits);
+	return {
+		all: visits.length,
+		upcoming: p.upcoming.length + p.today.length,
+		past: p.past.length,
+	};
+}
+
+/**
+ * Month-bucket upcoming visits with soonest-first order (opposite of the
+ * default newest-first grouping used for the past archive).
+ */
+export function groupUpcomingVisitsByMonth<T extends VisitForGrouping>(
+	visits: readonly T[],
+): MonthBucket<T>[] {
+	return groupVisitsByMonth(visits)
+		.reverse()
+		.map((bucket) => ({
+			...bucket,
+			visits: [...bucket.visits].reverse(),
+		}));
+}
+
+/** Status badge for temporal state. Past/unknown → null (no badge noise). */
+export function getTemporalBadge(
+	temporal: VisitTemporal,
+): { label: string; variant: "info" | "warning" } | null {
+	if (temporal === "upcoming") return { label: "待就诊", variant: "info" };
+	if (temporal === "today") return { label: "今天", variant: "warning" };
+	return null;
 }
