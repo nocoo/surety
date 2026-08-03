@@ -48,9 +48,16 @@ import { cn, getAvatarColor, hashString } from "@/lib/utils";
 import {
 	calculateAgeInMonths,
 	calculateDaysAgo,
+	countVisitsByTemporal,
+	filterVisitsByTemporal,
 	formatAgeInMonths,
 	formatDaysAgo,
 	formatVisitDate,
+	getTemporalBadge,
+	getVisitTemporal,
+	partitionVisitsByTemporal,
+	type TemporalFilter,
+	type VisitTemporal,
 } from "@/lib/visit-grouping";
 import { VisitSheet } from "./visit-sheet";
 import { VisitTimeline } from "./visit-timeline";
@@ -168,6 +175,155 @@ function formatDate(dateStr: string): string {
 	return formatVisitDate(dateStr);
 }
 
+/** Row chrome by temporal state — future emphasized, today highlighted, past calm. */
+function temporalRowClass(temporal: VisitTemporal): string {
+	if (temporal === "upcoming") return "border-l-2 border-l-info";
+	if (temporal === "today") return "border-l-2 border-l-warning bg-primary/5";
+	return "";
+}
+
+function temporalRelativeClass(temporal: VisitTemporal): string {
+	if (temporal === "upcoming") return "text-info-text";
+	if (temporal === "today") return "text-warning-text";
+	return "text-muted-foreground";
+}
+
+const TEMPORAL_SECTION_META: {
+	key: "upcoming" | "today" | "past" | "unknown";
+	label: string;
+}[] = [
+	{ key: "upcoming", label: "即将到来" },
+	{ key: "today", label: "今天" },
+	{ key: "past", label: "已发生" },
+	{ key: "unknown", label: "日期未识别" },
+];
+
+function VisitTableRow({
+	visit,
+	onEdit,
+	onDelete,
+}: {
+	visit: MedicalVisit;
+	onEdit: (visit: MedicalVisit) => void;
+	onDelete: (visit: MedicalVisit) => void;
+}) {
+	const ageInMonths = calculateAgeInMonths(visit.memberBirthDate, visit.visitDate);
+	const ageLabel = formatAgeInMonths(ageInMonths);
+	const daysAgo = calculateDaysAgo(visit.visitDate);
+	const temporal = getVisitTemporal(visit.visitDate);
+	const temporalBadge = getTemporalBadge(temporal);
+	const symptoms = visit.symptoms ? parseSymptoms(visit.symptoms) : [];
+
+	return (
+		<TableRow className={cn(temporalRowClass(temporal))}>
+			<TableCell>
+				<div className="flex items-center gap-2">
+					<Avatar className="h-7 w-7">
+						<AvatarFallback
+							className={cn("text-xs text-white", getAvatarColor(visit.memberName ?? ""))}
+						>
+							{visit.memberName?.[0] ?? "?"}
+						</AvatarFallback>
+					</Avatar>
+					<div className="flex flex-col leading-tight">
+						<span className="font-medium">{visit.memberName}</span>
+						{ageLabel !== "-" && <span className="text-xs text-muted-foreground">{ageLabel}</span>}
+					</div>
+				</div>
+			</TableCell>
+			<TableCell>
+				<div className="flex flex-wrap items-center gap-1">
+					<Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>{visit.visitType}</Badge>
+					{temporalBadge && <Badge variant={temporalBadge.variant}>{temporalBadge.label}</Badge>}
+				</div>
+			</TableCell>
+			<TableCell>
+				<div className="flex flex-col gap-0.5 leading-tight">
+					<div className="flex items-center gap-1.5">
+						<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+						<span className="font-mono text-sm">{formatDate(visit.visitDate)}</span>
+					</div>
+					<span className={cn("flex items-center gap-1 text-xs", temporalRelativeClass(temporal))}>
+						<Clock className="h-3 w-3" />
+						{formatDaysAgo(daysAgo)}
+						{(visit.visitTimeStart || visit.visitTimeEnd) && (
+							<>
+								<span className="mx-1">·</span>
+								{visit.visitTimeStart || "?"}-{visit.visitTimeEnd || "?"}
+							</>
+						)}
+					</span>
+				</div>
+			</TableCell>
+			<TableCell>
+				<span className="whitespace-normal">{visit.visitReason}</span>
+			</TableCell>
+			<TableCell>
+				<div className="flex flex-col gap-0.5 leading-tight">
+					<span className="flex items-center gap-1.5 whitespace-normal">
+						<Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+						{visit.hospitalName}
+					</span>
+					{visit.doctorName && (
+						<span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+							<UserRound className="h-3 w-3 shrink-0" />
+							{visit.doctorName}
+						</span>
+					)}
+				</div>
+			</TableCell>
+			<TableCell className="max-w-[420px]">
+				<div className="flex flex-col gap-1 text-sm">
+					{symptoms.length > 0 && (
+						<div className="flex flex-wrap gap-1">
+							{symptoms.map((s, i) => (
+								<span
+									key={`${s}-${i}`}
+									className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(s)}`}
+								>
+									{s}
+								</span>
+							))}
+						</div>
+					)}
+					{visit.diagnosis && (
+						<p className="whitespace-normal">
+							<span className="text-xs text-muted-foreground mr-1">诊断:</span>
+							{visit.diagnosis}
+						</p>
+					)}
+					{visit.treatment && (
+						<p className="whitespace-normal">
+							<span className="text-xs text-muted-foreground mr-1">治疗:</span>
+							{visit.treatment}
+						</p>
+					)}
+					{symptoms.length === 0 && !visit.diagnosis && !visit.treatment && (
+						<span className="text-muted-foreground">-</span>
+					)}
+				</div>
+			</TableCell>
+			<TableCell>
+				<div className="flex items-center gap-1">
+					<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(visit)}>
+						<Pencil className="h-4 w-4" />
+						<span className="sr-only">编辑</span>
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 text-destructive hover:text-destructive"
+						onClick={() => onDelete(visit)}
+					>
+						<Trash2 className="h-4 w-4" />
+						<span className="sr-only">删除</span>
+					</Button>
+				</div>
+			</TableCell>
+		</TableRow>
+	);
+}
+
 export default function MedicalVisitsPage() {
 	const [visits, setVisits] = useState<MedicalVisit[]>([]);
 	const [members, setMembers] = useState<Member[]>([]);
@@ -181,6 +337,7 @@ export default function MedicalVisitsPage() {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [visitToDelete, setVisitToDelete] = useState<MedicalVisit | null>(null);
 	const [selectedMemberId, setSelectedMemberId] = useState<string>("all");
+	const [temporalFilter, setTemporalFilter] = useState<TemporalFilter>("all");
 	const [viewMode, setViewMode] = usePersistedState<"table" | "timeline">(
 		"surety-medical-view",
 		"table",
@@ -246,10 +403,22 @@ export default function MedicalVisitsPage() {
 		fetchData();
 	}, []);
 
-	const filteredVisits = useMemo(() => {
+	const memberFilteredVisits = useMemo(() => {
 		if (selectedMemberId === "all") return visits;
 		return visits.filter((v) => v.memberId === parseInt(selectedMemberId, 10));
 	}, [visits, selectedMemberId]);
+
+	const temporalCounts = useMemo(
+		() => countVisitsByTemporal(memberFilteredVisits),
+		[memberFilteredVisits],
+	);
+
+	const filteredVisits = useMemo(
+		() => filterVisitsByTemporal(memberFilteredVisits, temporalFilter),
+		[memberFilteredVisits, temporalFilter],
+	);
+
+	const partitioned = useMemo(() => partitionVisitsByTemporal(filteredVisits), [filteredVisits]);
 
 	const handleAdd = () => {
 		setEditingVisit(null);
@@ -319,8 +488,9 @@ export default function MedicalVisitsPage() {
 					<div>
 						<h1 className="text-2xl font-semibold tracking-tight">就诊记录</h1>
 						<p className="text-sm text-muted-foreground">
-							共 {filteredVisits.length} 条记录
-							{selectedMemberId !== "all" && ` (已筛选)`}
+							共 {memberFilteredVisits.length} 条记录
+							{temporalFilter !== "all" && ` · 当前显示 ${filteredVisits.length} 条`}
+							{selectedMemberId !== "all" && " (已筛选成员)"}
 						</p>
 					</div>
 					<div className="flex flex-wrap items-center gap-3">
@@ -335,6 +505,24 @@ export default function MedicalVisitsPage() {
 							</ToggleGroupItem>
 							<ToggleGroupItem value="timeline" aria-label="时间轴视图">
 								<GalleryVerticalEnd className="h-4 w-4" />
+							</ToggleGroupItem>
+						</ToggleGroup>
+						<ToggleGroup
+							type="single"
+							value={temporalFilter}
+							onValueChange={(v) => v && setTemporalFilter(v as TemporalFilter)}
+							variant="outline"
+							size="sm"
+							aria-label="时间筛选"
+						>
+							<ToggleGroupItem value="all" aria-label={`全部 ${temporalCounts.all}`}>
+								全部 {temporalCounts.all}
+							</ToggleGroupItem>
+							<ToggleGroupItem value="upcoming" aria-label={`待就诊 ${temporalCounts.upcoming}`}>
+								待就诊 {temporalCounts.upcoming}
+							</ToggleGroupItem>
+							<ToggleGroupItem value="past" aria-label={`已发生 ${temporalCounts.past}`}>
+								已发生 {temporalCounts.past}
 							</ToggleGroupItem>
 						</ToggleGroup>
 						<Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
@@ -378,160 +566,72 @@ export default function MedicalVisitsPage() {
 							if (v) handleDeleteClick(v);
 						}}
 					/>
+				) : filteredVisits.length === 0 ? (
+					<div className="rounded-card bg-secondary p-8 text-center">
+						<Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+						<p className="mt-4 text-sm text-muted-foreground">
+							{memberFilteredVisits.length === 0
+								? "暂无就诊记录，点击上方按钮添加"
+								: "当前筛选下没有记录"}
+						</p>
+					</div>
 				) : (
-					<div className="rounded-card bg-secondary">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>就诊人</TableHead>
-									<TableHead className="w-[80px]">类型</TableHead>
-									<TableHead>时间</TableHead>
-									<TableHead>就诊原因</TableHead>
-									<TableHead>医院 / 医生</TableHead>
-									<TableHead>症状 / 诊断 / 治疗</TableHead>
-									<TableHead className="w-[100px]">操作</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{filteredVisits.length === 0 ? (
-									<TableRow>
-										<TableCell colSpan={7} className="h-24 text-center">
-											<div className="text-muted-foreground">暂无就诊记录，点击上方按钮添加</div>
-										</TableCell>
-									</TableRow>
-								) : (
-									filteredVisits.map((visit) => {
-										const ageInMonths = calculateAgeInMonths(
-											visit.memberBirthDate,
-											visit.visitDate,
-										);
-										const ageLabel = formatAgeInMonths(ageInMonths);
-										const daysAgo = calculateDaysAgo(visit.visitDate);
-										const symptoms = visit.symptoms ? parseSymptoms(visit.symptoms) : [];
-
-										return (
-											<TableRow key={visit.id}>
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<Avatar className="h-7 w-7">
-															<AvatarFallback
-																className={cn(
-																	"text-xs text-white",
-																	getAvatarColor(visit.memberName ?? ""),
-																)}
-															>
-																{visit.memberName?.[0] ?? "?"}
-															</AvatarFallback>
-														</Avatar>
-														<div className="flex flex-col leading-tight">
-															<span className="font-medium">{visit.memberName}</span>
-															{ageLabel !== "-" && (
-																<span className="text-xs text-muted-foreground">{ageLabel}</span>
-															)}
-														</div>
-													</div>
-												</TableCell>
-												<TableCell>
-													<Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>
-														{visit.visitType}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<div className="flex flex-col gap-0.5 leading-tight">
-														<div className="flex items-center gap-1.5">
-															<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-															<span className="font-mono text-sm">
-																{formatDate(visit.visitDate)}
-															</span>
-														</div>
-														<span className="flex items-center gap-1 text-xs text-muted-foreground">
-															<Clock className="h-3 w-3" />
-															{formatDaysAgo(daysAgo)}
-															{(visit.visitTimeStart || visit.visitTimeEnd) && (
-																<>
-																	<span className="mx-1">·</span>
-																	{visit.visitTimeStart || "?"}-{visit.visitTimeEnd || "?"}
-																</>
-															)}
-														</span>
-													</div>
-												</TableCell>
-												<TableCell>
-													<span className="whitespace-normal">{visit.visitReason}</span>
-												</TableCell>
-												<TableCell>
-													<div className="flex flex-col gap-0.5 leading-tight">
-														<span className="flex items-center gap-1.5 whitespace-normal">
-															<Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-															{visit.hospitalName}
-														</span>
-														{visit.doctorName && (
-															<span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-																<UserRound className="h-3 w-3 shrink-0" />
-																{visit.doctorName}
-															</span>
-														)}
-													</div>
-												</TableCell>
-												<TableCell className="max-w-[420px]">
-													<div className="flex flex-col gap-1 text-sm">
-														{symptoms.length > 0 && (
-															<div className="flex flex-wrap gap-1">
-																{symptoms.map((s, i) => (
-																	<span
-																		key={`${s}-${i}`}
-																		className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(s)}`}
-																	>
-																		{s}
-																	</span>
-																))}
-															</div>
-														)}
-														{visit.diagnosis && (
-															<p className="whitespace-normal">
-																<span className="text-xs text-muted-foreground mr-1">诊断:</span>
-																{visit.diagnosis}
-															</p>
-														)}
-														{visit.treatment && (
-															<p className="whitespace-normal">
-																<span className="text-xs text-muted-foreground mr-1">治疗:</span>
-																{visit.treatment}
-															</p>
-														)}
-														{symptoms.length === 0 && !visit.diagnosis && !visit.treatment && (
-															<span className="text-muted-foreground">-</span>
-														)}
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-1">
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-8 w-8"
-															onClick={() => handleEdit(visit)}
-														>
-															<Pencil className="h-4 w-4" />
-															<span className="sr-only">编辑</span>
-														</Button>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="h-8 w-8 text-destructive hover:text-destructive"
-															onClick={() => handleDeleteClick(visit)}
-														>
-															<Trash2 className="h-4 w-4" />
-															<span className="sr-only">删除</span>
-														</Button>
-													</div>
-												</TableCell>
-											</TableRow>
-										);
-									})
-								)}
-							</TableBody>
-						</Table>
+					<div className="space-y-6">
+						{TEMPORAL_SECTION_META.map(({ key, label }) => {
+							const sectionVisits = partitioned[key];
+							if (sectionVisits.length === 0) return null;
+							return (
+								<section key={key} aria-label={label}>
+									<div className="mb-2 flex items-center gap-3">
+										<h2
+											className={cn(
+												"shrink-0 text-sm font-medium",
+												key === "upcoming" && "text-info-text",
+												key === "today" && "text-warning-text",
+												key === "past" && "text-muted-foreground",
+												key === "unknown" && "text-warning-text",
+											)}
+										>
+											{label}
+											<span className="ml-1.5 tabular-nums text-muted-foreground">
+												{sectionVisits.length}
+											</span>
+										</h2>
+										<div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+										{key === "unknown" && (
+											<span className="text-xs text-muted-foreground">
+												日期为空或格式不合法，请编辑修复
+											</span>
+										)}
+									</div>
+									<div className="rounded-card bg-secondary overflow-hidden">
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>就诊人</TableHead>
+													<TableHead className="w-[80px]">类型</TableHead>
+													<TableHead>时间</TableHead>
+													<TableHead>就诊原因</TableHead>
+													<TableHead>医院 / 医生</TableHead>
+													<TableHead>症状 / 诊断 / 治疗</TableHead>
+													<TableHead className="w-[100px]">操作</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{sectionVisits.map((visit) => (
+													<VisitTableRow
+														key={visit.id}
+														visit={visit}
+														onEdit={handleEdit}
+														onDelete={handleDeleteClick}
+													/>
+												))}
+											</TableBody>
+										</Table>
+									</div>
+								</section>
+							);
+						})}
 					</div>
 				)}
 			</div>
