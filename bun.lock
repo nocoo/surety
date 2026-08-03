@@ -14,7 +14,7 @@
         "radix-ui": "1.6.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
-        "react-dropzone": "^19.2.0",
+        "react-dropzone": "^20.0.0",
         "recharts": "3.10.1",
         "tailwind-merge": "3.6.0",
         "ws": "8.21.1",
@@ -62,7 +62,7 @@
         "radix-ui": "1.6.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
-        "react-dropzone": "^19.2.0",
+        "react-dropzone": "^20.0.0",
         "react-router": "8.3.0",
         "recharts": "3.10.1",
         "swr": "2.4.2",
@@ -799,7 +799,7 @@
 
     "react-dom": ["react-dom@19.2.8", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.8" } }, "sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ=="],
 
-    "react-dropzone": ["react-dropzone@19.2.0", "", { "dependencies": { "attr-accept": "^2.2.5", "file-selector": "^4.1.0" }, "peerDependencies": { "@types/react": "*", "react": ">= 18" }, "optionalPeers": ["@types/react"] }, "sha512-/tIFow8ymZYnGGzO7KhsLaEUV+NKr04TBAIreBj4qXztPkQN2XwlmYFswUh2koQZvoTOTBK4kVpys4Nq4UqFYw=="],
+    "react-dropzone": ["react-dropzone@20.0.0", "", { "dependencies": { "attr-accept": "^2.2.5", "file-selector": "^4.1.0" }, "peerDependencies": { "@types/react": "*", "react": ">= 18" }, "optionalPeers": ["@types/react"] }, "sha512-Xw8tvvVPJQzj8ir5wivUMzA+G6R+aGhdU5KQzUMvVBlJNb26AW/0137VoYVmb5UgZcbhM9OCpjE4KOqqSL9QuQ=="],
 
     "react-is": ["react-is@16.13.1", "", {}, "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ=="],
 
