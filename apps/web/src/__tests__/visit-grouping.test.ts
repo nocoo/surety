@@ -12,6 +12,7 @@ import {
 	getVisitTemporal,
 	groupUpcomingVisitsByMonth,
 	groupVisitsByMonth,
+	parseVisitLocalDate,
 	partitionVisitsByTemporal,
 	UNKNOWN_DATE_KEY,
 } from "@/lib/visit-grouping";
@@ -109,7 +110,26 @@ describe("formatMonthLabel", () => {
 	});
 });
 
-describe("formatVisitDate", () => {
+describe("parseVisitLocalDate / formatVisitDate", () => {
+	it("parses YYYY-MM-DD as local midnight (not UTC)", () => {
+		// Regression (Codex P1): `new Date("YYYY-MM-DD")` is UTC midnight and
+		// becomes the previous local calendar day in western timezones.
+		const d = parseVisitLocalDate("2026-06-15");
+		expect(d).not.toBeNull();
+		expect(d?.getFullYear()).toBe(2026);
+		expect(d?.getMonth()).toBe(5);
+		expect(d?.getDate()).toBe(15);
+		expect(d?.getHours()).toBe(0);
+	});
+
+	it("rejects non-ISO and overflow calendar dates", () => {
+		expect(parseVisitLocalDate("garbage")).toBeNull();
+		expect(parseVisitLocalDate("2026-02-31")).toBeNull();
+		expect(parseVisitLocalDate("2026-13-01")).toBeNull();
+		expect(parseVisitLocalDate("")).toBeNull();
+		expect(parseVisitLocalDate(null)).toBeNull();
+	});
+
 	it("formats ISO date as YYYY-MM-DD", () => {
 		expect(formatVisitDate("2026-03-05")).toBe("2026-03-05");
 		expect(formatVisitDate("2025-12-09")).toBe("2025-12-09");

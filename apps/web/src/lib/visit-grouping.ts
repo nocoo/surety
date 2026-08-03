@@ -7,9 +7,29 @@
  * (legacy non-ISO, future visits, undefined) showed up in production.
  */
 
+import { formatLocalDate, parseLocalDate } from "@surety/db/lib/date-utils";
+
 export interface VisitForGrouping {
 	id: number;
 	visitDate: string;
+}
+
+/** Strict calendar-date shape used by the API (`YYYY-MM-DD`). */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Parse a visit/birth date string as a **local** calendar day.
+ *
+ * Never use `new Date("YYYY-MM-DD")` here — that is UTC midnight and
+ * shifts to the previous local day in western timezones (Codex P1).
+ * Round-trip via formatLocalDate rejects overflow like 2026-02-31.
+ */
+export function parseVisitLocalDate(dateStr: string | null | undefined): Date | null {
+	if (!dateStr || !ISO_DATE_RE.test(dateStr)) return null;
+	const d = parseLocalDate(dateStr);
+	if (Number.isNaN(d.getTime())) return null;
+	if (formatLocalDate(d) !== dateStr) return null;
+	return d;
 }
 
 export interface MonthBucket<T> {
@@ -34,10 +54,8 @@ export const UNKNOWN_DATE_KEY = "unknown";
  * record exists and edit it (the previous behaviour caused records
  * with legacy date formats to disappear from the timeline view).
  *
- * Parsing `visitDate` via the Date constructor: the API stores ISO
- * `YYYY-MM-DD`, so the constructor is fine and avoids a timezone-aware
- * parser dependency. New Date("2026-03-15") is UTC-midnight, which is
- * the same calendar month everywhere east of UTC-12 — safe for CN users.
+ * Month keys use local calendar components from parseVisitLocalDate
+ * so western timezones don't shift YYYY-MM-DD into the prior month.
  */
 export function groupVisitsByMonth<T extends VisitForGrouping>(
 	visits: readonly T[],
@@ -45,10 +63,10 @@ export function groupVisitsByMonth<T extends VisitForGrouping>(
 	const buckets = new Map<string, T[]>();
 
 	for (const visit of visits) {
-		const d = new Date(visit.visitDate);
-		const key = Number.isNaN(d.getTime())
-			? UNKNOWN_DATE_KEY
-			: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+		const d = parseVisitLocalDate(visit.visitDate);
+		const key = d
+			? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+			: UNKNOWN_DATE_KEY;
 		const bucket = buckets.get(key);
 		if (bucket) bucket.push(visit);
 		else buckets.set(key, [visit]);
@@ -86,14 +104,12 @@ export function formatMonthLabel(key: string): string {
 /**
  * Format a visit date as `YYYY-MM-DD`. If the input is missing or
  * unparseable, returns the same "日期未识别" string used by the
- * timeline's unknown-date bucket — never `NaN-NaN-NaN`, which would
- * leak through from `new Date("garbage")`.
+ * timeline's unknown-date bucket — never `NaN-NaN-NaN`.
  */
 export function formatVisitDate(dateStr: string | null | undefined): string {
-	if (!dateStr) return "日期未识别";
-	const d = new Date(dateStr);
-	if (Number.isNaN(d.getTime())) return "日期未识别";
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+	const d = parseVisitLocalDate(dateStr);
+	if (!d) return "日期未识别";
+	return formatLocalDate(d);
 }
 
 /**
@@ -103,9 +119,8 @@ export function formatVisitDate(dateStr: string | null | undefined): string {
  * instead of letting `NaN年前` reach the user.
  */
 export function calculateDaysAgo(dateStr: string | null | undefined): number | null {
-	if (!dateStr) return null;
-	const visitDate = new Date(dateStr);
-	if (Number.isNaN(visitDate.getTime())) return null;
+	const visitDate = parseVisitLocalDate(dateStr);
+	if (!visitDate) return null;
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	visitDate.setHours(0, 0, 0, 0);
@@ -121,10 +136,9 @@ export function calculateAgeInMonths(
 	birthDateStr: string | null | undefined,
 	visitDateStr: string | null | undefined,
 ): number | null {
-	if (!birthDateStr || !visitDateStr) return null;
-	const birthDate = new Date(birthDateStr);
-	const visitDate = new Date(visitDateStr);
-	if (Number.isNaN(birthDate.getTime()) || Number.isNaN(visitDate.getTime())) return null;
+	const birthDate = parseVisitLocalDate(birthDateStr);
+	const visitDate = parseVisitLocalDate(visitDateStr);
+	if (!birthDate || !visitDate) return null;
 	return (
 		(visitDate.getFullYear() - birthDate.getFullYear()) * 12 +
 		(visitDate.getMonth() - birthDate.getMonth())
