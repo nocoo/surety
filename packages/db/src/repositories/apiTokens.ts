@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { type DbInstance, db } from "../index";
@@ -17,7 +18,11 @@ export function hashToken(rawToken: string): string {
  */
 function generateRawToken(): string {
 	const bytes = randomBytes(32);
-	const body = bytes.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+	const body = Buffer.from(bytes)
+		.toString("base64")
+		.replace(/\+/g, "-")
+		.replace(/\//g, "_")
+		.replace(/=+$/, "");
 	return `sk_${body}`;
 }
 
