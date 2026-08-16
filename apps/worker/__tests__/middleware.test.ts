@@ -8,7 +8,7 @@
 
 import type { AllRepos } from "@surety/db/repositories";
 import { Hono } from "hono";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { AppEnv } from "../src/lib/types";
 import { accessAuth } from "../src/middleware/access-auth";
 import { apiKeyAuth } from "../src/middleware/api-key-auth";
@@ -309,6 +309,19 @@ describe("apiKeyAuth middleware", () => {
 });
 
 describe("accessAuth + apiKeyAuth + /api/me integration", () => {
+	beforeEach(() => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(
+				async () => new Response(JSON.stringify({ name: null, avatar: null }), { status: 200 }),
+			),
+		);
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
 	function buildApp(repos: unknown) {
 		const app = new Hono<AppEnv>();
 		app.use("*", async (c, next) => {

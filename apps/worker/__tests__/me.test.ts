@@ -5,7 +5,7 @@
  */
 
 import { Hono } from "hono";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { AppEnv } from "../src/lib/types";
 import meRoutes, { decodeJwtPayload } from "../src/routes/me";
 
@@ -48,21 +48,68 @@ describe("decodeJwtPayload", () => {
 });
 
 describe("GET /api/me", () => {
+	const fetchMock = vi.fn(
+		async () => new Response(JSON.stringify({ name: null, avatar: null }), { status: 200 }),
+	);
+
+	beforeEach(() => {
+		vi.stubGlobal("fetch", fetchMock);
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		fetchMock.mockReset();
+		fetchMock.mockImplementation(
+			async () => new Response(JSON.stringify({ name: null, avatar: null }), { status: 200 }),
+		);
+	});
+
 	test("returns authenticated:false when no JWT and no ctx email", async () => {
 		const app = makeApp();
 		const res = await app.request("/api/me");
 		const body = (await res.json()) as { email: string | null; authenticated: boolean };
 		expect(body.authenticated).toBe(false);
 		expect(body.email).toBeNull();
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	test("uses accessEmail ctx var when present", async () => {
 		const app = makeApp("zheng@hexly.ai");
 		const res = await app.request("/api/me");
-		const body = (await res.json()) as { email: string; name: string; authenticated: boolean };
+		const body = (await res.json()) as {
+			email: string;
+			name: string;
+			avatar: string | null;
+			authenticated: boolean;
+		};
 		expect(body.authenticated).toBe(true);
 		expect(body.email).toBe("zheng@hexly.ai");
 		expect(body.name).toBe("zheng");
+		expect(body.avatar).toBeNull();
+	});
+
+	test("prefers author profile name and avatar when the lookup hits", async () => {
+		fetchMock.mockImplementation(
+			async () =>
+				new Response(
+					JSON.stringify({ name: "Zheng Li", avatar: "https://img.example/avatar-80.jpg" }),
+					{ status: 200 },
+				),
+		);
+		const app = makeApp("architie@gmail.com");
+		const res = await app.request("/api/me");
+		const body = (await res.json()) as {
+			email: string;
+			name: string;
+			avatar: string | null;
+			authenticated: boolean;
+		};
+		expect(body.name).toBe("Zheng Li");
+		expect(body.avatar).toBe("https://img.example/avatar-80.jpg");
+		expect(fetchMock).toHaveBeenCalledOnce();
+		expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+			"hash=7ba563171c26fb9b82e9f7750840c0455602eb35025192027230bcb40aae1217",
+		);
 	});
 
 	test("falls back to decoding Cf-Access-Jwt-Assertion header", async () => {
@@ -77,6 +124,15 @@ describe("GET /api/me", () => {
 		expect(body.name).toBe("Bob");
 	});
 
+	test("keeps local-part name when author profile returns 429", async () => {
+		fetchMock.mockImplementation(async () => new Response("slow down", { status: 429 }));
+		const app = makeApp("zheng@hexly.ai");
+		const res = await app.request("/api/me");
+		const body = (await res.json()) as { name: string; avatar: string | null };
+		expect(body.name).toBe("zheng");
+		expect(body.avatar).toBeNull();
+	});
+
 	test("returns authenticated:false when JWT header decodes to null", async () => {
 		const app = makeApp();
 		const res = await app.request("/api/me", {
@@ -85,5 +141,6 @@ describe("GET /api/me", () => {
 		const body = (await res.json()) as { email: string | null; authenticated: boolean };
 		expect(body.authenticated).toBe(false);
 		expect(body.email).toBeNull();
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });
