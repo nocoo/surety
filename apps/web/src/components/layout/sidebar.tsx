@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMe } from "@/hooks/use-me";
@@ -85,6 +85,45 @@ function resolveNavGroup(group: NavGroupDef): NavGroup {
 
 const NAV_GROUPS: NavGroup[] = NAV_GROUPS_DEF.map(resolveNavGroup);
 const ALL_NAV_ITEMS: NavItem[] = ALL_NAV_ITEMS_DEF.map(resolveNavItem);
+
+function SidebarUser({
+	collapsed = false,
+	name,
+	initial,
+	email,
+	avatar,
+}: {
+	collapsed?: boolean;
+	name: string;
+	initial: string;
+	email: string | null;
+	avatar: string | null;
+}) {
+	const face = (
+		<Avatar className={cn("h-9 w-9", !collapsed && "shrink-0")}>
+			{avatar ? <AvatarImage src={avatar} alt={name} /> : null}
+			<AvatarFallback className={cn("text-xs text-white", getAvatarColor(name))}>
+				{initial}
+			</AvatarFallback>
+		</Avatar>
+	);
+
+	if (collapsed) {
+		return <div className="py-3 flex justify-center w-full">{face}</div>;
+	}
+
+	return (
+		<div className="px-4 py-3">
+			<div className="flex items-center gap-3">
+				{face}
+				<div className="flex-1 min-w-0">
+					<p className="text-sm font-medium text-foreground truncate">{name}</p>
+					{email ? <p className="text-xs text-muted-foreground truncate">{email}</p> : null}
+				</div>
+			</div>
+		</div>
+	);
+}
 
 // ── Sub-components ──
 
@@ -173,7 +212,12 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 	const { collapsed, toggle, setMobileOpen } = useSidebar();
 
 	const { data: user } = useMe();
-	const { name: userName, initial: userInitial, email: userEmail } = getDisplayName(user);
+	const {
+		name: userName,
+		initial: userInitial,
+		email: userEmail,
+		avatar: userAvatar,
+	} = getDisplayName(user);
 
 	const handleNavigate = () => setMobileOpen(false);
 
@@ -243,14 +287,13 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 							})}
 						</nav>
 
-						{/* User avatar */}
-						<div className="py-3 flex justify-center w-full">
-							<Avatar className="h-9 w-9">
-								<AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>
-									{userInitial}
-								</AvatarFallback>
-							</Avatar>
-						</div>
+						<SidebarUser
+							collapsed
+							name={userName}
+							initial={userInitial}
+							email={userEmail}
+							avatar={userAvatar}
+						/>
 					</div>
 				) : (
 					/* ── Expanded view ── */
@@ -294,22 +337,12 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 							))}
 						</nav>
 
-						{/* User info */}
-						<div className="px-4 py-3">
-							<div className="flex items-center gap-3">
-								<Avatar className="h-9 w-9 shrink-0">
-									<AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>
-										{userInitial}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-foreground truncate">{userName}</p>
-									{userEmail ? (
-										<p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-									) : null}
-								</div>
-							</div>
-						</div>
+						<SidebarUser
+							name={userName}
+							initial={userInitial}
+							email={userEmail}
+							avatar={userAvatar}
+						/>
 					</div>
 				)}
 			</aside>
