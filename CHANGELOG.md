@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.2
+
+### Added
+- Show author avatar in sidebar
+- Enrich /api/me from author profile
+
+### Changed
+- Bump @cloudflare/workers-types 5.20260813.1 → 5.20260814.1 (#363)
+- Bump wrangler 4.122.0 → 4.123.0 (#365)
+- Bump hono 4.13.1 → 4.13.2 (#364)
+- Bump nanoid 3.3.17 → 3.3.18
+- Bump @cloudflare/workers-types 5.20260812.1 → 5.20260813.1
+- Bump swr 2.5.0 → 2.5.1
+- Bump wrangler 4.121.0 → 4.122.0
+- Bump wrangler 4.120.1 → 4.121.0
+- Bump @cloudflare/workers-types 5.20260811.1 → 5.20260812.1
+- Bump @biomejs/biome 2.5.7 → 2.5.8
+- Bump wrangler 4.120.0 → 4.120.1
+- Bump @cloudflare/workers-types 5.20260809.1 → 5.20260811.1
+- Bump react-dropzone 20.0.0 → 20.1.0
+- Bump lucide-react to 1.31.0
+- Bump workers-types to 5.20260809.1
+- Bump nanoid to 3.3.17
+- Bump ws to 8.21.3
+- Bump hono to 4.13.1
+- Override vulnerable nanoid
+- Bump lucide-react to 1.30.0
+- Bump cloudflare workers types
+- Bump @types/node to 26.2.0
+- Bump wrangler to 4.120.0
+- Bump lucide-react to 1.29.0
+- Bump vite to 8.2.1
+- Bump wrangler to 4.119.0
+- Bump jose to 6.2.8
+- Upgrade swr to 2.5.0
+- Bump workers types to 5.20260804.1
+- Bump @biomejs/biome to 2.5.7
+- Bump undici to 7.29.0
+- Bump ws to 8.21.2
+
+### Fixed
+- Upgrade hono to 4.13.0
+
+### Removed
+- Drop leftover autoresearch notes
+
 ## v2.3.1
 
 ### Added
