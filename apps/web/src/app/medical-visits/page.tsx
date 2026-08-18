@@ -119,6 +119,7 @@ const VISIT_TYPE_COLORS: Record<
 	门诊: "default",
 	急诊: "destructive",
 	体检: "teal",
+	疫苗: "warning",
 	复查: "info",
 	预约: "purple",
 	儿保: "success",

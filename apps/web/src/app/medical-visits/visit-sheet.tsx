@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 
-const VISIT_TYPES = ["门诊", "急诊", "体检", "复查", "预约", "儿保"];
+const VISIT_TYPES = ["门诊", "急诊", "体检", "疫苗", "复查", "预约", "儿保"];
 
 // Tag input component for symptoms
 function TagInput({

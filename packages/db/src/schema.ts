@@ -357,7 +357,7 @@ export const medicalVisits = sqliteTable(
 		visitTimeStart: text("visit_time_start"),
 		visitTimeEnd: text("visit_time_end"),
 		visitType: text("visit_type", {
-			enum: ["儿保", "门诊", "急诊", "体检", "复查", "预约"],
+			enum: ["儿保", "门诊", "急诊", "体检", "复查", "预约", "疫苗"],
 		}).notNull(),
 		visitReason: text("visit_reason").notNull(),
 		department: text("department"),
