@@ -165,12 +165,12 @@ export function formatDaysAgo(days: number | null): string {
 	if (days === -1) return "明天";
 	if (days < 0) {
 		const abs = -days;
-		if (abs < 7) return `还有 ${abs} 天`;
+		if (abs < 14) return `还有 ${abs} 天`;
 		if (abs < 30) return `还有 ${Math.floor(abs / 7)} 周`;
 		if (abs < 365) return `还有 ${Math.floor(abs / 30)} 个月`;
 		return `还有 ${Math.floor(abs / 365)} 年`;
 	}
-	if (days < 7) return `${days}天前`;
+	if (days < 14) return `${days}天前`;
 	if (days < 30) return `${Math.floor(days / 7)}周前`;
 	if (days < 365) return `${Math.floor(days / 30)}月前`;
 	return `${Math.floor(days / 365)}年前`;

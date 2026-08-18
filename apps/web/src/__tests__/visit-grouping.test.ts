@@ -190,11 +190,15 @@ describe("calculateDaysAgo / formatDaysAgo", () => {
 		expect(formatDaysAgo(1)).toBe("昨天");
 		expect(formatDaysAgo(-1)).toBe("明天");
 		expect(formatDaysAgo(5)).toBe("5天前");
+		expect(formatDaysAgo(10)).toBe("10天前");
+		expect(formatDaysAgo(13)).toBe("13天前");
 		expect(formatDaysAgo(14)).toBe("2周前");
 		expect(formatDaysAgo(60)).toBe("2月前");
 		expect(formatDaysAgo(800)).toBe("2年前");
 		// Future uses todo-tone "还有 N …" rather than "N天后"
 		expect(formatDaysAgo(-3)).toBe("还有 3 天");
+		expect(formatDaysAgo(-10)).toBe("还有 10 天");
+		expect(formatDaysAgo(-13)).toBe("还有 13 天");
 		expect(formatDaysAgo(-14)).toBe("还有 2 周");
 		expect(formatDaysAgo(-60)).toBe("还有 2 个月");
 		expect(formatDaysAgo(-800)).toBe("还有 2 年");
