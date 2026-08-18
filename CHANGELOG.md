@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.3
+
+### Added
+- Add vaccine as a visit type
+
+### Changed
+- Bump @cloudflare/workers-types 5.20260814.1 → 5.20260817.1
+- Note release lockfile mirror trap
+- Restore bun.lock without mirror urls
+
+### Fixed
+- Use days for visits under 2 weeks
+
 ## v2.3.2
 
 ### Added
