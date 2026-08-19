@@ -1,20 +1,20 @@
 {
-  "name": "@surety/worker",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "wrangler dev --port 7016",
-    "deploy": "wrangler deploy",
-    "types": "wrangler types"
-  },
-  "dependencies": {
-    "@surety/api": "workspace:*",
-    "@surety/db": "workspace:*",
-    "hono": "4.13.3",
-    "jose": "6.2.9"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "5.20260819.1",
-    "wrangler": "4.124.0"
-  }
+	"name": "@surety/worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "wrangler dev --port 7016",
+		"deploy": "wrangler deploy",
+		"types": "wrangler types"
+	},
+	"dependencies": {
+		"@surety/api": "workspace:*",
+		"@surety/db": "workspace:*",
+		"hono": "4.13.3",
+		"jose": "6.2.9"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "5.20260819.1",
+		"wrangler": "4.124.0"
+	}
 }
