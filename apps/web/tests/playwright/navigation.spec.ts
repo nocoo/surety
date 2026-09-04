@@ -28,3 +28,21 @@ test("every primary route renders its H1", async ({ page }) => {
 		});
 	}
 });
+
+test("skip link becomes visible upon keyboard focus", async ({ page }) => {
+	await page.goto("/");
+	const skipLink = page.getByRole("link", { name: "跳至主要内容" });
+	await expect(skipLink).toBeAttached();
+
+	// Initially screen-reader only (1x1 clipped bounding box)
+	const initialBox = await skipLink.boundingBox();
+	expect(initialBox?.width).toBeLessThanOrEqual(1);
+	expect(initialBox?.height).toBeLessThanOrEqual(1);
+
+	// Focus via Tab reveals full dimensions and styles
+	await page.keyboard.press("Tab");
+	await expect(skipLink).toBeFocused();
+	const focusedBox = await skipLink.boundingBox();
+	expect(focusedBox?.width).toBeGreaterThan(50);
+	expect(focusedBox?.height).toBeGreaterThan(20);
+});
