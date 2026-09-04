@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Select,
 	SelectContent,
@@ -150,53 +151,56 @@ export default function HospitalsPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "医院管理" }]}>
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">医院管理</h1>
-						<p className="text-sm text-muted-foreground">
+				<PageHeader
+					title="医院管理"
+					description={
+						<>
 							共 {hospitals.length} 家医院
 							{filteredHospitals.length !== hospitals.length && (
 								<span>，当前筛选显示 {filteredHospitals.length} 家</span>
 							)}
-						</p>
-					</div>
-					<Button onClick={handleAdd}>
-						<Plus className="mr-2 h-4 w-4" />
-						添加医院
-					</Button>
-				</div>
-
-				<div className="flex items-center gap-4">
-					<div className="flex items-center gap-2">
-						<span className="text-sm text-muted-foreground">级别</span>
-						<Select value={filterLevel} onValueChange={setFilterLevel}>
-							<SelectTrigger className="w-[120px]">
-								<SelectValue placeholder="全部级别" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">全部级别</SelectItem>
-								{HOSPITAL_LEVELS.map((level) => (
-									<SelectItem key={level} value={level}>
-										{level}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-					<div className="flex items-center gap-2">
-						<span className="text-sm text-muted-foreground">性质</span>
-						<Select value={filterPublic} onValueChange={setFilterPublic}>
-							<SelectTrigger className="w-[120px]">
-								<SelectValue placeholder="全部性质" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">全部</SelectItem>
-								<SelectItem value="public">公立</SelectItem>
-								<SelectItem value="private">私立</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
+						</>
+					}
+					actions={
+						<Button onClick={handleAdd}>
+							<Plus className="mr-2 h-4 w-4" />
+							添加医院
+						</Button>
+					}
+					filters={
+						<div className="flex items-center gap-4">
+							<div className="flex items-center gap-2">
+								<span className="text-sm text-muted-foreground">级别</span>
+								<Select value={filterLevel} onValueChange={setFilterLevel}>
+									<SelectTrigger className="w-[120px]">
+										<SelectValue placeholder="全部级别" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">全部级别</SelectItem>
+										{HOSPITAL_LEVELS.map((level) => (
+											<SelectItem key={level} value={level}>
+												{level}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-sm text-muted-foreground">性质</span>
+								<Select value={filterPublic} onValueChange={setFilterPublic}>
+									<SelectTrigger className="w-[120px]">
+										<SelectValue placeholder="全部性质" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">全部</SelectItem>
+										<SelectItem value="public">公立</SelectItem>
+										<SelectItem value="private">私立</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+					}
+				/>
 
 				<div className="rounded-card bg-secondary">
 					<Table>
