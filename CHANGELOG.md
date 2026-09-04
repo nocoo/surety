@@ -2,6 +2,69 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.4
+
+### Added
+- Adopt PageHeader in hospitals page
+- Wrap ChartCard with Basalt LayerCard
+- Adopt PageHeader component backed by Basalt PageHeader
+- Adopt Basalt AppShell, AppMain, AppSkipLink, and ContentIsland
+- Migrate Breadcrumbs to Basalt Breadcrumbs
+- Switch ThemeToggle to @nocoo/basalt ThemeToggle
+- Configure Basalt ThemeProvider, AccentProvider, and LinkProvider
+
+### Changed
+- Add skip link keyboard focus visibility test
+- Add @nocoo/basalt@2.0.3 dependency
+- Bump @types/node to 26.4.1
+- Upgrade wrangler to 4.129.0
+- Bump lucide-react to 1.40.0
+- Bump vitest to 5.0.0
+- Update @types/react-dom to 19.2.7
+- Bump workers types to 5.20260903.1
+- Bump @biomejs/biome to 2.5.12
+- Bump lucide-react to 1.38.0
+- Bump @cloudflare/workers-types to 5.20260831.1
+- Bump wrangler to 4.127.1
+- Bump react-router to 8.3.1
+- Bump @vitejs/plugin-react to 6.1.1
+- Bump lint-staged to 17.4.1
+- Bump @biomejs/biome to 2.5.11
+- Bump hono to 4.13.5
+- Bump @types/node to 26.4.0
+- Bump @types/react-dom 19.2.4 → 19.2.5
+- Bump @types/node 26.2.0 → 26.3.0
+- Bump hono 4.13.3 → 4.13.4
+- Bump lucide-react 1.33.0 → 1.34.0
+- Bump @types/react-dom from 19.2.4 to 19.2.5
+- Bump @cloudflare/workers-types 5.20260822.1 → 5.20260823.1 (#406)
+- Bump @cloudflare/workers-types 5.20260821.1 → 5.20260822.1
+- Bump jose 6.2.9 → 6.2.10
+- Bump @biomejs/biome 2.5.9 → 2.5.10
+- Bump @types/bun 1.3.x → 1.4.0
+- Bump @vitejs/plugin-react 6.0.5 → 6.1.0
+- Bump vite 8.2.1 → 8.2.2
+- Bump react-dropzone 20.1.0 → 20.1.1
+- Bump wrangler 4.124.0 → 4.125.0
+- Bump @cloudflare/workers-types 5.20260820.1 → 5.20260821.1
+- Bump @cloudflare/workers-types 5.20260819.1 → 5.20260820.1 (STU-3996)
+- Bump lucide-react 1.32.0 → 1.33.0
+- STU-3889 follow-up: bump apps/worker hono 4.13.2 → 4.13.3 (#387)
+- Bump hono to 4.13.3 (#383)
+- Bump @cloudflare/workers-types to 5.20260819.1 (#382)
+- Bump lucide-react 1.31.0 → 1.32.0 (STU-3888) (#385)
+- Bump wrangler 4.123.0 → 4.124.0 (#384)
+- Bump vitest and @vitest/coverage-v8 4.1.10 → 4.1.11
+- Bump @cloudflare/workers-types 5.20260817.1 → 5.20260818.1
+- Bump jose 6.2.8 → 6.2.9
+- Bump @biomejs/biome 2.5.8 → 2.5.9
+
+### Fixed
+- Import Basalt tailwind tokens and register package sources in CSS
+
+### Removed
+- Drop accidental root @cloudflare/workers-types pin
+
 ## v2.3.3
 
 ### Added
