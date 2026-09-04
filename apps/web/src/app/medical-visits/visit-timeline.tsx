@@ -96,8 +96,7 @@ function parseSymptoms(symptoms: string | null | undefined): string[] {
 }
 
 function temporalCardClass(temporal: VisitTemporal): string {
-	if (temporal === "upcoming") return "border-l-2 border-l-info";
-	if (temporal === "today") return "border-l-2 border-l-warning bg-primary/5";
+	if (temporal === "today") return "bg-primary/5";
 	return "";
 }
 

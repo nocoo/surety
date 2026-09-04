@@ -53,7 +53,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { statusConfig, statusStripeClass } from "@/lib/constants/policy";
+import { statusConfig } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { countActiveFilters, type PolicyFilterState, PolicyFilters } from "./policy-filters";
@@ -758,11 +758,7 @@ export default function PoliciesPage() {
 												const status = statusConfig[policy.status];
 												const categoryConfig = getCategoryConfig(policy.category);
 												return (
-													<TableRow
-														key={policy.id}
-														className={statusStripeClass(policy.status)}
-														title={`状态: ${status.label}`}
-													>
+													<TableRow key={policy.id} title={`状态: ${status.label}`}>
 														<TableCell>
 															{/*
 															 * Status is conveyed by the row's left-border
