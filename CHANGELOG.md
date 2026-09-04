@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.5
+
+### Fixed
+- Remove status border stripes from policies and medical visits tables
+
 ## v2.3.4
 
 ### Added
