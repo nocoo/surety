@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -175,16 +176,16 @@ export default function MembersPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "家庭成员" }]}>
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">家庭成员</h1>
-						<p className="text-sm text-muted-foreground">共 {members.length} 位成员</p>
-					</div>
-					<Button onClick={handleAdd}>
-						<Plus className="mr-2 h-4 w-4" />
-						添加成员
-					</Button>
-				</div>
+				<PageHeader
+					title="家庭成员"
+					description={`共 ${members.length} 位成员`}
+					actions={
+						<Button onClick={handleAdd}>
+							<Plus className="mr-2 h-4 w-4" />
+							添加成员
+						</Button>
+					}
+				/>
 
 				{members.length === 0 ? (
 					<EmptyState

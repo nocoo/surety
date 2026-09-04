@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout";
 import { MonthlyCalendar, MonthlyChart, MonthlyDetails, SummaryCards } from "@/components/renewal";
 import { RenewalCalendarSkeleton } from "@/components/skeletons";
+import { PageHeader } from "@/components/ui/page-header";
 import { SectionDivider } from "@/components/ui/section-divider";
 
 const breadcrumbs = [{ label: "续保日历" }];
@@ -45,11 +46,7 @@ export default function RenewalCalendarPage() {
 	return (
 		<AppShell breadcrumbs={breadcrumbs}>
 			<div className="space-y-8">
-				{/* Header */}
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">续保日历</h1>
-					<p className="text-sm text-muted-foreground">未来 12 个月的保单续保计划</p>
-				</div>
+				<PageHeader title="续保日历" description="未来 12 个月的保单续保计划" />
 
 				{/* Summary Cards */}
 				<SummaryCards summary={data.summary} />

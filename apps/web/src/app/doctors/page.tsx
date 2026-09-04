@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Select,
 	SelectContent,
@@ -163,42 +164,43 @@ export default function DoctorsPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "医生管理" }]}>
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">医生管理</h1>
-						<p className="text-sm text-muted-foreground">
+				<PageHeader
+					title="医生管理"
+					description={
+						<>
 							共 {doctors.length} 位医生
 							{filteredDoctors.length !== doctors.length && (
 								<span>，当前筛选显示 {filteredDoctors.length} 位</span>
 							)}
-						</p>
-					</div>
-					<Button onClick={handleAdd} disabled={hospitals.length === 0}>
-						<Plus className="mr-2 h-4 w-4" />
-						添加医生
-					</Button>
-				</div>
-
-				{hospitals.length > 0 && (
-					<div className="flex items-center gap-4">
-						<div className="flex items-center gap-2">
-							<span className="text-sm text-muted-foreground">医院</span>
-							<Select value={filterHospitalId} onValueChange={setFilterHospitalId}>
-								<SelectTrigger className="w-[200px]">
-									<SelectValue placeholder="全部医院" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">全部医院</SelectItem>
-									{hospitals.map((hospital) => (
-										<SelectItem key={hospital.id} value={String(hospital.id)}>
-											{hospital.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
-				)}
+						</>
+					}
+					actions={
+						<Button onClick={handleAdd} disabled={hospitals.length === 0}>
+							<Plus className="mr-2 h-4 w-4" />
+							添加医生
+						</Button>
+					}
+					filters={
+						hospitals.length > 0 ? (
+							<div className="flex items-center gap-2">
+								<span className="text-sm text-muted-foreground">医院</span>
+								<Select value={filterHospitalId} onValueChange={setFilterHospitalId}>
+									<SelectTrigger className="w-[200px]">
+										<SelectValue placeholder="全部医院" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">全部医院</SelectItem>
+										{hospitals.map((hospital) => (
+											<SelectItem key={hospital.id} value={String(hospital.id)}>
+												{hospital.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						) : undefined
+					}
+				/>
 
 				{hospitals.length === 0 ? (
 					<div className="rounded-card bg-secondary p-8 text-center">

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
@@ -126,16 +127,16 @@ export default function AssetsPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "资产管理" }]}>
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">资产管理</h1>
-						<p className="text-sm text-muted-foreground">共 {assets.length} 项资产</p>
-					</div>
-					<Button onClick={handleAdd}>
-						<Plus className="mr-2 h-4 w-4" />
-						添加资产
-					</Button>
-				</div>
+				<PageHeader
+					title="资产管理"
+					description={`共 ${assets.length} 项资产`}
+					actions={
+						<Button onClick={handleAdd}>
+							<Plus className="mr-2 h-4 w-4" />
+							添加资产
+						</Button>
+					}
+				/>
 
 				<div className="rounded-card bg-secondary">
 					<Table>
