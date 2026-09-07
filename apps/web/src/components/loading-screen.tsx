@@ -9,7 +9,7 @@ export default function LoadingScreen() {
 			<div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
 				<div className="flex h-72 w-72 items-center justify-center rounded-full bg-secondary dark:bg-[#171717] ring-1 ring-border overflow-hidden p-6">
 					<img
-						src="/logo-80.png"
+						src="/logo-256.png"
 						alt="Surety"
 						width={112}
 						height={112}

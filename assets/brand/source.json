@@ -1,0 +1,46 @@
+{
+	"study": "surety/2026-09-07-01",
+	"finishing": "01",
+	"model": "gpt-image-2",
+	"method": "generated-redesign",
+	"generationCalls": 1,
+	"nativeDimensions": [2048, 2048],
+	"generation": {
+		"path": "raw/generated.png",
+		"sha256": "ae84f2009fb76b37853b64fa85c8204cb6d51d5fa263affd146fa8d8ba8f74a3"
+	},
+	"sourceRevisionBefore": "daa78704b19f9924d63f8d5324dc99bdade72bfd",
+	"previous": {
+		"original": "/logos/originals/surety.png",
+		"sourceUrl": "https://github.com/nocoo/surety/blob/aad7b0298935b71642e8d25abb125c0cb9cc0d22/logo.png",
+		"sha256": "13b22815f3d07d56ee294f005db9638809e0329fedce51887dd55cba75b01dc6",
+		"width": 2048,
+		"height": 2048
+	},
+	"masters": {
+		"logo.png": {
+			"sha256": "cb590912df7eb4ad0cf505b195870d448cde7ee3c8038ed7ea8a7ca5a8462314",
+			"width": 2048,
+			"height": 2048
+		},
+		"assets/brand/icon.png": {
+			"sha256": "587a4c30fd62c32927fc51b03911ad3dd287de18e3e1731ca05d8eb841c68c54",
+			"width": 2048,
+			"height": 2048
+		},
+		"assets/brand/icon-rounded.png": {
+			"sha256": "0ba3d464cf5672cf97d5e3c58f3df959b4b938fc0a1e8fb4c09552b32526aa4d",
+			"width": 2048,
+			"height": 2048
+		}
+	},
+	"protectedFeatureClearancePx": 145.5,
+	"intentionalEdges": [],
+	"acceptance": {
+		"decisionSource": "owner-delegated batch acceptance",
+		"ownerReviewedExactBytes": false,
+		"scope": "Surety, Owl, Ellie, Giraffe, and Steed redesign batch"
+	},
+	"review": "https://hexly.ai/logos/surety",
+	"archive": "https://github.com/nocoo/hexly.ai/tree/main/artwork/logo-family/surety/2026-09-07-01"
+}

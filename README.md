@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/worker/static/logo-80.png" alt="Surety Logo" width="80" height="80">
+  <img src="assets/brand/icon-rounded.png" alt="Surety" width="128" height="128">
 </p>
 
 <h1 align="center">Surety</h1>
