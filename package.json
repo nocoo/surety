@@ -78,7 +78,7 @@
 		"sharp": "^0.35.3",
 		"undici": "^7.29.0",
 		"ws": "^8.21.3",
-		"wrangler": "4.129.0"
+		"wrangler": "4.129.1"
 	},
 	"lint-staged": {
 		"*.{ts,tsx,js,jsx,json,css}": [
