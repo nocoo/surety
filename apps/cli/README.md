@@ -6,7 +6,7 @@ Designed for AI agents (Claude Code, Cursor, etc.) to read and mutate Surety dat
 
 ## Requirements
 
-- [Bun](https://bun.sh) 1.2+ (the CLI ships as `src/index.ts` and runs under Bun directly)
+- [Bun](https://bun.sh) (the CLI ships as `src/index.ts` and runs under Bun directly)
 
 ## Install
 
@@ -47,7 +47,7 @@ Environment overrides (highest priority):
 | `SURETY_API_URL` | `apiUrl` |
 | `SURETY_LOGIN_URL` | `loginUrl` |
 | `SURETY_API_TOKEN` | `token` |
-| `SURETY_CLI_DEV` | `=1` writes to `./.surety-dev/config.json` instead of `~/.config/surety` |
+| `SURETY_CLI_DEV` | `=1` or `true` selects `~/.config/surety/config.dev.json` in the current source; it does not change API URLs |
 
 ## Output contract
 
@@ -84,7 +84,7 @@ Positional JSON arguments are **not** accepted.
 | Command | Description |
 |---------|-------------|
 | `surety login [--login-url] [--api-url] [--timeout]` | Browser-based login via CF Access, saves token |
-| `surety logout` | Forget saved token and email |
+| `surety logout` | Requests local sign-out; see the configuration-write limitation below |
 | `surety whoami` | Print authenticated identity |
 
 ### Flat entities (CRUD)
@@ -108,7 +108,7 @@ All follow the same shape:
 
 ### Policies (with nested sub-resources)
 
-```bash
+```text
 surety policies ls
 surety policies get <id> [--full]
 surety policies add --data '<json>'
@@ -131,7 +131,7 @@ surety policies coverage-items add <policyId> --data '<json>'
 surety policies coverage-items update <policyId> <itemId> --data '<json>'
 surety policies coverage-items rm <policyId> <itemId>
 
-# Attachments (metadata only; upload not yet exposed in Worker)
+# Attachments (query metadata or delete attachments; upload through the website or Worker API)
 surety policies attachments ls <policyId>
 surety policies attachments get <policyId> <attachmentId>
 surety policies attachments rm <policyId> <attachmentId>
@@ -145,13 +145,18 @@ surety policies attachments rm <policyId> <attachmentId>
 | `surety renewals` | Upcoming renewals calendar |
 | `surety dashboard` | Dashboard summary payload |
 
-## Known backend gaps
+## Current limitations
 
-These endpoints are not yet implemented in the Worker; the CLI will expose them once shipped:
+Current boundaries:
 
 - `PUT/DELETE /api/policies/:id/beneficiaries` — beneficiaries are currently read-only
-- `POST /api/policies/:id/attachments` — attachment upload
+- `POST /api/policies/:id/attachments` supports upload in the Worker, but the CLI has no upload subcommand. PDF, JPEG, and PNG are supported, up to 50 MiB per file and 20 files per policy.
+- Attachment `rm` deletes the database record and attempts to remove the R2 file; an R2 deletion failure is not surfaced by the endpoint.
 - `GET /api/policies/:id` does not nest sub-resources; use the sub-resource `ls` commands
+- Policy termination and planned surrender have dedicated Worker endpoints and web controls, but no dedicated CLI subcommands.
+- `logout` removes fields from an in-memory object before passing it to a merge-writing config manager. The stored token can remain. Revoke a token through the authenticated browser API and remove it from local configuration when ending access; a successful logout message is not server-side revocation.
+
+See [current development and authentication notes](../../docs/20-development.md) for domain setup, configuration behavior, and database backup limitations.
 
 ## AI usage examples
 
@@ -161,8 +166,8 @@ surety members ls                                                   # discover m
 surety coverage --type member --id 1                                # list policies
 surety policies get 3 --full                                        # inspect one
 
-# Record a new out-of-pocket payment
-surety policies payments add 3 --data '{"amount":1200,"paidAt":"2026-04-01","note":"annual premium"}'
+# Record a paid premium for an existing active policy (choose an unused period number)
+surety policies payments add 3 --data '{"periodNumber":1,"dueDate":"2026-04-01","amount":1200,"status":"Paid","paidDate":"2026-04-01","paidAmount":1200}'
 
 # Regenerate upcoming payment schedule after policy change
 surety policies payments generate 3
@@ -172,10 +177,9 @@ surety policies payments generate 3
 
 ```bash
 # From repo root
-cd apps/cli
-bun install
-bun test
-bun run typecheck
+bun install --frozen-lockfile
+bun run test:cli
+bun run --cwd apps/cli typecheck
 ```
 
 The CLI has no build step — `bin` in `package.json` points directly at `src/index.ts`.
