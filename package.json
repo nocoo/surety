@@ -29,12 +29,12 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"@nocoo/basalt": "2.1.0",
+		"@nocoo/basalt": "2.1.2",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"drizzle-orm": "^0.45.2",
 		"hono": "4.13.7",
-		"lucide-react": "1.42.0",
+		"lucide-react": "1.43.0",
 		"path-to-regexp": "^8.4.0",
 		"radix-ui": "1.6.7",
 		"react": "^19.2.8",
@@ -47,7 +47,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.5.12",
 		"@tailwindcss/postcss": "4.3.3",
-		"@types/bun": "1.4.1",
+		"@types/bun": "1.4.2",
 		"@types/node": "26.5.0",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "19.2.7",
@@ -75,10 +75,10 @@
 		"nanoid": "3.3.18",
 		"path-to-regexp": "^8.4.0",
 		"postcss": "^8.5.18",
-		"sharp": "^0.35.3",
+		"sharp": "0.35.4",
 		"undici": "^7.29.0",
 		"ws": "^8.21.3",
-		"wrangler": "4.129.1"
+		"wrangler": "4.130.0"
 	},
 	"lint-staged": {
 		"*.{ts,tsx,js,jsx,json,css}": [
