@@ -10,7 +10,7 @@
 		"test:e2e": "playwright test"
 	},
 	"dependencies": {
-		"@nocoo/basalt": "2.1.0",
+		"@nocoo/basalt": "2.1.2",
 		"@surety/api": "workspace:*",
 		"@surety/db": "workspace:*",
 		"class-variance-authority": "^0.7.1",
