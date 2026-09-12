@@ -19,7 +19,6 @@ jobs:
       typecheck-command: "bun run typecheck"
       l2: true
       l2-command: "bun run test:l2:http"
-    secrets: inherit
 
   browser-e2e:
     name: "L3 Browser E2E"
