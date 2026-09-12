@@ -9,23 +9,26 @@ on:
 
 jobs:
   quality:
-    uses: nocoo/base-ci/.github/workflows/bun-quality.yml@aec4adc1a817c56790d1698329ef9398a15a754a  # v2026.5
+    uses: nocoo/base-ci/.github/workflows/quality.yml@3d2e9e55fdd60aa756df454ded53ef6d06d6653f
     with:
-      pre-command: "bun run build"
+      runtime-version: "1.4.2"
+      install-policy: "trusted"
+      coverage-path: "coverage"
+      prepare-command: "bun run build"
       test-command: "bun run test:coverage"
       typecheck-command: "bun run typecheck"
-      enable-l2: "true"
+      l2: true
       l2-command: "bun run test:l2:http"
     secrets: inherit
 
   browser-e2e:
     name: "L3 Browser E2E"
     needs: [quality]
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile --ignore-scripts
-      - run: cd apps/web && bunx playwright install --with-deps chromium chromium-headless-shell
-      - run: bun run test:e2e:browser
+    uses: nocoo/base-ci/.github/workflows/test-job.yml@3d2e9e55fdd60aa756df454ded53ef6d06d6653f
+    with:
+      runtime-version: "1.4.2"
+      install-policy: "blocked"
+      browser: "chromium"
+      browser-working-directory: "apps/web"
+      timeout-minutes: 25
+      command: "bun run test:e2e:browser"
