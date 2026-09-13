@@ -41,7 +41,7 @@
 		"react-dom": "19.3.0",
 		"react-dropzone": "^20.1.1",
 		"recharts": "3.10.1",
-		"tailwind-merge": "3.6.0",
+		"tailwind-merge": "3.7.0",
 		"ws": "8.21.3"
 	},
 	"devDependencies": {
