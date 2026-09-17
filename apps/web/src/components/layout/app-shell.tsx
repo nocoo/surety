@@ -1,3 +1,4 @@
+import { HeaderTooltip, HexlyLink } from "./header-links";
 import { ContentIsland } from "@nocoo/basalt";
 import {
 	AppSkipLink,
@@ -79,28 +80,33 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 				<header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
 					<div className="flex items-center gap-3">
 						{isMobile && (
-							<button
-								type="button"
-								onClick={() => setMobileOpen(true)}
-								aria-label="打开导航菜单"
-								className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-							>
-								<Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
-							</button>
+							<HeaderTooltip label="打开导航菜单">
+								<button
+									type="button"
+									onClick={() => setMobileOpen(true)}
+									aria-label="打开导航菜单"
+									className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+								>
+									<Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+								</button>
+							</HeaderTooltip>
 						)}
 						<Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
 					</div>
 					<div className="flex items-center gap-1">
 						<DbSelector />
-						<a
-							href="https://github.com/nocoo/surety"
-							target="_blank"
-							rel="noopener noreferrer"
-							aria-label="GitHub repository"
-							className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-						>
-							<Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
-						</a>
+						<HeaderTooltip label="GitHub repository">
+							<a
+								href="https://github.com/nocoo/surety"
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label="GitHub repository"
+								className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+							>
+								<Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+							</a>
+						</HeaderTooltip>
+						<HexlyLink />
 						<ThemeToggle />
 					</div>
 				</header>
