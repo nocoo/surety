@@ -1,4 +1,3 @@
-import { HeaderTooltip, HexlyLink } from "./header-links";
 import { ContentIsland } from "@nocoo/basalt";
 import {
 	AppSkipLink,
@@ -20,6 +19,7 @@ import { Github } from "../icons/github";
 import { Breadcrumbs } from "./breadcrumbs";
 import { CommandPalette } from "./command-palette";
 import { DbSelector } from "./db-selector";
+import { HeaderTooltip, HexlyLink } from "./header-links";
 import { Sidebar } from "./sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";

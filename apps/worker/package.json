@@ -10,11 +10,11 @@
 	"dependencies": {
 		"@surety/api": "workspace:*",
 		"@surety/db": "workspace:*",
-		"hono": "4.13.7",
+		"hono": "4.13.8",
 		"jose": "6.2.12"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "5.20260914.1",
-		"wrangler": "4.131.2"
+		"@cloudflare/workers-types": "5.20260916.1",
+		"wrangler": "4.133.0"
 	}
 }
