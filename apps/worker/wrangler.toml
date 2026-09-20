@@ -1,4 +1,6 @@
 name = "surety"
+workers_dev = false
+preview_urls = false
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
