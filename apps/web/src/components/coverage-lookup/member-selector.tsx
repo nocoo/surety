@@ -1,9 +1,9 @@
+import { Button } from "@nocoo/basalt";
 import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
 import { getNameInitial } from "@surety/api/lib/category-config";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { cn, getAvatarColor } from "@/lib/utils";
 
 interface MemberSelectorProps {

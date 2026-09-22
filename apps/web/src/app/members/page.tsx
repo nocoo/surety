@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { AlertCircle, Pencil, Plus, Shield, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout";
@@ -14,7 +15,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import {

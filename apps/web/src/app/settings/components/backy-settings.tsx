@@ -1,7 +1,7 @@
+import { Button } from "@nocoo/basalt";
 import { AlertTriangle, Cloud, History, Loader2, Plug, RefreshCw, Save, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Notice } from "@/components/ui/notice";

@@ -1,7 +1,7 @@
+import { Button } from "@nocoo/basalt";
 import { type AssetCoverageCard, formatSumAssured } from "@surety/api/coverage-lookup";
 import { Car, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface AssetSelectorProps {

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { formatCurrencyFull } from "@surety/api/lib/format";
 import { todayStr } from "@surety/db/lib/date-utils";
 import { isObsoletedByTermination } from "@surety/db/types";
@@ -24,7 +25,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

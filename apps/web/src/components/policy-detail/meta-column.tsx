@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { formatCurrency } from "@surety/api/lib/format";
 import { formatDateWithDays } from "@surety/db/lib/date-utils";
 import {
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import {
 	type CategoryGroup,
 	type CoverageLookupData,
@@ -11,7 +12,6 @@ import { useSearchParams } from "react-router";
 import { AssetSelector, CategorySection, MemberSelector } from "@/components/coverage-lookup";
 import { AppShell } from "@/components/layout";
 import { CoverageLookupSkeleton } from "@/components/skeletons";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { readCoverageDeepLink } from "./deep-link";

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { FileText, Globe, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout";
@@ -13,7 +14,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,

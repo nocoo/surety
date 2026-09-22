@@ -1,8 +1,8 @@
+import { Button } from "@nocoo/basalt";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { ListFilter, X } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
 	Select,

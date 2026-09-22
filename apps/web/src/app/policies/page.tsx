@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
@@ -37,7 +38,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SortHeader } from "@/components/ui/sort-header";

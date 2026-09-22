@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { Cloud, Key, Loader2, Terminal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import useSWR from "swr";
@@ -13,7 +14,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
 	Table,

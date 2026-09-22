@@ -1,7 +1,7 @@
+import { Button } from "@nocoo/basalt";
 import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
 import { Download, Eye, FileText, ImageIcon, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface AttachmentListProps {
 	attachments: Attachment[];

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
@@ -7,7 +8,6 @@ import { MetaColumn } from "@/components/policy-detail/meta-column";
 import { PaymentsSection } from "@/components/policy-detail/payments-section";
 import { TimelineColumn } from "@/components/policy-detail/timeline-column";
 import { PolicyDetailSkeleton } from "@/components/skeletons";
-import { Button } from "@/components/ui/button";
 import type { Beneficiary, CoverageItem, Payment, PolicyDetail } from "@/lib/types/policy";
 
 /**

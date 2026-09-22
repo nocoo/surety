@@ -1,6 +1,6 @@
+import { Button } from "@nocoo/basalt";
 import { formatLocalDate, parseLocalDate, todayInTimeZone } from "@surety/db/lib/date-utils";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,

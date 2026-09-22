@@ -1,8 +1,8 @@
+import { Button } from "@nocoo/basalt";
 import { AlertCircle, Bell, Save, Shield } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlocker } from "react-router";
 import { AppShell } from "@/components/layout";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {

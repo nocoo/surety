@@ -1,7 +1,7 @@
+import { Button } from "@nocoo/basalt";
 import { Building2, Calendar, Clock, Pencil, Trash2, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
 import {
 	calculateDaysAgo,

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import {
 	AlertCircle,
 	Building2,
@@ -25,7 +26,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,

@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt";
 import { AlertTriangle, Database, Download, Loader2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import {
@@ -10,7 +11,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/notice";
 import { Separator } from "@/components/ui/separator";
 

@@ -1,9 +1,9 @@
+import { Button } from "@nocoo/basalt";
 import { AlertCircle } from "lucide-react";
 import useSWR from "swr";
 import { fetchAPI } from "@/api";
 import { AppShell } from "@/components/layout";
 import { DashboardSkeleton } from "@/components/skeletons";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { DashboardData } from "@/lib/dashboard-vm";
 import { DashboardContent } from "./dashboard-content";
