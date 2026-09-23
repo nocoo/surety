@@ -103,7 +103,7 @@ def check_tests(path):
     report = json.loads(path.read_text())
     total = report.get("numTotalTests")
     passed = report.get("numPassedTests")
-    if not report.get("success") or not isinstance(total, int) or total <= 0:
+    if report.get("success") is not True or type(total) is not int or total <= 0:
         raise RuntimeError(f"Missing, empty, or unsuccessful test report: {path}")
     if (passed != total or report.get("numFailedTests") != 0 or
             report.get("numPendingTests") != 0 or report.get("numTodoTests") != 0):
@@ -125,9 +125,11 @@ def check_coverage(path):
             raise RuntimeError(f"Missing {metric} coverage in {path}")
         value = result.get("pct")
         count = result.get("total")
-        if (not isinstance(value, (int, float)) or not math.isfinite(value) or
-                not isinstance(count, int) or count <= 0 or value < FLOORS[metric]):
-            raise RuntimeError(f"Missing, empty, or below-floor {metric} coverage in {path}: {value}")
+        covered = result.get("covered")
+        if (not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 <= value <= 100 or
+                type(count) is not int or count <= 0 or type(covered) is not int or
+                not 0 <= covered <= count or value < FLOORS[metric]):
+            raise RuntimeError(f"Missing, malformed, or below-floor {metric} coverage in {path}: {value}")
         values[metric] = value
     print(path.parent.name + " coverage: " + ", ".join(
         f"{metric}={values[metric]:.2f}%" for metric in METRICS
@@ -162,6 +164,7 @@ def self_test():
         check_tests(report)
         for bad in (
             {"success": True, "numTotalTests": 0, "numPassedTests": 0},
+            {"success": True, "numTotalTests": True, "numPassedTests": 1},
             {"success": True, "numTotalTests": 1, "numPassedTests": 0,
              "numFailedTests": 0, "numPendingTests": 1, "numTodoTests": 0},
         ):
@@ -173,13 +176,19 @@ def self_test():
             else:
                 raise AssertionError("Invalid test report was accepted")
 
-        report.write_text(json.dumps({"total": {metric: {"total": 1, "pct": 95.5} for metric in METRICS}}))
+        report.write_text(json.dumps({"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}))
         check_coverage(report)
         invalid_reports = []
-        for value in (95.4, float("nan")):
-            invalid_reports.append({"total": {metric: {"total": 1, "pct": 95.5} for metric in METRICS}})
+        for value in (95.4, float("nan"), 101):
+            invalid_reports.append({"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}})
             invalid_reports[-1]["total"]["branches"]["pct"] = value
-        empty = {"total": {metric: {"total": 1, "pct": 95.5} for metric in METRICS}}
+        missing_covered = {"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}
+        del missing_covered["total"]["branches"]["covered"]
+        invalid_reports.append(missing_covered)
+        excessive_covered = {"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}
+        excessive_covered["total"]["branches"]["covered"] = 3
+        invalid_reports.append(excessive_covered)
+        empty = {"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}
         empty["total"]["branches"]["total"] = 0
         invalid_reports.append(empty)
         for bad in invalid_reports:
