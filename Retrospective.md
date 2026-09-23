@@ -1,6 +1,6 @@
 # Retrospective
 
-Accident narratives belong here. Keep only recurring project rules in `CLAUDE.md`; cross-project lessons belong in global rules and deterministic checks in hooks/tests.
+Accident narratives belong here. Keep only recurring project rules in `AGENTS.md`; cross-project lessons belong in global rules and deterministic checks in hooks/tests.
 
 Historical Next.js and remote-D1 test migrations below describe earlier implementations. Current automated L2/L3 uses local Wrangler and separate fixture state.
 

@@ -112,7 +112,7 @@ planned_surrender_at TEXT,
 planned_surrender_note TEXT,
 ```
 
-> 参考 CLAUDE.md Retrospective "INIT_SQL 是单源真值"约定。
+> 参考 AGENTS.md Retrospective “INIT_SQL 是单源真值”约定。
 
 ### Drizzle Migration
 
@@ -571,7 +571,7 @@ L2 HTTP 套件 `bun run test:l2:http` 走一遍 terminate + planned-surrender �
 - L2：无（commit 3 才引入消费者）
 
 **Risks & Rollback**
-- 风险：INIT_SQL 与 schema.ts 列顺序不一致导致 bun-sqlite L1 跑通但 D1 行为不同（CLAUDE.md Retrospective 记录过）→ 跑 step 5 的 `PRAGMA table_info` 与 schema.ts 顺序对照
+- 风险：INIT_SQL 与 schema.ts 列顺序不一致导致 bun-sqlite L1 跑通但 D1 行为不同（AGENTS.md Retrospective 记录过）→ 跑 step 5 的 `PRAGMA table_info` 与 schema.ts 顺序对照
 - 回滚：
   - **代码侧**：`git revert` schema.ts + INIT_SQL + drizzle/000X + drizzle/meta 一起还原（4 个工件必须一起退，否则 generate 状态不一致）
   - **dev D1 侧**：四个新列被退掉后 schema 仍多 4 个 dangling 列 —— 单纯 `DROP COLUMN` 是破坏性操作且绕过 Drizzle 管理路径（dev D1 上若已写了 terminated_at 数据会直接丢）。**正确做法**：仅在 dev 环境、确认无价值数据后，二选一：

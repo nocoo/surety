@@ -2,7 +2,7 @@
 
 Private family insurance, assets and medical records in a self-hosted Worker with web and CLI clients.
 Profile: ts-worker-web + ts CLI.
-Direction: [design overview](docs/01-design-overview.md). Frameworks must preserve this handbook.
+Human overview: [README.md](README.md). Direction: [design overview](docs/01-design-overview.md). Frameworks must preserve this handbook. Maintain this root `AGENTS.md` as the only project handbook; do not create a `CLAUDE.md` alias, copy or import.
 
 ## Sources of Truth
 
@@ -52,22 +52,20 @@ bun run test:cli
 
 ## Verification
 
-6DQ = L1/L2/L3 + G1/G2 + D1 (test isolation). Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
-L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps.
-G1 requires check-only strict analysis/formatting with zero errors/warnings. G2 requires dependency and secret scans, with missing required scanners failing.
+6DQ = L1/L2/L3 + G2 + D1 (test isolation); the former G1 dimension was merged into L1 on 2026-09-21. Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
+L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps. L1 also includes check-only strict analysis/formatting with zero errors/warnings (the former G1 contract). G2 requires dependency and secret scans, with missing required scanners failing.
 
 | Dimension | Status | Required proof and current evidence/gap |
 |---|---|---|
-| L1 TypeScript | planned | Preserve the stricter all-four 95.5% thresholds in Vitest. Shared packages, TSX, Worker routes and several CLI/hook modules are outside coverage; full source scope remains incomplete. |
+| L1 TypeScript (incl. former G1 static) | planned | Preserve the stricter all-four 95.5% thresholds in Vitest. Shared packages, TSX, Worker routes and several CLI/hook modules are outside coverage; full source scope remains incomplete. Hooks/CI run zero-warning Biome and all package types; pre-commit autofixes staged files and uses working-tree caches rather than index-only checks. |
 | L2 Worker / CLI | planned | Separate Bun in-process SQLite E2E and real HTTP local D1/R2 lanes run before push. Require 100% endpoint/auth/error coverage and real CLI command workflows; in-process Hono calls are not HTTP proof. |
 | L3 browser / CLI | planned | CI runs Chromium against built SPA/local Worker on 27012. All-page and CLI system proof remains incomplete; token login/revocation and real restore need explicit acceptance. |
-| G1 TypeScript | planned | Hooks/CI run zero-warning Biome and all package types; pre-commit autofixes staged files and uses working-tree caches rather than index-only checks. |
 | G2 | planned | OSV runs before push and CI scans secrets/deps, but local pre-push gitleaks scans only the staged index, missing already committed push contents. |
 | D1 | planned | L2/L3 force local persist state and test auth vars, but fixed directories are recursively removed without checked marker/path ownership and runners do not force NODE_ENV=test. |
 
 Pre-commit settles lint-staged first, then runs cached coverage/types, full lint and staged secrets in parallel. Pre-push runs units, in-memory E2E, real local HTTP, OSV and staged gitleaks in parallel. L1 cache hashes source/config but not all dependency/toolchain inputs; a cache hit is not a fresh run. CI independently builds, checks coverage/types/security, HTTP and browser lanes.
 
-Target hooks: pre-commit checks G1 + L1 against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
+Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
 Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
 
 ## Resources / Isolation
