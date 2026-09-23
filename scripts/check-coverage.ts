@@ -5,7 +5,7 @@
  * Historically this script spawned `bun test --coverage` per app, which
  * cannot execute Vitest-only suites and reported misleading failures after
  * the vitest migration. Now it is a thin wrapper around
- * `vitest run --coverage`, whose thresholds live in vitest.config.ts
+ * `vitest run --coverage`, whose thresholds live in vitest.config.mts
  * (statements/branches/functions/lines ≥ 95.5).
  */
 
@@ -14,7 +14,7 @@ import { resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dir, "..");
 
-console.log("🧪 Coverage gate via vitest (thresholds in vitest.config.ts)\n");
+console.log("🧪 Coverage gate via vitest (thresholds in vitest.config.mts)\n");
 
 const proc = spawnSync("bunx", ["vitest", "run", "--coverage"], {
 	cwd: REPO_ROOT,

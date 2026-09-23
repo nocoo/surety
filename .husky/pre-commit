@@ -1,1 +1,1 @@
-bun run scripts/pre-commit.ts
+python3 -B -c 'import subprocess; source = subprocess.run(["git", "show", ":scripts/pre-commit.py"], check=True, stdout=subprocess.PIPE).stdout; exec(compile(source, "scripts/pre-commit.py", "exec"))'

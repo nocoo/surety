@@ -23,7 +23,7 @@ const STEPS: Step[] = [
 	{ name: "osv-scanner", cmd: ["osv-scanner", "--lockfile=bun.lock"] },
 	{ name: "gitleaks", cmd: ["gitleaks", "protect", "--staged", "--no-banner"] },
 	// Worker + CLI unit suites via vitest (test files migrated to vitest).
-	// vitest.config.ts includes/excludes are authoritative; no path args needed.
+	// vitest.config.mts includes/excludes are authoritative; no path args needed.
 	{
 		name: "vitest unit",
 		cmd: ["bunx", "vitest", "run"],
