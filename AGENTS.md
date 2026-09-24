@@ -57,13 +57,13 @@ L1 requires statements, branches, functions and lines each ≥95%, with no skipp
 
 | Dimension | Status | Required proof and current evidence/gap |
 |---|---|---|
-| L1 TypeScript (incl. former G1 static) | planned | Preserve the stricter all-four 95.5% thresholds in Vitest. Shared packages, TSX, Worker routes and several CLI/hook modules are outside coverage; full source scope remains incomplete. Hooks/CI run zero-warning Biome and all package types; pre-commit autofixes staged files and uses working-tree caches rather than index-only checks. |
+| L1 TypeScript (incl. former G1 static) | planned | Preserve the stricter all-four 95.5% thresholds in Vitest. Shared packages, TSX, Worker routes and several CLI/hook modules are outside coverage; full source scope remains incomplete. Hooks/CI run zero-warning Biome and all package types; pre-commit runs staged gitleaks/lint/typecheck/coverage check-only against an isolated index snapshot with fresh temporary cache dirs. |
 | L2 Worker / CLI | planned | Separate Bun in-process SQLite E2E and real HTTP local D1/R2 lanes run before push. Require 100% endpoint/auth/error coverage and real CLI command workflows; in-process Hono calls are not HTTP proof. |
 | L3 browser / CLI | planned | CI runs Chromium against built SPA/local Worker on 27012. All-page and CLI system proof remains incomplete; token login/revocation and real restore need explicit acceptance. |
 | G2 | planned | OSV runs before push and CI scans secrets/deps, but local pre-push gitleaks scans only the staged index, missing already committed push contents. |
 | D1 | planned | L2/L3 force local persist state and test auth vars, but fixed directories are recursively removed without checked marker/path ownership and runners do not force NODE_ENV=test. |
 
-Pre-commit settles lint-staged first, then runs cached coverage/types, full lint and staged secrets in parallel. Pre-push runs units, in-memory E2E, real local HTTP, OSV and staged gitleaks in parallel. L1 cache hashes source/config but not all dependency/toolchain inputs; a cache hit is not a fresh run. CI independently builds, checks coverage/types/security, HTTP and browser lanes.
+Pre-commit exports the index to an isolated temporary snapshot, links dependencies and runs staged gitleaks, lint, typecheck and coverage check-only in that order, with no autofix; pre-commit uses fresh isolated temporary cache dirs and never short-circuits via a result cache. Pre-push runs units, in-memory E2E, real local HTTP, OSV and staged gitleaks in parallel. CI independently builds, checks coverage/types/security, HTTP and browser lanes.
 
 Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
 Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
