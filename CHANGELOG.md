@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.6
+
+### Added
+- Add the Hexly project link and shared header tooltips.
+
+### Changed
+- Upgrade Wrangler to 4.138.0 and Workers Types to 5.20260924.1, including the deployment workflow pin.
+- Upgrade Drizzle ORM to 0.45.3 and Drizzle Kit to 0.31.11.
+- Refresh runtime, UI and development dependencies, including Basalt 2.1.8 and React 19.3.0.
+- Adopt Basalt buttons, remove the unused dropdown component, and consolidate the project handbook in AGENTS.md.
+- Share pinned CI workflows with independent quality and deployment verification.
+
+### Fixed
+- Run commit checks against an isolated staged snapshot and reject malformed coverage reports.
+- Disable the Worker's default and preview URLs.
+- Complete shared header accessibility content and upgrade Sharp for its security fix.
+
 ## v2.3.5
 
 ### Fixed

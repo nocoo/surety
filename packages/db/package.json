@@ -14,6 +14,6 @@
 		"./worker-db-client": "./src/worker-db-client.ts"
 	},
 	"dependencies": {
-		"drizzle-orm": "^0.45.2"
+		"drizzle-orm": "^0.45.3"
 	}
 }
