@@ -6,7 +6,7 @@ import { defineConfig, loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
 	// Prefer monorepo root `.env` (docs + shared with CLI tooling); fall back
 	// to apps/web for any package-local overrides.
-	const monorepoRoot = resolve(__dirname, "../..");
+	const monorepoRoot = resolve(import.meta.dirname, "../..");
 	const env = {
 		...loadEnv(mode, monorepoRoot, ""),
 		...loadEnv(mode, process.cwd(), ""),
@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
 		plugins: [react(), tailwindcss()],
 		resolve: {
 			alias: {
-				"@": resolve(__dirname, "./src"),
+				"@": resolve(import.meta.dirname, "./src"),
 			},
 		},
 		build: {
