@@ -14,9 +14,7 @@
 		"lint": "biome check --error-on-warnings .",
 		"lint:fix": "biome check --write .",
 		"typecheck": "tsc --noEmit && cd apps/web && tsc --noEmit && cd ../cli && tsc --noEmit && cd ../worker && tsc --noEmit",
-		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
-		"db:seed": "bun run scripts/seed-remote.ts",
 		"test:web": "vitest run apps/web/src/__tests__/",
 		"test:worker": "vitest run apps/worker/__tests__/",
 		"test:cli": "vitest run apps/cli/__tests__/",
@@ -25,7 +23,10 @@
 		"test:e2e:browser": "bun --no-env-file scripts/run-local-tests.ts browser",
 		"test:coverage": "vitest run --coverage",
 		"release": "bun run scripts/release.ts",
-		"prepare": "husky"
+		"prepare": "husky",
+		"test:environments": "bun run build && bun --no-env-file apps/web/local/verify.ts",
+		"fixtures:media": "bun --no-env-file apps/web/local/generate-media.ts",
+		"db:migrate": "cd apps/worker && wrangler d1 migrations apply surety-db --remote"
 	},
 	"dependencies": {
 		"@nocoo/basalt": "2.1.8",

@@ -98,7 +98,7 @@ describe("L2 E2E: auth tokens management", () => {
     const env = buildTestApp();
     await env.repos.apiTokens.create("alice@hexly.ai", "alice cli");
     const r = await jsonRequest(env, "GET", "/api/auth/tokens");
-    // E2E_SKIP_AUTH bypasses api-key-auth, but session check still runs
+    // The route harness supplies no session identity.
     expect(r.status).toBe(401);
   });
 

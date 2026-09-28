@@ -1,13 +1,4 @@
-/**
- * Database module — supports D1 binding (Worker), sqlite-proxy (legacy), and bun:sqlite (tests).
- *
- * D1 binding: Worker calls createDbFromD1(d1) for direct D1 access
- * sqlite-proxy: Legacy Next.js app calls getDbForRequest() via Worker proxy
- * Unit tests: bun:sqlite :memory: (no network, instant)
- */
-
 import * as schema from "./schema";
-import { type TargetDb, WorkerDbClient } from "./worker-db-client";
 
 /**
  * Dual-driver Drizzle handle (D1 | bun:sqlite). Aliased to `any` because the
@@ -16,9 +7,6 @@ import { type TargetDb, WorkerDbClient } from "./worker-db-client";
  */
 // biome-ignore lint/suspicious/noExplicitAny: dual-driver Drizzle escape hatch — see doc above
 export type DbInstance = any;
-
-// Re-export TargetDb for consumers
-export type { TargetDb };
 
 // ---------- D1 binding driver (Cloudflare Worker) ----------
 
@@ -42,141 +30,11 @@ function isTestEnv(): boolean {
 	return process.env.NODE_ENV === "test" || process.env.BUN_ENV === "test";
 }
 
-function getWorkerUrl(): string {
-	const url = process.env.SURETY_WORKER_URL;
-	if (!url) throw new Error("SURETY_WORKER_URL is not set");
-	return url;
-}
-
-function getWorkerSecret(): string {
-	const secret = process.env.SURETY_WORKER_SECRET;
-	if (!secret) throw new Error("SURETY_WORKER_SECRET is not set");
-	return secret;
-}
-
-/**
- * Resolve the target D1 database name.
- * Priority: SURETY_TARGET_DB env > cookie > "production"
- *
- * Safety: when E2E_SKIP_AUTH is set (E2E runner), SURETY_TARGET_DB is mandatory.
- * This prevents E2E tests from accidentally hitting production D1.
- */
-export function resolveTargetDb(cookieValue?: string): TargetDb {
-	const envTarget = process.env.SURETY_TARGET_DB;
-
-	// Guard: E2E runner must explicitly choose a target DB
-	if (process.env.E2E_SKIP_AUTH === "true" && !envTarget) {
-		throw new Error(
-			"E2E safety guard: SURETY_TARGET_DB must be set when E2E_SKIP_AUTH=true. " +
-				"This prevents E2E tests from accidentally connecting to production D1.",
-		);
-	}
-
-	if (envTarget && isValidTargetDb(envTarget)) return envTarget;
-	if (cookieValue && isValidTargetDb(cookieValue)) return cookieValue;
-	return "production";
-}
-
-function isValidTargetDb(value: string): value is TargetDb {
-	return ["production", "test"].includes(value);
-}
-
-// ---------- Remote database (sqlite-proxy → Worker proxy) ----------
-
-/**
- * Create a Drizzle instance backed by the Worker proxy (D1).
- * This is the production path — all queries go over HTTP.
- */
-export function createRemoteDb(targetDb: TargetDb = "production"): DbInstance {
-	const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
-	return createRemoteDbFromClient(client);
-}
-
-export function createRemoteDbFromClient(client: WorkerDbClient): DbInstance {
-	const { drizzle } = require("drizzle-orm/sqlite-proxy");
-
-	return drizzle(
-		// single query callback
-		async (sql: string, params: unknown[], method: string) => {
-			const result = await client.query(sql, params);
-			const rows = result.rows.map((row) => Object.values(row));
-			// sqlite-proxy: "get" expects a single flat row, "all" expects array-of-arrays
-			return { rows: method === "get" ? rows[0] : rows };
-		},
-		// batch callback
-		async (queries: Array<{ sql: string; params: unknown[]; method: string }>) => {
-			const results = await client.batch(queries.map((q) => ({ sql: q.sql, params: q.params })));
-			return results.map((r) => ({
-				rows: r.rows.map((row) => Object.values(row)),
-			}));
-		},
-		{ schema },
-	);
-}
-
-// ---------- Request-scoped database access ----------
-
-/**
- * Get a request-scoped database instance.
- *
- * Routing:
- * 1. Test env → in-memory SQLite (bun:sqlite :memory:)
- * 2. Non-test → remote D1 via sqlite-proxy (requires SURETY_WORKER_URL)
- *
- * @param requestOrTargetDb - Either a Request (reads cookie) or a TargetDb string
- */
-export function getDbForRequest(requestOrTargetDb?: Request | TargetDb): DbInstance {
-	if (isTestEnv()) {
-		return getTestDb();
-	}
-
-	// Non-test: always use remote D1
-	let targetDb: TargetDb;
-
-	if (typeof requestOrTargetDb === "string") {
-		targetDb = resolveTargetDb(requestOrTargetDb);
-	} else if (requestOrTargetDb instanceof Request) {
-		const cookieHeader = requestOrTargetDb.headers.get("cookie") || "";
-		const match = cookieHeader.match(/surety-database=([^;]+)/);
-		targetDb = resolveTargetDb(match?.[1]);
-	} else {
-		targetDb = resolveTargetDb();
-	}
-
-	return createRemoteDb(targetDb);
-}
-
-/**
- * Create a batch executor for the given target database.
- * Uses WorkerDbClient.batch() which maps to D1's atomic batch API.
- *
- * Returns undefined in test environment (bun-sqlite uses local transactions).
- */
-export function createBatchExecutor(
-	targetDb: TargetDb = "production",
-): ((statements: Array<{ sql: string; params: unknown[] }>) => Promise<void>) | undefined {
-	if (isTestEnv()) return undefined;
-
-	const client = new WorkerDbClient(getWorkerUrl(), getWorkerSecret(), targetDb);
-	return async (statements) => {
-		await client.batch(statements.map((s) => ({ sql: s.sql, params: s.params })));
-	};
-}
-
 // ---------- Test database (bun:sqlite :memory:) ----------
 
 // biome-ignore lint/suspicious/noExplicitAny: bun:sqlite Database type via require only in tests
 let testSqlite: any = null;
 let testDbInstance: DbInstance = null;
-
-/**
- * Get or create the shared test :memory: database.
- * Used in test environment only.
- */
-function getTestDb(): DbInstance {
-	if (testDbInstance) return testDbInstance;
-	return createTestDb();
-}
 
 /**
  * Create a fresh in-memory test database.
@@ -238,8 +96,8 @@ export function resetTestDb(): void {
  * provisioned outside of drizzle-kit (in-memory unit tests, the L2-HTTP
  * wrangler-local D1 runner, ad-hoc seed scripts).
  *
- * Production schema lives in `drizzle/*.sql` and is kept in sync with this
- * block; whenever a schema change lands, both must move together.
+ * Native D1 uses apps/worker/migrations. The environment verification
+ * asserts parity with this unit-test DDL before exercising native resources.
  */
 export const INIT_SQL = `
     CREATE TABLE IF NOT EXISTS members (
@@ -480,21 +338,11 @@ export function closeDb(): void {
 	}
 }
 
-// ---------- Proxy for backward compatibility ----------
-
-/**
- * Dynamic db Proxy — routes to the correct database instance.
- *
- * In test environment: uses in-memory SQLite.
- * In production: remote D1 via sqlite-proxy.
- */
 export const db = new Proxy({} as DbInstance, {
 	get(_, prop) {
-		if (isTestEnv()) {
-			if (!testDbInstance) createTestDb();
-			return testDbInstance[prop];
-		}
-		const remoteDb = createRemoteDb(resolveTargetDb());
-		return remoteDb[prop];
+		if (!isTestEnv())
+			throw new Error("Database globals are test-only; use request-scoped D1 repositories");
+		if (!testDbInstance) createTestDb();
+		return testDbInstance[prop];
 	},
 });

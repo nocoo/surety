@@ -4,10 +4,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "vite --port 7012",
+		"dev": "bun local/main.ts",
 		"build": "vite build",
-		"preview": "vite preview",
-		"test:e2e": "playwright test"
+		"preview": "bun local/main.ts --built",
+		"test:e2e": "cd ../.. && bun run test:e2e:browser"
 	},
 	"dependencies": {
 		"@nocoo/basalt": "2.1.8",

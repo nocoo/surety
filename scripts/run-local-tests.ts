@@ -37,6 +37,13 @@ const runtime = Bun.spawn(
 		stderr: Bun.file(resolve(evidence, "runtime.log")),
 	},
 );
+let tests: ReturnType<typeof Bun.spawn> | undefined;
+function interrupt() {
+	tests?.kill("SIGTERM");
+	runtime.kill("SIGTERM");
+}
+process.on("SIGINT", interrupt);
+process.on("SIGTERM", interrupt);
 try {
 	let ready = false;
 	for (let i = 0; i < 200; i++) {
@@ -68,7 +75,7 @@ try {
 					"--config",
 					"apps/web/playwright.config.ts",
 				];
-	const tests = Bun.spawn(cmd, {
+	tests = Bun.spawn(cmd, {
 		cwd: ROOT,
 		env: {
 			...env,

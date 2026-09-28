@@ -29,15 +29,15 @@ const STEPS: Step[] = [
 		cmd: ["bunx", "vitest", "run"],
 		live: true,
 	},
-	// L2 E2E for the Hono worker — uses the in-memory D1 harness in
+	// In-process route unit checks use the SQLite harness in
 	// __tests__/e2e/setup.ts. Listed separately so the bunfig E2E path-ignore
 	// can be overridden for this step only.
 	{
-		name: "worker e2e",
+		name: "worker route units",
 		cmd: ["bun", "test", "apps/worker/__tests__/e2e", "--path-ignore-patterns", "__none__"],
 		live: true,
 	},
-	// L2 HTTP — boots `wrangler dev --local` on :7017 and drives
+	// L2 HTTP — boots `wrangler dev --local` on a dynamic port and drives
 	// the worker through real fetch() over the loopback. Catches D1/R2
 	// binding regressions that the in-memory harness cannot.
 	{

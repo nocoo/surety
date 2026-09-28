@@ -25,6 +25,7 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "surety-db"
+migrations_dir = "./migrations"
 database_id = "9e57f832-0c6f-4456-8706-612f2965a66c"
 
 [[r2_buckets]]

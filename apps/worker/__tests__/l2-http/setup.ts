@@ -1,13 +1,16 @@
 /**
  * L2-HTTP shared setup — every test in this directory hits a real
  * `wrangler dev` server over the loopback. The runner script
- * (`scripts/run-l2-http.ts`) starts/stops the server and exposes its
+ * (`scripts/run-local-tests.ts`) starts/stops the server and exposes its
  * base URL via `L2_HTTP_BASE_URL`.
  */
 
 if (process.env.SURETY_E2E_OWNED !== "true" || !process.env.L2_HTTP_BASE_URL)
 	throw new Error("Use the owned E2E runner");
 export const BASE_URL = process.env.L2_HTTP_BASE_URL;
+const target = new URL(BASE_URL);
+if (target.protocol !== "http:" || target.hostname !== "127.0.0.1")
+	throw new Error("E2E requires the owned loopback runtime");
 
 export interface HttpResponse<T = unknown> {
 	status: number;

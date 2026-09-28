@@ -1,9 +1,9 @@
 /**
- * L2 E2E test harness — full Hono app over an in-memory SQLite DB.
+ * In-process route unit harness; this is not native HTTP/E2E evidence.
  *
  * Replaces the production `dbMiddleware` (which expects a D1 binding) with one
- * that wires the bun:sqlite test DB into the request context. Auth is bypassed
- * via E2E_SKIP_AUTH so suites can drive routes directly.
+ * that wires the bun:sqlite test DB into the request context. Individual route tests inject context;
+ * native authentication and binding behavior are covered by the HTTP runner.
  */
 import { Hono } from "hono";
 import { createTestDb, resetTestDb } from "@surety/db";
@@ -39,8 +39,6 @@ export interface TestEnv {
  * Each call returns an isolated DB so suites don't bleed state.
  */
 export function buildTestApp(): TestEnv {
-  process.env.SURETY_TARGET_DB = "test";
-  process.env.E2E_SKIP_AUTH = "true";
 
   const db = createTestDb();
   resetTestDb();
@@ -115,7 +113,6 @@ export function buildTestApp(): TestEnv {
   const bindings = {
     DB: fakeD1,
     ATTACHMENTS: fakeR2,
-    E2E_SKIP_AUTH: "true",
   };
 
   return { app, db, repos, bindings };
