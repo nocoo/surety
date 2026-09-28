@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { chromium, expect } from "@playwright/test";
 import { preview } from "vite";
 import { INIT_SQL } from "../../../packages/db/src";
-import { ROOT, resetDemo, startNative } from "../../worker/local/native";
+import { cleanEnvironment, ROOT, resetDemo, startNative } from "../../worker/local/native";
 import { type LaunchOptions, localGateway } from "./gateway";
 
 const run = crypto.randomUUID();
@@ -74,9 +74,23 @@ try {
 	const headers = { authorization: `Bearer ${token}` };
 	assert.equal((await native.request("/api/members", { headers })).status, 200);
 	assert.equal((await native.request("/api/auth/tokens", { headers })).status, 401);
+	const cli = Bun.spawn(["bun", "--no-env-file", "apps/cli/src/index.ts", "members", "ls"], {
+		cwd: ROOT,
+		env: { ...cleanEnvironment(), SURETY_API_URL: native.target, SURETY_API_TOKEN: token },
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	assert.equal(await cli.exited, 0);
+	const creation = await native.request("/api/members", {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({ name: "Isolated fixture", relation: "Self" }),
+	});
+	assert.equal(creation.status, 201);
 	const other = await startNative("e2e", store);
 	try {
 		assert.equal((await other.request("/api/members", { headers })).status, 403);
+		assert.deepEqual(await (await other.request("/api/members")).json(), []);
 	} finally {
 		await other.stop();
 	}
@@ -172,6 +186,16 @@ try {
 	assert.notEqual(await id(), e2e);
 	pass("accepted manual E2E, fresh reentry, stale 410 and independent tab");
 	await assert.rejects(resetDemo(store), /Stop the Demo/);
+	await assert.rejects(resetDemo("/tmp/surety-foreign"), /Foreign storage root/);
+	const marker = resolve(store, "demo/owner.json");
+	const owner = await readFile(marker, "utf8");
+	try {
+		await writeFile(marker, "{}");
+		await assert.rejects(resetDemo(store), /Invalid storage marker/);
+	} finally {
+		await writeFile(marker, owner);
+	}
+	pass("active Demo reset, foreign path and ownership mismatch refused");
 	await context.close();
 	await runtime.stop();
 	runtime = await launch({ automated: false, dataset: "empty", initial: "e2e" });
@@ -249,6 +273,18 @@ try {
 			fullPage: true,
 		});
 	}
+	await screen.goto(`${runtime.base}/policies/1`);
+	await screen
+		.locator("li")
+		.filter({ hasText: "family-protection.png" })
+		.getByTitle("预览")
+		.click();
+	const artwork = screen.getByRole("dialog").locator("img");
+	await expect(artwork).toBeVisible();
+	await expect
+		.poll(() => artwork.evaluate((element) => (element as HTMLImageElement).naturalWidth))
+		.toBe(960);
+	await screen.screenshot({ path: resolve(evidence, "attachment-preview.png") });
 	await desktop.close();
 	const prefix = `/__instance/${locked.id}`;
 	assert.equal((await runtime.request(`${prefix}/api/settings/backy/push`, {})).status, 200);

@@ -7,6 +7,7 @@ export type Bindings = {
 	CF_ACCESS_TEAM_DOMAIN?: string;
 	CF_ACCESS_AUD?: string;
 	LOCAL_ACCESS_JWKS?: string;
+	LOCAL_MODE?: "demo" | "e2e";
 	LOCAL_EXTERNAL_ORIGIN?: string;
 	ENVIRONMENT?: string;
 };

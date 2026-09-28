@@ -45,6 +45,11 @@ export async function seedCatalog(instance: NativeInstance, persistent: boolean)
 		identifier: "DEMO-CAR-001",
 		ownerId: owner,
 	});
+	for (const [name, website] of [
+		["云杉示范保险", "https://spruce.example.invalid"],
+		["青禾示范保险", "https://meadow.example.invalid"],
+	])
+		await post("/api/insurers", { name, website, phone: "+1-202-555-0147" });
 	const policies = [];
 	for (const [index, category] of [
 		"Medical",
@@ -75,7 +80,7 @@ export async function seedCatalog(instance: NativeInstance, persistent: boolean)
 				policyNumber: `DEMO-2026-00${index + 1}`,
 				effectiveDate: index === 0 ? "2025-09-01" : "2025-10-15",
 				expiryDate: index === 2 ? "2026-08-31" : "2027-01-01",
-				nextDueDate: "2026-10-15",
+				nextDueDate: index === 0 ? "2026-09-01" : "2026-10-15",
 				premium: premiums[index],
 				sumAssured: [2000000, 1000000, 500000, 200000, 1500000, 600000, 500000][index],
 				paymentFrequency: "Yearly",

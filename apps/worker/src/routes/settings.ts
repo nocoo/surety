@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { externalFetch } from "../lib/external-fetch";
-import type { AppEnv } from "../lib/types";
+import type { AppEnv, Bindings } from "../lib/types";
 
 const LEGACY_SENSITIVE_PREFIX = "totp.";
 function isLegacySensitiveKey(key: string): boolean {
@@ -8,6 +8,9 @@ function isLegacySensitiveKey(key: string): boolean {
 }
 
 const app = new Hono<AppEnv>();
+function environment(env: Bindings) {
+	return env.ENVIRONMENT === "local" ? (env.LOCAL_MODE ?? "e2e") : "prod";
+}
 
 app.get("/api/settings", async (c) => {
 	const repos = c.get("repos");
@@ -36,7 +39,12 @@ app.get("/api/settings/backy", async (c) => {
 	const webhookUrl = (await repos.settings.get("backy.webhookUrl")) ?? "";
 	const apiKey = (await repos.settings.get("backy.apiKey")) ?? "";
 	const masked = apiKey ? `${"*".repeat(Math.max(0, apiKey.length - 4))}${apiKey.slice(-4)}` : "";
-	return c.json({ webhookUrl, apiKey: masked, hasApiKey: apiKey.length > 0, environment: "prod" });
+	return c.json({
+		webhookUrl,
+		apiKey: masked,
+		hasApiKey: apiKey.length > 0,
+		environment: environment(c.env),
+	});
 });
 
 app.put("/api/settings/backy", async (c) => {
@@ -49,7 +57,7 @@ app.put("/api/settings/backy", async (c) => {
 	await repos.settings.set("backy.webhookUrl", webhookUrl);
 	await repos.settings.set("backy.apiKey", apiKey);
 	const masked = `${"*".repeat(Math.max(0, apiKey.length - 4))}${apiKey.slice(-4)}`;
-	return c.json({ webhookUrl, apiKey: masked, hasApiKey: true, environment: "prod" });
+	return c.json({ webhookUrl, apiKey: masked, hasApiKey: true, environment: environment(c.env) });
 });
 
 app.get("/api/settings/backy/history", async (c) => {
@@ -115,13 +123,13 @@ app.post("/api/settings/backy/push", async (c) => {
 
 	const form = new FormData();
 	form.append("file", new Blob([json], { type: "application/json" }), filename);
-	form.append("environment", "prod");
+	form.append("environment", environment(c.env));
 	form.append("tag", tag);
 
 	const requestMeta = {
 		url: webhookUrl,
 		method: "POST" as const,
-		environment: "prod",
+		environment: environment(c.env),
 		tag,
 		fileName: filename,
 		fileSizeBytes: json.length,

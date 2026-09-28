@@ -14,7 +14,7 @@ interface BackySettings {
 	webhookUrl: string;
 	apiKey: string;
 	hasApiKey: boolean;
-	environment: "prod" | "dev";
+	environment: "prod" | "demo" | "e2e";
 }
 
 interface BackyPushResponse {
@@ -221,7 +221,7 @@ export function BackySettings() {
 						variant={backySettings?.environment === "prod" ? "success" : "warning"}
 						className="ml-1"
 					>
-						{backySettings?.environment ?? "dev"}
+						{backySettings?.environment ?? "…"}
 					</Badge>
 				</div>
 			</div>

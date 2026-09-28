@@ -94,13 +94,13 @@ export async function startNative(mode: "demo" | "e2e", store = STORE) {
 					request.method === "GET"
 						? {
 								project_name: "Surety Demo",
-								environment: "demo",
+								environment: mode,
 								total_backups: 1,
 								recent_backups: [
 									{
 										id: "fixture-1",
 										tag: "Synthetic family catalog",
-										environment: "demo",
+										environment: mode,
 										file_size: 18432,
 										is_single_json: 1,
 										created_at: "2026-09-28T00:00:00Z",
@@ -141,6 +141,7 @@ export async function startNative(mode: "demo" | "e2e", store = STORE) {
 		r2_buckets: [{ binding: "ATTACHMENTS", bucket_name: "surety-local" }],
 		vars: {
 			ENVIRONMENT: "local",
+			LOCAL_MODE: mode,
 			LOCAL_EXTERNAL_ORIGIN: `http://127.0.0.1:${boundary.port}`,
 			LOCAL_ACCESS_JWKS: JSON.stringify({ keys: [jwk] }),
 			CF_ACCESS_TEAM_DOMAIN: "surety-fixture.invalid",
