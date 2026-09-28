@@ -9,9 +9,9 @@ const preferenceKey = "surety:environment-mode";
 const sessionKey = "surety:environment-instance";
 export let localEnvironment: LocalEnvironment | null = null;
 const originalFetch = globalThis.fetch.bind(globalThis);
-function stored(storage: Storage, key: string) {
+function stored(storage: "localStorage" | "sessionStorage", key: string) {
 	try {
-		return storage.getItem(key);
+		return window[storage].getItem(key);
 	} catch {
 		return null;
 	}
@@ -24,7 +24,10 @@ export async function initializeEnvironment() {
 	if (config.local !== true) return;
 	const body = config.locked
 		? {}
-		: { id: stored(sessionStorage, sessionKey), preference: stored(localStorage, preferenceKey) };
+		: {
+				id: stored("sessionStorage", sessionKey),
+				preference: stored("localStorage", preferenceKey),
+			};
 	const res = await originalFetch("/__local/start", {
 		method: "POST",
 		headers: { "content-type": "application/json" },

@@ -32,7 +32,11 @@ export async function accessAuth(c: Context<AppEnv>, next: Next) {
 	if (c.req.path === "/api/live") return next();
 
 	if (isMachineEndpoint(c)) return next();
-	if (isLocalhost(c) && (c.req.header("Authorization") ?? "").startsWith("Bearer ")) return next();
+	if (
+		(isLocalhost(c) || (c.env.ENVIRONMENT === "local" && c.env.LOCAL_ACCESS_JWKS)) &&
+		(c.req.header("Authorization") ?? "").startsWith("Bearer ")
+	)
+		return next();
 
 	const teamDomain = c.env.CF_ACCESS_TEAM_DOMAIN;
 	const aud = c.env.CF_ACCESS_AUD;

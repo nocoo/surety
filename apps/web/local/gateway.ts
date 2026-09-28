@@ -7,6 +7,7 @@ import { type Mode, type NativeInstance, ROOT, startNative } from "../../worker/
 
 export interface LaunchOptions {
 	automated: boolean;
+	store?: string;
 	initial?: Mode;
 	dataset: "demo" | "empty";
 }
@@ -21,13 +22,24 @@ export async function localGateway(options: LaunchOptions) {
 		let native: NativeInstance | undefined;
 		if (mode === "demo") {
 			if (!demo) {
-				demo = await startNative("demo");
-				await seedCatalog(demo, true);
+				const candidate = await startNative("demo", options.store);
+				try {
+					await seedCatalog(candidate, true);
+					demo = candidate;
+				} catch (error) {
+					await candidate.stop();
+					throw error;
+				}
 			}
 			native = demo;
 		} else if (mode === "e2e") {
-			native = await startNative("e2e");
-			if (options.dataset === "demo") await seedCatalog(native, false);
+			native = await startNative("e2e", options.store);
+			try {
+				if (options.dataset === "demo") await seedCatalog(native, false);
+			} catch (error) {
+				await native.stop();
+				throw error;
+			}
 		}
 		const id = randomUUID();
 		sessions.set(id, native ? { mode, native } : { mode });

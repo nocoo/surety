@@ -7,7 +7,15 @@ import { App } from "./App";
 import { initializeEnvironment } from "./hooks/local-environment";
 import "./globals.css";
 
-await initializeEnvironment();
+try {
+	await initializeEnvironment();
+} catch (error) {
+	const notice = document.createElement("p");
+	notice.setAttribute("role", "alert");
+	notice.textContent = `本地环境启动失败，请检查启动器日志后刷新：${error instanceof Error ? error.message : "未知错误"}`;
+	document.body.append(notice);
+	throw error;
+}
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");
@@ -36,9 +44,11 @@ function BasaltLinkAdapter({
 }
 
 // Ensure default accent is vermilion if not set
-if (typeof window !== "undefined" && !localStorage.getItem("basalt-accent")) {
-	localStorage.setItem("basalt-accent", "vermilion");
-}
+try {
+	if (!localStorage.getItem("basalt-accent")) {
+		localStorage.setItem("basalt-accent", "vermilion");
+	}
+} catch {}
 
 createRoot(root).render(
 	<StrictMode>

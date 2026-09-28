@@ -121,6 +121,7 @@
 			"!**/dist",
 			"!**/coverage",
 			"!**/.wrangler",
+			"!.surety-local",
 			"!**/build",
 			"!apps/worker/static",
 			"!apps/web/dist",

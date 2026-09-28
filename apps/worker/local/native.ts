@@ -39,8 +39,8 @@ async function own(path: string, create: boolean) {
 		throw new Error("Invalid storage marker");
 }
 
-export async function resetDemo() {
-	const path = resolve(STORE, "demo");
+export async function resetDemo(store = STORE) {
+	const path = resolve(store, "demo");
 	await own(path, false);
 	if (await Bun.file(resolve(path, "active.lock")).exists())
 		throw new Error("Stop the Demo launcher before resetting its data");
@@ -62,10 +62,11 @@ async function command(args: string[], cwd: string) {
 	if (code) throw new Error(`Wrangler failed: ${out}\n${err}`);
 }
 
-export async function startNative(mode: "demo" | "e2e") {
+export async function startNative(mode: "demo" | "e2e", store = STORE) {
+	if (store !== STORE && !store.startsWith(`${STORE}/`)) throw new Error("Foreign storage root");
 	const id = randomUUID();
-	const path = resolve(STORE, mode === "demo" ? "demo" : `runs/${id}`);
-	await mkdir(resolve(STORE, "runs"), { recursive: true });
+	const path = resolve(store, mode === "demo" ? "demo" : `runs/${id}`);
+	await mkdir(resolve(store, "runs"), { recursive: true });
 	const exists = await Bun.file(resolve(path, "owner.json")).exists();
 	await own(path, !exists);
 	const lock = resolve(path, "active.lock");
@@ -91,7 +92,21 @@ export async function startNative(mode: "demo" | "e2e") {
 			if (url.pathname === "/webhook")
 				return Response.json(
 					request.method === "GET"
-						? { backups: [], total: 0 }
+						? {
+								project_name: "Surety Demo",
+								environment: "demo",
+								total_backups: 1,
+								recent_backups: [
+									{
+										id: "fixture-1",
+										tag: "Synthetic family catalog",
+										environment: "demo",
+										file_size: 18432,
+										is_single_json: 1,
+										created_at: "2026-09-28T00:00:00Z",
+									},
+								],
+							}
 						: { id: "demo-backup", success: true },
 				);
 			return new Response("Unknown fixture boundary", { status: 404 });
@@ -135,7 +150,10 @@ export async function startNative(mode: "demo" | "e2e") {
 	const configPath = resolve(configDir, "wrangler.json");
 	await writeFile(configPath, JSON.stringify(config), { mode: 0o600 });
 	let proc: ReturnType<typeof Bun.spawn> | undefined;
+	let stopped = false;
 	async function stop() {
+		if (stopped) return;
+		stopped = true;
 		boundary.stop(true);
 		if (proc) {
 			proc.kill();
@@ -215,7 +233,28 @@ export async function startNative(mode: "demo" | "e2e") {
 			headers.set("origin", target);
 			return fetch(`${target}${pathname}`, { ...init, headers, redirect: "manual" });
 		}
+		async function seedSql(sql: string) {
+			await own(path, false);
+			const file = resolve(configDir, "fixture.sql");
+			await writeFile(file, sql);
+			await command(
+				[
+					"d1",
+					"execute",
+					"surety-local",
+					"--local",
+					"--persist-to",
+					path,
+					"--config",
+					configPath,
+					"--file",
+					file,
+				],
+				configDir,
+			);
+		}
 		return {
+			seedSql,
 			id,
 			mode,
 			path,
