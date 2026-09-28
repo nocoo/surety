@@ -36,7 +36,8 @@ bun run build
 bun --no-env-file apps/web/local/main.ts --automated --built --dataset demo --port 27013
 ```
 
-Stop with Ctrl-C for owned cleanup. `test:environments` automatically captures
+Stop with Ctrl-C for owned cleanup. Vite dev/built shutdown hooks await native
+cleanup before exit; managed test runners assert their owned store was removed. `test:environments` automatically captures
 all 13 routes, desktop/mobile chrome and attachment preview into
 `test-results/environments-<uuid>/`, alongside a manifest containing revision,
 versions, viewport, locale and anchor. Captures use disposable E2E, not daily
@@ -132,7 +133,7 @@ owned local D1 SQL; application reads still use the production repositories.
 | Renewals `/renewal-calendar` | Overdue/current/upcoming dates, yearly schedules | Existing browser calendar checks | Route captured |
 | Hospitals `/hospitals` | Public tertiary hospital and private clinic | Browser CRUD | Route captured |
 | Doctors `/doctors` | Named synthetic physician, department/title | Browser CRUD | Route captured |
-| Visits `/medical-visits` | Outpatient and emergency, colored symptom tags, diagnoses and costs | Browser CRUD | Route captured |
+| Visits `/medical-visits` | Outpatient and emergency, colored symptom tags, diagnoses and costs | Browser CRUD | List and symptom tags reviewed |
 | Settings `/settings` | Income/currency/reminder, dirty-edit scenario | Save/reload plus cancelled/accepted mode switch | Settings reviewed |
 | Backup/export | Synthetic household JSON, Backy history, success and 503 | HTTP export; real provider-boundary push 200/502 | History reviewed |
 | Restore | Existing JSON importer | Existing validation tests only | Native D1 restore remains unsupported; do not claim full restore |
