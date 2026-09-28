@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { externalFetch } from "../lib/external-fetch";
 import type { AppEnv } from "../lib/types";
 
 const LEGACY_SENSITIVE_PREFIX = "totp.";
@@ -58,7 +59,7 @@ app.get("/api/settings/backy/history", async (c) => {
 	if (!webhookUrl || !apiKey)
 		return c.json({ error: "Backy webhook URL and API key must be configured first" }, 400);
 	try {
-		const res = await fetch(webhookUrl, {
+		const res = await externalFetch(c.env)(webhookUrl, {
 			method: "GET",
 			headers: { Authorization: `Bearer ${apiKey}` },
 		});
@@ -79,7 +80,7 @@ app.post("/api/settings/backy/test", async (c) => {
 	if (!webhookUrl || !apiKey)
 		return c.json({ error: "Backy webhook URL and API key must be configured first" }, 400);
 	try {
-		const res = await fetch(webhookUrl, {
+		const res = await externalFetch(c.env)(webhookUrl, {
 			method: "HEAD",
 			headers: { Authorization: `Bearer ${apiKey}` },
 		});
@@ -138,7 +139,7 @@ app.post("/api/settings/backy/push", async (c) => {
 	};
 
 	try {
-		const res = await fetch(webhookUrl, {
+		const res = await externalFetch(c.env)(webhookUrl, {
 			method: "POST",
 			headers: { Authorization: `Bearer ${apiKey}` },
 			body: form,

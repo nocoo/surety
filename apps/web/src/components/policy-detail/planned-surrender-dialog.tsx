@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { PolicyDetail } from "@/lib/types/policy";
 
 interface PlannedSurrenderDialogProps {

@@ -1,6 +1,7 @@
 import { isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiUrl } from "@/hooks/local-environment";
 
 interface AttachmentPreviewDialogProps {
 	attachment: Attachment | null;
@@ -17,7 +18,7 @@ export function AttachmentPreviewDialog({
 }: AttachmentPreviewDialogProps) {
 	if (!attachment) return null;
 
-	const fileUrl = `/api/policies/${policyId}/attachments/${attachment.id}/file`;
+	const fileUrl = apiUrl(`/api/policies/${policyId}/attachments/${attachment.id}/file`);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

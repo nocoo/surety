@@ -35,6 +35,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { Payment, PolicyStatus } from "@/lib/types/policy";
 import { cn } from "@/lib/utils";
 

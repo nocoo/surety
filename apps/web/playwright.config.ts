@@ -1,12 +1,13 @@
-import { resolve } from "node:path";
 import { defineConfig } from "@playwright/test";
 
-const PORT = 27012;
+if (process.env.SURETY_E2E_OWNED !== "true" || !process.env.L3_PORT)
+	throw new Error("Use bun run test:e2e:browser; an owned E2E runtime is required");
+const PORT = Number(process.env.L3_PORT);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
-const REPO_ROOT = resolve(import.meta.dirname, "../..");
 
 export default defineConfig({
 	testDir: "./tests/playwright",
+	outputDir: process.env.SURETY_TEST_OUTPUT ?? "test-results",
 	globalSetup: "./tests/playwright/global-setup.ts",
 	globalTeardown: "./tests/playwright/global-teardown.ts",
 	fullyParallel: false,
@@ -18,19 +19,9 @@ export default defineConfig({
 
 	use: {
 		baseURL: BASE_URL,
+		extraHTTPHeaders: { Origin: BASE_URL },
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
-	},
-
-	webServer: {
-		command: `bun run scripts/run-l3-server.ts`,
-		cwd: REPO_ROOT,
-		url: `${BASE_URL}/api/live`,
-		reuseExistingServer: false,
-		timeout: 120_000,
-		env: { L3_PORT: String(PORT) },
-		stdout: "pipe",
-		stderr: "pipe",
 	},
 
 	projects: [

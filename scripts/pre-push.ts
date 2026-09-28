@@ -42,7 +42,7 @@ const STEPS: Step[] = [
 	// binding regressions that the in-memory harness cannot.
 	{
 		name: "l2 http",
-		cmd: ["bun", "run", "scripts/run-l2-http.ts"],
+		cmd: ["bun", "--no-env-file", "scripts/run-local-tests.ts", "http"],
 		live: true,
 	},
 ];

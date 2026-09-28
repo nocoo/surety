@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Notice } from "@/components/ui/notice";
 import { Separator } from "@/components/ui/separator";
+import { apiUrl, apiFetch as fetch } from "@/hooks/local-environment";
 
 // Table display names for import preview
 const TABLE_LABELS: Record<string, string> = {
@@ -110,7 +111,7 @@ export function DatabaseSettings() {
 						variant="outline"
 						size="sm"
 						onClick={() => {
-							window.location.href = "/api/backup";
+							window.location.href = apiUrl("/api/backup");
 						}}
 					>
 						<Download className="mr-2 h-4 w-4" />

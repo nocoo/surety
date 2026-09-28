@@ -211,7 +211,7 @@ describe("originGuard middleware", () => {
 			headers: { host: "localhost:7016", origin: "https://evil.example" },
 			body: "{}",
 		});
-		expect(res.status).toBe(201);
+		expect(res.status).toBe(403);
 	});
 
 	test("E2E_SKIP_AUTH=true bypasses guard (non-prod environment)", async () => {
@@ -225,7 +225,7 @@ describe("originGuard middleware", () => {
 			},
 			{ E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
 		);
-		expect(res.status).toBe(201);
+		expect(res.status).toBe(403);
 	});
 
 	test("E2E_SKIP_AUTH=true is ignored when ENVIRONMENT=production", async () => {

@@ -74,3 +74,6 @@ apps/web/playwright-report/
 # benchmark run logs (data, not source)
 autoresearch.jsonl
 *.autoresearch.jsonl
+
+# Owned local Demo and disposable E2E state
+.surety-local/

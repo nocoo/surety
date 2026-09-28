@@ -167,13 +167,9 @@ describe("accessAuth - CF JWT branch", () => {
 		expect(res.status).toBe(500);
 	});
 
-	test("localhost bypass still works (env unconfigured) — no fail-closed 500", async () => {
-		const app = probeApp();
-		const res = await app.request("/api/probe", { headers: { host: "localhost:7016" } }, {});
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as Record<string, unknown>;
-		expect(body.accessAuthenticated).toBe(true);
-		expect(body.sessionAuthenticated).toBe(true);
+	test("localhost without identity fails closed", async () => {
+		const res = await probeApp().request("/api/probe", { headers: { host: "localhost:7016" } }, {});
+		expect(res.status).toBe(500);
 	});
 
 	test("/api/live whitelist still works (env unconfigured) — no fail-closed 500", async () => {
@@ -229,7 +225,7 @@ describe("accessAuth - CF JWT branch", () => {
 			{ headers: { host: "surety.hexly.ai" } },
 			{ E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
 		);
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(500);
 	});
 
 	test("E2E_SKIP_AUTH=true is ignored when ENVIRONMENT=production (still fail-closed)", async () => {

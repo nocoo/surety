@@ -4,7 +4,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, Link as RouterLink, RouterProvider } from "react-router";
 import { App } from "./App";
+import { initializeEnvironment } from "./hooks/local-environment";
 import "./globals.css";
+
+await initializeEnvironment();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const HOSPITAL_LEVELS = ["三甲", "三乙", "二甲", "二乙", "一级", "社区", "诊所", "未评级"];
 

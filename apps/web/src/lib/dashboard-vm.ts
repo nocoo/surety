@@ -1,3 +1,4 @@
+import { apiFetch as fetch } from "@/hooks/local-environment";
 /**
  * Dashboard types and view model
  * Separates data logic from UI for better testability

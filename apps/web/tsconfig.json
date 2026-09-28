@@ -2,6 +2,7 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"lib": ["dom", "dom.iterable", "esnext"],
+		"types": ["bun", "node"],
 		"jsx": "react-jsx",
 		"paths": {
 			"@/*": ["./src/*"],
@@ -9,6 +10,6 @@
 			"@surety/api/*": ["../../packages/api/src/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+	"include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "local/**/*.ts"],
 	"exclude": ["node_modules"]
 }

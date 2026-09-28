@@ -20,6 +20,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const VISIT_TYPES = ["门诊", "急诊", "体检", "疫苗", "复查", "预约", "儿保"];
 

@@ -18,6 +18,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const DOCTOR_TITLES = ["主任医师", "副主任医师", "主治医师", "住院医师", "其他"];
 

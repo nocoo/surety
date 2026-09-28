@@ -1,3 +1,4 @@
+import { apiUrl } from "@/hooks/local-environment";
 /**
  * Upload file with XMLHttpRequest for progress tracking.
  *
@@ -12,7 +13,7 @@ export function uploadWithProgress(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
-		xhr.open("POST", url);
+		xhr.open("POST", apiUrl(url));
 
 		xhr.upload.addEventListener("progress", (e) => {
 			if (e.lengthComputable) {

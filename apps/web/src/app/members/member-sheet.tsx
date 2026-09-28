@@ -18,6 +18,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 interface MemberFormData {
 	name: string;

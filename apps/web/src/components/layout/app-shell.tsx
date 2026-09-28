@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Github } from "../icons/github";
 import { Breadcrumbs } from "./breadcrumbs";
 import { CommandPalette } from "./command-palette";
-import { DbSelector } from "./db-selector";
+import { EnvironmentSelector } from "./environment-selector";
 import { HeaderTooltip, HexlyLink } from "./header-links";
 import { Sidebar } from "./sidebar";
 import { SidebarProvider, useSidebar } from "./sidebar-context";
@@ -94,7 +94,7 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 						<Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
 					</div>
 					<div className="flex items-center gap-1">
-						<DbSelector />
+						<EnvironmentSelector />
 						<HeaderTooltip label="GitHub repository">
 							<a
 								href="https://github.com/nocoo/surety"

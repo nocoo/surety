@@ -8,7 +8,7 @@ async function fetchJson(
 	path: string,
 	body?: unknown,
 ): Promise<{ status: number; body: unknown }> {
-	const headers: Record<string, string> = { accept: "application/json" };
+	const headers: Record<string, string> = { accept: "application/json", origin: BASE_URL };
 	let payload: string | undefined;
 	if (body !== undefined) {
 		headers["content-type"] = "application/json";

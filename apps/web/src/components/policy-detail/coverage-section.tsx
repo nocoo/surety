@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { CoverageItem } from "@/lib/types/policy";
 import { cn } from "@/lib/utils";
 

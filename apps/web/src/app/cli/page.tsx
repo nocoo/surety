@@ -23,6 +23,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 interface ApiToken {
 	id: number;

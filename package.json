@@ -7,8 +7,9 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "cd apps/web && bun run dev",
-		"dev:worker": "cd apps/worker && bun run dev",
+		"dev": "bun apps/web/local/main.ts",
+		"dev:built": "bun apps/web/local/main.ts --built",
+		"demo:reset": "bun --no-env-file apps/web/local/main.ts --reset-demo",
 		"build": "cd apps/web && bun run build",
 		"lint": "biome check --error-on-warnings .",
 		"lint:fix": "biome check --write .",
@@ -20,8 +21,8 @@
 		"test:worker": "vitest run apps/worker/__tests__/",
 		"test:cli": "vitest run apps/cli/__tests__/",
 		"test": "vitest run",
-		"test:l2:http": "bun run scripts/run-l2-http.ts",
-		"test:e2e:browser": "cd apps/web && bun run test:e2e",
+		"test:l2:http": "bun --no-env-file scripts/run-local-tests.ts http",
+		"test:e2e:browser": "bun --no-env-file scripts/run-local-tests.ts browser",
 		"test:coverage": "vitest run --coverage",
 		"release": "bun run scripts/release.ts",
 		"prepare": "husky"

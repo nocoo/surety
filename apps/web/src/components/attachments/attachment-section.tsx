@@ -10,6 +10,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import { AttachmentDropZone } from "./attachment-drop-zone";
 import { AttachmentList } from "./attachment-list";
 import { AttachmentPreviewDialog } from "./attachment-preview-dialog";

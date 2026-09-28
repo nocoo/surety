@@ -1,3 +1,4 @@
+import { apiFetch as fetch } from "@/hooks/local-environment";
 export async function fetchAPI<T>(url: string): Promise<T> {
 	const res = await fetch(url, { credentials: "include" });
 	if (!res.ok) {

@@ -2,6 +2,7 @@ import { Button } from "@nocoo/basalt";
 import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
 import { Download, Eye, FileText, ImageIcon, Trash2 } from "lucide-react";
+import { apiUrl } from "@/hooks/local-environment";
 
 interface AttachmentListProps {
 	attachments: Attachment[];
@@ -58,7 +59,11 @@ export function AttachmentList({
 							<Eye className="h-4 w-4" />
 						</Button>
 						<Button variant="ghost" size="icon" asChild title="下载" className="h-8 w-8">
-							<a href={`/api/policies/${policyId}/attachments/${attachment.id}/file?download=true`}>
+							<a
+								href={apiUrl(
+									`/api/policies/${policyId}/attachments/${attachment.id}/file?download=true`,
+								)}
+							>
 								<Download className="h-4 w-4" />
 							</a>
 						</Button>

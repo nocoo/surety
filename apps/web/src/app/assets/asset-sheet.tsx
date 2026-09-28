@@ -18,6 +18,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 type AssetType = "RealEstate" | "Vehicle";
 

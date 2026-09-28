@@ -84,6 +84,7 @@ describe("L2-HTTP: attachments via real R2 binding", () => {
 
 		const upRes = await fetch(`${BASE_URL}/api/policies/${policyId}/attachments`, {
 			method: "POST",
+			headers: { origin: BASE_URL },
 			body: form,
 		});
 		const att = (await upRes.json()) as Attachment;
@@ -132,6 +133,7 @@ describe("L2-HTTP: attachments via real R2 binding", () => {
 		);
 		const res = await fetch(`${BASE_URL}/api/policies/${policyId}/attachments`, {
 			method: "POST",
+			headers: { origin: BASE_URL },
 			body: form,
 		});
 		expect(res.status).toBe(400);

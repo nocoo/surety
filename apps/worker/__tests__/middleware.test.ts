@@ -49,7 +49,7 @@ describe("isLocalhost", () => {
 		expect(isLocalhost(ctxWithHost("localhost"))).toBe(true);
 		expect(isLocalhost(ctxWithHost("localhost:7016"))).toBe(true);
 		expect(isLocalhost(ctxWithHost("127.0.0.1:7016"))).toBe(true);
-		expect(isLocalhost(ctxWithHost("app.dev.hexly.ai"))).toBe(true);
+		expect(isLocalhost(ctxWithHost("surety.dev.hexly.ai"))).toBe(true);
 	});
 
 	test("rejects prod hostnames", () => {
@@ -67,7 +67,7 @@ describe("isLocalhost", () => {
 	});
 
 	test("still accepts *.dev.hexly.ai on CF edge (dev environment)", () => {
-		expect(isLocalhost(ctxWithHost("app.dev.hexly.ai", { colo: "SJC" }))).toBe(true);
+		expect(isLocalhost(ctxWithHost("app.dev.hexly.ai", { colo: "SJC" }))).toBe(false);
 	});
 });
 
@@ -80,18 +80,13 @@ describe("accessAuth middleware", () => {
 		expect(res.status).toBe(200);
 	});
 
-	test("localhost host bypass sets accessAuthenticated=true", async () => {
-		const app = makeApp(accessAuth);
-		const res = await app.request("/api/probe", {
-			headers: { host: "localhost:7016" },
-		});
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as {
-			accessAuthenticated: boolean;
-			accessEmail: string | null;
-		};
-		expect(body.accessAuthenticated).toBe(true);
-		expect(body.accessEmail).toBeNull();
+	test("localhost without credentials fails closed", async () => {
+		const res = await makeApp(accessAuth).request(
+			"/api/probe",
+			{ headers: { host: "localhost:7016" } },
+			{},
+		);
+		expect(res.status).toBe(500);
 	});
 
 	test("localhost with Bearer token defers to apiKeyAuth (no bypass flag)", async () => {
@@ -130,12 +125,12 @@ describe("apiKeyAuth middleware", () => {
 		expect(res.status).toBe(200);
 	});
 
-	test("localhost host bypass allows anonymous requests", async () => {
+	test("localhost rejects anonymous requests", async () => {
 		const app = makeApp(apiKeyAuth);
 		const res = await app.request("/api/probe", {
 			headers: { host: "127.0.0.1:7016" },
 		});
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(401);
 	});
 
 	test("prod host with no auth → 401", async () => {
@@ -268,7 +263,7 @@ describe("apiKeyAuth middleware", () => {
 			{ headers: { host: "surety.hexly.ai" } },
 			{ E2E_SKIP_AUTH: "true" },
 		);
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(401);
 	});
 
 	test("spoofed Host: localhost on a CF edge request does NOT bypass auth", async () => {
@@ -304,7 +299,7 @@ describe("apiKeyAuth middleware", () => {
 			{ headers: { host: "surety.hexly.ai" } },
 			{ E2E_SKIP_AUTH: "true", ENVIRONMENT: "test" },
 		);
-		expect(res.status).toBe(200);
+		expect(res.status).toBe(401);
 	});
 });
 

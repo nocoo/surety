@@ -10,12 +10,15 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 async function deleteAll(path: string): Promise<void> {
 	try {
 		const res = await fetch(`${BASE_URL}${path}`, {
-			headers: { accept: "application/json" },
+			headers: { accept: "application/json", origin: BASE_URL },
 		});
 		if (!res.ok) return;
 		const items = (await res.json()) as Array<{ id: number }>;
 		for (const item of items) {
-			await fetch(`${BASE_URL}${path}/${item.id}`, { method: "DELETE" });
+			await fetch(`${BASE_URL}${path}/${item.id}`, {
+				method: "DELETE",
+				headers: { origin: BASE_URL },
+			});
 		}
 	} catch {
 		// wrangler may already be tearing down — silent

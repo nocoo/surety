@@ -32,6 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import { cn, getAvatarColor, getHospitalInitial } from "@/lib/utils";
 import { HospitalSheet } from "./hospital-sheet";
 

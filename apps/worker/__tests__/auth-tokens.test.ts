@@ -114,13 +114,13 @@ describe("GET /api/auth/tokens", () => {
 		expect(body.map((t) => t.id)).toEqual([1]);
 	});
 
-	test("localhost dev session (no email) sees all tokens", async () => {
-		const repos = buildRepos(null);
-		const app = buildApp(repos);
-		const res = await app.request("/api/auth/tokens", { headers: { host: "localhost:7016" } }, {});
-		expect(res.status).toBe(200);
-		const body = (await res.json()) as Array<{ id: number }>;
-		expect(body.map((t) => t.id).sort()).toEqual([1, 2]);
+	test("anonymous localhost cannot enumerate tokens", async () => {
+		const res = await buildApp(buildRepos(null)).request(
+			"/api/auth/tokens",
+			{ headers: { host: "localhost:7016" } },
+			{},
+		);
+		expect(res.status).toBe(500);
 	});
 });
 

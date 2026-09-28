@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { fetchAuthorProfile } from "../lib/author-profile";
-import type { AppEnv } from "../lib/types";
+import { externalFetch } from "../lib/external-fetch";
+import type { AppEnv, Bindings } from "../lib/types";
 
 export interface AccessJwtPayload {
 	email?: string;
@@ -22,11 +23,14 @@ async function meResponse(
 	email: string | null,
 	fallbackName: string | null,
 	authenticated: boolean,
+	env: Bindings,
 ) {
 	if (!authenticated) {
 		return { email: null, name: null, avatar: null, authenticated: false };
 	}
-	const profile = email ? await fetchAuthorProfile(email) : { name: null, avatar: null };
+	const profile = email
+		? await fetchAuthorProfile(email, externalFetch(env))
+		: { name: null, avatar: null };
 	return {
 		email,
 		name: profile.name ?? fallbackName,
@@ -43,20 +47,20 @@ app.get("/api/me", async (c) => {
 	// so the route still works even if accessAuth chose not to set the var.
 	const ctxEmail = c.get("accessEmail");
 	if (ctxEmail) {
-		return c.json(await meResponse(ctxEmail, ctxEmail.split("@")[0] ?? null, true));
+		return c.json(await meResponse(ctxEmail, ctxEmail.split("@")[0] ?? null, true, c.env));
 	}
 
 	const jwt = c.req.header("Cf-Access-Jwt-Assertion");
 	if (!jwt) {
-		return c.json(await meResponse(null, null, false));
+		return c.json(await meResponse(null, null, false, c.env));
 	}
 	const payload = decodeJwtPayload(jwt);
 	if (!payload) {
-		return c.json(await meResponse(null, null, false));
+		return c.json(await meResponse(null, null, false, c.env));
 	}
 	const email = payload.email ?? null;
 	const fallbackName = payload.name ?? email?.split("@")[0] ?? null;
-	return c.json(await meResponse(email, fallbackName, true));
+	return c.json(await meResponse(email, fallbackName, true, c.env));
 });
 
 export default app;

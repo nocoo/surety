@@ -8,6 +8,7 @@ import { MetaColumn } from "@/components/policy-detail/meta-column";
 import { PaymentsSection } from "@/components/policy-detail/payments-section";
 import { TimelineColumn } from "@/components/policy-detail/timeline-column";
 import { PolicyDetailSkeleton } from "@/components/skeletons";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { Beneficiary, CoverageItem, Payment, PolicyDetail } from "@/lib/types/policy";
 
 /**

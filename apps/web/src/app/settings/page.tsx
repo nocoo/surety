@@ -13,6 +13,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { apiFetch as fetch } from "@/hooks/local-environment";
 
 import { BackySettings, DatabaseSettings } from "./components";
 
@@ -106,7 +107,15 @@ export default function SettingsPage() {
 			e.returnValue = "";
 		};
 		window.addEventListener("beforeunload", onBeforeUnload);
-		return () => window.removeEventListener("beforeunload", onBeforeUnload);
+		const discard = (event: Event) => event.preventDefault();
+		window.addEventListener("surety:discard-drafts", discard);
+		const acceptDiscard = () => window.removeEventListener("beforeunload", onBeforeUnload);
+		window.addEventListener("surety:accepted-discard", acceptDiscard);
+		return () => {
+			window.removeEventListener("beforeunload", onBeforeUnload);
+			window.removeEventListener("surety:discard-drafts", discard);
+			window.removeEventListener("surety:accepted-discard", acceptDiscard);
+		};
 	}, [dirty]);
 
 	// In-app navigation guard: block sidebar/<Link>/navigate() jumps
