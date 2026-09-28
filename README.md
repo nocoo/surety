@@ -53,13 +53,13 @@ bun install --frozen-lockfile
 bun run build
 ```
 
-默认 `bun run dev` 只启动 Vite，并把 `/api` 代理到线上 API。先按[开发配置](docs/20-development.md#开发配置)设置自己的 `SURETY_API_URL` 与开发 token，再启动：
+Local development defaults to persistent synthetic Demo. See [local environments](docs/22-local-environments.md) for mode switching, isolated tests and screenshots.
 
 ```bash
 bun run dev
 ```
 
-Vite 使用 7012 端口，仓库约定的开发入口为 `https://surety.dev.hexly.ai`。可单独用 `bun run dev:worker` 启动 7016 端口的本地 Worker，但数据库初始化和认证仍需配置。只验证本地行为时，使用下节会自行初始化数据的测试 runner。
+The local launcher listens on 7012 (`https://surety.dev.hexly.ai`) and initializes native Worker/D1/R2 with fixture authentication. `bun run dev --mode e2e` selects freely switchable manual E2E; `bun run demo:reset` explicitly resets stopped Demo.
 
 主要代码位于 `apps/web/`、`apps/worker/`、`apps/cli/`、`packages/api/` 和 `packages/db/`。`build` 将 SPA 写入 `apps/worker/static/`；CLI 直接运行 TypeScript 源文件，无独立构建步骤。部署和 schema 管理见开发说明。
 
@@ -75,7 +75,7 @@ bunx playwright install chromium
 bun run test:e2e:browser
 ```
 
-Vitest 运行 web、Worker、CLI 和共享包单元测试；第二条命令用 Bun 内存 SQLite 测试 Hono 集成。HTTP runner 在本地 7017 启动 Worker，使用独立的 D1 / R2 状态。浏览器 runner 自动构建页面，在 27012 启动本地 Worker，并由 Playwright Chromium 访问。
+Vitest covers unit tests. The in-process Hono suite is route-unit evidence only. HTTP/browser runners allocate fresh native D1/R2, identities and dynamic ports; browser runs require Playwright Chromium. `bun run test:environments` verifies switching and saves disposable rich-catalog captures.
 
 保持这两个端口空闲。HTTP / 浏览器测试分别重建 `apps/worker/.wrangler/state-l2-http` 和 `state-l3`，只写入合成测试数据，无需生产凭据。不要将这些目录用于日常数据。
 

@@ -21,33 +21,21 @@ Worker 的 `access-auth.ts` 当前将 `surety-api.hexly.ai` 写在机器访问�
 
 CLI 配置位于 `~/.config/surety/config.json`；当前源码依赖的 `@nocoo/base-cli` 在 `SURETY_CLI_DEV=1` 或 `true` 时选择同目录 `config.dev.json`，不会自动切换 API 地址。`logout` 当前通过合并写入保存配置，删除内存字段后可能仍保留旧 token；需要撤销凭据时，通过已登录浏览器调用 token 撤销 API，并从本地配置移除相应字段。不要把该命令的成功输出当作服务端撤销确认。
 
-## 开发配置
+## Local development and verification
 
-需要 Bun 和 Node.js 22.12+。根目录执行 `bun install --frozen-lockfile` 安装所有 workspace 包。
+See [local environments](22-local-environments.md) for the maintained startup,
+reset, test, screenshot, auth and storage commands. `bun run dev` starts the
+local launcher on 7012 and defaults to persistent synthetic Demo, unless an
+explicit or saved interactive selection chooses E2E/Prod. Production requires
+`SURETY_DEV_API_TOKEN` and explicit selection; it is never an automated target.
 
-`bun run dev` 启动 Vite 7012；其 `/api` 代理默认指向 `https://surety-api.hexly.ai`。如果提供了 `SURETY_DEV_API_TOKEN`，代理会在缺少 Authorization 的请求上注入 Bearer token，页面操作会直接读写对应服务的数据。
+`bun run test:l2:http` and `bun run test:e2e:browser` use
+`scripts/run-local-tests.ts`, dynamic ports, fresh owned native D1/R2 and signed
+fixture JWTs. `bun run test:environments` verifies switching and captures the rich
+catalog in disposable E2E. Playwright Chromium must be installed.
 
-在根 `.env` 或适用的 Vite 环境文件中填写自己的开发实例：
-
-```dotenv
-SURETY_API_URL=https://api.surety.example
-SURETY_LOGIN_URL=https://surety.example
-SURETY_DEV_API_TOKEN=your-development-token
-```
-
-这里的 `.example` 域名是占位符。`SURETY_LOGIN_URL` 供 CLI / 登录流程使用，Vite 代理实际读取 API 地址和开发 token。根 `.env.example` 仍包含旧 NextAuth、Google OAuth 和 Worker 数据库代理字段；这些不是当前 SPA / Hono 运行所需配置，不必照搬。
-
-仓库日常开发入口为 `https://surety.dev.hexly.ai`，需要自行准备 HTTPS 反向代理到 Vite 7012。Vite `allowedHosts` 也包含这一域名；自定义开发域名要对应调整配置。
-
-`bun run dev:worker` 在 7016 启动 Wrangler。本仓库的 D1 / R2 binding 没有设置 `remote = true`，默认本地资源仍需要初始化。认证快捷路径会同时检查 Host 和 `request.cf`，不能笼统地认为任意 localhost 请求都能免认证。需要完整本地验证时使用隔离测试 runner，它们自行准备 schema、资源和测试认证。
-
-## 测试与构建
-
-根 README 给出了单元、内存数据库集成、HTTP 与浏览器测试命令。`test:l2:http` 调用 `scripts/run-l2-http.ts`，以显式 `--local --persist-to` 初始化 D1 并启动 7017，R2 也使用本地模拟存储。`test:e2e:browser` 由 Playwright 启动 `scripts/run-l3-server.ts`，构建 SPA 后在 27012 提供页面与 API。
-
-两个 runner 分别重建包内 `.wrangler/state-l2-http` 和 `.wrangler/state-l3`。它们注入非生产环境的测试认证，使用合成记录；不要把生产凭据或家庭数据放入这些目录。浏览器测试需要先安装 Playwright Chromium，runner 会自行构建静态资源。
-
-`bun run build` 只构建 Vite SPA，产物写入 `apps/worker/static/`。CLI 的 bin 直接指向 `apps/cli/src/index.ts`，需要 Bun，无独立 build。`packages/api` 保存视图计算与共享校验，实体读写路由在 Worker，数据 schema / repositories 位于 `packages/db`。
+`bun run build` writes the SPA to `apps/worker/static/`. CLI runs TypeScript with
+Bun directly. No remote seed or schema operation is a local startup prerequisite.
 
 ## 保单与附件
 
@@ -69,8 +57,10 @@ Backy 的手动推送使用同一份 JSON，通过 multipart 上传到配置的 
 
 新实例需要自己的 Cloudflare Worker、D1、R2、域名和 Access 配置。`apps/worker/wrangler.toml` 内的 `DB` / `ATTACHMENTS` 指向数据库和存储桶，需替换为自己的资源。浏览器认证变量还需在 Worker 环境中配置。
 
-当前 schema 位于 `packages/db/src/schema.ts`。`bun run db:push` 使用 Drizzle 管理面；设置 `CLOUDFLARE_ACCOUNT_ID`、`CLOUDFLARE_DATABASE_ID`、`CLOUDFLARE_D1_TOKEN` 后直接写入所选远程数据库。它不是普通本地启动前置命令，也不由 `SURETY_TARGET_DB` 选择目标。
-
-`bun run db:seed` 保留的是早期 Worker 数据库代理脚本，会清空目标业务表再写入演示数据；它不适配当前单 Worker 的直接 D1 请求路径。新环境验证用本地 runner，不沿用旧 README 的远程 seed 快速开始。
+The typed schema is `packages/db/src/schema.ts`; all native environments use
+`apps/worker/migrations/`. `bun run db:migrate` applies those migrations to the
+configured remote D1 and requires separate authorization. Inspect existing
+schema/migration history first; see the baseline note in the local environment
+guide. The obsolete remote seed and sqlite-proxy paths have been removed.
 
 当前 [.github/workflows/release.yml](../.github/workflows/release.yml) 在 main CI 成功后构建和部署单个 Worker，也支持带版本 tag 的发布。main 路径检查 `/api/live` 返回 200；tag 路径还比对版本。Release 不执行 schema push 或数据库迁移，D1 schema 必须事先就绪。手动部署也需要先构建静态资源，再运行 Worker 包的 deploy 脚本。

@@ -53,13 +53,13 @@ bun install --frozen-lockfile
 bun run build
 ```
 
-By default, `bun run dev` starts only Vite and proxies `/api` to the hosted API. Configure your own `SURETY_API_URL` and development token using the [development guide](20-development.md#开发配置), then run:
+Local development defaults to persistent synthetic Demo. See [local environments](22-local-environments.md) for mode switching, isolated tests and screenshots.
 
 ```bash
 bun run dev
 ```
 
-Vite runs on port 7012; the repository's development entry is `https://surety.dev.hexly.ai`. `bun run dev:worker` can separately start a local Worker on 7016, but database initialization and authentication still need configuration. For local verification, use the test runners below, which initialize their own data.
+The local launcher listens on 7012 (`https://surety.dev.hexly.ai`) and initializes native Worker/D1/R2 with fixture authentication. `bun run dev --mode e2e` selects freely switchable manual E2E; `bun run demo:reset` explicitly resets stopped Demo.
 
 The main code lives in `apps/web/`, `apps/worker/`, `apps/cli/`, `packages/api/`, and `packages/db/`. `build` writes the SPA to `apps/worker/static/`. The CLI runs TypeScript source directly, with no separate build step. See the development guide for deployment and schema management.
 
@@ -75,7 +75,7 @@ bunx playwright install chromium
 bun run test:e2e:browser
 ```
 
-Vitest runs unit tests for the web app, Worker, CLI, and shared packages. The second command tests Hono integration with Bun's in-memory SQLite. The HTTP runner starts a local Worker on 7017 with separate D1 / R2 state. The browser runner builds the SPA, starts a local Worker on 27012, and uses Playwright Chromium.
+Vitest covers unit tests. The in-process Hono suite is route-unit evidence only. HTTP/browser runners allocate fresh native D1/R2, identities and dynamic ports; browser runs require Playwright Chromium. `bun run test:environments` verifies switching and saves disposable rich-catalog captures.
 
 Keep both ports free. HTTP and browser tests rebuild `apps/worker/.wrangler/state-l2-http` and `state-l3`, respectively, using synthetic data without production credentials. Reserve these directories for tests.
 

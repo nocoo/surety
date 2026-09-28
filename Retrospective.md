@@ -11,3 +11,21 @@ Historical Next.js and remote-D1 test migrations below describe earlier implemen
 - **sqlite-proxy "get" 方法的行映射陷阱**：Drizzle sqlite-proxy 的 callback 返回 `{ rows }` 时，`method === "get"` 期望 `rows` 是单个扁平行 `[1, "张伟", ...]`，而 `method === "all"` 期望行数组 `[[1, ...], [2, ...]]`。原实现用 `rows.slice(0,1)` 处理 "get"，但这返回 `[[1, "张伟", ...]]`（仍是数组包数组），导致 `.returning().get()` 返回 `id` 时得到整行数组而非标量值。修复：`method === "get" ? rows[0] : rows`。教训：sqlite-proxy 的 callback 返回格式文档不充分，必须读 `drizzle-orm/sqlite-proxy/session.cjs` 中的 `mapGetResult` 源码确认期望格式。
 - **移除本地 SQLite 运行时的分阶段策略**：8 个原子 commit 从安全 guard → D1 dev 创建 → seed 脚本 → E2E 迁移 → UI 删除 → health check 异步化 → 本地代码删除 → 清理。关键决策：(1) 先加 E2E safety guard（Phase 1）防止迁移过程中 E2E 意外连 production；(2) E2E 全部走远程 D1 dev 而非本地文件，统一数据路径；(3) UT 保持 `bun:sqlite :memory:` 零改动（481+ test）。教训：大规模基础设施迁移必须先部署防护网再拆旧路径，每个 commit 独立可验证。
 - **release.ts 的 bun install 会把镜像 URL 写进 bun.lock**：本机 IT 拦截 registry.npmjs.org，`bun run release` 必须带 `BUN_CONFIG_REGISTRY` 才能装依赖。Bun 会把镜像地址写进 lockfile 并随 `release: vX.Y.Z` 一起提交；CI 用 `--frozen-lockfile`，tag 部署也按该 commit 装包。v2.3.2 已用 follow-up commit 还原。教训：release 后立刻 `rg -c '", "https' bun.lock`，非 0 就从上一 commit 还原 lockfile 再推，不要让镜像 URL 留在 tag 上。
+
+## 2026-09-28 — native local environment validation
+
+The first gateway forwarded fetch-decoded response bodies with upstream
+content-encoding headers, causing browsers to decode twice. Strip transport
+encoding/length headers when constructing the proxy response, and exercise the
+real browser path rather than relying on API status alone.
+
+Wrangler's native local requests carry `request.cf`, so the existing localhost
+Bearer classifier did not allow a freshly issued fixture token to reach the
+real token verifier. Explicit server-owned local issuer configuration now selects
+that path; neither mode headers nor browser flags bypass verification. The
+native verification checks issuance, bearer permissions, cross-run rejection
+and revocation.
+
+The first expanded verification script had a missing import/type assertion;
+normal typecheck/pre-commit rejected it. Keep verification tooling in the same
+strict checks, and inspect command exit status before staging. No hook was bypassed.
