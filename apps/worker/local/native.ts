@@ -7,7 +7,7 @@ export const ROOT = resolve(import.meta.dirname, "../../..");
 const STORE = resolve(ROOT, ".surety-local");
 const WORKER = resolve(ROOT, "apps/worker");
 const WRANGLER = resolve(WORKER, "node_modules/wrangler/bin/wrangler.js");
-export const fixtureVersion = "2026-09-28.1";
+export const fixtureVersion = "2026-09-28.2";
 export type Mode = "demo" | "e2e" | "prod";
 
 export function cleanEnvironment(): Record<string, string> {
@@ -64,6 +64,22 @@ async function command(args: string[], cwd: string) {
 
 export async function startNative(mode: "demo" | "e2e", store = STORE) {
 	if (store !== STORE && !store.startsWith(`${STORE}/`)) throw new Error("Foreign storage root");
+	const source = Bun.TOML.parse(await readFile(resolve(WORKER, "wrangler.toml"), "utf8")) as {
+		compatibility_date: string;
+		compatibility_flags: string[];
+		main: string;
+		alias: Record<string, string>;
+		assets: {
+			directory: string;
+			binding: string;
+			run_worker_first: string[];
+			not_found_handling: string;
+		};
+		limits?: unknown;
+		ratelimits?: unknown;
+	};
+	if (source.limits || source.ratelimits)
+		throw new Error("Configure native parity for new Worker limits before starting");
 	const id = randomUUID();
 	const path = resolve(store, mode === "demo" ? "demo" : `runs/${id}`);
 	await mkdir(resolve(store, "runs"), { recursive: true });
@@ -114,21 +130,18 @@ export async function startNative(mode: "demo" | "e2e", store = STORE) {
 	});
 	const { privateKey, publicKey } = await generateKeyPair("RS256");
 	const jwk = await exportJWK(publicKey);
-	const source = Bun.TOML.parse(await readFile(resolve(WORKER, "wrangler.toml"), "utf8")) as {
-		compatibility_date: string;
-		compatibility_flags: string[];
-	};
+
 	const config = {
 		name: "surety-local",
-		main: resolve(WORKER, "src/index.ts"),
+		main: resolve(WORKER, source.main),
 		compatibility_date: source.compatibility_date,
 		compatibility_flags: source.compatibility_flags,
-		alias: { "bun:sqlite": resolve(WORKER, "src/lib/bun-sqlite-stub.ts") },
+		alias: Object.fromEntries(
+			Object.entries(source.alias).map(([key, path]) => [key, resolve(WORKER, path)]),
+		),
 		assets: {
-			directory: resolve(WORKER, "static"),
-			binding: "ASSETS",
-			run_worker_first: ["/api/*"],
-			not_found_handling: "single-page-application",
+			...source.assets,
+			directory: resolve(WORKER, source.assets.directory),
 		},
 		d1_databases: [
 			{
@@ -149,7 +162,6 @@ export async function startNative(mode: "demo" | "e2e", store = STORE) {
 		},
 	};
 	const configPath = resolve(configDir, "wrangler.json");
-	await writeFile(configPath, JSON.stringify(config), { mode: 0o600 });
 	let proc: ReturnType<typeof Bun.spawn> | undefined;
 	let stopped = false;
 	async function stop() {
@@ -167,6 +179,7 @@ export async function startNative(mode: "demo" | "e2e", store = STORE) {
 		await rm(configDir, { recursive: true });
 	}
 	try {
+		await writeFile(configPath, JSON.stringify(config), { mode: 0o600 });
 		await command(
 			[
 				"d1",

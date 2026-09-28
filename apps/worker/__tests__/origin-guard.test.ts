@@ -8,8 +8,8 @@
  *  - session-cookie / Access-JWT writes from another origin are 403
  *  - missing Origin AND missing Referer on an unsafe write is 403
  *  - Referer is accepted when Origin is absent
- *  - /api/live and localhost dev are exempt
- *  - E2E_SKIP_AUTH=true bypass works (non-prod only)
+ *  - /api/live is exempt; local session writes require same-origin
+ *  - obsolete E2E_SKIP_AUTH never bypasses the guard
  *  - production host with E2E_SKIP_AUTH=true is NOT exempt
  */
 
@@ -214,7 +214,7 @@ describe("originGuard middleware", () => {
 		expect(res.status).toBe(403);
 	});
 
-	test("E2E_SKIP_AUTH=true bypasses guard (non-prod environment)", async () => {
+	test("obsolete E2E_SKIP_AUTH cannot bypass guard in tests", async () => {
 		const app = makeApp();
 		const res = await app.request(
 			"https://surety.hexly.ai/api/things",

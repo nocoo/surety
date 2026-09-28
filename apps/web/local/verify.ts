@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
 import { resolve } from "node:path";
 import { chromium, expect } from "@playwright/test";
 import { preview } from "vite";
 import { INIT_SQL } from "../../../packages/db/src";
-import { cleanEnvironment, ROOT, resetDemo, startNative } from "../../worker/local/native";
+import {
+	cleanEnvironment,
+	fixtureVersion,
+	ROOT,
+	resetDemo,
+	startNative,
+} from "../../worker/local/native";
 import { type LaunchOptions, localGateway } from "./gateway";
 
 const run = crypto.randomUUID();
@@ -167,12 +174,27 @@ try {
 	await expect(demo).toBeChecked();
 	assert.equal(await page.evaluate(() => localStorage.getItem("surety:environment-mode")), null);
 	pass("default Demo, rich fixtures, media, cancelled draft preserves instance and preference");
+	let pendingWrite: ReturnType<typeof httpRequest> | undefined;
+	const pendingStatus = new Promise<number | undefined>((resolveStatus, reject) => {
+		pendingWrite = httpRequest(
+			`${runtime.base}/__instance/${first}/api/members`,
+			{ method: "POST", headers: { origin: runtime.base, "content-type": "application/json" } },
+			(response) => {
+				response.resume();
+				resolveStatus(response.statusCode);
+			},
+		);
+		pendingWrite.on("error", reject);
+		pendingWrite.write('{"name":');
+	});
 	page.once("dialog", (dialog) => dialog.accept());
 	await page.getByRole("radio", { name: "E2E", exact: true }).click();
 	await expect(page.getByRole("radio", { name: "E2E", exact: true })).toBeChecked({
 		timeout: 60000,
 	});
 	const e2e = await id();
+	pendingWrite?.end('"Late fixture", "relation":"Self"}');
+	assert.equal(await pendingStatus, 410);
 	assert.notEqual(e2e, first);
 	assert.equal((await runtime.request(`/__instance/${first}/api/members`)).status, 410);
 	assert.equal((await runtime.request(`/__instance/${secondId}/api/members`)).status, 200);
@@ -197,6 +219,30 @@ try {
 	}
 	pass("active Demo reset, foreign path and ownership mismatch refused");
 	await context.close();
+	const unavailable = await browser.newContext();
+	await unavailable.addInitScript(() => {
+		Object.defineProperty(window, "localStorage", {
+			get() {
+				throw new Error("Storage unavailable");
+			},
+		});
+		Object.defineProperty(window, "sessionStorage", {
+			get() {
+				throw new Error("Storage unavailable");
+			},
+		});
+	});
+	const limited = await unavailable.newPage();
+	await limited.goto(runtime.base);
+	await expect(limited.getByRole("radio", { name: "Demo", exact: true })).toBeChecked({
+		timeout: 30000,
+	});
+	await limited.getByRole("radio", { name: "E2E", exact: true }).click();
+	await expect(limited.getByRole("radio", { name: "E2E", exact: true })).toBeChecked({
+		timeout: 60000,
+	});
+	await unavailable.close();
+	pass("in-flight old write rejected; storage-unavailable interactive switching");
 	await runtime.stop();
 	runtime = await launch({ automated: false, dataset: "empty", initial: "e2e" });
 	const explicit = await (await runtime.request("/__local/start", { preference: "demo" })).json();
@@ -281,6 +327,7 @@ try {
 		.click();
 	const artwork = screen.getByRole("dialog").locator("img");
 	await expect(artwork).toBeVisible();
+	await screen.waitForTimeout(400);
 	await expect
 		.poll(() => artwork.evaluate((element) => (element as HTMLImageElement).naturalWidth))
 		.toBe(960);
@@ -333,7 +380,7 @@ try {
 			{
 				revision: revision.trim(),
 				appVersion: "2.3.6",
-				fixtureVersion: "2026-09-28.1",
+				fixtureVersion,
 				anchor: "2026-09-28",
 				timezone: "Asia/Shanghai",
 				locale: "zh-CN",

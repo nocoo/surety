@@ -256,7 +256,7 @@ describe("apiKeyAuth middleware", () => {
 		for (let i = 0; i < 3; i++) await Promise.resolve();
 	});
 
-	test("E2E_SKIP_AUTH=true bypasses auth even on prod host", async () => {
+	test("obsolete E2E_SKIP_AUTH cannot bypass auth on prod host", async () => {
 		const app = makeApp(apiKeyAuth);
 		const res = await app.request(
 			"/api/probe",
@@ -292,7 +292,7 @@ describe("apiKeyAuth middleware", () => {
 		expect(res.status).toBe(401);
 	});
 
-	test("E2E_SKIP_AUTH=*** + ENVIRONMENT=test still bypasses auth", async () => {
+	test("obsolete E2E_SKIP_AUTH cannot bypass auth in tests", async () => {
 		const app = makeApp(apiKeyAuth);
 		const res = await app.request(
 			"/api/probe",

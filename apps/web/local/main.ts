@@ -32,8 +32,17 @@ const config = {
 	server: { port, host: "127.0.0.1", strictPort: true },
 	preview: { port, host: "127.0.0.1", strictPort: true },
 };
-const server = args.includes("--built") ? await preview(config) : await createServer(config);
-if ("listen" in server) await server.listen();
+async function startFrontend() {
+	try {
+		const server = args.includes("--built") ? await preview(config) : await createServer(config);
+		if ("listen" in server) await server.listen();
+		return server;
+	} catch (error) {
+		await gateway.stop();
+		throw error;
+	}
+}
+const server = await startFrontend();
 server.printUrls();
 let stopping = false;
 async function stop() {

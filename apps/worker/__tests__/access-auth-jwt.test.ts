@@ -215,10 +215,7 @@ describe("accessAuth - CF JWT branch", () => {
 		expect(res.status).toBe(401);
 	});
 
-	test("E2E_SKIP_AUTH=true bypasses JWT verification in non-prod (L2-HTTP)", async () => {
-		// The L2-HTTP runner boots wrangler dev with E2E_SKIP_AUTH=true so the
-		// suite can exercise the browser-host code path without a real CF
-		// Access JWT. Without this bypass the suite would always see 500.
+	test("obsolete E2E_SKIP_AUTH cannot bypass JWT verification", async () => {
 		const app = probeApp();
 		const res = await app.request(
 			"/api/probe",

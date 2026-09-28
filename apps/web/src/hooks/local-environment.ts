@@ -22,10 +22,11 @@ export async function initializeEnvironment() {
 		return;
 	const config = await capability.json();
 	if (config.local !== true) return;
+	const transfer = new URLSearchParams(window.location.search).get("__surety_instance");
 	const body = config.locked
 		? {}
 		: {
-				id: stored("sessionStorage", sessionKey),
+				id: transfer ?? stored("sessionStorage", sessionKey),
 				preference: stored("localStorage", preferenceKey),
 			};
 	const res = await originalFetch("/__local/start", {
@@ -35,6 +36,7 @@ export async function initializeEnvironment() {
 	});
 	if (!res.ok) throw new Error(await res.text());
 	localEnvironment = await res.json();
+	if (transfer && !config.locked) window.history.replaceState(null, "", window.location.pathname);
 	if (localEnvironment && !localEnvironment.locked) {
 		try {
 			sessionStorage.setItem(sessionKey, localEnvironment.id);
@@ -71,5 +73,5 @@ export async function switchEnvironment(mode: LocalMode) {
 		sessionStorage.setItem(sessionKey, accepted.id);
 	} catch {}
 	window.dispatchEvent(new Event("surety:accepted-discard"));
-	window.location.replace("/");
+	window.location.replace(`/?__surety_instance=${accepted.id}`);
 }
