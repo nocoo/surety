@@ -49,6 +49,56 @@ const launch = async (options: LaunchOptions) => {
 		},
 	};
 };
+for (const built of [false, true]) {
+	const probe = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response() });
+	const port = probe.port;
+	probe.stop(true);
+	const base = `http://127.0.0.1:${port}`;
+	const proc = Bun.spawn(
+		[
+			"bun",
+			"--no-env-file",
+			"apps/web/local/main.ts",
+			"--automated",
+			"--dataset",
+			"empty",
+			"--port",
+			String(port),
+			...(built ? ["--built"] : []),
+		],
+		{
+			cwd: ROOT,
+			env: cleanEnvironment(),
+			stdout: Bun.file(resolve(evidence, `shutdown-${built}.log`)),
+			stderr: "inherit",
+		},
+	);
+	let resourceId: string | undefined;
+	try {
+		for (let attempt = 0; attempt < 200; attempt++) {
+			if (proc.exitCode !== null) throw new Error("Lifecycle launcher failed");
+			try {
+				if ((await fetch(`${base}/api/live`)).ok) break;
+			} catch {}
+			await Bun.sleep(200);
+		}
+		const response = await fetch(`${base}/__local/start`, {
+			method: "POST",
+			headers: { origin: base, "content-type": "application/json" },
+			body: "{}",
+		});
+		resourceId = ((await response.json()) as { resourceId: string }).resourceId;
+		assert(resourceId);
+	} finally {
+		proc.kill("SIGTERM");
+		await proc.exited;
+	}
+	assert.equal(
+		await Bun.file(resolve(ROOT, ".surety-local/runs", resourceId, "owner.json")).exists(),
+		false,
+	);
+	console.log(`PASS ${built ? "built" : "dev"} SIGTERM removes owned resources`);
+}
 const checks: string[] = [];
 const revision = await new Response(
 	Bun.spawn(["git", "rev-parse", "HEAD"], { cwd: ROOT, stdout: "pipe" }).stdout,

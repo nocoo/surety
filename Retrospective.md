@@ -29,3 +29,13 @@ and revocation.
 The first expanded verification script had a missing import/type assertion;
 normal typecheck/pre-commit rejected it. Keep verification tooling in the same
 strict checks, and inspect command exit status before staging. No hook was bypassed.
+
+The restart acceptance check exposed Vite's own SIGTERM handler exiting before
+the launcher's later cleanup handler completed. Native Workers and ownership
+locks remained after apparently successful test runs. Cleanup now belongs to
+Vite's awaited `closeBundle`/`closePreviewServer` hooks with one shared shutdown
+promise. Verification launches both dev and built subprocesses, sends SIGTERM,
+and asserts the owned storage is gone; managed HTTP/browser runners also fail
+when their store remains. Orphan processes from this task were stopped only
+after checking exact config paths, ownership markers and dead launcher PIDs;
+Demo database/media were preserved while removing its stale lock.

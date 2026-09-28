@@ -37,6 +37,7 @@ const runtime = Bun.spawn(
 		stderr: Bun.file(resolve(evidence, "runtime.log")),
 	},
 );
+let resourceId: string | undefined;
 let tests: ReturnType<typeof Bun.spawn> | undefined;
 function interrupt() {
 	tests?.kill("SIGTERM");
@@ -57,6 +58,14 @@ try {
 		await Bun.sleep(200);
 	}
 	if (!ready) throw new Error("Local runtime readiness timed out");
+	const session = (await (
+		await fetch(`${base}/__local/start`, {
+			method: "POST",
+			headers: { origin: base, "content-type": "application/json" },
+			body: "{}",
+		})
+	).json()) as { resourceId: string };
+	resourceId = session.resourceId;
 	const cmd =
 		lane === "http"
 			? [
@@ -91,5 +100,12 @@ try {
 } finally {
 	runtime.kill("SIGTERM");
 	await runtime.exited;
+	if (
+		resourceId &&
+		(await Bun.file(resolve(ROOT, ".surety-local/runs", resourceId, "owner.json")).exists())
+	) {
+		console.error("E2E cleanup failed: owned store still exists");
+		process.exitCode = 1;
+	}
 	console.log(`Evidence: ${evidence}`);
 }

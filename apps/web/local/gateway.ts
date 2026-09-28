@@ -54,6 +54,7 @@ export async function localGateway(options: LaunchOptions) {
 			mode: session.mode,
 			locked: options.automated,
 			visible: !process.env.CI,
+			resourceId: session.native?.id,
 			fixtureVersion: session.native?.fixtureVersion,
 			schemaHash: session.native?.schemaHash,
 		};
@@ -157,6 +158,8 @@ export async function localGateway(options: LaunchOptions) {
 	}
 	const plugin: Plugin = {
 		name: "surety-local-runtime",
+		closeBundle: stop,
+		closePreviewServer: stop,
 		configureServer(server) {
 			server.middlewares.use(middleware);
 		},
@@ -164,11 +167,17 @@ export async function localGateway(options: LaunchOptions) {
 			server.middlewares.use(middleware);
 		},
 	};
-	async function stop() {
-		for (const session of sessions.values())
-			if (session.mode === "e2e") await session.native?.stop();
-		sessions.clear();
-		await demo?.stop();
+	let stopping: Promise<void> | undefined;
+	function stop() {
+		stopping ??= (async () => {
+			await queue;
+			for (const session of sessions.values())
+				if (session.mode === "e2e") await session.native?.stop();
+			sessions.clear();
+			await demo?.stop();
+		})();
+		return stopping;
 	}
+
 	return { plugin, stop, root: resolve(ROOT, "apps/web") };
 }
