@@ -27,7 +27,7 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"@nocoo/basalt": "2.1.8",
+		"@nocoo/basalt": "2.2.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"drizzle-orm": "^0.45.3",
@@ -73,7 +73,7 @@
 		"path-to-regexp": "^8.4.0",
 		"postcss": "^8.5.18",
 		"sharp": "0.35.4",
-		"undici": "^7.29.0",
+		"undici": "7.29.1",
 		"ws": "^8.21.3",
 		"wrangler": "4.138.0"
 	}
