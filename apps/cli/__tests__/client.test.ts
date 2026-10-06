@@ -1,5 +1,19 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { getConfigDir } from "../src/config";
 import { buildClient } from "../src/lib/client";
+
+const fixture = vi.hoisted(() => ({ home: "" }));
+
+vi.mock("node:os", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:os")>()),
+	homedir: () => {
+		if (!fixture.home) throw new Error("Missing owned CLI test fixture");
+		return fixture.home;
+	},
+}));
 
 const origExit = process.exit;
 const origStderr = process.stderr.write;
@@ -13,6 +27,7 @@ class ExitCalled extends Error {
 let stderrOut = "";
 
 beforeEach(() => {
+	fixture.home = realpathSync(mkdtempSync(join(tmpdir(), "surety-client-")));
 	stderrOut = "";
 	process.stderr.write = ((chunk: string | Uint8Array) => {
 		stderrOut += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
@@ -26,15 +41,13 @@ beforeEach(() => {
 afterEach(() => {
 	process.stderr.write = origStderr;
 	process.exit = origExit;
+	const owned = fixture.home;
+	fixture.home = "";
+	expect(realpathSync(owned)).toBe(owned);
+	rmSync(owned, { recursive: true });
 });
 
 describe("buildClient", () => {
-	// We deliberately do not pass a HOME override: getConfigDir() in
-	// src/config.ts uses os.homedir() (a syscall), which ignores the env arg.
-	// The previous mkdtempSync(...) + rmSync(...) dance was wasted I/O
-	// (~5ms/test) since ConfigManager still read from the real ~/.config/surety.
-	// Both branches below are env-driven (token in env vs dev mode + missing
-	// file), so we don't need a sandbox dir for correctness either.
 	test("returns ApiClient when token is present in env", () => {
 		const client = buildClient({
 			SURETY_API_TOKEN: "tok_test",
@@ -43,10 +56,20 @@ describe("buildClient", () => {
 		expect(client).toBeDefined();
 	});
 
+	test("reads a synthetic token only from the owned config fixture", () => {
+		const directory = getConfigDir();
+		expect(directory).toBe(join(fixture.home, ".config", "surety"));
+		mkdirSync(directory, { recursive: true });
+		writeFileSync(
+			join(directory, "config.dev.json"),
+			JSON.stringify({ token: "fixture-token", apiUrl: "https://example.test" }),
+		);
+		expect(buildClient({ SURETY_CLI_DEV: "1" } as NodeJS.ProcessEnv)).toBeDefined();
+	});
+
 	test("exits with JSON error envelope when no token configured", () => {
 		expect(() =>
 			buildClient({
-				// dev-mode → reads config.dev.json which does not exist in CI
 				SURETY_CLI_DEV: "1",
 			} as unknown as NodeJS.ProcessEnv),
 		).toThrow(ExitCalled);
