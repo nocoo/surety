@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.7
+
+### Changed
+- Bump minor and patch dependencies across the monorepo, including Vitest 5.0.4, Vite 8.3.4, Wrangler 4.149.0, and Radix UI 1.8.1.
+
+### Fixed
+- Override Sharp to 0.35.5 for GHSA-wq5f-xc86-pv6w.
+
 ## v2.3.6
 
 ### Added
