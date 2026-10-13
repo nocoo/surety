@@ -34,7 +34,7 @@
 		"hono": "4.13.13",
 		"lucide-react": "1.55.0",
 		"path-to-regexp": "^8.4.0",
-		"radix-ui": "1.6.7",
+		"radix-ui": "1.8.1",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
 		"react-dropzone": "^20.1.2",
