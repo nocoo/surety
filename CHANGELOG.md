@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.9
+
+### Added
+- Add `surety --skill` and `surety skill` to print a self-contained agent-oriented CLI guide on stdout (no auth required).
+
 ## v2.3.8
 
 ### Changed

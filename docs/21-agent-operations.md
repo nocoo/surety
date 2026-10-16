@@ -80,6 +80,7 @@ AI/脚本入口，通过 Bearer token 访问 Worker HTTP API，已替代原 MCP 
 
 | 任务 | 命令 |
 |------|------|
+| Agent 用法摘要 | `surety --skill` 或 `surety skill`（stdout 自包含指南，无需 token） |
 | 本地调试 | `cd apps/cli && bun src/index.ts <cmd>` |
 | 跑测试 | `bun run test`（根目录 vitest，覆盖 CLI） |
 | 类型检查 | `cd apps/cli && bun run typecheck` |
