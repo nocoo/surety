@@ -3,10 +3,12 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
+const configDir = import.meta.dirname;
+
 export default defineConfig(({ mode }) => {
 	// Prefer monorepo root `.env` (docs + shared with CLI tooling); fall back
 	// to apps/web for any package-local overrides.
-	const monorepoRoot = resolve(__dirname, "../..");
+	const monorepoRoot = resolve(configDir, "../..");
 	const env = {
 		...loadEnv(mode, monorepoRoot, ""),
 		...loadEnv(mode, process.cwd(), ""),
@@ -18,7 +20,7 @@ export default defineConfig(({ mode }) => {
 		plugins: [react(), tailwindcss()],
 		resolve: {
 			alias: {
-				"@": resolve(__dirname, "./src"),
+				"@": resolve(configDir, "./src"),
 			},
 		},
 		build: {
