@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.8
+
+### Changed
+- Bump minor and patch dependencies across the monorepo, including Vitest 5.0.5, React 19.3.1, Playwright 1.64.1, Wrangler 4.151.0, lucide-react 1.57.0, and Workers Types 5.20261015.1.
+
 ## v2.3.7
 
 ### Changed
