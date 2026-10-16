@@ -34,7 +34,7 @@ jobs:
       source-run-id: ${{ github.event_name == 'workflow_run' && format('{0}', github.event.workflow_run.id) || '' }}
       tag: ${{ github.event_name == 'push' && github.ref_name || inputs.tag || '' }}
       package-version-match: ${{ github.event_name != 'workflow_run' }}
-      runtime-version: "1.3.11"
+      runtime-version: "1.4.2"
       install-policy: "blocked"
       build-command: "bun run build"
       wrangler-working-directory: "apps/worker"
