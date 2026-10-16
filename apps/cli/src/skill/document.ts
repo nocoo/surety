@@ -15,7 +15,7 @@ Surety is a self-hosted family insurance and records app: one shared household i
 | Task | Command |
 |------|---------|
 | Sign in (browser / CF Access) | \`surety login\` |
-| Clear local session fields | \`surety logout\` (does not prove server-side token revocation) |
+| Request local sign-out | \`surety logout\` — merge-written config may leave \`token\` on disk; not server-side revocation |
 | Show identity | \`surety whoami\` |
 
 Config file: \`~/.config/surety/config.json\` (or \`config.dev.json\` when \`SURETY_CLI_DEV=1\`).

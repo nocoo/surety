@@ -36,6 +36,8 @@ describe("buildAgentSkillDocument", () => {
 		expect(doc).toContain("--full");
 		expect(doc).toContain("renewals");
 		expect(doc).toContain("dashboard");
+		expect(doc).toContain("merge-written config");
+		expect(doc).not.toContain("Clear local session fields");
 	});
 });
 
