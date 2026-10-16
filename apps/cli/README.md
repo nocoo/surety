@@ -16,6 +16,15 @@ bun add -g @nocoo/surety
 bunx @nocoo/surety --help
 ```
 
+## Agent entrypoint
+
+External agents can load a self-contained guide (no auth required):
+
+```bash
+surety --skill
+# or: surety skill
+```
+
 ## Quick start
 
 ```bash
