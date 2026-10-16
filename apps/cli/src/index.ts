@@ -1,7 +1,5 @@
 #!/usr/bin/env bun
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { defineCommand, readVersion, runMain } from "@nocoo/base-cli";
+import { defineCommand, runMain } from "@nocoo/base-cli";
 import { assetsCommand } from "./commands/assets.js";
 import { authCommand } from "./commands/auth.js";
 import { doctorsCommand } from "./commands/doctors.js";
@@ -13,13 +11,12 @@ import { policiesCommand } from "./commands/policies.js";
 import { coverageCommand, dashboardCommand, renewalsCommand } from "./commands/readonly.js";
 import { skillCommand } from "./commands/skill.js";
 import { buildAgentSkillDocument } from "./skill/document.js";
-
-const cliVersion = readVersion(join(dirname(fileURLToPath(import.meta.url)), "../../.."));
+import { CLI_PACKAGE_VERSION } from "./version.js";
 
 const main = defineCommand({
 	meta: {
 		name: "surety",
-		version: cliVersion,
+		version: CLI_PACKAGE_VERSION,
 		description: "Surety CLI — AI-facing interface for household policies",
 	},
 	args: {
