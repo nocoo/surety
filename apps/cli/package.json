@@ -1,6 +1,6 @@
 {
 	"name": "@nocoo/surety",
-	"version": "2.3.9",
+	"version": "2.3.10",
 	"description": "Surety CLI — AI-facing command line interface for managing household insurance policies",
 	"type": "module",
 	"bin": {
