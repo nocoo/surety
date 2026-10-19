@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.10
+
+### Changed
+- Document release commands, CI checks and deploy targets in `AGENTS.md`.
+
 ## v2.3.9
 
 ### Added

@@ -76,6 +76,14 @@ Dev: trusted `https://surety.dev.hexly.ai` → Vite 7012; local Worker 7016. L2:
 
 Schema push writes the chosen remote D1 directly and is not a startup/test step; schema must be ready before authorized Worker release. Follow [operations](docs/21-agent-operations.md) and current release workflow: build SPA, synchronize root version/changelog/lockfile, then release. Inspect mirror URL drift before publishing; CLI has no separate build.
 
+| Area | Facts |
+|---|---|
+| Release | `bun run build` (SPA → `apps/worker/static`); `bun run release [-- patch\|minor\|major\|X.Y.Z\|--dry-run]` (`scripts/release.ts`: root version, `bun.lock`, CHANGELOG, commit, tag, GitHub release); keep `apps/cli/package.json` version in sync. Manual Worker deploy only when authorized: `bun run --cwd apps/worker deploy` (`wrangler deploy`). |
+| CLI publish | `@nocoo/surety` from `apps/cli`, published from 哥's MacBook (2FA in Chrome); verify/install via `https://registry.npmmirror.com`. |
+| CI (`ci.yml`) | `quality` (base-ci): `bun run build`, `bun run typecheck`, `bun run test:coverage`, L2 `bun run test:l2:http`; `L3 Browser E2E`: `bun run test:e2e:browser` (chromium). |
+| Deploy (`release.yml`) | `Deploy Worker` on green CI on `main`, `v*.*.*` tag or dispatch; builds, wrangler deploy from `apps/worker`, verifies `https://surety.hexly.ai/api/live` version. |
+| Targets | Worker `surety`, custom domains `surety.hexly.ai` (SPA + Access login) and `surety-api.hexly.ai` (Bearer API); D1 `DB` → `surety-db`; R2 `ATTACHMENTS` → `surety`; assets `ASSETS`; npm `@nocoo/surety`. |
+
 ## Retrospective
 
 Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
