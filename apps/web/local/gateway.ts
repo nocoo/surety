@@ -158,6 +158,10 @@ export async function localGateway(options: LaunchOptions) {
 	}
 	const plugin: Plugin = {
 		name: "surety-local-runtime",
+		config() {
+			const native = lockedId ? sessions.get(lockedId)?.native : undefined;
+			return native ? { cacheDir: resolve(native.path, "vite") } : undefined;
+		},
 		closeBundle: stop,
 		closePreviewServer: stop,
 		configureServer(server) {

@@ -90,6 +90,23 @@ for (const built of [false, true]) {
 		});
 		resourceId = ((await response.json()) as { resourceId: string }).resourceId;
 		assert(resourceId);
+		const context = await browser.newContext();
+		try {
+			const page = await context.newPage();
+			await page.goto(base);
+			await expect(page.getByRole("radio", { name: "E2E", exact: true })).toBeChecked({
+				timeout: 30000,
+			});
+			await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+			if (!built) {
+				const metadata = Bun.file(
+					resolve(ROOT, ".surety-local/runs", resourceId, "vite/deps/_metadata.json"),
+				);
+				await expect.poll(() => metadata.exists()).toBe(true);
+			}
+		} finally {
+			await context.close();
+		}
 	} finally {
 		proc.kill("SIGTERM");
 		await proc.exited;
@@ -98,7 +115,7 @@ for (const built of [false, true]) {
 		await Bun.file(resolve(ROOT, ".surety-local/runs", resourceId, "owner.json")).exists(),
 		false,
 	);
-	console.log(`PASS ${built ? "built" : "dev"} SIGTERM removes owned resources`);
+	console.log(`PASS ${built ? "built" : "dev"} page renders and SIGTERM removes owned resources`);
 }
 const checks: string[] = [];
 const revision = await new Response(

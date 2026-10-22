@@ -51,3 +51,18 @@ merging newer releases. It now uses the shared `APP_VERSION` export; fixture
 versions remain separate from application versions. Verify evidence metadata
 against the running API rather than assuming a successful script labels itself
 correctly.
+
+## 2026-10-22 - isolate Vite optimizer caches, not only databases
+
+The interactive Demo served HTML and health endpoints with HTTP 200, but its
+React/Basalt module requests returned `504 Outdated Optimize Dep`. An automated
+development launcher used the same `apps/web/node_modules/.vite` directory with
+a different environment and invalidated the live server's optimized files.
+Restarting Demo restored access without resetting its database or attachments.
+
+Automated gateways now place Vite's cache inside their owned E2E resource
+directory, so existing validated shutdown removes it too. Lifecycle acceptance
+now renders both dev and built pages and checks that dev optimizer metadata is
+inside that resource. A health response or built-SPA browser pass does not prove
+the separately served development page works; check its actual URL and module
+responses before handing it to the user.
