@@ -12,7 +12,6 @@
 ## Overview
 
 将 Surety 的数据库从本地 SQLite 文件迁移到 Cloudflare D1，通过 **Cloudflare Worker proxy** 访问 D1。部署架构（Railway）保持不变。
-
 - **运行时访问**：Next.js → Worker proxy → D1 binding（推荐路径，无需账户级 Token）
 - **管理面访问**：`drizzle-kit` + `d1-http` driver 做 schema push/migrate（账户级 API Token，仅开发时使用）
 
@@ -82,16 +81,16 @@
 
 ### Key Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Runtime access path | `sqlite-proxy` → Worker proxy → D1 binding | 应用不持有账户级 D1 Token；Worker 层可鉴权/限流/日志；符合 CF 推荐用法；后续换实现应用层改动最小 |
-| Schema management | `drizzle-kit` with `driver: "d1-http"` | 仅开发时用账户级 API Token 做 push/migrate/studio |
-| Database count | 1 production + 3 isolated E2E | 生产数据安全隔离；不同类型 E2E 不互相干扰 |
-| Multi-db switching | **Request-scoped**：每个请求通过 header 显式指定目标库 | 消除全局可变状态 `process.env.SURETY_DB`；并发安全 |
-| Unit test DB | `:memory:` SQLite (本地 `bun:sqlite`) | 单元测试不走网络，保持极速 |
-| Transaction support | Worker 内部 D1 `batch()` | D1 binding 的 `batch()` 是原子操作；Worker proxy 暴露 `/batch` 端点 |
-| MCP Server | 通过 Worker proxy 访问 | 与主应用共享同一 Worker，无需独立 D1 Token |
-| **Repo DB injection** | **Factory pattern**: `createMembersRepo(db)` | Repo 不再模块级导入全局 `db`；调用方传入 request-scoped db instance |
+| Decision              | Choice                                                 | Rationale                                                                                        |
+| --------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Runtime access path   | `sqlite-proxy` → Worker proxy → D1 binding             | 应用不持有账户级 D1 Token；Worker 层可鉴权/限流/日志；符合 CF 推荐用法；后续换实现应用层改动最小 |
+| Schema management     | `drizzle-kit` with `driver: "d1-http"`                 | 仅开发时用账户级 API Token 做 push/migrate/studio                                                |
+| Database count        | 1 production + 3 isolated E2E                          | 生产数据安全隔离；不同类型 E2E 不互相干扰                                                        |
+| Multi-db switching    | **Request-scoped**：每个请求通过 header 显式指定目标库 | 消除全局可变状态 `process.env.SURETY_DB`；并发安全                                               |
+| Unit test DB          | `:memory:` SQLite (本地 `bun:sqlite`)                  | 单元测试不走网络，保持极速                                                                       |
+| Transaction support   | Worker 内部 D1 `batch()`                               | D1 binding 的 `batch()` 是原子操作；Worker proxy 暴露 `/batch` 端点                              |
+| MCP Server            | 通过 Worker proxy 访问                                 | 与主应用共享同一 Worker，无需独立 D1 Token                                                       |
+| **Repo DB injection** | **Factory pattern**: `createMembersRepo(db)`           | Repo 不再模块级导入全局 `db`；调用方传入 request-scoped db instance                              |
 
 ---
 
@@ -103,13 +102,13 @@
 
 ```typescript
 // src/db/repositories/members.ts (BEFORE)
-import { db } from "../index";           // ← module-level global import
+import { db } from "../index"; // ← module-level global import
 
 export const membersRepo = {
-  findAll(): Member[] {
-    return db.select().from(members).all(); // ← uses global db
-  },
-  // ...
+	findAll(): Member[] {
+		return db.select().from(members).all(); // ← uses global db
+	},
+	// ...
 };
 ```
 
@@ -126,29 +125,33 @@ import { members, type Member, type NewMember } from "../schema";
 import type { DbInstance } from "../index";
 
 export function createMembersRepo(db: DbInstance) {
-  return {
-    async findAll(): Promise<Member[]> {
-      return db.select().from(members).all();
-    },
+	return {
+		async findAll(): Promise<Member[]> {
+			return db.select().from(members).all();
+		},
 
-    async findById(id: number): Promise<Member | undefined> {
-      return db.select().from(members).where(eq(members.id, id)).get();
-    },
+		async findById(id: number): Promise<Member | undefined> {
+			return db.select().from(members).where(eq(members.id, id)).get();
+		},
 
-    async create(data: NewMember): Promise<Member> {
-      return db.insert(members).values(data).returning().get();
-    },
+		async create(data: NewMember): Promise<Member> {
+			return db.insert(members).values(data).returning().get();
+		},
 
-    async update(id: number, data: Partial<NewMember>): Promise<Member | undefined> {
-      return db.update(members).set({ ...data, updatedAt: new Date() })
-        .where(eq(members.id, id)).returning().get();
-    },
+		async update(id: number, data: Partial<NewMember>): Promise<Member | undefined> {
+			return db
+				.update(members)
+				.set({ ...data, updatedAt: new Date() })
+				.where(eq(members.id, id))
+				.returning()
+				.get();
+		},
 
-    async delete(id: number): Promise<boolean> {
-      const result = await db.delete(members).where(eq(members.id, id)).run();
-      return (result as unknown as { changes: number }).changes > 0;
-    },
-  };
+		async delete(id: number): Promise<boolean> {
+			const result = await db.delete(members).where(eq(members.id, id)).run();
+			return (result as unknown as { changes: number }).changes > 0;
+		},
+	};
 }
 
 export type MembersRepo = ReturnType<typeof createMembersRepo>;
@@ -162,10 +165,10 @@ import { getDbForRequest } from "@/db";
 import { createMembersRepo } from "@/db/repositories/members";
 
 export async function GET(request: Request) {
-  const db = getDbForRequest(request);          // request-scoped
-  const membersRepo = createMembersRepo(db);    // scoped repo
-  const members = await membersRepo.findAll();  // async
-  return Response.json(members);
+	const db = getDbForRequest(request); // request-scoped
+	const membersRepo = createMembersRepo(db); // scoped repo
+	const members = await membersRepo.findAll(); // async
+	return Response.json(members);
 }
 ```
 
@@ -176,17 +179,17 @@ export async function GET(request: Request) {
 ```typescript
 // src/db/repositories/index.ts (AFTER)
 export function createAllRepos(db: DbInstance) {
-  return {
-    members: createMembersRepo(db),
-    insurers: createInsurersRepo(db),
-    assets: createAssetsRepo(db),
-    policies: createPoliciesRepo(db),
-    beneficiaries: createBeneficiariesRepo(db),
-    payments: createPaymentsRepo(db),
-    cashValues: createCashValuesRepo(db),
-    coverageItems: createCoverageItemsRepo(db),
-    settings: createSettingsRepo(db),
-  };
+	return {
+		members: createMembersRepo(db),
+		insurers: createInsurersRepo(db),
+		assets: createAssetsRepo(db),
+		policies: createPoliciesRepo(db),
+		beneficiaries: createBeneficiariesRepo(db),
+		payments: createPaymentsRepo(db),
+		cashValues: createCashValuesRepo(db),
+		coverageItems: createCoverageItemsRepo(db),
+		settings: createSettingsRepo(db),
+	};
 }
 
 export type AllRepos = ReturnType<typeof createAllRepos>;
@@ -217,11 +220,11 @@ expect(all).toHaveLength(1);
 
 ### Why Not AsyncLocalStorage
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| **Factory (chosen)** | 显式依赖、可测试、零 magic | 每个 route handler 多一行 `createAllRepos(db)` |
-| AsyncLocalStorage | 调用方不感知 db 来源 | 隐式依赖、调试困难、Bun 兼容性待验证、MCP Server 不在 Next.js 请求链中 |
-| Global Proxy (current) | 零改动 | 并发不安全、全局可变状态、测试隔离差 |
+| Approach               | Pros                       | Cons                                                                   |
+| ---------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| **Factory (chosen)**   | 显式依赖、可测试、零 magic | 每个 route handler 多一行 `createAllRepos(db)`                         |
+| AsyncLocalStorage      | 调用方不感知 db 来源       | 隐式依赖、调试困难、Bun 兼容性待验证、MCP Server 不在 Next.js 请求链中 |
+| Global Proxy (current) | 零改动                     | 并发不安全、全局可变状态、测试隔离差                                   |
 
 Factory 是最显式、最安全的选择。额外的一行代码是值得的。
 
@@ -252,11 +255,11 @@ worker/
 
 ### API 端点
 
-| Method | Path | Purpose | Auth |
-|--------|------|---------|------|
-| POST | `/query` | 执行单条 prepared statement | Shared secret |
-| POST | `/batch` | 执行多条 prepared statement（原子） | Shared secret |
-| GET | `/health` | Worker + D1 存活检查 | None |
+| Method | Path      | Purpose                             | Auth          |
+| ------ | --------- | ----------------------------------- | ------------- |
+| POST   | `/query`  | 执行单条 prepared statement         | Shared secret |
+| POST   | `/batch`  | 执行多条 prepared statement（原子） | Shared secret |
+| GET    | `/health` | Worker + D1 存活检查                | None          |
 
 ### 请求/响应格式
 
@@ -310,12 +313,12 @@ Worker 的 `WORKER_SHARED_SECRET` 通过 `wrangler secret put` 设置。应用�
 
 Worker 根据请求头 `X-Target-DB` 选择 D1 binding：
 
-| Header Value | D1 Binding | Purpose |
-|---|---|---|
-| `production` (default) | `DB_PROD` | 生产数据 |
-| `api-e2e` | `DB_API_E2E` | API E2E 测试 |
-| `ui-e2e` | `DB_UI_E2E` | Playwright E2E 测试 |
-| `mcp-e2e` | `DB_MCP_E2E` | MCP E2E 测试 |
+| Header Value           | D1 Binding   | Purpose             |
+| ---------------------- | ------------ | ------------------- |
+| `production` (default) | `DB_PROD`    | 生产数据            |
+| `api-e2e`              | `DB_API_E2E` | API E2E 测试        |
+| `ui-e2e`               | `DB_UI_E2E`  | Playwright E2E 测试 |
+| `mcp-e2e`              | `DB_MCP_E2E` | MCP E2E 测试        |
 
 **wrangler.toml 示例**：
 
@@ -369,19 +372,19 @@ WorkerDbClient
 
 ### 环境变量
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `SURETY_WORKER_URL` | Worker proxy URL (e.g., `https://surety-db-proxy.<account>.workers.dev`) | Yes |
-| `SURETY_WORKER_SECRET` | Shared secret for Worker auth | Yes |
-| `SURETY_TARGET_DB` | Override target DB (用于 E2E 测试启动 dev server) | No, default `production` |
+| Variable               | Purpose                                                                  | Required                 |
+| ---------------------- | ------------------------------------------------------------------------ | ------------------------ |
+| `SURETY_WORKER_URL`    | Worker proxy URL (e.g., `https://surety-db-proxy.<account>.workers.dev`) | Yes                      |
+| `SURETY_WORKER_SECRET` | Shared secret for Worker auth                                            | Yes                      |
+| `SURETY_TARGET_DB`     | Override target DB (用于 E2E 测试启动 dev server)                        | No, default `production` |
 
 管理面（仅 `drizzle-kit` 使用）：
 
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account identifier | drizzle-kit only |
-| `CLOUDFLARE_DATABASE_ID` | Target D1 database ID | drizzle-kit only |
-| `CLOUDFLARE_D1_TOKEN` | API token with D1 Edit permission | drizzle-kit only |
+| Variable                 | Purpose                           | Required         |
+| ------------------------ | --------------------------------- | ---------------- |
+| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare account identifier     | drizzle-kit only |
+| `CLOUDFLARE_DATABASE_ID` | Target D1 database ID             | drizzle-kit only |
+| `CLOUDFLARE_D1_TOKEN`    | API token with D1 Edit permission | drizzle-kit only |
 
 ### `src/db/index.ts` (rewrite)
 
@@ -410,20 +413,18 @@ getDbForRequest(request | targetDb)
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 
 function createRemoteDb(client: WorkerDbClient) {
-  return drizzle(
-    // single query
-    async (sql, params, method) => {
-      const result = await client.query(sql, params);
-      return { rows: method === "get" ? result.rows.slice(0, 1) : result.rows };
-    },
-    // batch
-    async (queries) => {
-      const results = await client.batch(
-        queries.map(q => ({ sql: q.sql, params: q.params }))
-      );
-      return results.map(r => ({ rows: r.rows }));
-    }
-  );
+	return drizzle(
+		// single query
+		async (sql, params, method) => {
+			const result = await client.query(sql, params);
+			return { rows: method === "get" ? result.rows.slice(0, 1) : result.rows };
+		},
+		// batch
+		async (queries) => {
+			const results = await client.batch(queries.map((q) => ({ sql: q.sql, params: q.params })));
+			return results.map((r) => ({ rows: r.rows }));
+		},
+	);
 }
 ```
 
@@ -433,135 +434,135 @@ function createRemoteDb(client: WorkerDbClient) {
 
 ### New files
 
-| File | Purpose |
-|------|---------|
-| `worker/src/index.ts` | Worker entry, routing |
-| `worker/src/auth.ts` | Shared secret verification |
-| `worker/src/db.ts` | D1 binding resolver by `X-Target-DB` header |
-| `worker/src/routes/query.ts` | `/query` endpoint |
-| `worker/src/routes/batch.ts` | `/batch` endpoint |
-| `worker/src/routes/health.ts` | `/health` endpoint |
-| `worker/wrangler.toml` | D1 bindings, secrets config |
-| `worker/package.json` | Worker dependencies |
-| `worker/tsconfig.json` | Worker TypeScript config |
-| `src/db/worker-db-client.ts` | Application-side HTTP client for Worker proxy |
+| File                          | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `worker/src/index.ts`         | Worker entry, routing                         |
+| `worker/src/auth.ts`          | Shared secret verification                    |
+| `worker/src/db.ts`            | D1 binding resolver by `X-Target-DB` header   |
+| `worker/src/routes/query.ts`  | `/query` endpoint                             |
+| `worker/src/routes/batch.ts`  | `/batch` endpoint                             |
+| `worker/src/routes/health.ts` | `/health` endpoint                            |
+| `worker/wrangler.toml`        | D1 bindings, secrets config                   |
+| `worker/package.json`         | Worker dependencies                           |
+| `worker/tsconfig.json`        | Worker TypeScript config                      |
+| `src/db/worker-db-client.ts`  | Application-side HTTP client for Worker proxy |
 
 ### Critical (rewrite)
 
-| File | Change | Reason |
-|------|--------|--------|
-| `src/db/index.ts` | **Rewrite** | 移除本地 SQLite driver；移除全局可变状态；request-scoped client via `sqlite-proxy` + Worker proxy |
-| `src/db/backup.ts` | **Rewrite** | `getRawSqlite()` 不再可用；改用 Drizzle ORM 查询 + Worker `/batch` 端点 |
-| `drizzle.config.ts` | **Update** | `driver: "d1-http"` + Cloudflare management credentials |
-| `.env.example` | **Update** | 新增 `SURETY_WORKER_URL`, `SURETY_WORKER_SECRET`；管理面变量 |
+| File                | Change      | Reason                                                                                            |
+| ------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| `src/db/index.ts`   | **Rewrite** | 移除本地 SQLite driver；移除全局可变状态；request-scoped client via `sqlite-proxy` + Worker proxy |
+| `src/db/backup.ts`  | **Rewrite** | `getRawSqlite()` 不再可用；改用 Drizzle ORM 查询 + Worker `/batch` 端点                           |
+| `drizzle.config.ts` | **Update**  | `driver: "d1-http"` + Cloudflare management credentials                                           |
+| `.env.example`      | **Update**  | 新增 `SURETY_WORKER_URL`, `SURETY_WORKER_SECRET`；管理面变量                                      |
 
 ### Repository layer (9 files — global singleton → factory + async)
 
-| File | Change |
-|------|--------|
-| `src/db/repositories/members.ts` | `membersRepo` → `createMembersRepo(db)`; all methods async |
-| `src/db/repositories/insurers.ts` | `insurersRepo` → `createInsurersRepo(db)`; all methods async |
-| `src/db/repositories/assets.ts` | `assetsRepo` → `createAssetsRepo(db)`; all methods async |
-| `src/db/repositories/policies.ts` | `policiesRepo` → `createPoliciesRepo(db)`; all methods async |
+| File                                   | Change                                                                 |
+| -------------------------------------- | ---------------------------------------------------------------------- |
+| `src/db/repositories/members.ts`       | `membersRepo` → `createMembersRepo(db)`; all methods async             |
+| `src/db/repositories/insurers.ts`      | `insurersRepo` → `createInsurersRepo(db)`; all methods async           |
+| `src/db/repositories/assets.ts`        | `assetsRepo` → `createAssetsRepo(db)`; all methods async               |
+| `src/db/repositories/policies.ts`      | `policiesRepo` → `createPoliciesRepo(db)`; all methods async           |
 | `src/db/repositories/beneficiaries.ts` | `beneficiariesRepo` → `createBeneficiariesRepo(db)`; all methods async |
-| `src/db/repositories/payments.ts` | `paymentsRepo` → `createPaymentsRepo(db)`; all methods async |
-| `src/db/repositories/cashValues.ts` | `cashValuesRepo` → `createCashValuesRepo(db)`; all methods async |
+| `src/db/repositories/payments.ts`      | `paymentsRepo` → `createPaymentsRepo(db)`; all methods async           |
+| `src/db/repositories/cashValues.ts`    | `cashValuesRepo` → `createCashValuesRepo(db)`; all methods async       |
 | `src/db/repositories/coverageItems.ts` | `coverageItemsRepo` → `createCoverageItemsRepo(db)`; all methods async |
-| `src/db/repositories/settings.ts` | `settingsRepo` → `createSettingsRepo(db)`; all methods async |
-| `src/db/repositories/index.ts` | Add `createAllRepos(db)` helper; remove global re-exports |
+| `src/db/repositories/settings.ts`      | `settingsRepo` → `createSettingsRepo(db)`; all methods async           |
+| `src/db/repositories/index.ts`         | Add `createAllRepos(db)` helper; remove global re-exports              |
 
 ### API routes (add `await` + request-scoped db via factory)
 
-| File | Repo calls |
-|------|-----------|
-| `src/app/api/members/route.ts` | `membersRepo.findAll/create` |
-| `src/app/api/members/[id]/route.ts` | `membersRepo.findById/update/delete` |
-| `src/app/api/policies/route.ts` | `policiesRepo.findAll/create`, `membersRepo.findAll`, `assetsRepo.findAll` |
-| `src/app/api/policies/[id]/route.ts` | `policiesRepo.findById/update/delete`, `membersRepo.findAll`, `assetsRepo.findAll` |
-| `src/app/api/policies/[id]/beneficiaries/route.ts` | `beneficiariesRepo.findByPolicyId/create/replaceForPolicy` |
-| `src/app/api/policies/[id]/payments/route.ts` | `paymentsRepo.findByPolicyId/create/update/deleteByPolicyId` |
-| `src/app/api/policies/[id]/coverage-items/route.ts` | `coverageItemsRepo.findByPolicyId/replaceForPolicy` |
-| `src/app/api/policies/[id]/coverage-items/[itemId]/route.ts` | `coverageItemsRepo.*` |
-| `src/app/api/assets/route.ts` | `assetsRepo.findAll/create` |
-| `src/app/api/assets/[id]/route.ts` | `assetsRepo.findById/update/delete` |
-| `src/app/api/insurers/route.ts` | `insurersRepo.findAll/create` |
-| `src/app/api/insurers/[id]/route.ts` | `insurersRepo.findById/update/delete` |
-| `src/app/api/settings/route.ts` | `settingsRepo.findAll/set` |
-| `src/app/api/settings/[key]/route.ts` | `settingsRepo.get/set/delete` |
-| `src/app/api/settings/2fa/status/route.ts` | TOTP via `settingsRepo` |
-| `src/app/api/settings/2fa/setup/route.ts` | TOTP via `settingsRepo` |
-| `src/app/api/settings/2fa/verify-setup/route.ts` | TOTP via `settingsRepo` |
-| `src/app/api/settings/2fa/disable/route.ts` | TOTP via `settingsRepo` |
-| `src/app/api/settings/backy/route.ts` | `settingsRepo.get/set` |
-| `src/app/api/settings/backy/push/route.ts` | `buildBackup()`, `settingsRepo` |
-| `src/app/api/settings/backy/test/route.ts` | `settingsRepo` |
-| `src/app/api/settings/backy/history/route.ts` | `settingsRepo` |
-| `src/app/api/backup/route.ts` | `buildBackup()`, `restoreBackup()` |
-| `src/app/api/database/switch/route.ts` | DB switching logic rewrite (cookie → `targetDb`) |
-| `src/app/api/dashboard/route.ts` | `policiesRepo`, `membersRepo` |
-| `src/app/api/coverage-lookup/route.ts` | `membersRepo`, `policiesRepo`, `insurersRepo`, `assetsRepo` |
-| `src/app/api/renewal-calendar/route.ts` | `policiesRepo.findAll`, `membersRepo.findAll` |
-| `src/app/api/live/route.ts` | Health check async |
-| `src/app/api/auth/verify-2fa/route.ts` | `getDbForRequest()`, `getTotpService()` → `settingsRepo` |
-| `src/app/api/auth/[...nextauth]/route.ts` | 审查 JWT/session callback 是否间接依赖 `settingsRepo`/TOTP store；如有则纳入迁移 |
+| File                                                         | Repo calls                                                                         |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `src/app/api/members/route.ts`                               | `membersRepo.findAll/create`                                                       |
+| `src/app/api/members/[id]/route.ts`                          | `membersRepo.findById/update/delete`                                               |
+| `src/app/api/policies/route.ts`                              | `policiesRepo.findAll/create`, `membersRepo.findAll`, `assetsRepo.findAll`         |
+| `src/app/api/policies/[id]/route.ts`                         | `policiesRepo.findById/update/delete`, `membersRepo.findAll`, `assetsRepo.findAll` |
+| `src/app/api/policies/[id]/beneficiaries/route.ts`           | `beneficiariesRepo.findByPolicyId/create/replaceForPolicy`                         |
+| `src/app/api/policies/[id]/payments/route.ts`                | `paymentsRepo.findByPolicyId/create/update/deleteByPolicyId`                       |
+| `src/app/api/policies/[id]/coverage-items/route.ts`          | `coverageItemsRepo.findByPolicyId/replaceForPolicy`                                |
+| `src/app/api/policies/[id]/coverage-items/[itemId]/route.ts` | `coverageItemsRepo.*`                                                              |
+| `src/app/api/assets/route.ts`                                | `assetsRepo.findAll/create`                                                        |
+| `src/app/api/assets/[id]/route.ts`                           | `assetsRepo.findById/update/delete`                                                |
+| `src/app/api/insurers/route.ts`                              | `insurersRepo.findAll/create`                                                      |
+| `src/app/api/insurers/[id]/route.ts`                         | `insurersRepo.findById/update/delete`                                              |
+| `src/app/api/settings/route.ts`                              | `settingsRepo.findAll/set`                                                         |
+| `src/app/api/settings/[key]/route.ts`                        | `settingsRepo.get/set/delete`                                                      |
+| `src/app/api/settings/2fa/status/route.ts`                   | TOTP via `settingsRepo`                                                            |
+| `src/app/api/settings/2fa/setup/route.ts`                    | TOTP via `settingsRepo`                                                            |
+| `src/app/api/settings/2fa/verify-setup/route.ts`             | TOTP via `settingsRepo`                                                            |
+| `src/app/api/settings/2fa/disable/route.ts`                  | TOTP via `settingsRepo`                                                            |
+| `src/app/api/settings/backy/route.ts`                        | `settingsRepo.get/set`                                                             |
+| `src/app/api/settings/backy/push/route.ts`                   | `buildBackup()`, `settingsRepo`                                                    |
+| `src/app/api/settings/backy/test/route.ts`                   | `settingsRepo`                                                                     |
+| `src/app/api/settings/backy/history/route.ts`                | `settingsRepo`                                                                     |
+| `src/app/api/backup/route.ts`                                | `buildBackup()`, `restoreBackup()`                                                 |
+| `src/app/api/database/switch/route.ts`                       | DB switching logic rewrite (cookie → `targetDb`)                                   |
+| `src/app/api/dashboard/route.ts`                             | `policiesRepo`, `membersRepo`                                                      |
+| `src/app/api/coverage-lookup/route.ts`                       | `membersRepo`, `policiesRepo`, `insurersRepo`, `assetsRepo`                        |
+| `src/app/api/renewal-calendar/route.ts`                      | `policiesRepo.findAll`, `membersRepo.findAll`                                      |
+| `src/app/api/live/route.ts`                                  | Health check async                                                                 |
+| `src/app/api/auth/verify-2fa/route.ts`                       | `getDbForRequest()`, `getTotpService()` → `settingsRepo`                           |
+| `src/app/api/auth/[...nextauth]/route.ts`                    | 审查 JWT/session callback 是否间接依赖 `settingsRepo`/TOTP store；如有则纳入迁移   |
 
 ### Server components and lib
 
-| File | Change | Reason |
-|------|--------|--------|
-| `src/app/page.tsx` | `ensureDatabaseFromCookie()` → `getDbForRequest()` | Request-scoped DB access |
-| `src/lib/dashboard-data.ts` | `policiesRepo.findAll()` / `membersRepo.findAll()` → add `await` | Dynamic import + async repo |
-| `src/lib/totp.ts` | Adapter: `settingsRepo.get/set/delete` → add `await` | TOTP store adapter async |
-| `src/lib/api-helpers.ts` | `ensureDbFromRequest()` → return request-scoped client | 移除全局 env 切换 |
-| `src/lib/health.ts` | `SELECT 1` → async via Worker proxy | No more raw SQLite |
-| `src/services/backy.ts` | `buildBackup()` call → `await` | Backup async |
-| `src/proxy.ts` | 移除 `process.env.SURETY_DB` 切换 | Request-scoped; DB routing via header |
+| File                        | Change                                                           | Reason                                |
+| --------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| `src/app/page.tsx`          | `ensureDatabaseFromCookie()` → `getDbForRequest()`               | Request-scoped DB access              |
+| `src/lib/dashboard-data.ts` | `policiesRepo.findAll()` / `membersRepo.findAll()` → add `await` | Dynamic import + async repo           |
+| `src/lib/totp.ts`           | Adapter: `settingsRepo.get/set/delete` → add `await`             | TOTP store adapter async              |
+| `src/lib/api-helpers.ts`    | `ensureDbFromRequest()` → return request-scoped client           | 移除全局 env 切换                     |
+| `src/lib/health.ts`         | `SELECT 1` → async via Worker proxy                              | No more raw SQLite                    |
+| `src/services/backy.ts`     | `buildBackup()` call → `await`                                   | Backup async                          |
+| `src/proxy.ts`              | 移除 `process.env.SURETY_DB` 切换                                | Request-scoped; DB routing via header |
 
 ### MCP Server
 
-| File | Change |
-|------|--------|
-| `mcp/guard.ts` | `settingsRepo.get()` → `await settingsRepo.get()` |
-| `mcp/tools/members.ts` | All repo calls → async |
-| `mcp/tools/policies.ts` | All repo calls → async |
-| `mcp/tools/assets.ts` | All repo calls → async |
-| `mcp/tools/coverage.ts` | All repo calls → async |
-| `mcp/server.ts` | Tool handlers → async |
+| File                    | Change                                            |
+| ----------------------- | ------------------------------------------------- |
+| `mcp/guard.ts`          | `settingsRepo.get()` → `await settingsRepo.get()` |
+| `mcp/tools/members.ts`  | All repo calls → async                            |
+| `mcp/tools/policies.ts` | All repo calls → async                            |
+| `mcp/tools/assets.ts`   | All repo calls → async                            |
+| `mcp/tools/coverage.ts` | All repo calls → async                            |
+| `mcp/server.ts`         | Tool handlers → async                             |
 
 ### Scripts
 
-| File | Change |
-|------|--------|
-| `src/db/seed.ts` | seed functions → async |
-| `src/db/seed-example.ts` | seed functions → async (**后续清理中已删除**) |
-| `scripts/seed-e2e.ts` | 改为通过 Worker proxy 清空 + 种子 (**后续清理中已删除，合并入 seed-remote.ts**) |
-| `scripts/run-e2e.ts` | 设置 `SURETY_TARGET_DB` 而非 `SURETY_DB` |
-| `scripts/run-e2e-ui.ts` | 同上 |
-| `scripts/e2e-utils.ts` | 移除 WAL/SHM 文件清理逻辑 |
-| `scripts/import-csv.ts` | **后续清理中已删除**（本地 SQLite 离线迁移工具，迁移完成后不再需要） |
+| File                     | Change                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| `src/db/seed.ts`         | seed functions → async                                                          |
+| `src/db/seed-example.ts` | seed functions → async (**后续清理中已删除**)                                   |
+| `scripts/seed-e2e.ts`    | 改为通过 Worker proxy 清空 + 种子 (**后续清理中已删除，合并入 seed-remote.ts**) |
+| `scripts/run-e2e.ts`     | 设置 `SURETY_TARGET_DB` 而非 `SURETY_DB`                                        |
+| `scripts/run-e2e-ui.ts`  | 同上                                                                            |
+| `scripts/e2e-utils.ts`   | 移除 WAL/SHM 文件清理逻辑                                                       |
+| `scripts/import-csv.ts`  | **后续清理中已删除**（本地 SQLite 离线迁移工具，迁移完成后不再需要）            |
 
 ### Cleanup / Low impact
 
-| File | Change |
-|------|--------|
-| `database/` directory | **后续清理中已删除**（迁移完成后不再需要本地 .db 文件） |
-| `Dockerfile` | 移除 `python3 make g++`（不再编译 native module）；移除 `/data` volume |
-| `package.json` | 移除 `better-sqlite3`、`@types/better-sqlite3` from dependencies |
-| `src/components/layout/db-selector.tsx` | UI 文案更新：production/api-e2e/ui-e2e/mcp-e2e |
+| File                                    | Change                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| `database/` directory                   | **后续清理中已删除**（迁移完成后不再需要本地 .db 文件）                |
+| `Dockerfile`                            | 移除 `python3 make g++`（不再编译 native module）；移除 `/data` volume |
+| `package.json`                          | 移除 `better-sqlite3`、`@types/better-sqlite3` from dependencies       |
+| `src/components/layout/db-selector.tsx` | UI 文案更新：production/api-e2e/ui-e2e/mcp-e2e                         |
 
 ### Test files (async adaptation)
 
-| File Pattern | Count | Change |
-|---|---|---|
-| `src/__tests__/db/*.test.ts` | ~9 | Repo 调用加 `await` |
-| `src/__tests__/backup.test.ts` | 1 | Backup/restore tests rewrite (no raw SQLite) |
-| `src/__tests__/totp-module.test.ts` | 1 | `settingsRepo` calls → async |
-| `src/__tests__/backy-service.test.ts` | 1 | `buildBackup()` → async |
-| `src/__tests__/health.test.ts` | 1 | Health check → async |
-| `src/__tests__/proxy-logic.test.ts` | 1 | DB routing logic update |
-| `src/__tests__/e2e/*.test.ts` | ~14 | 指向各自的 E2E D1 database |
-| `e2e/tests/*.spec.ts` | ~9 | Playwright tests → `surety-db-ui-e2e` |
-| `mcp/__tests__/*.test.ts` | ~6 | MCP tool tests → async |
+| File Pattern                          | Count | Change                                       |
+| ------------------------------------- | ----- | -------------------------------------------- |
+| `src/__tests__/db/*.test.ts`          | ~9    | Repo 调用加 `await`                          |
+| `src/__tests__/backup.test.ts`        | 1     | Backup/restore tests rewrite (no raw SQLite) |
+| `src/__tests__/totp-module.test.ts`   | 1     | `settingsRepo` calls → async                 |
+| `src/__tests__/backy-service.test.ts` | 1     | `buildBackup()` → async                      |
+| `src/__tests__/health.test.ts`        | 1     | Health check → async                         |
+| `src/__tests__/proxy-logic.test.ts`   | 1     | DB routing logic update                      |
+| `src/__tests__/e2e/*.test.ts`         | ~14   | 指向各自的 E2E D1 database                   |
+| `e2e/tests/*.spec.ts`                 | ~9    | Playwright tests → `surety-db-ui-e2e`        |
+| `mcp/__tests__/*.test.ts`             | ~6    | MCP tool tests → async                       |
 
 ---
 
@@ -573,10 +574,10 @@ function createRemoteDb(client: WorkerDbClient) {
 // backup.ts — 手动事务
 raw.exec("BEGIN TRANSACTION");
 try {
-  // DELETE all → INSERT all
-  raw.exec("COMMIT");
+	// DELETE all → INSERT all
+	raw.exec("COMMIT");
 } catch {
-  raw.exec("ROLLBACK");
+	raw.exec("ROLLBACK");
 }
 ```
 
@@ -585,7 +586,6 @@ try {
 Worker 内部使用 D1 binding 的 `batch()` 方法——这是真正的原子操作（D1 保证 batch 内的所有 statement 要么全部成功，要么全部回滚）。
 
 **`restoreBackup()` 策略**：
-
 1. 通过 Worker `/batch` 端点发送所有 DELETE + INSERT 语句
 2. Worker 内部将这些语句包装为 `env.DB.batch([...])` 执行
 3. 如果任何语句失败，D1 自动回滚整个 batch
@@ -616,11 +616,11 @@ Worker 内部使用 D1 binding 的 `batch()` 方法——这是真正的原子�
 
 ### E2E Tests — 按类型隔离到独立 D1 数据库
 
-| Test Type | D1 Database | `SURETY_TARGET_DB` | Port |
-|-----------|------------|---------------------|------|
-| API E2E | `surety-db-api-e2e` | `api-e2e` | 7016 |
-| Playwright UI E2E | `surety-db-ui-e2e` | `ui-e2e` | 7017 |
-| MCP E2E | `surety-db-mcp-e2e` | `mcp-e2e` | — |
+| Test Type         | D1 Database         | `SURETY_TARGET_DB` | Port |
+| ----------------- | ------------------- | ------------------ | ---- |
+| API E2E           | `surety-db-api-e2e` | `api-e2e`          | 7016 |
+| Playwright UI E2E | `surety-db-ui-e2e`  | `ui-e2e`           | 7017 |
+| MCP E2E           | `surety-db-mcp-e2e` | `mcp-e2e`          | —    |
 
 每种 E2E 测试在独立的 D1 数据库上运行，互不干扰。
 
@@ -629,20 +629,20 @@ Worker 内部使用 D1 binding 的 `batch()` 方法——这是真正的原子�
 ```typescript
 // scripts/seed-e2e.ts
 async function resetE2EDb(targetDb: string) {
-  const client = new WorkerDbClient(workerUrl, secret, targetDb);
-  // Worker /batch → D1 batch() — 原子清空
-  await client.batch([
-    { sql: "DELETE FROM coverage_items", params: [] },
-    { sql: "DELETE FROM cash_values", params: [] },
-    { sql: "DELETE FROM payments", params: [] },
-    { sql: "DELETE FROM beneficiaries", params: [] },
-    { sql: "DELETE FROM policies", params: [] },
-    { sql: "DELETE FROM assets", params: [] },
-    { sql: "DELETE FROM insurers", params: [] },
-    { sql: "DELETE FROM members", params: [] },
-    { sql: "DELETE FROM settings", params: [] },
-  ]);
-  // Then seed with test data via Drizzle ORM
+	const client = new WorkerDbClient(workerUrl, secret, targetDb);
+	// Worker /batch → D1 batch() — 原子清空
+	await client.batch([
+		{ sql: "DELETE FROM coverage_items", params: [] },
+		{ sql: "DELETE FROM cash_values", params: [] },
+		{ sql: "DELETE FROM payments", params: [] },
+		{ sql: "DELETE FROM beneficiaries", params: [] },
+		{ sql: "DELETE FROM policies", params: [] },
+		{ sql: "DELETE FROM assets", params: [] },
+		{ sql: "DELETE FROM insurers", params: [] },
+		{ sql: "DELETE FROM members", params: [] },
+		{ sql: "DELETE FROM settings", params: [] },
+	]);
+	// Then seed with test data via Drizzle ORM
 }
 ```
 
@@ -694,7 +694,6 @@ sqlite3 database/surety.example.db .dump > /tmp/surety-example-dump.sql
 ```
 
 **导入前预处理**（critical）：
-
 - `sqlite3 .dump` 输出包含 `BEGIN TRANSACTION` / `COMMIT`——D1 不支持，需移除
 - 大批量 `INSERT` 语句可能超过 D1 单次请求限制（100KB/statement），需拆分
 - `CREATE TABLE` 语句与 `drizzle-kit push` 冲突——如果已 push schema，需从 dump 中移除 DDL（只保留 INSERT）
@@ -732,7 +731,6 @@ wrangler d1 execute surety-db --remote --command="SELECT key FROM settings"
 ### Railway Migration
 
 Railway 环境需要配置新的环境变量并部署新版本代码。
-
 1. 在 Railway 中设置 `SURETY_WORKER_URL` 和 `SURETY_WORKER_SECRET`
 2. 部署新版本代码
 3. 验证线上服务正常（全功能回归）
@@ -919,7 +917,6 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ## Rollback Plan
 
 如果迁移过程中发现 Worker proxy 延迟不可接受或有未预见的兼容性问题：
-
 1. Git history 中保留迁移前的完整代码（本地 `.db` 文件和脚本已在后续清理中删除）
 2. 可通过 `git revert` 回退到 SQLite 版本
 3. D1 数据可通过 `wrangler d1 export` 导出为 SQL，再导入本地 SQLite

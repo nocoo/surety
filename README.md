@@ -81,16 +81,16 @@ Vitest 运行 web、Worker、CLI 和共享包单元测试；第二条命令用 B
 
 ## 技术栈
 
-| 技术 | 用途 |
-| --- | --- |
-| TypeScript / Bun workspaces | 应用代码、CLI 和本地工具 |
-| Vite / React / React Router / SWR | SPA、路由与数据读取 |
-| Tailwind CSS / Radix UI / Basalt / Recharts | 样式、界面组件与统计图表 |
-| Hono / Cloudflare Workers | API、认证中间件与静态资源 |
-| Drizzle ORM / Cloudflare D1 | 家庭、保单和就诊数据 |
-| Cloudflare R2 | 保单附件 |
-| Cloudflare Access / `@nocoo/base-cli` | 浏览器认证与 CLI 登录 |
-| Vitest / Bun SQLite / Playwright | 单元、API 集成和浏览器测试 |
+| 技术                                        | 用途                       |
+| ------------------------------------------- | -------------------------- |
+| TypeScript / Bun workspaces                 | 应用代码、CLI 和本地工具   |
+| Vite / React / React Router / SWR           | SPA、路由与数据读取        |
+| Tailwind CSS / Radix UI / Basalt / Recharts | 样式、界面组件与统计图表   |
+| Hono / Cloudflare Workers                   | API、认证中间件与静态资源  |
+| Drizzle ORM / Cloudflare D1                 | 家庭、保单和就诊数据       |
+| Cloudflare R2                               | 保单附件                   |
+| Cloudflare Access / `@nocoo/base-cli`       | 浏览器认证与 CLI 登录      |
+| Vitest / Bun SQLite / Playwright            | 单元、API 集成和浏览器测试 |
 
 ## 文档
 
