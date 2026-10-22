@@ -75,7 +75,7 @@
 		"sharp": "0.35.5",
 		"undici": "7.29.1",
 		"ws": "8.22.0",
-		"wrangler": "4.151.0",
+		"wrangler": "4.151.3",
 		"source-map-js": "1.2.2"
 	}
 }
