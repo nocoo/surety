@@ -1,3 +1,4 @@
+import { Button } from "@nocoo/basalt/components/button";
 import { APP_VERSION } from "@surety/api/lib/version";
 import {
 	Building2,
@@ -117,8 +118,8 @@ function SidebarUser({
 			<div className="flex items-center gap-3">
 				{face}
 				<div className="flex-1 min-w-0">
-					<p className="text-sm font-medium text-foreground truncate">{name}</p>
-					{email ? <p className="text-xs text-muted-foreground truncate">{email}</p> : null}
+					<p className="text-sm font-medium text-basalt-foreground truncate">{name}</p>
+					{email ? <p className="text-xs text-basalt-muted-foreground truncate">{email}</p> : null}
 				</div>
 			</div>
 		</div>
@@ -153,11 +154,13 @@ function NavGroupSection({
 					 * readability when nothing's reshapable. Keep the small
 					 * muted treatment without the typewriter affectations.
 					 */}
-					<span className="text-[11px] font-medium text-muted-foreground/70">{group.label}</span>
+					<span className="text-[11px] font-medium text-basalt-muted-foreground">
+						{group.label}
+					</span>
 					<span className="flex h-5 w-5 shrink-0 items-center justify-center">
 						<ChevronUp
 							className={cn(
-								"h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
+								"h-3.5 w-3.5 text-basalt-muted-foreground transition-transform duration-200",
 								!open && "rotate-180",
 							)}
 							strokeWidth={1.5}
@@ -178,20 +181,24 @@ function NavGroupSection({
 							const isActive = isItemActive(item.href, pathname);
 
 							return (
-								<Link
+								<Button
 									key={item.href}
-									to={item.href}
-									onClick={onNavigate}
+									asChild
+									variant="ghost"
 									className={cn(
-										"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-normal transition-colors",
-										isActive
-											? "bg-accent text-foreground"
-											: "text-muted-foreground hover:bg-accent hover:text-foreground",
+										"w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm",
+										!isActive && "font-normal text-basalt-muted-foreground",
 									)}
 								>
-									<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-									<span className="flex-1 text-left">{item.label}</span>
-								</Link>
+									<Link
+										to={item.href}
+										onClick={onNavigate}
+										aria-current={isActive ? "page" : undefined}
+									>
+										<item.icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+										<span className="flex-1 text-left">{item.label}</span>
+									</Link>
+								</Button>
 							);
 						})}
 					</div>
@@ -229,7 +236,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 			<aside
 				aria-label={mobile ? "主导航抽屉" : "主导航"}
 				className={cn(
-					"sticky top-0 flex h-screen shrink-0 flex-col bg-background transition-all duration-300 ease-in-out overflow-hidden",
+					"sticky top-0 flex h-screen shrink-0 flex-col bg-basalt-background text-basalt-foreground transition-all duration-300 ease-in-out overflow-hidden",
 					isCollapsed ? "w-[68px]" : "w-[260px]",
 				)}
 			>
@@ -244,14 +251,15 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 						{/* Expand toggle */}
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="icon"
 									onClick={toggle}
 									aria-label="展开侧边栏"
-									className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mb-2"
+									className="h-10 w-10 rounded-lg text-basalt-muted-foreground mb-2"
 								>
 									<PanelLeft className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
-								</button>
+								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="right" sideOffset={8}>
 								展开侧边栏
@@ -266,18 +274,24 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 								return (
 									<Tooltip key={item.href}>
 										<TooltipTrigger asChild>
-											<Link
-												to={item.href}
-												onClick={handleNavigate}
+											<Button
+												asChild
+												variant="ghost"
+												size="icon"
 												className={cn(
-													"relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
-													isActive
-														? "bg-accent text-foreground"
-														: "text-muted-foreground hover:bg-accent hover:text-foreground",
+													"h-10 w-10 rounded-lg",
+													!isActive && "text-basalt-muted-foreground",
 												)}
 											>
-												<item.icon className="h-4 w-4" strokeWidth={1.5} />
-											</Link>
+												<Link
+													to={item.href}
+													onClick={handleNavigate}
+													aria-label={item.label}
+													aria-current={isActive ? "page" : undefined}
+												>
+													<item.icon className="h-4 w-4" strokeWidth={1.5} />
+												</Link>
+											</Button>
 										</TooltipTrigger>
 										<TooltipContent side="right" sideOffset={8}>
 											{item.label}
@@ -310,18 +324,19 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 										className="shrink-0"
 									/>
 									<span className="text-lg font-bold tracking-tighter">surety</span>
-									<span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground leading-none">
+									<span className="rounded-md bg-basalt-secondary px-1.5 py-0.5 text-[10px] font-medium text-basalt-muted-foreground leading-none">
 										v{APP_VERSION}
 									</span>
 								</div>
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="icon"
 									onClick={toggle}
 									aria-label="收起侧边栏"
-									className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors"
+									className="h-7 w-7 rounded-md text-basalt-muted-foreground"
 								>
 									<PanelLeft className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
-								</button>
+								</Button>
 							</div>
 						</div>
 
