@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.11
+
+### Changed
+
+- Bump minor and patch dependencies: Vite 8.3.5, Biome 2.6.2, jose 6.2.13, @nocoo/basalt 3.2.1, react-router 8.5.0, react-dropzone 20.1.4, Wrangler 4.151.3, lucide-react 1.61.0, and @cloudflare/workers-types 5.20261021.1.
+
 ## v2.3.10
 
 ### Changed

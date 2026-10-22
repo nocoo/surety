@@ -1,6 +1,6 @@
 {
 	"name": "surety",
-	"version": "2.3.10",
+	"version": "2.3.11",
 	"private": true,
 	"workspaces": [
 		"apps/*",
