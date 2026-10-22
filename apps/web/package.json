@@ -10,29 +10,29 @@
 		"test:e2e": "cd ../.. && bun run test:e2e:browser"
 	},
 	"dependencies": {
-		"@nocoo/basalt": "2.1.8",
+		"@nocoo/basalt": "3.2.1",
 		"@surety/api": "workspace:*",
 		"@surety/db": "workspace:*",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
-		"lucide-react": "1.48.0",
-		"radix-ui": "1.6.7",
-		"react": "19.3.0",
-		"react-dom": "19.3.0",
-		"react-dropzone": "^20.1.2",
-		"react-router": "8.4.0",
+		"lucide-react": "1.61.0",
+		"radix-ui": "1.8.1",
+		"react": "19.3.1",
+		"react-dom": "19.3.1",
+		"react-dropzone": "20.1.4",
+		"react-router": "8.5.0",
 		"recharts": "3.10.1",
 		"swr": "2.5.1",
 		"tailwind-merge": "3.7.0"
 	},
 	"devDependencies": {
-		"@playwright/test": "1.63.0",
+		"@playwright/test": "1.64.1",
 		"@tailwindcss/vite": "4.3.3",
 		"@types/react": "19.3.0",
 		"@types/react-dom": "19.3.0",
-		"@vitejs/plugin-react": "6.1.1",
+		"@vitejs/plugin-react": "6.1.2",
 		"tailwindcss": "4.3.3",
 		"tw-animate-css": "^1.4.0",
-		"vite": "8.3.1"
+		"vite": "8.3.5"
 	}
 }

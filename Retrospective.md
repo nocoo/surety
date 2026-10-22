@@ -3,8 +3,6 @@
 Accident narratives belong here. Keep only recurring project rules in `AGENTS.md`; cross-project lessons belong in global rules and deterministic checks in hooks/tests.
 
 Historical Next.js and remote-D1 test migrations below describe earlier implementations. Current automated L2/L3 uses local Wrangler and separate fixture state.
-
-
 - **主动维护文档结构**：docs 目录下文件使用编号命名（如 `01-xxx.md`、`02-xxx.md`），便于阅读顺序；同时在根目录 README.md 中维护项目结构树，保持文档与代码同步更新。
 - **Bun 特有 API 不可在 Next.js Server Runtime 使用**：`Bun.password.hash/verify` 是 Bun 独有 API，Next.js 的 server runtime 使用 Node.js 兼容层，`Bun` 全局对象不存在。此问题在开发阶段因 `bun dev` 运行正常而被掩盖，部署后在 API route 中触发 `ReferenceError`。解决方案：使用 `node:crypto` 的 `scrypt` + `timingSafeEqual` 替代。教训：在 Bun + Next.js 技术栈中，API route / middleware 代码必须只使用 Node.js 标准 API，Bun 特有 API 仅限构建脚本和独立进程使用。
 - **SQLite .dump 导入 D1 必须带显式列名**：`sqlite3 .dump` 生成的 `INSERT INTO table VALUES(...)` 不含列名，按源库的列顺序排列。但 `drizzle-kit push` 创建的 D1 表列顺序由 schema.ts 定义顺序决定，与历史 SQLite 的列顺序不同。直接导入会导致值错位，触发 NOT NULL constraint 或数据写入错误列。解决方案：用脚本生成 `INSERT INTO table (col1, col2, ...) VALUES(...)` 格式。教训：跨数据库迁移数据时，永远不要依赖隐式列顺序。

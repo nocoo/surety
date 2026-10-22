@@ -48,11 +48,11 @@ bucket_name = "surety-test"
 
 ```typescript
 export interface Env {
-  DB_PROD: D1Database;
-  DB_TEST: D1Database;
-  R2_PROD: R2Bucket;    // NEW
-  R2_TEST: R2Bucket;    // NEW
-  WORKER_SHARED_SECRET: string;
+	DB_PROD: D1Database;
+	DB_TEST: D1Database;
+	R2_PROD: R2Bucket; // NEW
+	R2_TEST: R2Bucket; // NEW
+	WORKER_SHARED_SECRET: string;
 }
 ```
 
@@ -61,11 +61,10 @@ export interface Env {
 **New: `worker/src/r2.ts`** — 复用 X-Target-DB header 解析目标 bucket:
 
 ```typescript
-export function resolveR2(request: Request, env: Env):
-  { bucket: R2Bucket } | { error: Response } {
-  const targetDb = request.headers.get("X-Target-DB") || "production";
-  const bucket = targetDb === "test" ? env.R2_TEST : env.R2_PROD;
-  // ...
+export function resolveR2(request: Request, env: Env): { bucket: R2Bucket } | { error: Response } {
+	const targetDb = request.headers.get("X-Target-DB") || "production";
+	const bucket = targetDb === "test" ? env.R2_TEST : env.R2_PROD;
+	// ...
 }
 ```
 
@@ -73,11 +72,11 @@ export function resolveR2(request: Request, env: Env):
 
 **New: `worker/src/routes/r2.ts`**
 
-| Method | Path | Handler | 说明 |
-|--------|------|---------|------|
-| PUT | `/r2/:key` | `handleR2Put` | Stream `request.body` → `bucket.put()` |
-| GET | `/r2/:key` | `handleR2Get` | `bucket.get()` → stream response body |
-| DELETE | `/r2/:key` | `handleR2Delete` | `bucket.delete()` → 204 |
+| Method | Path       | Handler          | 说明                                   |
+| ------ | ---------- | ---------------- | -------------------------------------- |
+| PUT    | `/r2/:key` | `handleR2Put`    | Stream `request.body` → `bucket.put()` |
+| GET    | `/r2/:key` | `handleR2Get`    | `bucket.get()` → stream response body  |
+| DELETE | `/r2/:key` | `handleR2Delete` | `bucket.delete()` → 204                |
 
 Key 可包含 `/`，如 `policies/42/uuid.pdf`，Worker 从 `/r2/` 之后截取全部路径。
 
@@ -91,17 +90,17 @@ Key 可包含 `/`，如 `policies/42/uuid.pdf`，Worker 从 `/r2/` 之后截取�
 
 ```typescript
 export const attachments = sqliteTable("attachments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  policyId: integer("policy_id")
-    .notNull()
-    .references(() => policies.id),
-  filename: text("filename").notNull(),        // 原始文件名
-  r2Key: text("r2_key").notNull().unique(),     // R2 object key
-  contentType: text("content_type").notNull(),  // MIME type
-  size: integer("size").notNull(),              // bytes
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
+	id: integer("id").primaryKey({ autoIncrement: true }),
+	policyId: integer("policy_id")
+		.notNull()
+		.references(() => policies.id),
+	filename: text("filename").notNull(), // 原始文件名
+	r2Key: text("r2_key").notNull().unique(), // R2 object key
+	contentType: text("content_type").notNull(), // MIME type
+	size: integer("size").notNull(), // bytes
+	createdAt: integer("created_at", { mode: "timestamp" })
+		.notNull()
+		.$defaultFn(() => new Date()),
 });
 ```
 
@@ -163,22 +162,22 @@ export function generateR2Key(policyId: number, filename: string): string;
 
 **New: `src/app/api/policies/[id]/attachments/route.ts`**
 
-| Method | Action | 关键逻辑 |
-|--------|--------|----------|
-| POST | Upload PDF | Content-Length pre-check (413) → parse multipart → validate type/size → validate PDF magic bytes → check count limit (soft) → stream to R2 → insert DB |
-| GET | List | Query DB by policyId |
+| Method | Action     | 关键逻辑                                                                                                                                               |
+| ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST   | Upload PDF | Content-Length pre-check (413) → parse multipart → validate type/size → validate PDF magic bytes → check count limit (soft) → stream to R2 → insert DB |
+| GET    | List       | Query DB by policyId                                                                                                                                   |
 
 **New: `src/app/api/policies/[id]/attachments/[attachmentId]/route.ts`**
 
-| Method | Action |
-|--------|--------|
+| Method | Action                                  |
+| ------ | --------------------------------------- |
 | DELETE | Delete from DB → best-effort R2 cleanup |
 
 **New: `src/app/api/policies/[id]/attachments/[attachmentId]/file/route.ts`**
 
-| Method | Action |
-|--------|--------|
-| GET | Stream file from R2 via Worker. `?download=true` → `Content-Disposition: attachment`, 否则 `inline` |
+| Method | Action                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------- |
+| GET    | Stream file from R2 via Worker. `?download=true` → `Content-Disposition: attachment`, 否则 `inline` |
 
 ### 3.4 Policy delete cascade
 
@@ -238,8 +237,8 @@ XHR wrapper — fetch API 不支持 upload progress，对 50MB 文件必须用 `
 
 ### 4.5 New dependency
 
-| Package | 大小 | 用途 |
-|---------|------|------|
+| Package          | 大小         | 用途                   |
+| ---------------- | ------------ | ---------------------- |
 | `react-dropzone` | ~9KB gzipped | Drag-and-drop 文件处理 |
 
 不需要 PDF.js — 浏览器原生 PDF viewer 通过 iframe 加载已足够。
@@ -248,92 +247,96 @@ XHR wrapper — fetch API 不支持 upload progress，对 50MB 文件必须用 `
 
 ### L1 Unit (bun test, pre-commit, ≥90%)
 
-| File | Tests |
-|------|-------|
+| File                                          | Tests                                                                             |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
 | `src/__tests__/attachment-validation.test.ts` | validateFile (valid/type/size/empty), generateR2Key (format/uniqueness/extension) |
-| `src/__tests__/r2-client.test.ts` | URL encoding, header setting, error handling (mock fetch) |
-| `src/__tests__/db/attachments.test.ts` | Repository CRUD (bun:sqlite :memory:) |
-| `worker/src/__tests__/r2.test.ts` | resolveR2 (prod/test routing) |
+| `src/__tests__/r2-client.test.ts`             | URL encoding, header setting, error handling (mock fetch)                         |
+| `src/__tests__/db/attachments.test.ts`        | Repository CRUD (bun:sqlite :memory:)                                             |
+| `worker/src/__tests__/r2.test.ts`             | resolveR2 (prod/test routing)                                                     |
 
 ### L2 API E2E (real HTTP, pre-push)
 
-| Test | Expected |
-|------|----------|
-| Upload valid PDF | 201 + attachment in list |
-| Upload wrong type | 400 |
-| Upload oversized | 400 |
-| Upload no file | 400 |
-| Exceed count limit | 400 |
-| GET file | Correct Content-Type + body |
-| GET file `?download=true` | `Content-Disposition: attachment` |
-| DELETE | 204, then GET → 404 |
-| Cross-policy access | 404 (IDOR protection) |
+| Test                     | Expected                          |
+| ------------------------ | --------------------------------- |
+| Upload valid PDF         | 201 + attachment in list          |
+| Upload wrong type        | 400                               |
+| Upload oversized         | 400                               |
+| Upload no file           | 400                               |
+| Exceed count limit       | 400                               |
+| GET file                 | Correct Content-Type + body       |
+| GET file`?download=true` | `Content-Disposition: attachment` |
+| DELETE                   | 204, then GET → 404               |
+| Cross-policy access      | 404 (IDOR protection)             |
 
 All L2 tests 使用 `wrangler dev --env dev --local`，R2 bucket 为本地模拟。
 
 ### G1 Static Analysis (pre-commit)
+
 - `tsc --noEmit` — 新文件类型正确
 - ESLint strict — 零警告
 
 ### G2 Security (pre-push)
+
 - `osv-scanner` — 扫描 react-dropzone
 - `gitleaks` — 无硬编码 secret
 
 ### D1 Test Isolation
+
 - **R2 buckets**: `surety` (prod) / local emulator (dev, via `--env dev --local`)
 - Worker 通过 `X-Target-DB` header 路由到对应 bucket（与 D1 隔离模式一致）
 - L2 测试专用 test bucket
 
 ### L3 Playwright E2E (on-demand)
+
 - 拖拽上传 → 进度条 → 列表出现 → 点预览 → iframe PDF → 下载 → 删除
 
 ## 6. Atomic Commit Sequence
 
-| # | Message | Scope | Status |
-|---|---------|-------|--------|
-| 1 | `feat: add R2 bucket bindings to Worker` | worker/wrangler.toml, Env type, resolveR2 | ✅ Done |
-| 2 | `feat: add Worker R2 route handlers` | worker/src/routes/r2.ts, worker/src/index.ts | ✅ Done |
-| 3 | `feat: add attachments schema and repository` | schema, migration, repository, unit test | ✅ Done |
-| 4 | `feat: add attachment validation and R2 client` | lib files + unit tests | ✅ Done |
-| 5 | `feat: add attachment API routes` | API routes + policy cascade delete | ✅ Done |
-| 6 | `feat: add attachment UI components` | components + react-dropzone dep | ✅ Done |
-| 7 | `feat: integrate attachments into policy detail` | policy-detail-dialog.tsx + docs update | ✅ Done |
-| 8 | `test: add Playwright E2E for attachments` | e2e/ | Deferred |
+| #   | Message                                          | Scope                                        | Status   |
+| --- | ------------------------------------------------ | -------------------------------------------- | -------- |
+| 1   | `feat: add R2 bucket bindings to Worker`         | worker/wrangler.toml, Env type, resolveR2    | ✅ Done  |
+| 2   | `feat: add Worker R2 route handlers`             | worker/src/routes/r2.ts, worker/src/index.ts | ✅ Done  |
+| 3   | `feat: add attachments schema and repository`    | schema, migration, repository, unit test     | ✅ Done  |
+| 4   | `feat: add attachment validation and R2 client`  | lib files + unit tests                       | ✅ Done  |
+| 5   | `feat: add attachment API routes`                | API routes + policy cascade delete           | ✅ Done  |
+| 6   | `feat: add attachment UI components`             | components + react-dropzone dep              | ✅ Done  |
+| 7   | `feat: integrate attachments into policy detail` | policy-detail-dialog.tsx + docs update       | ✅ Done  |
+| 8   | `test: add Playwright E2E for attachments`       | e2e/                                         | Deferred |
 
 每个 commit 独立通过 pre-commit hooks (tsc + eslint + L1 tests)。Coverage 91.66% (threshold 90%)。
 
 ## 7. Legacy `policyFilePath` Migration
 
-| Phase | Action | When |
-|-------|--------|------|
-| 1 | 同时显示旧 `policyFilePath` 链接和新附件区 | Commit 7 |
-| 2 | Migration script 下载旧 URL 的 PDF → 上传到 R2 | Optional |
-| 3 | 移除 `policyFilePath` 字段 | 确认迁移完成后 |
+| Phase | Action                                         | When           |
+| ----- | ---------------------------------------------- | -------------- |
+| 1     | 同时显示旧 `policyFilePath` 链接和新附件区     | Commit 7       |
+| 2     | Migration script 下载旧 URL 的 PDF → 上传到 R2 | Optional       |
+| 3     | 移除 `policyFilePath` 字段                     | 确认迁移完成后 |
 
 **建议**: 家庭应用保单数量少，Phase 1 + 手动重新上传最务实。
 
 ## 8. Security Summary
 
-| Layer | Protection |
-|-------|-----------|
-| Client | react-dropzone accept filter + validateFile() |
-| Next.js API | Type + size + magic bytes + count validation, policy existence check |
-| Next.js → Worker | Bearer WORKER_SHARED_SECRET + `duplex: "half"` for streaming |
-| Worker | Auth verify, X-Target-DB → bucket isolation |
-| R2 | Private bucket, no public URL, binding-only access |
-| Preview | `Content-Disposition: inline` + validated Content-Type |
-| Filename | RFC 5987 `filename*=UTF-8''...` encoding for non-ASCII filenames |
+| Layer            | Protection                                                           |
+| ---------------- | -------------------------------------------------------------------- |
+| Client           | react-dropzone accept filter + validateFile()                        |
+| Next.js API      | Type + size + magic bytes + count validation, policy existence check |
+| Next.js → Worker | Bearer WORKER_SHARED_SECRET + `duplex: "half"` for streaming         |
+| Worker           | Auth verify, X-Target-DB → bucket isolation                          |
+| R2               | Private bucket, no public URL, binding-only access                   |
+| Preview          | `Content-Disposition: inline` + validated Content-Type               |
+| Filename         | RFC 5987 `filename*=UTF-8''...` encoding for non-ASCII filenames     |
 
 ## 9. R2/DB Consistency Strategy
 
 R2 和 DB 是两个独立存储，无法原子操作。每个路径的失败策略如下：
 
-| Path | 顺序 | Failure mode | 后果 |
-|------|------|-------------|------|
-| **Upload** | R2 → DB | R2 失败 → 500, 不写 DB | 无 orphan |
-| **Upload** | R2 → DB | DB 失败 → 清理 R2 orphan (best-effort) → 500 | 可能留 R2 orphan（无 DB 引用，无害） |
-| **Single delete** | DB → R2 | DB 失败 → 500, R2 不动 | 完全一致，用户可重试 |
-| **Single delete** | DB → R2 | R2 失败 → 已删 DB, R2 orphan 无害 | 用户看到已删除 |
-| **Cascade delete** | DB → R2 (allSettled) | R2 失败 → orphan R2 objects（DB 已干净） | 只浪费存储，无用户可见问题 |
+| Path               | 顺序                 | Failure mode                                 | 后果                                 |
+| ------------------ | -------------------- | -------------------------------------------- | ------------------------------------ |
+| **Upload**         | R2 → DB              | R2 失败 → 500, 不写 DB                       | 无 orphan                            |
+| **Upload**         | R2 → DB              | DB 失败 → 清理 R2 orphan (best-effort) → 500 | 可能留 R2 orphan（无 DB 引用，无害） |
+| **Single delete**  | DB → R2              | DB 失败 → 500, R2 不动                       | 完全一致，用户可重试                 |
+| **Single delete**  | DB → R2              | R2 失败 → 已删 DB, R2 orphan 无害            | 用户看到已删除                       |
+| **Cascade delete** | DB → R2 (allSettled) | R2 失败 → orphan R2 objects（DB 已干净）     | 只浪费存储，无用户可见问题           |
 
 **设计原则**: 偏好 R2 orphan（只浪费存储）而非 DB 悬空记录（用户可见的幽灵附件）。

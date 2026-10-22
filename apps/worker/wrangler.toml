@@ -4,6 +4,7 @@ preview_urls = false
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
 compatibility_flags = ["nodejs_compat"]
+upload_source_maps = false
 
 routes = [
   { pattern = "surety.hexly.ai", custom_domain = true },

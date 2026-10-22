@@ -9,14 +9,31 @@ import { medicalVisitsCommand } from "./commands/medical-visits.js";
 import { membersCommand } from "./commands/members.js";
 import { policiesCommand } from "./commands/policies.js";
 import { coverageCommand, dashboardCommand, renewalsCommand } from "./commands/readonly.js";
+import { skillCommand } from "./commands/skill.js";
+import { buildAgentSkillDocument } from "./skill/document.js";
+import { CLI_PACKAGE_VERSION } from "./version.js";
 
 const main = defineCommand({
 	meta: {
 		name: "surety",
-		version: "2.0.0",
+		version: CLI_PACKAGE_VERSION,
 		description: "Surety CLI — AI-facing interface for household policies",
 	},
+	args: {
+		skill: {
+			type: "boolean",
+			description: "Print agent-oriented usage documentation and exit",
+			default: false,
+		},
+	},
+	async setup({ args }) {
+		if (args.skill) {
+			process.stdout.write(`${buildAgentSkillDocument()}\n`);
+			process.exit(0);
+		}
+	},
 	subCommands: {
+		skill: skillCommand,
 		login: authCommand.login,
 		logout: authCommand.logout,
 		whoami: authCommand.whoami,

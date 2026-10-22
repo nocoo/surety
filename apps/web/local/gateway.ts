@@ -46,7 +46,7 @@ export async function localGateway(options: LaunchOptions) {
 		return id;
 	}
 	const lockedId = options.automated ? await create("e2e") : undefined;
-	function describe(id: string) {
+	function describeSession(id: string) {
 		const session = sessions.get(id);
 		if (!session) throw new Error("Instance expired");
 		return {
@@ -74,14 +74,14 @@ export async function localGateway(options: LaunchOptions) {
 				visible: !process.env.CI,
 			});
 		if (url.pathname === "/__local/start" && request.method === "POST") {
-			if (lockedId) return Response.json(describe(lockedId));
+			if (lockedId) return Response.json(describeSession(lockedId));
 			const body = (await request.json()) as { id?: string; preference?: Mode };
-			if (body.id && sessions.has(body.id)) return Response.json(describe(body.id));
+			if (body.id && sessions.has(body.id)) return Response.json(describeSession(body.id));
 			const mode =
 				options.initial ??
 				(["demo", "e2e", "prod"].includes(body.preference ?? "") ? body.preference : undefined) ??
 				"demo";
-			return Response.json(describe(await create(mode)));
+			return Response.json(describeSession(await create(mode)));
 		}
 		if (url.pathname === "/__local/switch" && request.method === "POST") {
 			if (options.automated) return new Response("Automated E2E is locked", { status: 403 });
@@ -90,11 +90,11 @@ export async function localGateway(options: LaunchOptions) {
 			if (!previous) return new Response("Instance expired", { status: 410 });
 			if (!["demo", "e2e", "prod"].includes(mode))
 				return new Response("Invalid mode", { status: 400 });
-			if (mode === previous.mode) return Response.json(describe(id));
+			if (mode === previous.mode) return Response.json(describeSession(id));
 			const next = await create(mode);
 			sessions.delete(id);
 			if (previous.mode === "e2e") await previous.native?.stop();
-			return Response.json(describe(next));
+			return Response.json(describeSession(next));
 		}
 		const match = /^\/__instance\/([a-f0-9-]+)(\/api\/.*)$/.exec(url.pathname);
 		const id = match?.[1] ?? (url.pathname.startsWith("/api/") ? lockedId : undefined);

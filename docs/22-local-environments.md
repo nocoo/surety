@@ -45,11 +45,11 @@ Demo. The test suite also exercises an independent persistent Demo namespace.
 
 ## Runtime and safety boundaries
 
-| Mode | Backend and identity | Lifetime |
-| --- | --- | --- |
-| Demo | Real local Worker/D1/R2; RS256 fixture issuer | `.surety-local/demo`; CRUD survives restart; explicit reset |
-| E2E | Same Worker/API/auth/repositories/migrations; unique RSA issuer audience | `.surety-local/runs/<uuid>`; removed on accepted exit or orderly shutdown |
-| Prod | Fixed `https://surety-api.hexly.ai`; real server-side Bearer token | Real deployed data; never provisioned or reset by these tools |
+| Mode | Backend and identity                                                     | Lifetime                                                                  |
+| ---- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Demo | Real local Worker/D1/R2; RS256 fixture issuer                            | `.surety-local/demo`; CRUD survives restart; explicit reset               |
+| E2E  | Same Worker/API/auth/repositories/migrations; unique RSA issuer audience | `.surety-local/runs/<uuid>`; removed on accepted exit or orderly shutdown |
+| Prod | Fixed `https://surety-api.hexly.ai`; real server-side Bearer token       | Real deployed data; never provisioned or reset by these tools             |
 
 The local gateway validates Host and Origin. It creates opaque, immutable
 `/__instance/<uuid>/api/…` targets per tab. A switch replaces the session only
@@ -119,28 +119,28 @@ closed. Worker request construction, parsing, backup serialization and errors
 remain real. Beneficiaries and cash values have no write API, so their seed uses
 owned local D1 SQL; application reads still use the production repositories.
 
-| Feature / route | Prepared fixture or scenario | Executed evidence | Visual review |
-| --- | --- | --- | --- |
-| Dashboard `/` | Six active policies, income, premiums, family distributions | API aggregates; browser dashboard tests | Desktop and mobile reviewed |
-| Members `/members` | Self/spouse/child/parent, gender, DOB, social insurance | Browser CRUD and count assertions | Route captured |
-| Assets `/assets` | Synthetic apartment and car, ownership | Browser CRUD | Route captured |
-| Insurers `/insurers` | Two insurers, reserved example URLs/fictional phone | Browser CRUD; real catalog creation | List reviewed |
-| Policies `/policies` | Seven categories; active, expired, surrendered, lapsed, claimed | Browser CRUD, filters/status workflows | Route captured |
-| Policy detail `/policies/1` | Medical coverage, deductible, paid/pending premiums, timeline | Browser transitions/payment checks | Detail reviewed |
-| Life/annuity details | Beneficiary, cash values, planned surrender | Seed SQL/read APIs; transition tests | Not separately reviewed |
-| Attachments | Original 960×600 PNG and PDF | Real uploads/downloads; image naturalWidth assertion | Preview reviewed |
-| Coverage `/coverage-lookup` | Related member and asset policies | Existing browser queries | Route captured |
-| Renewals `/renewal-calendar` | Overdue/current/upcoming dates, yearly schedules | Existing browser calendar checks | Route captured |
-| Hospitals `/hospitals` | Public tertiary hospital and private clinic | Browser CRUD | Route captured |
-| Doctors `/doctors` | Named synthetic physician, department/title | Browser CRUD | Route captured |
-| Visits `/medical-visits` | Outpatient and emergency, colored symptom tags, diagnoses and costs | Browser CRUD | List and symptom tags reviewed |
-| Settings `/settings` | Income/currency/reminder, dirty-edit scenario | Save/reload plus cancelled/accepted mode switch | Settings reviewed |
-| Backup/export | Synthetic household JSON, Backy history, success and 503 | HTTP export; real provider-boundary push 200/502 | History reviewed |
-| Restore | Existing JSON importer | Existing validation tests only | Native D1 restore remains unsupported; do not claim full restore |
-| CLI `/cli` | Real command help; real signed token issuance | Native CLI members list; token revoke and cross-run rejection | Help route captured |
-| Auth/account | Synthetic avatar; session vs bearer permissions | Missing/forged JWT, issuance, revoke, bearer permission denial | Avatar reviewed |
-| Environment chrome | Default/explicit/saved modes, two tabs, stale requests | Native gateway + Chromium verification; server lock/CI/hosted checks | Desktop/mobile reviewed |
-| Search/empty/errors | Focused existing browser scenarios; empty E2E dataset | Existing filters/CRUD validation; failed provider scenario | Not every error state reviewed |
+| Feature / route              | Prepared fixture or scenario                                        | Executed evidence                                                    | Visual review                                                    |
+| ---------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Dashboard `/`                | Six active policies, income, premiums, family distributions         | API aggregates; browser dashboard tests                              | Desktop and mobile reviewed                                      |
+| Members `/members`           | Self/spouse/child/parent, gender, DOB, social insurance             | Browser CRUD and count assertions                                    | Route captured                                                   |
+| Assets `/assets`             | Synthetic apartment and car, ownership                              | Browser CRUD                                                         | Route captured                                                   |
+| Insurers `/insurers`         | Two insurers, reserved example URLs/fictional phone                 | Browser CRUD; real catalog creation                                  | List reviewed                                                    |
+| Policies `/policies`         | Seven categories; active, expired, surrendered, lapsed, claimed     | Browser CRUD, filters/status workflows                               | Route captured                                                   |
+| Policy detail `/policies/1`  | Medical coverage, deductible, paid/pending premiums, timeline       | Browser transitions/payment checks                                   | Detail reviewed                                                  |
+| Life/annuity details         | Beneficiary, cash values, planned surrender                         | Seed SQL/read APIs; transition tests                                 | Not separately reviewed                                          |
+| Attachments                  | Original 960×600 PNG and PDF                                        | Real uploads/downloads; image naturalWidth assertion                 | Preview reviewed                                                 |
+| Coverage `/coverage-lookup`  | Related member and asset policies                                   | Existing browser queries                                             | Route captured                                                   |
+| Renewals `/renewal-calendar` | Overdue/current/upcoming dates, yearly schedules                    | Existing browser calendar checks                                     | Route captured                                                   |
+| Hospitals `/hospitals`       | Public tertiary hospital and private clinic                         | Browser CRUD                                                         | Route captured                                                   |
+| Doctors `/doctors`           | Named synthetic physician, department/title                         | Browser CRUD                                                         | Route captured                                                   |
+| Visits `/medical-visits`     | Outpatient and emergency, colored symptom tags, diagnoses and costs | Browser CRUD                                                         | List and symptom tags reviewed                                   |
+| Settings `/settings`         | Income/currency/reminder, dirty-edit scenario                       | Save/reload plus cancelled/accepted mode switch                      | Settings reviewed                                                |
+| Backup/export                | Synthetic household JSON, Backy history, success and 503            | HTTP export; real provider-boundary push 200/502                     | History reviewed                                                 |
+| Restore                      | Existing JSON importer                                              | Existing validation tests only                                       | Native D1 restore remains unsupported; do not claim full restore |
+| CLI `/cli`                   | Real command help; real signed token issuance                       | Native CLI members list; token revoke and cross-run rejection        | Help route captured                                              |
+| Auth/account                 | Synthetic avatar; session vs bearer permissions                     | Missing/forged JWT, issuance, revoke, bearer permission denial       | Avatar reviewed                                                  |
+| Environment chrome           | Default/explicit/saved modes, two tabs, stale requests              | Native gateway + Chromium verification; server lock/CI/hosted checks | Desktop/mobile reviewed                                          |
+| Search/empty/errors          | Focused existing browser scenarios; empty E2E dataset               | Existing filters/CRUD validation; failed provider scenario           | Not every error state reviewed                                   |
 
 There are no app roles beyond interactive-session and bearer permissions, no
 comments subsystem, no bulk-action feature and no reminder delivery job.

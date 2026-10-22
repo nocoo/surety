@@ -21,21 +21,21 @@ Migrate Surety's visual design language to the Basalt template while preserving 
 
 ### Unused shadcn/ui components (0 imports each)
 
-| Component | File |
-|-----------|------|
-| calendar | `src/components/ui/calendar.tsx` |
-| form | `src/components/ui/form.tsx` |
-| popover | `src/components/ui/popover.tsx` |
+| Component   | File                                |
+| ----------- | ----------------------------------- |
+| calendar    | `src/components/ui/calendar.tsx`    |
+| form        | `src/components/ui/form.tsx`        |
+| popover     | `src/components/ui/popover.tsx`     |
 | scroll-area | `src/components/ui/scroll-area.tsx` |
-| toggle | `src/components/ui/toggle.tsx` |
+| toggle      | `src/components/ui/toggle.tsx`      |
 
 ### Unused npm dependencies
 
-| Package | Reason |
-|---------|--------|
-| `react-hook-form` | No files import it |
-| `@hookform/resolvers` | Depends on react-hook-form |
-| `react-day-picker` | Only used by deleted calendar component |
+| Package               | Reason                                  |
+| --------------------- | --------------------------------------- |
+| `react-hook-form`     | No files import it                      |
+| `@hookform/resolvers` | Depends on react-hook-form              |
+| `react-day-picker`    | Only used by deleted calendar component |
 
 ---
 
@@ -43,39 +43,38 @@ Migrate Surety's visual design language to the Basalt template while preserving 
 
 Replace `globals.css` entirely. Key changes:
 
-| Aspect | Current (Surety) | Target (Basalt) |
-|--------|-------------------|-----------------|
-| Color space | oklch | HSL |
-| CSS import | `@import "shadcn/tailwind.css"` | Manual token mapping |
-| Luminance | Flat (card = background = white) | **3-tier**: L0 body > L1 card > L2 secondary |
-| Primary | 5 switchable themes (oklch) | Fixed Vermilion HSL |
-| Chart palette | 8 colors | 24 sequential colors |
-| Radius tokens | `--radius` only | `--radius-card: 14px`, `--radius-widget: 10px` |
-| Utility tokens | None | `--chart-axis`, `--chart-muted` |
+| Aspect         | Current (Surety)                 | Target (Basalt)                                |
+| -------------- | -------------------------------- | ---------------------------------------------- |
+| Color space    | oklch                            | HSL                                            |
+| CSS import     | `@import "shadcn/tailwind.css"`  | Manual token mapping                           |
+| Luminance      | Flat (card = background = white) | **3-tier**: L0 body > L1 card > L2 secondary   |
+| Primary        | 5 switchable themes (oklch)      | Fixed Vermilion HSL                            |
+| Chart palette  | 8 colors                         | 24 sequential colors                           |
+| Radius tokens  | `--radius` only                  | `--radius-card: 14px`, `--radius-widget: 10px` |
+| Utility tokens | None                             | `--chart-axis`, `--chart-muted`                |
 
 ### 3-Tier Luminance Hierarchy
 
-| Tier | Purpose | Light | Dark |
-|------|---------|-------|------|
-| L0 `--background` | Body | `220 14% 94%` | `0 0% 9%` (#171717) |
-| L1 `--card` | Content panels | `220 14% 97%` | `0 0% 10.6%` (#1b1b1b) |
-| L2 `--secondary` | Inner cards/widgets | `0 0% 100%` | `0 0% 12.2%` (#1f1f1f) |
+| Tier              | Purpose             | Light         | Dark                   |
+| ----------------- | ------------------- | ------------- | ---------------------- |
+| L0 `--background` | Body                | `220 14% 94%` | `0 0% 9%` (#171717)    |
+| L1 `--card`       | Content panels      | `220 14% 97%` | `0 0% 10.6%` (#1b1b1b) |
+| L2 `--secondary`  | Inner cards/widgets | `0 0% 100%`   | `0 0% 12.2%` (#1f1f1f) |
 
 ### Vermilion Primary
 
-| Mode | HSL Value |
-|------|-----------|
+| Mode  | HSL Value    |
+| ----- | ------------ |
 | Light | `15 85% 52%` |
-| Dark | `15 85% 57%` |
+| Dark  | `15 85% 57%` |
 
 ---
 
 ## 3. Font Replacement
 
-| Current | Target |
-|---------|--------|
+| Current                                    | Target                                   |
+| ------------------------------------------ | ---------------------------------------- |
 | Geist Sans / Geist Mono (Next.js built-in) | Inter (body) + DM Sans (display/numbers) |
-
 - Load via Google Fonts in `layout.tsx`
 - Add `@utility font-display { font-family: "DM Sans", system-ui, sans-serif; }` in CSS
 - Apply `font-display` class to metric numbers and headings
@@ -102,6 +101,7 @@ Includes semantic aliases:
 ## 5. Layout Shell (AppShell) Rewrite
 
 ### Current
+
 ```
 ┌─────────┬──────────────────────────┐
 │ sidebar  │ header (border-b)        │
@@ -111,6 +111,7 @@ Includes semantic aliases:
 ```
 
 ### Target (Basalt "floating island")
+
 ```
 ┌─────────┬──────────────────────────┐
 │ sidebar  │ header (no border)       │
@@ -134,13 +135,13 @@ Key changes:
 
 **Preserve**: 8 nav items, collapse/expand, user avatar, sign-out, logo.
 
-| Aspect | Current | Target |
-|--------|---------|--------|
-| Background | `bg-sidebar border-r` | `bg-background` (no border) |
-| Nav item | `rounded-md` | `rounded-lg` |
-| Icon stroke | default (2) | `strokeWidth={1.5}` |
-| Width | 256px / 64px | 260px / 68px |
-| Mobile | Not implemented | Overlay with `bg-black/50 backdrop-blur-xs` |
+| Aspect      | Current               | Target                                      |
+| ----------- | --------------------- | ------------------------------------------- |
+| Background  | `bg-sidebar border-r` | `bg-background` (no border)                 |
+| Nav item    | `rounded-md`          | `rounded-lg`                                |
+| Icon stroke | default (2)           | `strokeWidth={1.5}`                         |
+| Width       | 256px / 64px          | 260px / 68px                                |
+| Mobile      | Not implemented       | Overlay with `bg-black/50 backdrop-blur-xs` |
 
 **New feature**: Command palette search (Cmd+K) via `cmdk` package.
 
@@ -149,7 +150,6 @@ Key changes:
 ## 7. Login Page → BadgeLogin
 
 Replace the current simple Card login with basalt's BadgeLoginPage design:
-
 - Vertical badge card (54:86 aspect ratio)
 - Vermilion header strip with barcode pattern + logo
 - Avatar placeholder area
@@ -164,12 +164,12 @@ Replace the current simple Card login with basalt's BadgeLoginPage design:
 
 ## 8. Dashboard Page Styling
 
-| Aspect | Current | Target |
-|--------|---------|--------|
-| Card style | `bg-card rounded-lg border shadow-sm` | `bg-secondary rounded-card border-0 shadow-none` |
-| Chart colors | 8-color chart-config | 24-color palette.ts |
-| Numbers font | default | `font-display` (DM Sans) |
-| Card header icon | default stroke | `strokeWidth={1.5}` |
+| Aspect           | Current                               | Target                                           |
+| ---------------- | ------------------------------------- | ------------------------------------------------ |
+| Card style       | `bg-card rounded-lg border shadow-sm` | `bg-secondary rounded-card border-0 shadow-none` |
+| Chart colors     | 8-color chart-config                  | 24-color palette.ts                              |
+| Numbers font     | default                               | `font-display` (DM Sans)                         |
+| Card header icon | default stroke                        | `strokeWidth={1.5}`                              |
 
 ---
 
@@ -201,12 +201,12 @@ Replace the current simple Card login with basalt's BadgeLoginPage design:
 
 ## 12. Dependency Changes
 
-| Action | Package | Reason |
-|--------|---------|--------|
-| Install | `cmdk` | Command palette (Cmd+K search) |
-| Remove | `react-hook-form` | Unused |
-| Remove | `@hookform/resolvers` | Unused |
-| Remove | `react-day-picker` | Unused (calendar deleted) |
+| Action  | Package               | Reason                         |
+| ------- | --------------------- | ------------------------------ |
+| Install | `cmdk`                | Command palette (Cmd+K search) |
+| Remove  | `react-hook-form`     | Unused                         |
+| Remove  | `@hookform/resolvers` | Unused                         |
+| Remove  | `react-day-picker`    | Unused (calendar deleted)      |
 
 ---
 
@@ -214,9 +214,9 @@ Replace the current simple Card login with basalt's BadgeLoginPage design:
 
 ```json
 {
-  "style": "default",
-  "baseColor": "slate",
-  "rsc": true
+	"style": "default",
+	"baseColor": "slate",
+	"rsc": true
 }
 ```
 
@@ -226,26 +226,26 @@ Only affects future `shadcn add` commands. Existing component files follow CSS v
 
 ## Zero Functionality Loss Guarantee
 
-| Feature | Impact | Measure |
-|---------|--------|---------|
-| NextAuth login | UI only | signIn/signOut calls unchanged |
-| CRUD forms (Sheet) | Style only | Form logic, API calls unchanged |
-| Data tables + sort/filter | Style only | Table component logic unchanged |
-| Dashboard charts | Color system swap | Recharts data flow unchanged |
+| Feature                   | Impact              | Measure                            |
+| ------------------------- | ------------------- | ---------------------------------- |
+| NextAuth login            | UI only             | signIn/signOut calls unchanged     |
+| CRUD forms (Sheet)        | Style only          | Form logic, API calls unchanged    |
+| Data tables + sort/filter | Style only          | Table component logic unchanged    |
+| Dashboard charts          | Color system swap   | Recharts data flow unchanged       |
 | 5-color theme → Vermilion | **Feature removal** | Settings page theme picker removed |
-| DB Selector | Style only | Minor style adjustment |
-| MCP Server | No impact | Pure backend logic |
-| Backup/Restore | Style only | Minor style adjustment |
+| DB Selector               | Style only          | Minor style adjustment             |
+| MCP Server                | No impact           | Pure backend logic                 |
+| Backup/Restore            | Style only          | Minor style adjustment             |
 
 ---
 
 ## Test Impact
 
-| Tier | Impact | Action |
-|------|--------|--------|
-| UT (`bun test`) | Low — tests DB/VM pure logic | Verify pass |
-| Lint (`eslint`) | Medium — new/deleted files | Clean imports, verify zero errors |
-| E2E (HTTP tests) | Low — tests API data correctness | Verify pass |
+| Tier             | Impact                           | Action                            |
+| ---------------- | -------------------------------- | --------------------------------- |
+| UT (`bun test`)  | Low — tests DB/VM pure logic     | Verify pass                       |
+| Lint (`eslint`)  | Medium — new/deleted files       | Clean imports, verify zero errors |
+| E2E (HTTP tests) | Low — tests API data correctness | Verify pass                       |
 
 ---
 

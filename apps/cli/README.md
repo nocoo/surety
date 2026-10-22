@@ -16,6 +16,15 @@ bun add -g @nocoo/surety
 bunx @nocoo/surety --help
 ```
 
+## Agent entrypoint
+
+External agents can load a self-contained guide (no auth required):
+
+```bash
+surety --skill
+# or: surety skill
+```
+
 ## Quick start
 
 ```bash
@@ -33,21 +42,21 @@ surety members ls
 
 Config file: `~/.config/surety/config.json`
 
-| Key | Description |
-|-----|-------------|
-| `apiUrl` | Data-plane origin (Bearer token). Default `https://surety-api.hexly.ai` |
+| Key        | Description                                                                         |
+| ---------- | ----------------------------------------------------------------------------------- |
+| `apiUrl`   | Data-plane origin (Bearer token). Default `https://surety-api.hexly.ai`             |
 | `loginUrl` | CF-Access-protected origin that mints CLI tokens. Default `https://surety.hexly.ai` |
-| `token` | Bearer token (set by `surety login`) |
-| `email` | Authenticated email (set by `surety login`) |
+| `token`    | Bearer token (set by `surety login`)                                                |
+| `email`    | Authenticated email (set by `surety login`)                                         |
 
 Environment overrides (highest priority):
 
-| Env | Overrides |
-|-----|-----------|
-| `SURETY_API_URL` | `apiUrl` |
-| `SURETY_LOGIN_URL` | `loginUrl` |
-| `SURETY_API_TOKEN` | `token` |
-| `SURETY_CLI_DEV` | `=1` or `true` selects `~/.config/surety/config.dev.json` in the current source; it does not change API URLs |
+| Env                | Overrides                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `SURETY_API_URL`   | `apiUrl`                                                                                                     |
+| `SURETY_LOGIN_URL` | `loginUrl`                                                                                                   |
+| `SURETY_API_TOKEN` | `token`                                                                                                      |
+| `SURETY_CLI_DEV`   | `=1` or `true` selects `~/.config/surety/config.dev.json` in the current source; it does not change API URLs |
 
 ## Output contract
 
@@ -71,7 +80,6 @@ surety members rm 999
 ## JSON input for `add` / `update`
 
 Mutating commands take the payload via one of (in priority order):
-
 1. `--data '<inline json>'`
 2. `--data-file <path>` (use `-` to read from stdin)
 3. piped stdin (when not a TTY)
@@ -81,29 +89,29 @@ Positional JSON arguments are **not** accepted.
 ## Commands
 
 ### Auth
-| Command | Description |
-|---------|-------------|
-| `surety login [--login-url] [--api-url] [--timeout]` | Browser-based login via CF Access, saves token |
-| `surety logout` | Requests local sign-out; see the configuration-write limitation below |
-| `surety whoami` | Print authenticated identity |
+
+| Command                                              | Description                                                           |
+| ---------------------------------------------------- | --------------------------------------------------------------------- |
+| `surety login [--login-url] [--api-url] [--timeout]` | Browser-based login via CF Access, saves token                        |
+| `surety logout`                                      | Requests local sign-out; see the configuration-write limitation below |
+| `surety whoami`                                      | Print authenticated identity                                          |
 
 ### Flat entities (CRUD)
 
 All follow the same shape:
-
 - `ls` — list all
 - `get <id>` — fetch one
 - `add --data '<json>'` — create (also `--data-file <path>` / stdin)
 - `update <id> --data '<json>'` — replace
 - `rm <id>` — delete
 
-| Command | Path |
-|---------|------|
-| `surety members …` | `/api/members` |
-| `surety insurers …` | `/api/insurers` |
-| `surety assets …` | `/api/assets` |
-| `surety hospitals …` | `/api/hospitals` |
-| `surety doctors …` | `/api/doctors` |
+| Command                   | Path                  |
+| ------------------------- | --------------------- |
+| `surety members …`        | `/api/members`        |
+| `surety insurers …`       | `/api/insurers`       |
+| `surety assets …`         | `/api/assets`         |
+| `surety hospitals …`      | `/api/hospitals`      |
+| `surety doctors …`        | `/api/doctors`        |
 | `surety medical-visits …` | `/api/medical-visits` |
 
 ### Policies (with nested sub-resources)
@@ -139,16 +147,15 @@ surety policies attachments rm <policyId> <attachmentId>
 
 ### Read-only
 
-| Command | Description |
-|---------|-------------|
+| Command                                            | Description                  |
+| -------------------------------------------------- | ---------------------------- |
 | `surety coverage --type <member\|asset> --id <id>` | Query `/api/coverage-lookup` |
-| `surety renewals` | Upcoming renewals calendar |
-| `surety dashboard` | Dashboard summary payload |
+| `surety renewals`                                  | Upcoming renewals calendar   |
+| `surety dashboard`                                 | Dashboard summary payload    |
 
 ## Current limitations
 
 Current boundaries:
-
 - `PUT/DELETE /api/policies/:id/beneficiaries` — beneficiaries are currently read-only
 - `POST /api/policies/:id/attachments` supports upload in the Worker, but the CLI has no upload subcommand. PDF, JPEG, and PNG are supported, up to 50 MiB per file and 20 files per policy.
 - Attachment `rm` deletes the database record and attempts to remove the R2 file; an R2 deletion failure is not surfaced by the endpoint.
