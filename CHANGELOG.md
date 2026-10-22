@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.12
+
+### Added
+
+- Add persistent synthetic Demo and disposable E2E environments backed by the real local Worker, D1 and R2, with interactive mode switching and rich fixtures.
+- Verify local environment isolation, authentication, attachments, switching and owned-resource cleanup in browser and HTTP workflows.
+
+### Changed
+
+- Route local development and automated tests through the shared launcher instead of independent startup paths.
+- Refresh compatible dependency resolutions, remove unused direct dependencies and retain the merged upstream CLI and dependency updates.
+- Use a monospace sidebar version pill derived from the authoritative application version.
+
+### Fixed
+
+- Align expanded, collapsed and mobile sidebar selection and hover colors with Basalt 3.2.1 while preserving link navigation.
+- Isolate automated Vite dependency caches to prevent `504 Outdated Optimize Dep` failures in a running Demo server.
+- Await native Worker cleanup when Vite shuts down and reject foreign or active Demo storage cleanup.
+- Preserve accepted environment switches when browser storage is unavailable and keep stale requests bound to their original instance.
+- Report the current application version in local verification evidence.
+
+### Removed
+
+- Remove obsolete remote development, remote seed and sqlite-proxy runtime paths without changing the production database schema.
+
 ## v2.3.11
 
 ### Changed

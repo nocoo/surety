@@ -324,7 +324,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 										className="shrink-0"
 									/>
 									<span className="text-lg font-bold tracking-tighter">surety</span>
-									<span className="rounded-md bg-basalt-secondary px-1.5 py-0.5 text-[10px] font-medium text-basalt-muted-foreground leading-none">
+									<span className="rounded-md bg-basalt-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium text-basalt-muted-foreground leading-none">
 										v{APP_VERSION}
 									</span>
 								</div>
