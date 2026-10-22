@@ -4,6 +4,7 @@ import { request as httpRequest } from "node:http";
 import { resolve } from "node:path";
 import { chromium, expect } from "@playwright/test";
 import { preview } from "vite";
+import { APP_VERSION } from "../../../packages/api/src/lib/version";
 import { INIT_SQL } from "../../../packages/db/src";
 import {
 	cleanEnvironment,
@@ -429,7 +430,7 @@ try {
 		JSON.stringify(
 			{
 				revision: revision.trim(),
-				appVersion: "2.3.6",
+				appVersion: APP_VERSION,
 				fixtureVersion,
 				anchor: "2026-09-28",
 				timezone: "Asia/Shanghai",

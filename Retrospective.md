@@ -37,3 +37,17 @@ and asserts the owned storage is gone; managed HTTP/browser runners also fail
 when their store remains. Orphan processes from this task were stopped only
 after checking exact config paths, ownership markers and dead launcher PIDs;
 Demo database/media were preserved while removing its stale lock.
+
+## 2026-10-22 - serialize validation of shared build assets
+
+During merge validation, the HTTP runner rebuilt `apps/worker/static` while
+environment acceptance still served that directory. Both checks passed, but
+isolated databases do not make their shared SPA output independent. Do not use
+that overlap as single-build acceptance evidence: finish every preview consumer
+before another lane rebuilds, then rerun environment acceptance serially.
+
+The environment manifest also retained a hardcoded application version after
+merging newer releases. It now uses the shared `APP_VERSION` export; fixture
+versions remain separate from application versions. Verify evidence metadata
+against the running API rather than assuming a successful script labels itself
+correctly.

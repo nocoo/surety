@@ -2,7 +2,7 @@
 
 Shared plan: [system0-envs](../../workflow/tasks/system0-envs/SKILL.md).
 Implementation: `apps/web/local/`, `apps/worker/local/`, and
-`apps/worker/migrations/`. Application version: 2.3.6; fixture catalog:
+`apps/worker/migrations/`. Application version: root `package.json`; fixture catalog:
 2026-09-28.2, anchor 2026-09-28, Asia/Shanghai.
 
 ## Commands
