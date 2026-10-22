@@ -10,12 +10,12 @@
 
 浏览器使用 `surety.hexly.ai`，Worker 验证 Access JWT。`surety login` 在浏览器里打开 `/api/auth/cli`，通过 loopback 回调保存 token。数据命令使用 `surety-api.hexly.ai`，由 Bearer token 验证。铸造、列出或撤销 token 需要交互登录身份；设置页尚无 token 管理界面。
 
-| 配置 | 作用 |
-| --- | --- |
+| 配置                                                | 作用                                 |
+| --------------------------------------------------- | ------------------------------------ |
 | Worker 的 `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` | Access JWT 的 issuer / audience 配置 |
-| CLI 的 `SURETY_LOGIN_URL` 或 `login --login-url` | Access 保护的登录入口 |
-| CLI 的 `SURETY_API_URL` 或 `login --api-url` | 接受 Bearer token 的数据 API |
-| CLI 的 `SURETY_API_TOKEN` | 覆盖保存的 token |
+| CLI 的 `SURETY_LOGIN_URL` 或 `login --login-url`    | Access 保护的登录入口                |
+| CLI 的 `SURETY_API_URL` 或 `login --api-url`        | 接受 Bearer token 的数据 API         |
+| CLI 的 `SURETY_API_TOKEN`                           | 覆盖保存的 token                     |
 
 Worker 的 `access-auth.ts` 当前将 `surety-api.hexly.ai` 写在机器访问域名判断中；自定义域名需要一起适配这个判断和 Cloudflare Access 边缘策略，仅修改 CLI 地址不够。浏览器的状态变更请求还要通过同源检查。
 

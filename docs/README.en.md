@@ -81,16 +81,16 @@ Keep both ports free. HTTP and browser tests rebuild `apps/worker/.wrangler/stat
 
 ## Stack
 
-| Technology | Purpose |
-| --- | --- |
-| TypeScript / Bun workspaces | Application code, CLI, and local tools |
-| Vite / React / React Router / SWR | SPA, routing, and data fetching |
-| Tailwind CSS / Radix UI / Basalt / Recharts | Styling, interface components, and charts |
-| Hono / Cloudflare Workers | API, authentication middleware, and static assets |
-| Drizzle ORM / Cloudflare D1 | Household, policy, and medical-visit data |
-| Cloudflare R2 | Policy attachments |
-| Cloudflare Access / `@nocoo/base-cli` | Browser authentication and CLI login |
-| Vitest / Bun SQLite / Playwright | Unit, API integration, and browser tests |
+| Technology                                  | Purpose                                           |
+| ------------------------------------------- | ------------------------------------------------- |
+| TypeScript / Bun workspaces                 | Application code, CLI, and local tools            |
+| Vite / React / React Router / SWR           | SPA, routing, and data fetching                   |
+| Tailwind CSS / Radix UI / Basalt / Recharts | Styling, interface components, and charts         |
+| Hono / Cloudflare Workers                   | API, authentication middleware, and static assets |
+| Drizzle ORM / Cloudflare D1                 | Household, policy, and medical-visit data         |
+| Cloudflare R2                               | Policy attachments                                |
+| Cloudflare Access / `@nocoo/base-cli`       | Browser authentication and CLI login              |
+| Vitest / Bun SQLite / Playwright            | Unit, API integration, and browser tests          |
 
 ## Documentation
 

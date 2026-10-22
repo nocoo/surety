@@ -8,14 +8,14 @@ Worker 源码在 `apps/worker/`，部署到 Cloudflare Workers。单 Worker 同�
 
 ### 基础信息
 
-| 项目 | 值 |
-|------|------|
-| Worker 名称 | `surety` |
-| Worker URL | `https://surety.<your-account>.workers.dev` |
-| Custom Domain (UI) | `https://surety.hexly.ai` (CF Access 保护) |
-| Custom Domain (API) | `https://surety-api.hexly.ai` (Bearer token) |
-| D1 Database | `surety-db` (`<your-database-id>`) |
-| Liveness | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
+| 项目                | 值                                                          |
+| ------------------- | ----------------------------------------------------------- |
+| Worker 名称         | `surety`                                                    |
+| Worker URL          | `https://surety.<your-account>.workers.dev`                 |
+| Custom Domain (UI)  | `https://surety.hexly.ai` (CF Access 保护)                  |
+| Custom Domain (API) | `https://surety-api.hexly.ai` (Bearer token)                |
+| D1 Database         | `surety-db` (`<your-database-id>`)                          |
+| Liveness            | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
 
 ### 部署命令
 
@@ -78,13 +78,13 @@ SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 
 AI/脚本入口，通过 Bearer token 访问 Worker HTTP API，已替代原 MCP Server。源码 `apps/cli/`，Bun-only（`bin` 指向 `src/index.ts`，无 build 步骤）。
 
-| 任务 | 命令 |
-|------|------|
+| 任务           | 命令                                                                |
+| -------------- | ------------------------------------------------------------------- |
 | Agent 用法摘要 | `surety --skill` 或 `surety skill`（stdout 自包含指南，无需 token） |
-| 本地调试 | `cd apps/cli && bun src/index.ts <cmd>` |
-| 跑测试 | `bun run test`（根目录 vitest，覆盖 CLI） |
-| 类型检查 | `cd apps/cli && bun run typecheck` |
-| 全局安装 | `bun add -g @nocoo/surety` |
+| 本地调试       | `cd apps/cli && bun src/index.ts <cmd>`                             |
+| 跑测试         | `bun run test`（根目录 vitest，覆盖 CLI）                           |
+| 类型检查       | `cd apps/cli && bun run typecheck`                                  |
+| 全局安装       | `bun add -g @nocoo/surety`                                          |
 
 认证域名模型（易错点）：
 - `loginUrl`（默认 `https://surety.hexly.ai`）= CF Access 保护的铸 token 入口，`surety login` 必须打在这个域。

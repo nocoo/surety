@@ -5,33 +5,40 @@ All notable changes to this project will be documented in this file.
 ## v2.3.10
 
 ### Changed
+
 - Document release commands, CI checks and deploy targets in `AGENTS.md`.
 
 ## v2.3.9
 
 ### Added
+
 - Add `surety --skill` and `surety skill` to print a self-contained agent-oriented CLI guide on stdout (no auth required).
 
 ## v2.3.8
 
 ### Changed
+
 - Bump minor and patch dependencies across the monorepo, including Vitest 5.0.5, React 19.3.1, Playwright 1.64.1, Wrangler 4.151.0, lucide-react 1.57.0, and Workers Types 5.20261015.1.
 - Disable Wrangler source map uploads on deploy (`upload_source_maps = false`) after Wrangler 4.150 enabled them by default.
 
 ## v2.3.7
 
 ### Changed
+
 - Bump minor and patch dependencies across the monorepo, including Vitest 5.0.4, Vite 8.3.4, Wrangler 4.149.0, and Radix UI 1.8.1.
 
 ### Fixed
+
 - Override Sharp to 0.35.5 for GHSA-wq5f-xc86-pv6w.
 
 ## v2.3.6
 
 ### Added
+
 - Add the Hexly project link and shared header tooltips.
 
 ### Changed
+
 - Upgrade Wrangler to 4.138.0 and Workers Types to 5.20260924.1, including the deployment workflow pin.
 - Upgrade Drizzle ORM to 0.45.3 and Drizzle Kit to 0.31.11.
 - Refresh runtime, UI and development dependencies, including Basalt 2.1.8 and React 19.3.0.
@@ -39,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - Share pinned CI workflows with independent quality and deployment verification.
 
 ### Fixed
+
 - Run commit checks against an isolated staged snapshot and reject malformed coverage reports.
 - Disable the Worker's default and preview URLs.
 - Complete shared header accessibility content and upgrade Sharp for its security fix.
@@ -46,11 +54,13 @@ All notable changes to this project will be documented in this file.
 ## v2.3.5
 
 ### Fixed
+
 - Remove status border stripes from policies and medical visits tables
 
 ## v2.3.4
 
 ### Added
+
 - Adopt PageHeader in hospitals page
 - Wrap ChartCard with Basalt LayerCard
 - Adopt PageHeader component backed by Basalt PageHeader
@@ -60,6 +70,7 @@ All notable changes to this project will be documented in this file.
 - Configure Basalt ThemeProvider, AccentProvider, and LinkProvider
 
 ### Changed
+
 - Add skip link keyboard focus visibility test
 - Add @nocoo/basalt@2.0.3 dependency
 - Bump @types/node to 26.4.1
@@ -106,31 +117,38 @@ All notable changes to this project will be documented in this file.
 - Bump @biomejs/biome 2.5.8 → 2.5.9
 
 ### Fixed
+
 - Import Basalt tailwind tokens and register package sources in CSS
 
 ### Removed
+
 - Drop accidental root @cloudflare/workers-types pin
 
 ## v2.3.3
 
 ### Added
+
 - Add vaccine as a visit type
 
 ### Changed
+
 - Bump @cloudflare/workers-types 5.20260814.1 → 5.20260817.1
 - Note release lockfile mirror trap
 - Restore bun.lock without mirror urls
 
 ### Fixed
+
 - Use days for visits under 2 weeks
 
 ## v2.3.2
 
 ### Added
+
 - Show author avatar in sidebar
 - Enrich /api/me from author profile
 
 ### Changed
+
 - Bump @cloudflare/workers-types 5.20260813.1 → 5.20260814.1 (#363)
 - Bump wrangler 4.122.0 → 4.123.0 (#365)
 - Bump hono 4.13.1 → 4.13.2 (#364)
@@ -165,9 +183,11 @@ All notable changes to this project will be documented in this file.
 - Bump ws to 8.21.2
 
 ### Fixed
+
 - Upgrade hono to 4.13.0
 
 ### Removed
+
 - Drop leftover autoresearch notes
 
 ## v2.3.1
@@ -615,6 +635,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.3.0
 
 ### Changed
+
 - Document surety.dev.hexly.ai and auth/api domain split
 - Strengthen pre-commit biome gates
 - Raise branch coverage threshold to 95.5
@@ -684,6 +705,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Upgrade @cloudflare/workers-types 4.20260623.1 → 4.20260624.1
 
 ### Fixed
+
 - Load monorepo root .env in vite dev proxy
 - Hash scripts, cli tests, vite.config in g1a cache
 - Run lint-staged before parallel pre-commit gates
@@ -694,9 +716,11 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.2.3
 
 ### Added
+
 - Sunday-start weeks, denser cells, wider grid
 
 ### Changed
+
 - Unify currency display to ¥ + thousands separator
 - Upgrade wrangler 4.103.0 → 4.104.0
 - Upgrade vite 8.0.16 → 8.1.0
@@ -711,16 +735,19 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.2.2
 
 ### Fixed
+
 - Generate trusts existing periodNumbers when anchor is off-calendar
 
 ## v2.2.1
 
 ### Fixed
+
 - Generate uses nextDueDate as schedule anchor, backfills past periods
 
 ## v2.2.0
 
 ### Added
+
 - Timeline filters future events in terminated state; planned-surrender milestone
 - Payments section filters obsoleted rows in terminated state
 - Wire action buttons in MetaColumn; status field readonly
@@ -730,6 +757,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add terminated_at / termination_reason / planned_surrender_at / planned_surrender_note columns
 
 ### Changed
+
 - Scrub stale "real D1" / "Cancelled" wording in describes and comments
 - Cover terminate / planned-surrender / payment lockdown on real D1
 - Anchor Expired display-state to real deriveDisplayStatus
@@ -764,12 +792,14 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Pin base-ci reusable workflow to v2026.5 SHA
 
 ### Fixed
+
 - Generate anchors on effectiveDate; backfills past periods
 - "标记失效" button uses destructive variant per plan
 - Termination dialog defaults terminatedAt to today on fresh terminations
 - Validate body.status enum; reject same-terminal PUT; fix reason error message
 
 ### Removed
+
 - Tighten policy-status header + cover PUT/DELETE payment lockdown
 - Simplify to v1 minimum — drop PendingSurrender status, payments Cancelled enum, batch + bind ceremony
 - Drop nonexistent payment notes field, fix date helper name, clarify edit-mode interlock
@@ -778,6 +808,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.1.3
 
 ### Changed
+
 - Clear resolved osv-scanner ignored vulns
 - Override undici to ^7.28.0 (GHSA-vmh5-mc38-953g, GHSA-pr7r-676h-xcf6)
 - Origin-guard Bearer exemption requires no session
@@ -786,6 +817,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Generator anchors on firstDueDate not effectiveDate
 
 ### Fixed
+
 - /api/auth/cli requires Access session, blocks token self-replication
 - IsMachineEndpoint requires CF edge witness
 - /api/auth/cli requires Sec-Fetch headers, fails closed
@@ -795,6 +827,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.1.2
 
 ### Changed
+
 - Generate handles concurrent requests via onConflictDoNothing
 - Freeze clock and assert generate never emits future dues
 - Payments generate is pending-only, backfills past, idempotent
@@ -822,6 +855,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Bump @types/node 25.9.2 → 25.9.3
 
 ### Fixed
+
 - Generate cutoff uses CST calendar date, not UTC clock
 - Payments createMany skips policy/period conflict for concurrency
 - Clarify payments generate dialog wording
@@ -832,9 +866,11 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.1.1
 
 ### Added
+
 - Add WholeLife (终身寿) policy category
 
 ### Changed
+
 - MAJOR @types/node 22.19.20 → 25.9.2
 - MAJOR eslint 9.39.4 → 10.4.1
 - MAJOR vite 6→8 + @vitejs/plugin-react 4→6
@@ -842,11 +878,13 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Policy detail page → 1:1:1 three-column layout
 
 ### Fixed
+
 - Align Playwright e2e with current dashboard / coverage UI
 
 ## v2.1.0
 
 ### Added
+
 - Renewal calendar dialog as URL state + round-trip back nav
 - Coverage health ratio excludes savings-type premium
 - SectionDivider for page-level segments; default everything open
@@ -864,6 +902,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add Notice component for inline status messages
 
 ### Changed
+
 - Suppress recharts default focus outline
 - Rename "寿险" → "定期寿" display label
 - Unify category type display to Badge + getCategoryConfig
@@ -889,6 +928,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add baoyu design audit report (18)
 
 ### Fixed
+
 - Dashboard tolerates stats without protectionPremium
 - Visit-sheet symptom tag-input visual height
 - Coverage-lookup avatars use verified-contrast palette
@@ -908,11 +948,13 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Revert avatar palette to readable tokens (a11y)
 
 ### Removed
+
 - Drop uppercase + tracking-wider from CJK section labels
 
 ## v2.0.6
 
 ### Changed
+
 - Bump @types/node from 20 to 22.19.20
 - Upgrade lucide-react to 1.17.0
 - Extract Github icon from lucide-react 0.577
@@ -923,6 +965,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.0.5
 
 ### Changed
+
 - Untrack .claude/scheduled_tasks.lock
 - Upgrade TypeScript to 6.0.3
 - Stop tracking autoresearch.jsonl benchmark log
@@ -933,9 +976,11 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Bump hono to 4.12.23
 
 ### Fixed
+
 - Persist status filter with reset key
 
 ### Removed
+
 - Drop csv-parse from manifest
 - Remove one-off medical-visits import script and csv-parse
 - Remove unused @hono/node-server, otpauth, qrcode, zod
@@ -943,15 +988,18 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.0.4
 
 ### Added
+
 - Show months for children under 5 years old
 
 ### Changed
+
 - Add packageManager bun to wrangler-action
 - Install chromium-headless-shell for Playwright tests
 - Add --ignore-scripts to custom workflows (Shai-Hulud defense)
 - Enable L2 gate in CI
 
 ### Fixed
+
 - Widen edit mode input fields to w-64
 - Do not fallback to effectiveDate for nextDueDate
 - Default to showing all policies instead of persisting filter
@@ -963,16 +1011,19 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.0.3
 
 ### Changed
+
 - Correct L1 test command — vitest run, not bun test
 - Exclude playwright from bun test pathIgnorePatterns
 - Add release.yml for CF Worker CD
 
 ### Removed
+
 - Remove cloud -test resources, use top-level bindings + --local
 
 ## v2.0.2
 
 ### Changed
+
 - CLI page install/auth/token sections
 - Coverage-lookup member/asset switching + data display
 - Dashboard stat cards + all chart sections
@@ -1005,10 +1056,12 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add bench-pre-commit.ts + autoresearch baseline
 
 ### Fixed
+
 - Migrate pre-push worker+cli step to vitest
 - Migrate run-l1.ts from bun test to vitest
 
 ### Removed
+
 - Remove packages from coverage include
 - Drop mkdtemp from buildClient tests (HOME ignored anyway): 64→59ms (-8%)
 - Drop setTimeout(10) in middleware test, use deferred: 151→127ms (-16%)
@@ -1016,6 +1069,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.0.1
 
 ### Added
+
 - Add /cli page with token management
 - Add secure response headers middleware
 - Add L3 specs for members/policies/coverage/404
@@ -1027,6 +1081,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Raise L1 coverage thresholds to 95/95
 
 ### Changed
+
 - Log run#65 floor confirmation
 - Resume #2 floor confirmation + ideas.md updates: 62ms within-noise
 - Bun --bun test in spawned procs: 58ms steady (was 59-60), isolated cli proc 71→51ms (-28%)
@@ -1049,6 +1104,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Export canonical INIT_SQL for non-drizzle provisioners
 
 ### Fixed
+
 - Override postcss to ^8.5.10
 - Narrow Bun.spawn stdout/stderr types after upstream Bun bump
 - Add production guard to E2E_SKIP_AUTH
@@ -1057,6 +1113,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v2.0.0
 
 ### Added
+
 - Add L2 hono e2e suite covering crud + auth boundary
 - Extend coverage gate to web/cli/worker with 2-dim threshold
 - Add coverage, renewals, dashboard read-only commands
@@ -1076,6 +1133,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add D1 binding driver support
 
 ### Changed
+
 - Bump version to 2.0.0 for first npm release
 - Prune web_legacy from architecture docs and quality matrix
 - Hoist build scripts and drizzle config to repo root
@@ -1108,6 +1166,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Rename apps/web to apps/web_legacy
 
 ### Fixed
+
 - Gate token-management routes on session auth, scope to caller email
 - Verify bearer token on localhost bypass so /api/me works locally
 - Funnel api errors through emitError for stable JSON stderr contract
@@ -1119,6 +1178,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Align bg-card usage to B05 luminance spec
 
 ### Removed
+
 - Delete apps/web_legacy/ and Next.js dependencies
 - Drop legacy Next.js E2E (Playwright) suite
 - Remove MCP access settings UI and e2e
@@ -1133,6 +1193,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v1.6.0
 
 ### Changed
+
 - Clean up root files and update README for monorepo
 - Finalize monorepo configuration
 - Move worker to apps/worker
@@ -1143,6 +1204,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Scaffold monorepo workspace structure
 
 ### Fixed
+
 - Align test:coverage with test command globs, add services to coverage
 - Move eslint config to repo root to cover all packages
 - Address 4 monorepo integration issues
@@ -1150,6 +1212,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 ## v1.5.10
 
 ### Added
+
 - Remove two-factor authentication (2FA/TOTP) feature
 - Add bearer token auth to all API routes
 - Add CLI login endpoint and token management API
@@ -1159,6 +1222,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Add automated release script (#28)
 
 ### Changed
+
 - Pre-commit/pre-push optimization session summary in autoresearch.ideas.md
 - Parallel scrypt verifies in recovery roundtrip: 963→900ms (-6.5%, cooled trials)
 - Full describe.concurrent in totp-module: 997→963ms (-3.4%)
@@ -1183,6 +1247,7 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Ignore GHSA-458j-xx4x-4375 hono medium CVE
 
 ### Fixed
+
 - Update MCP E2E test expectations and seed-remote timestamp
 - Move legacy totp test key from shared seed to E2E-only
 - Avoid Response singleton reuse, strengthen legacy key test
@@ -1204,4 +1269,5 @@ with local-first architecture, privacy-safe design, and comprehensive test cover
 - Migrate L3 controls from bg-input to bg-secondary + border-border
 
 ### Removed
+
 - Remove stale hono CVE ignores from osv-scanner.toml

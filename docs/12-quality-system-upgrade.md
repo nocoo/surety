@@ -10,7 +10,6 @@ Upgrade from legacy "Four-Layer Testing" to the new quality system (3 test layer
 ## Background
 
 The project currently implements the old "四层测试架构" model. The new "质量体系" redefines the taxonomy:
-
 - **Lint is demoted** from a test layer to a quality gate (G1)
 - **L3/L4 merged** into a single System/E2E layer (L3)
 - **G2 Security gate** is added (osv-scanner + gitleaks)
@@ -21,35 +20,35 @@ The project currently implements the old "四层测试架构" model. The new "�
 
 ### Current State (Four-Layer Testing)
 
-| Layer | What | Hook | Status |
-|-------|------|------|--------|
-| L1 UT | bun test + check-coverage.ts (≥90%) | pre-commit | ✅ Aligned |
-| L2 Lint | eslint (strict rules active) | pre-commit | ✅ Aligned |
-| L2 Typecheck | tsc --noEmit | pre-commit | ✅ Aligned |
-| L3 API E2E | run-e2e.ts (15 files, remote D1 dev) | pre-push | ✅ Aligned |
-| L4 UI E2E | Playwright (9 specs) | on-demand | ✅ Aligned |
+| Layer        | What                                 | Hook       | Status     |
+| ------------ | ------------------------------------ | ---------- | ---------- |
+| L1 UT        | bun test + check-coverage.ts (≥90%)  | pre-commit | ✅ Aligned |
+| L2 Lint      | eslint (strict rules active)         | pre-commit | ✅ Aligned |
+| L2 Typecheck | tsc --noEmit                         | pre-commit | ✅ Aligned |
+| L3 API E2E   | run-e2e.ts (15 files, remote D1 dev) | pre-push   | ✅ Aligned |
+| L4 UI E2E    | Playwright (9 specs)                 | on-demand  | ✅ Aligned |
 
 ### Target State (Quality System)
 
-| Layer/Gate | What | Hook | Current Gap |
-|------------|------|------|-------------|
-| **L1** Unit | bun test + coverage ≥90% | pre-commit | ✅ No gap |
-| **L2** Integration/API | run-e2e.ts (true HTTP) | pre-push | ✅ No gap |
-| **L3** System/E2E | Playwright | on-demand | ✅ No gap |
+| Layer/Gate             | What                                              | Hook       | Current Gap                                     |
+| ---------------------- | ------------------------------------------------- | ---------- | ----------------------------------------------- |
+| **L1** Unit            | bun test + coverage ≥90%                          | pre-commit | ✅ No gap                                       |
+| **L2** Integration/API | run-e2e.ts (true HTTP)                            | pre-push   | ✅ No gap                                       |
+| **L3** System/E2E      | Playwright                                        | on-demand  | ✅ No gap                                       |
 | **G1** Static Analysis | tsc (full) + eslint via lint-staged (incremental) | pre-commit | ⚠️ Missing lint-staged, missing .skip/.only ban |
-| **G2** Security | osv-scanner + gitleaks | pre-push | ❌ Not installed, not hooked |
+| **G2** Security        | osv-scanner + gitleaks                            | pre-push   | ❌ Not installed, not hooked                    |
 
 ### Detailed Gaps
 
-| # | Gap | Severity |
-|---|-----|----------|
-| 1 | No `lint-staged` — pre-commit lints entire codebase instead of staged files only | Low |
-| 2 | No `.skip`/`.only` ban in ESLint — test hygiene not enforced | Low |
-| 3 | No `osv-scanner` in pre-push — dependency vulnerabilities not scanned | Medium |
-| 4 | No `gitleaks` in pre-push — secret leakage not detected | Medium |
-| 5 | ESLint config comment references "four-layer" — terminology outdated | Trivial |
-| 6 | `docs/06-testing-improvement-plan.md` references old model — should be archived | Trivial |
-| 7 | `CLAUDE.md` test framework table uses old L1/L2/L3/L4 naming | Trivial |
+| #   | Gap                                                                              | Severity |
+| --- | -------------------------------------------------------------------------------- | -------- |
+| 1   | No `lint-staged` — pre-commit lints entire codebase instead of staged files only | Low      |
+| 2   | No `.skip`/`.only` ban in ESLint — test hygiene not enforced                     | Low      |
+| 3   | No `osv-scanner` in pre-push — dependency vulnerabilities not scanned            | Medium   |
+| 4   | No `gitleaks` in pre-push — secret leakage not detected                          | Medium   |
+| 5   | ESLint config comment references "four-layer" — terminology outdated             | Trivial  |
+| 6   | `docs/06-testing-improvement-plan.md` references old model — should be archived  | Trivial  |
+| 7   | `CLAUDE.md` test framework table uses old L1/L2/L3/L4 naming                     | Trivial  |
 
 ### What's Already Aligned (No Change Needed)
 
@@ -73,18 +72,20 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Why**: Currently `bun run lint` in pre-commit scans the entire codebase (~hundreds of files). With lint-staged, only staged files are checked, cutting pre-commit lint time significantly.
 
 **Changes**:
-
 1. Install: `bun add -d lint-staged`
 2. Add `lint-staged` config to `package.json`:
+
    ```json
    "lint-staged": {
      "*.{ts,tsx,mjs}": ["eslint --max-warnings=0"]
    }
    ```
 3. Update `.husky/pre-commit`:
+
    ```bash
    bun run test:coverage && bunx lint-staged && bun run typecheck
    ```
+
    - Replace `bun run lint` with `bunx lint-staged` for incremental checking
    - Keep `bun run typecheck` as-is (tsc needs full project context, cannot be incremental)
 
@@ -105,7 +106,6 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Why**: Prevent accidentally committed `.skip()` / `.only()` from silently disabling tests. This is a quality system requirement under G1.
 
 **Changes**:
-
 1. Remove `e2e/**` from `globalIgnores` in `eslint.config.mjs` (currently ignored because Playwright tests are not React code, but we need ESLint to enforce test hygiene rules there)
 2. Add a new ESLint config block to disable React/Next.js rules for `e2e/` (since it's not React code)
 3. Add test hygiene rules targeting all test directories:
@@ -158,8 +158,8 @@ brew install osv-scanner gitleaks
 ```
 
 **Changes**:
-
 1. Update `.husky/pre-push`:
+
    ```bash
    set -e  # Ensure any failure aborts the push
 
@@ -209,6 +209,7 @@ brew install osv-scanner gitleaks
      echo "⚠️  gitleaks not installed, skipping secret scan (brew install gitleaks)"
    fi
    ```
+
    - **`set -e`**: Ensures command failures (e.g., `bun run test:e2e`, `osv-scanner`) abort the hook. Note: `set -e` alone does NOT fix gitleaks failure propagation — the `<<<` here-string fix below is what makes `exit 1` inside the loop work
    - **stdin capture**: `PUSH_INFO=$(cat)` at script start preserves ref info before any child process can consume it
    - **`<<< "$PUSH_INFO"` (not pipe)**: This is the critical fix for gitleaks failure propagation. `while read` runs in the main shell, so `exit 1` terminates the hook. A pipe (`echo | while`) spawns a subshell where `exit 1` only exits the subshell, allowing the hook to succeed even when gitleaks finds secrets
@@ -229,7 +230,6 @@ brew install osv-scanner gitleaks
 **Why**: Align terminology from "four-layer" to "quality system". Ensure lint script uses `--max-warnings=0` explicitly.
 
 **Changes**:
-
 1. `eslint.config.mjs`:
    - Change comment `// Strict mode: four-layer testing compliance` → `// G1: strict TypeScript rules`
 2. `package.json`:
@@ -250,12 +250,12 @@ brew install osv-scanner gitleaks
 **Why**: `docs/06-testing-improvement-plan.md` documents the old four-layer model and is fully completed. Archive it. Update CLAUDE.md test framework table to use the new L1/L2/L3/G1/G2 taxonomy.
 
 **Changes**:
-
 1. Create `docs/archive/` directory
 2. Move `docs/06-testing-improvement-plan.md` → `docs/archive/06-testing-improvement-plan.md`
 3. Update `CLAUDE.md` "四层测试框架" table:
 
    **Before**:
+
    ```
    | 层级 | 工具 | 触发时机 | 要求 |
    |------|------|----------|------|
@@ -267,6 +267,7 @@ brew install osv-scanner gitleaks
    ```
 
    **After**:
+
    ```
    | 层级 | 工具 | 触发时机 | 要求 |
    |------|------|----------|------|
@@ -284,6 +285,7 @@ brew install osv-scanner gitleaks
    - Add `12-quality-system-upgrade.md`
    - Add `README.md` (docs index)
    - Example target structure:
+
      ```
      ├── 📂 docs/                      # 项目文档
      │   ├── README.md                 # 文档索引
@@ -323,21 +325,21 @@ Create `docs/README.md`:
 
 ## Documents
 
-| # | Document | Description |
-|---|----------|-------------|
-| 01 | [Design Overview](./01-design-overview.md) | System architecture and design decisions |
-| 02 | [Database Design](./02-database-design.md) | Database schema and D1 proxy architecture |
-| 04 | [MCP Setup](./04-mcp-setup.md) | MCP Server configuration and tools |
-| 05 | [Basalt UI Migration](./05-basalt-ui-migration.md) | UI framework migration record |
-| 07 | [Impeccable Audit Report](./07-impeccable-audit-report.md) | Security audit findings |
-| 11 | [SQLite to D1 Migration](./11-sqlite-to-d1-migration.md) | Database migration record |
-| 12 | [Quality System Upgrade](./12-quality-system-upgrade.md) | Quality system (L1+L2+L3+G1+G2) upgrade plan |
+| #   | Document                                                   | Description                                  |
+| --- | ---------------------------------------------------------- | -------------------------------------------- |
+| 01  | [Design Overview](./01-design-overview.md)                 | System architecture and design decisions     |
+| 02  | [Database Design](./02-database-design.md)                 | Database schema and D1 proxy architecture    |
+| 04  | [MCP Setup](./04-mcp-setup.md)                             | MCP Server configuration and tools           |
+| 05  | [Basalt UI Migration](./05-basalt-ui-migration.md)         | UI framework migration record                |
+| 07  | [Impeccable Audit Report](./07-impeccable-audit-report.md) | Security audit findings                      |
+| 11  | [SQLite to D1 Migration](./11-sqlite-to-d1-migration.md)   | Database migration record                    |
+| 12  | [Quality System Upgrade](./12-quality-system-upgrade.md)   | Quality system (L1+L2+L3+G1+G2) upgrade plan |
 
 ## Archive
 
-| # | Document | Description |
-|---|----------|-------------|
-| 06 | [Testing Improvement Plan](./archive/06-testing-improvement-plan.md) | Legacy four-layer testing plan (completed) |
+| #   | Document                                                             | Description                                |
+| --- | -------------------------------------------------------------------- | ------------------------------------------ |
+| 06  | [Testing Improvement Plan](./archive/06-testing-improvement-plan.md) | Legacy four-layer testing plan (completed) |
 ```
 
 **Files modified**:

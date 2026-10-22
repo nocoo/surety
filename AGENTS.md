@@ -8,14 +8,14 @@ Human overview: [README.md](README.md). Direction: [design overview](docs/01-des
 
 This file is the quality contract; hooks, CI and config are enforcement. Close implementation gaps without lowering the contract. Historical test results are not evidence of a current passing run.
 
-| Fact | Where |
-|---|---|
-| Product / boundaries | [README.md](README.md), [development](docs/20-development.md) |
-| CLI / operations | [CLI contract](apps/cli/README.md), [agent operations](docs/21-agent-operations.md) |
-| Version / schema | root `package.json`, shared version export, `packages/db/src/schema.ts` |
+| Fact                    | Where                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| Product / boundaries    | [README.md](README.md), [development](docs/20-development.md)                       |
+| CLI / operations        | [CLI contract](apps/cli/README.md), [agent operations](docs/21-agent-operations.md) |
+| Version / schema        | root `package.json`, shared version export, `packages/db/src/schema.ts`             |
 | Enforcement / isolation | `vitest.config.ts`, `scripts/pre-*.ts`, `scripts/run-l2-http.ts`, Playwright and CI |
-| Accidents | [Retrospective.md](Retrospective.md) |
-| Machine workflow | global `AGENTS.md` and Git rules |
+| Accidents               | [Retrospective.md](Retrospective.md)                                                |
+| Machine workflow        | global `AGENTS.md` and Git rules                                                    |
 
 ## Project Invariants
 
@@ -28,11 +28,11 @@ This file is the quality contract; hooks, CI and config are enforcement. Close i
 
 ## Stack / Layout
 
-| Component | Path / choice |
-|---|---|
-| UI / Worker | `apps/web` Vite/React/Basalt → `apps/worker` Hono + SPA assets |
+| Component        | Path / choice                                                            |
+| ---------------- | ------------------------------------------------------------------------ |
+| UI / Worker      | `apps/web` Vite/React/Basalt → `apps/worker` Hono + SPA assets           |
 | Logic / database | `packages/api`, `packages/db`; D1 binding/Drizzle, in-memory test driver |
-| CLI | `apps/cli`, Bun-only `@nocoo/surety`, Bearer auth |
+| CLI              | `apps/cli`, Bun-only `@nocoo/surety`, Bearer auth                        |
 
 ## Commands
 
@@ -55,13 +55,13 @@ bun run test:cli
 6DQ = L1/L2/L3 + G2 + D1 (test isolation); the former G1 dimension was merged into L1 on 2026-09-21. Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
 L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps. L1 also includes check-only strict analysis/formatting with zero errors/warnings (the former G1 contract). G2 requires dependency and secret scans, with missing required scanners failing.
 
-| Dimension | Status | Required proof and current evidence/gap |
-|---|---|---|
+| Dimension                              | Status  | Required proof and current evidence/gap                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | L1 TypeScript (incl. former G1 static) | planned | Preserve the stricter all-four 95.5% thresholds in Vitest. Shared packages, TSX, Worker routes and several CLI/hook modules are outside coverage; full source scope remains incomplete. Hooks/CI run zero-warning Biome and all package types; pre-commit runs staged gitleaks/lint/typecheck/coverage check-only against an isolated index snapshot with fresh temporary cache dirs. |
-| L2 Worker / CLI | planned | Separate Bun in-process SQLite E2E and real HTTP local D1/R2 lanes run before push. Require 100% endpoint/auth/error coverage and real CLI command workflows; in-process Hono calls are not HTTP proof. |
-| L3 browser / CLI | planned | CI runs Chromium against built SPA/local Worker on 27012. All-page and CLI system proof remains incomplete; token login/revocation and real restore need explicit acceptance. |
-| G2 | planned | OSV runs before push and CI scans secrets/deps, but local pre-push gitleaks scans only the staged index, missing already committed push contents. |
-| D1 | planned | L2/L3 force local persist state and test auth vars, but fixed directories are recursively removed without checked marker/path ownership and runners do not force NODE_ENV=test. |
+| L2 Worker / CLI                        | planned | Separate Bun in-process SQLite E2E and real HTTP local D1/R2 lanes run before push. Require 100% endpoint/auth/error coverage and real CLI command workflows; in-process Hono calls are not HTTP proof.                                                                                                                                                                               |
+| L3 browser / CLI                       | planned | CI runs Chromium against built SPA/local Worker on 27012. All-page and CLI system proof remains incomplete; token login/revocation and real restore need explicit acceptance.                                                                                                                                                                                                         |
+| G2                                     | planned | OSV runs before push and CI scans secrets/deps, but local pre-push gitleaks scans only the staged index, missing already committed push contents.                                                                                                                                                                                                                                     |
+| D1                                     | planned | L2/L3 force local persist state and test auth vars, but fixed directories are recursively removed without checked marker/path ownership and runners do not force NODE_ENV=test.                                                                                                                                                                                                       |
 
 Pre-commit exports the index to an isolated temporary snapshot, links dependencies and runs staged gitleaks, lint, typecheck and coverage check-only in that order, with no autofix; pre-commit uses fresh isolated temporary cache dirs and never short-circuits via a result cache. Pre-push runs units, in-memory E2E, real local HTTP, OSV and staged gitleaks in parallel. CI independently builds, checks coverage/types/security, HTTP and browser lanes.
 
@@ -76,18 +76,17 @@ Dev: trusted `https://surety.dev.hexly.ai` → Vite 7012; local Worker 7016. L2:
 
 Schema push writes the chosen remote D1 directly and is not a startup/test step; schema must be ready before authorized Worker release. Follow [operations](docs/21-agent-operations.md) and current release workflow: build SPA, synchronize root version/changelog/lockfile, then release. Inspect mirror URL drift before publishing; CLI has no separate build.
 
-| Area | Facts |
-|---|---|
-| Release | `bun run build` (SPA → `apps/worker/static`); `bun run release [-- patch\|minor\|major\|X.Y.Z\|--dry-run]` (`scripts/release.ts`: root version, `bun.lock`, CHANGELOG, commit, tag, GitHub release); keep `apps/cli/package.json` version in sync. Manual Worker deploy only when authorized: `bun run --cwd apps/worker deploy` (`wrangler deploy`). |
-| CLI publish | `@nocoo/surety` from `apps/cli`, published from 哥's MacBook (2FA in Chrome); verify/install via `https://registry.npmmirror.com`. |
-| CI (`ci.yml`) | `quality` (base-ci): `bun run build`, `bun run typecheck`, `bun run test:coverage`, L2 `bun run test:l2:http`; `L3 Browser E2E`: `bun run test:e2e:browser` (chromium). |
-| Deploy (`release.yml`) | `Deploy Worker` on green CI on `main`, `v*.*.*` tag or dispatch; builds, wrangler deploy from `apps/worker`, verifies `https://surety.hexly.ai/api/live` version. |
-| Targets | Worker `surety`, custom domains `surety.hexly.ai` (SPA + Access login) and `surety-api.hexly.ai` (Bearer API); D1 `DB` → `surety-db`; R2 `ATTACHMENTS` → `surety`; assets `ASSETS`; npm `@nocoo/surety`. |
+| Area                   | Facts                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Release                | `bun run build` (SPA → `apps/worker/static`); `bun run release [-- patch\|minor\|major\|X.Y.Z\|--dry-run]` (`scripts/release.ts`: root version, `bun.lock`, CHANGELOG, commit, tag, GitHub release); keep `apps/cli/package.json` version in sync. Manual Worker deploy only when authorized: `bun run --cwd apps/worker deploy` (`wrangler deploy`). |
+| CLI publish            | `@nocoo/surety` from `apps/cli`, published from 哥's MacBook (2FA in Chrome); verify/install via `https://registry.npmmirror.com`.                                                                                                                                                                                                                    |
+| CI (`ci.yml`)          | `quality` (base-ci): `bun run build`, `bun run typecheck`, `bun run test:coverage`, L2 `bun run test:l2:http`; `L3 Browser E2E`: `bun run test:e2e:browser` (chromium).                                                                                                                                                                               |
+| Deploy (`release.yml`) | `Deploy Worker` on green CI on `main`, `v*.*.*` tag or dispatch; builds, wrangler deploy from `apps/worker`, verifies `https://surety.hexly.ai/api/live` version.                                                                                                                                                                                     |
+| Targets                | Worker `surety`, custom domains `surety.hexly.ai` (SPA + Access login) and `surety-api.hexly.ai` (Bearer API); D1 `DB` → `surety-db`; R2 `ATTACHMENTS` → `surety`; assets `ASSETS`; npm `@nocoo/surety`.                                                                                                                                              |
 
 ## Retrospective
 
 Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
-
 - Cross-database imports must name columns explicitly; never depend on SQLite `.dump` column order.
 - Drizzle sqlite-proxy get returns a flat row; all returns a row array. Verify actual driver contracts.
 - `logout` output does not prove token revocation, and `SURETY_CLI_DEV` only changes the config file.
