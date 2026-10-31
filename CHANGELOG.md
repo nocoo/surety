@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.13
+
+### Changed
+
+- Bump patch dependencies: @types/bun 1.4.4, hono 4.13.14, and react-router 8.5.1.
+
 ## v2.3.12
 
 ### Added
