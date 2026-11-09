@@ -17,6 +17,28 @@ for (const colorScheme of ["light", "dark"] as const) {
 	test.describe(`${colorScheme} sidebar`, () => {
 		test.use({ colorScheme, reducedMotion: "reduce" });
 
+		test("expanded collapse toggle aligns with nav group chevrons", async ({ page }) => {
+			await page.goto("/");
+			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+			const toggleIcon = sidebar
+				.getByRole("button", { name: "收起侧边栏", exact: true })
+				.locator("svg");
+			const chevronIcon = sidebar.locator("nav svg.lucide-chevron-up").first();
+
+			await expect(toggleIcon).toBeVisible();
+			await expect(chevronIcon).toBeVisible();
+
+			const toggleBox = await toggleIcon.boundingBox();
+			const chevronBox = await chevronIcon.boundingBox();
+			if (!toggleBox || !chevronBox) {
+				throw new Error("Expected toggle and chevron icons to have layout boxes");
+			}
+
+			const toggleCenterX = toggleBox.x + toggleBox.width / 2;
+			const chevronCenterX = chevronBox.x + chevronBox.width / 2;
+			expect(Math.abs(toggleCenterX - chevronCenterX)).toBeLessThanOrEqual(0.5);
+		});
+
 		test("expanded links keep distinct Basalt selected and hover colors", async ({ page }) => {
 			await page.goto("/");
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });

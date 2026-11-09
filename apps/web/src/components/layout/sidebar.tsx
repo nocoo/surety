@@ -333,7 +333,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 									size="icon"
 									onClick={toggle}
 									aria-label="收起侧边栏"
-									className="h-7 w-7 rounded-md text-basalt-muted-foreground"
+									className="-mr-1 h-7 w-7 min-w-7 max-w-7 rounded-md text-basalt-muted-foreground"
 								>
 									<PanelLeft className="h-4 w-4" aria-hidden="true" strokeWidth={1.5} />
 								</Button>
