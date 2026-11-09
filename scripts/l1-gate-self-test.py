@@ -74,6 +74,13 @@ def reset_worktree(worktree: Path) -> None:
     run_git(["clean", "-fd"], worktree)
 
 
+def ensure_git_identity(worktree: Path) -> None:
+    if run_git(["config", "user.email"], worktree, check=False).stdout.strip():
+        return
+    run_git(["config", "user.email", "l1-gate-self-test@localhost"], worktree)
+    run_git(["config", "user.name", "L1 Gate Self Test"], worktree)
+
+
 def stage_file(worktree: Path, relative: str, content: str) -> Path:
     path = worktree / relative
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -132,6 +139,7 @@ def run_hook_interrupt(worktree: Path) -> tuple[int, str]:
 
 
 def try_commit(worktree: Path, message: str) -> tuple[int, str]:
+    ensure_git_identity(worktree)
     commit = subprocess.run(
         ["git", "commit", "--allow-empty", "-m", message],
         cwd=worktree,
@@ -277,12 +285,15 @@ SCENARIOS = [
 
 def hook_env_for(name: str) -> dict[str, str]:
     if name == "missing_tool":
-        home = Path.home()
-        return {
-            "PATH": os.pathsep.join(
-                ["/usr/bin", "/bin", str(home / ".bun" / "bin"), "/exec-daemon"]
-            )
-        }
+        path_parts = []
+        gitleaks_path = shutil.which("gitleaks")
+        for part in os.environ.get("PATH", "").split(os.pathsep):
+            if not part:
+                continue
+            if gitleaks_path and Path(gitleaks_path).parent.resolve() == Path(part).resolve():
+                continue
+            path_parts.append(part)
+        return {"PATH": os.pathsep.join(path_parts) if path_parts else "/usr/bin:/bin"}
     if name == "timeout":
         return {
             "SURETY_L1_GATE_SELF_TEST": "1",
@@ -339,6 +350,7 @@ def main() -> int:
     try:
         run_git(["worktree", "add", "--detach", str(worktree), "HEAD"], source)
         link_dependencies(source, worktree)
+        ensure_git_identity(worktree)
         results: list[Result] = []
         for scenario in SCENARIOS:
             results.append(exercise_scenario(worktree, scenario))
