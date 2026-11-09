@@ -22,6 +22,7 @@
 		"test:l2:http": "bun --no-env-file scripts/run-local-tests.ts http",
 		"test:e2e:browser": "bun --no-env-file scripts/run-local-tests.ts browser",
 		"test:coverage": "vitest run --coverage",
+		"test:l1:gate": "python3 -B scripts/l1-gate-self-test.py",
 		"release": "bun run scripts/release.ts",
 		"prepare": "husky",
 		"test:environments": "bun run build && bun --no-env-file apps/web/local/verify.ts",
