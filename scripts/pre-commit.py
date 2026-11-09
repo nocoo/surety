@@ -9,8 +9,13 @@ import sys
 import tempfile
 import time
 
-TIMEOUT = 170
 METRICS = ("statements", "branches", "functions", "lines")
+
+
+def gate_timeout():
+    if os.environ.get("SURETY_L1_GATE_SELF_TEST") == "1":
+        return float(os.environ.get("SURETY_L1_TIMEOUT", "170"))
+    return 170
 DEPENDENCIES = (
     "node_modules",
     "apps/cli/node_modules",
@@ -203,8 +208,12 @@ def self_test():
 
 
 def main():
+    if os.environ.get("SURETY_L1_GATE_SELF_TEST") == "1":
+        delay = float(os.environ.get("SURETY_L1_GATE_SELF_TEST_SLEEP", "0"))
+        if delay > 0:
+            time.sleep(delay)
     started = time.monotonic()
-    deadline = started + TIMEOUT
+    deadline = started + gate_timeout()
     for tool in ("git", "bun", "node", "python3", "gitleaks"):
         if shutil.which(tool) is None:
             raise RuntimeError(f"Missing required tool: {tool}")
