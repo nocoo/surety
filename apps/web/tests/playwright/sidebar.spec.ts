@@ -1,8 +1,8 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
-async function expectBackground(locator: Locator, value: string) {
-	const expected = await locator.evaluate((element, color) => {
+async function resolveCssColor(locator: Locator, value: string): Promise<string> {
+	return locator.evaluate((element, color) => {
 		const probe = document.createElement("span");
 		probe.style.backgroundColor = color;
 		element.append(probe);
@@ -10,7 +10,20 @@ async function expectBackground(locator: Locator, value: string) {
 		probe.remove();
 		return result;
 	}, value);
+}
+
+async function expectBackground(locator: Locator, value: string) {
+	const expected = await resolveCssColor(locator, value);
 	await expect(locator).toHaveCSS("background-color", expected);
+}
+
+/** Basalt paints row hover on the nav list ::before layer, not per-link backgrounds. */
+async function expectBasaltNavHover(nav: Locator, link: Locator, token: string) {
+	await link.hover();
+	await expect(nav).toHaveAttribute("data-hover-visible", "true");
+	const expected = await resolveCssColor(nav, token);
+	const surface = await nav.evaluate((el) => getComputedStyle(el, "::before").backgroundColor);
+	expect(surface).toBe(expected);
 }
 
 for (const colorScheme of ["light", "dark"] as const) {
@@ -42,13 +55,13 @@ for (const colorScheme of ["light", "dark"] as const) {
 		test("expanded links keep distinct Basalt selected and hover colors", async ({ page }) => {
 			await page.goto("/");
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+			const nav = sidebar.locator('[data-slot="sidebar-nav"]');
 			const active = sidebar.getByRole("link", { name: "仪表盘", exact: true });
 			const members = sidebar.getByRole("link", { name: "家庭成员", exact: true });
 			await expect(active).toHaveAttribute("aria-current", "page");
 			await expectBackground(sidebar, "hsl(var(--basalt-background))");
 			await expectBackground(active, "hsl(var(--basalt-selected))");
-			await members.hover();
-			await expectBackground(members, "var(--basalt-hover)");
+			await expectBasaltNavHover(nav, members, "var(--basalt-hover)");
 			await expectBackground(active, "hsl(var(--basalt-selected))");
 			await active.hover();
 			await expectBackground(active, "hsl(var(--basalt-selected))");
@@ -64,13 +77,13 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await page.goto("/");
 			await page.getByRole("button", { name: "收起侧边栏", exact: true }).click();
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+			const nav = sidebar.locator('[data-slot="sidebar-nav"]');
 			await expect(sidebar).toHaveCSS("width", "68px");
 			const active = sidebar.getByRole("link", { name: "仪表盘", exact: true });
 			const members = sidebar.getByRole("link", { name: "家庭成员", exact: true });
 			await expect(active).toHaveAttribute("aria-current", "page");
 			await expectBackground(active, "hsl(var(--basalt-selected))");
-			await members.hover();
-			await expectBackground(members, "var(--basalt-hover)");
+			await expectBasaltNavHover(nav, members, "var(--basalt-hover)");
 			await expectBackground(active, "hsl(var(--basalt-selected))");
 			await expect(members).toHaveAttribute("href", "/members");
 		});
