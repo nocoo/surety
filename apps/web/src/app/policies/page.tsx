@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
@@ -549,78 +550,80 @@ export default function PoliciesPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "保单" }]}>
 			<div className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">全部保单</h1>
-						<p className="text-sm text-muted-foreground">
+				<PageHeader
+					title="全部保单"
+					description={
+						<>
 							共 {filteredPolicies.length} 份保单
 							{countActiveFilters(filters) > 0 && ` (已筛选，共 ${policies.length} 份)`}
-						</p>
-					</div>
-					<Button onClick={() => setSheetOpen(true)}>
-						<Plus className="h-4 w-4 mr-1.5" />
-						新增保单
-					</Button>
-				</div>
-
-				{/* Filter Area */}
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<PolicyFilters
-						filters={filters}
-						onChange={handleFiltersChange}
-						options={{
-							applicantNames,
-							insuredNames,
-							categories,
-							assetNames,
-							statuses,
-						}}
-					/>
-					<div className="flex items-center gap-2">
-						{/*
-						 * Density toggle — only meaningful for the flat list view, and
-						 * only on sm+ widths. Below sm the layout is pinned to cards
-						 * regardless of listDensity (the table has no chance at narrow
-						 * widths), so showing the toggle there would let users select
-						 * "comfortable"/"compact" and see no change.
-						 */}
-						{viewMode === "list" && (
-							<ToggleGroup
-								type="single"
-								value={listDensity}
-								onValueChange={(v) => v && setListDensity(v as ListDensity)}
-								aria-label="列表密度"
-								className="hidden sm:flex"
-							>
-								<ToggleGroupItem value="cards" aria-label="卡片视图">
-									<LayoutList className="h-4 w-4" />
-								</ToggleGroupItem>
-								<ToggleGroupItem value="comfortable" aria-label="舒适表格">
-									<Rows3 className="h-4 w-4" />
-								</ToggleGroupItem>
-								<ToggleGroupItem value="compact" aria-label="紧凑表格">
-									<Rows4 className="h-4 w-4" />
-								</ToggleGroupItem>
-							</ToggleGroup>
-						)}
-						<ToggleGroup
-							type="single"
-							value={viewMode}
-							onValueChange={(v) => v && setViewMode(v as ViewMode)}
-							aria-label="视图模式"
-						>
-							<ToggleGroupItem value="list" aria-label="列表视图">
-								<List className="h-4 w-4" />
-							</ToggleGroupItem>
-							<ToggleGroupItem value="byCategory" aria-label="按类型分组">
-								<LayoutGrid className="h-4 w-4" />
-							</ToggleGroupItem>
-							<ToggleGroupItem value="byInsured" aria-label="按被保人分组">
-								<Users className="h-4 w-4" />
-							</ToggleGroupItem>
-						</ToggleGroup>
-					</div>
-				</div>
+						</>
+					}
+					actions={
+						<Button onClick={() => setSheetOpen(true)}>
+							<Plus className="h-4 w-4 mr-1.5" />
+							新增保单
+						</Button>
+					}
+					filters={
+						<div className="flex w-full flex-wrap items-center justify-between gap-4">
+							<PolicyFilters
+								filters={filters}
+								onChange={handleFiltersChange}
+								options={{
+									applicantNames,
+									insuredNames,
+									categories,
+									assetNames,
+									statuses,
+								}}
+							/>
+							<div className="flex items-center gap-2">
+								{/*
+								 * Density toggle — only meaningful for the flat list view, and
+								 * only on sm+ widths. Below sm the layout is pinned to cards
+								 * regardless of listDensity (the table has no chance at narrow
+								 * widths), so showing the toggle there would let users select
+								 * "comfortable"/"compact" and see no change.
+								 */}
+								{viewMode === "list" && (
+									<ToggleGroup
+										type="single"
+										value={listDensity}
+										onValueChange={(v) => v && setListDensity(v as ListDensity)}
+										aria-label="列表密度"
+										className="hidden sm:flex"
+									>
+										<ToggleGroupItem value="cards" aria-label="卡片视图">
+											<LayoutList className="h-4 w-4" />
+										</ToggleGroupItem>
+										<ToggleGroupItem value="comfortable" aria-label="舒适表格">
+											<Rows3 className="h-4 w-4" />
+										</ToggleGroupItem>
+										<ToggleGroupItem value="compact" aria-label="紧凑表格">
+											<Rows4 className="h-4 w-4" />
+										</ToggleGroupItem>
+									</ToggleGroup>
+								)}
+								<ToggleGroup
+									type="single"
+									value={viewMode}
+									onValueChange={(v) => v && setViewMode(v as ViewMode)}
+									aria-label="视图模式"
+								>
+									<ToggleGroupItem value="list" aria-label="列表视图">
+										<List className="h-4 w-4" />
+									</ToggleGroupItem>
+									<ToggleGroupItem value="byCategory" aria-label="按类型分组">
+										<LayoutGrid className="h-4 w-4" />
+									</ToggleGroupItem>
+									<ToggleGroupItem value="byInsured" aria-label="按被保人分组">
+										<Users className="h-4 w-4" />
+									</ToggleGroupItem>
+								</ToggleGroup>
+							</div>
+						</div>
+					}
+				/>
 
 				{/* Empty State */}
 				{policies.length === 0 && (

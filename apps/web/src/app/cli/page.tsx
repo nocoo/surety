@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { Cloud, Key, Loader2, Terminal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import useSWR from "swr";
@@ -84,13 +85,15 @@ export default function CliPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "CLI" }]}>
 			<div className="space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">CLI</h1>
-					<p className="text-sm text-muted-foreground">
-						<code className="rounded bg-secondary px-1 py-0.5 text-xs">@nocoo/surety</code> 是 AI
-						助手与脚本访问 Surety 的命令行入口
-					</p>
-				</div>
+				<PageHeader
+					title="CLI"
+					description={
+						<>
+							<code className="rounded bg-secondary px-1 py-0.5 text-xs">@nocoo/surety</code> 是 AI
+							助手与脚本访问 Surety 的命令行入口
+						</>
+					}
+				/>
 
 				{/* Card 1: Install & Usage */}
 				<div className="rounded-card bg-secondary p-6">

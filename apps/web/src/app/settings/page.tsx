@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { AlertCircle, Bell, Save, Shield } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlocker } from "react-router";
@@ -192,10 +193,7 @@ export default function SettingsPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "设置" }]}>
 			<div className="space-y-6">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">设置</h1>
-					<p className="text-sm text-muted-foreground">管理应用偏好和家庭财务参数</p>
-				</div>
+				<PageHeader title="设置" description="管理应用偏好和家庭财务参数" />
 
 				{dirty && (
 					<div

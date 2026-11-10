@@ -1,3 +1,4 @@
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import {
 	AlertCircle,
 	ArrowRight,
@@ -94,14 +95,7 @@ function DashboardHeader({ stats }: { stats: DashboardStats }) {
 	const greeting = greetingForHour(new Date().getHours());
 	const subtitle = familySubtitle(stats.memberCount, stats.policyCount);
 
-	return (
-		<div>
-			<h1 className="font-display text-2xl font-semibold tracking-tight">
-				{greeting}，{name}
-			</h1>
-			<p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-		</div>
-	);
+	return <PageHeader title={`${greeting}，${name}`} description={subtitle} />;
 }
 
 export function DashboardContent({ data }: { data: DashboardData }) {
