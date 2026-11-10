@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.14
+
+### Changed
+
+- Bump dependencies: @biomejs/biome 2.6.6, lucide-react 1.70.0, @types/node 26.6.6, hono 4.13.17, tailwindcss and @tailwindcss/vite 4.3.5, vitest and @vitest/coverage-v8 5.1.0, and @playwright/test 1.65.0.
+
 ## v2.3.13
 
 ### Changed
