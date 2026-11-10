@@ -1,4 +1,4 @@
-import { ContentIsland } from "@nocoo/basalt";
+import { ContentIsland, SidebarProvider } from "@nocoo/basalt";
 import {
 	AppSkipLink,
 	AppMain as BasaltAppMain,
@@ -17,11 +17,11 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Github } from "../icons/github";
 import { Breadcrumbs } from "./breadcrumbs";
-import { CommandPalette } from "./command-palette";
+import { CommandPaletteProvider } from "./command-palette";
 import { EnvironmentSelector } from "./environment-selector";
 import { HeaderTooltip, HexlyLink } from "./header-links";
-import { Sidebar } from "./sidebar";
-import { SidebarProvider, useSidebar } from "./sidebar-context";
+import { MobileNavProvider, useMobileNav } from "./mobile-nav-context";
+import { PersistedSidebarProvider, Sidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 
 interface AppShellProps {
@@ -31,7 +31,7 @@ interface AppShellProps {
 
 function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 	const isMobile = useIsMobile();
-	const { mobileOpen, setMobileOpen } = useSidebar();
+	const { mobileOpen, setMobileOpen } = useMobileNav();
 	const { pathname } = useLocation();
 
 	// Close mobile sidebar on route change
@@ -40,93 +40,87 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 		setMobileOpen(false);
 	}, [pathname, setMobileOpen]);
 
-	// Prevent body scroll when mobile sidebar is open
-	useEffect(() => {
-		if (mobileOpen) {
-			document.body.style.overflow = "hidden";
-		} else {
-			document.body.style.overflow = "";
-		}
-		return () => {
-			document.body.style.overflow = "";
-		};
-	}, [mobileOpen]);
-
 	return (
-		<BasaltAppShell>
-			<AppSkipLink href="#main-content">跳至主要内容</AppSkipLink>
+		<CommandPaletteProvider>
+			<BasaltAppShell>
+				<AppSkipLink href="#main-content">跳至主要内容</AppSkipLink>
 
-			{/* Desktop sidebar */}
-			{!isMobile && <Sidebar />}
+				{!isMobile && (
+					<PersistedSidebarProvider>
+						<Sidebar ariaLabel="主导航" />
+					</PersistedSidebarProvider>
+				)}
 
-			{isMobile && (
-				<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-					<SheetContent
-						side="left"
-						className="w-[260px] p-0 sm:max-w-[260px]"
-						showCloseButton={false}
-					>
-						<SheetHeader className="sr-only">
-							<SheetTitle>导航菜单</SheetTitle>
-							<SheetDescription>浏览 Surety 的主要页面</SheetDescription>
-						</SheetHeader>
-						<Sidebar mobile />
-					</SheetContent>
-				</Sheet>
-			)}
+				{isMobile && (
+					<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+						<SheetContent
+							side="left"
+							className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 sm:max-w-[260px]"
+							showCloseButton={false}
+						>
+							<SheetHeader className="sr-only">
+								<SheetTitle>导航菜单</SheetTitle>
+								<SheetDescription>浏览 Surety 的主要页面</SheetDescription>
+							</SheetHeader>
+							<SidebarProvider collapsed={false} defaultWidth={260}>
+								<Sidebar
+									ariaLabel="主导航抽屉"
+									variant="mobile"
+									onNavigate={() => setMobileOpen(false)}
+								/>
+							</SidebarProvider>
+						</SheetContent>
+					</Sheet>
+				)}
 
-			<BasaltAppMain>
-				{/* Header — no border, matching basalt */}
-				<header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
-					<div className="flex items-center gap-3">
-						{isMobile && (
-							<HeaderTooltip label="打开导航菜单">
-								<button
-									type="button"
-									onClick={() => setMobileOpen(true)}
-									aria-label="打开导航菜单"
+				<BasaltAppMain>
+					<header className="flex h-14 shrink-0 items-center justify-between px-4 md:px-6">
+						<div className="flex items-center gap-3">
+							{isMobile && (
+								<HeaderTooltip label="打开导航菜单">
+									<button
+										type="button"
+										onClick={() => setMobileOpen(true)}
+										aria-label="打开导航菜单"
+										className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+									>
+										<Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
+									</button>
+								</HeaderTooltip>
+							)}
+							<Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
+						</div>
+						<div className="flex items-center gap-1">
+							<EnvironmentSelector />
+							<HeaderTooltip label="GitHub repository">
+								<a
+									href="https://github.com/nocoo/surety"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label="GitHub repository"
 									className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
 								>
-									<Menu className="h-5 w-5" aria-hidden="true" strokeWidth={1.5} />
-								</button>
+									<Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
+								</a>
 							</HeaderTooltip>
-						)}
-						<Breadcrumbs items={[{ label: "首页", href: "/" }, ...breadcrumbs]} />
-					</div>
-					<div className="flex items-center gap-1">
-						<EnvironmentSelector />
-						<HeaderTooltip label="GitHub repository">
-							<a
-								href="https://github.com/nocoo/surety"
-								target="_blank"
-								rel="noopener noreferrer"
-								aria-label="GitHub repository"
-								className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-							>
-								<Github className="h-[18px] w-[18px]" aria-hidden="true" strokeWidth={1.5} />
-							</a>
-						</HeaderTooltip>
-						<HexlyLink />
-						<ThemeToggle />
-					</div>
-				</header>
+							<HexlyLink />
+							<ThemeToggle />
+						</div>
+					</header>
 
-				{/* Floating island content area */}
-				<div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
-					<ContentIsland>{children}</ContentIsland>
-				</div>
-			</BasaltAppMain>
-
-			{/* Global Cmd/Ctrl+K command palette — present on every route. */}
-			<CommandPalette />
-		</BasaltAppShell>
+					<div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
+						<ContentIsland>{children}</ContentIsland>
+					</div>
+				</BasaltAppMain>
+			</BasaltAppShell>
+		</CommandPaletteProvider>
 	);
 }
 
 export function AppShell({ children, breadcrumbs = [] }: AppShellProps) {
 	return (
-		<SidebarProvider>
+		<MobileNavProvider>
 			<AppShellInner breadcrumbs={breadcrumbs}>{children}</AppShellInner>
-		</SidebarProvider>
+		</MobileNavProvider>
 	);
 }

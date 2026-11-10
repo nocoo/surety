@@ -14,7 +14,16 @@ import {
 	UserRound,
 	Users,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useNavigate } from "react-router";
 import useSWR from "swr";
 import { fetchAPI } from "@/api";
@@ -35,8 +44,19 @@ import { cn } from "@/lib/utils";
  *   members, hospitals, doctors — so the first-render cost is zero.
  *   SWR caches each list for 60s; reopening within a minute is instant.
  */
-export function CommandPalette() {
+const CommandPaletteOpenContext = createContext<(() => void) | null>(null);
+
+export function useOpenCommandPalette(): () => void {
+	const open = useContext(CommandPaletteOpenContext);
+	if (!open) {
+		throw new Error("useOpenCommandPalette must be used within CommandPalette");
+	}
+	return open;
+}
+
+export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 	const [open, setOpen] = useState(false);
+	const openPalette = useCallback(() => setOpen(true), []);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -51,12 +71,15 @@ export function CommandPalette() {
 	}, []);
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogContent className="overflow-hidden p-0 sm:max-w-xl" showCloseButton={false}>
-				<DialogTitle className="sr-only">命令面板</DialogTitle>
-				<PaletteContent onClose={() => setOpen(false)} active={open} />
-			</DialogContent>
-		</Dialog>
+		<CommandPaletteOpenContext.Provider value={openPalette}>
+			{children}
+			<Dialog open={open} onOpenChange={setOpen}>
+				<DialogContent className="overflow-hidden p-0 sm:max-w-xl" showCloseButton={false}>
+					<DialogTitle className="sr-only">命令面板</DialogTitle>
+					<PaletteContent onClose={() => setOpen(false)} active={open} />
+				</DialogContent>
+			</Dialog>
+		</CommandPaletteOpenContext.Provider>
 	);
 }
 
