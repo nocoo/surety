@@ -154,15 +154,7 @@ function SuretySidebarBody({
 		<>
 			<SidebarHeader>
 				<SidebarBrand
-					logo={
-						<img
-							src="/logo-24.png"
-							alt=""
-							width={20}
-							height={20}
-							className="size-basalt-sidebar-brand-slot shrink-0"
-						/>
-					}
+					logo={<img src="/logo-80.png" alt="" width={24} height={24} />}
 					name="surety"
 					version={`v${APP_VERSION}`}
 					action={
