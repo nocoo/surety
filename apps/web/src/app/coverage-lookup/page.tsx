@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import {
 	type CategoryGroup,
 	type CoverageLookupData,
@@ -177,31 +178,28 @@ export default function CoverageLookupPage() {
 	return (
 		<AppShell breadcrumbs={breadcrumbs}>
 			<div className="space-y-5">
-				{/* Header */}
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">保障速查</h1>
-						<p className="text-sm text-muted-foreground">
-							快速查看家庭成员和资产的保障信息，紧急情况下快速定位联系方式
-						</p>
-					</div>
-					{data.categoryGroups.length > 0 && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleCopyAll}
-							className="gap-1.5 self-start"
-							disabled={!subjectLabel}
-						>
-							{copied ? (
-								<Check className="h-4 w-4 text-success-text" />
-							) : (
-								<Copy className="h-4 w-4" />
-							)}
-							{copied ? "已复制全部信息" : "复制全部信息"}
-						</Button>
-					)}
-				</div>
+				<PageHeader
+					title="保障速查"
+					description="快速查看家庭成员和资产的保障信息，紧急情况下快速定位联系方式"
+					actions={
+						data.categoryGroups.length > 0 ? (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleCopyAll}
+								className="gap-1.5"
+								disabled={!subjectLabel}
+							>
+								{copied ? (
+									<Check className="h-4 w-4 text-success-text" />
+								) : (
+									<Copy className="h-4 w-4" />
+								)}
+								{copied ? "已复制全部信息" : "复制全部信息"}
+							</Button>
+						) : undefined
+					}
+				/>
 				{copyError && (
 					<p className="-mt-4 text-sm text-destructive-text" role="alert">
 						{copyError}
