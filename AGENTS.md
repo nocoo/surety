@@ -97,6 +97,7 @@ The explicit `db:migrate` command applies the shared SQL migrations remotely and
 ## Retrospective
 
 Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
+
 - Cross-database imports must name columns explicitly; never depend on SQLite `.dump` column order.
 - Drizzle sqlite-proxy get returns a flat row; all returns a row array. Verify actual driver contracts.
 - `logout` output does not prove token revocation, and `SURETY_CLI_DEV` only changes the config file.

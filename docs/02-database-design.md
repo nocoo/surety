@@ -178,6 +178,7 @@ settings (全局设置，KV存储)
 | paidAmount   | REAL                            | 实际缴费金额         |
 
 **缴费计划生成逻辑**：
+
 1. 创建保单时，根据 `effectiveDate` + `paymentFrequency` + `totalPayments` 自动生成全部期数
 2. 用户标记已缴时，更新 `paidDate`、`paidAmount`、`status=Paid`
 3. 宽限期计算：`dueDate + 60天` 内未缴则 `status` 变为 `Overdue`

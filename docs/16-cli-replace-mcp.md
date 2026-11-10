@@ -5,6 +5,7 @@ Status: **Phase 1–5 文档部分完成**，剩余 `npm publish` + git tag 由�
 ## 背景
 
 目前 `packages/mcp` 是面向 LLM 的 MCP server，通过 stdio 提供 12 个工具集 (≈2.3k 行) 调用 Worker API。问题：
+
 - **安装路径重**：需要 `mcpServers` 配置 + 本地 clone 源码 + `bun run packages/mcp/src/index.ts`。
 - **传播不友好**：MCP 只能被支持 MCP 的 AI 客户端消费，无法直接给人/脚本用。
 - **设置页开关冗余**：`mcp.enabled` + 路径复制卡片，需要用户手动拼 JSON。
@@ -40,10 +41,12 @@ Status: **Phase 1–5 文档部分完成**，剩余 `npm publish` + git tag 由�
 | dashboard               | `/api/dashboard`                                                 | GET                                | dashboard                                         |
 
 **不覆盖**的 MCP 原有工具：
+
 - `cash-values`：MCP 里本身是 "Not available" stub，CLI 直接不实现。
 - `coverage`（第二层嵌套）：拆成三个顶层命令 `coverage`/`renewals`/`dashboard`，不再叠一层。
 
 **后端缺口（CLI 无法填补，需要 Worker 先加能力）**：
+
 - beneficiaries 写入（新增/替换/删除）：CLI 暂无 `set`/`add`/`rm`，用户需用 Web UI。
 - attachments 上传：CLI 无 `add`/`upload`，Worker 有 POST multipart 但 CLI 当前不实现上传路径。
 - policies 嵌套读取：GET /api/policies/:id **不**内联 payments / beneficiaries / coverage-items / attachments。需要嵌套视图请分别调 `policies payments ls`、`coverage-items ls` 等子命令。
@@ -170,10 +173,12 @@ surety dashboard
 ### `surety login` 流程
 
 Surety 有**两个独立域**：
+
 - `loginUrl`（默认 `https://surety.hexly.ai`）：CF Access 保护，承载 `/api/auth/cli` 铸 token 入口
 - `apiUrl`（默认 `https://surety-api.hexly.ai`）：数据平面，纯 Bearer token
 
 `surety login` 走 `loginUrl`，完成后把 token 和两个 URL 都落到 config；之后所有业务命令走 `apiUrl`。
+
 1. `performLogin({ apiUrl: loginUrl, loginPath: "/api/auth/cli", tokenParam: "api_key" })`
    （base-cli 的参数名叫 `apiUrl`，但这里传的是"铸 token 入口"的 origin，即 loginUrl）
 2. 浏览器走 CF Access（Google OAuth）→ Worker 用 `accessEmail` 铸 token → 302 到 loopback `/callback?api_key=...&state=...&email=...`
@@ -181,6 +186,7 @@ Surety 有**两个独立域**：
 4. stdout `{"ok": true, "apiUrl": "...", "loginUrl": "...", "email": "..."}`
 
 覆盖方式（dev / self-host）：
+
 - 命令行：`surety login --login-url=... --api-url=...`
 - 环境变量：`SURETY_LOGIN_URL` / `SURETY_API_URL` / `SURETY_API_TOKEN`
 - `SURETY_CLI_DEV=1` → 使用 `config.dev.json`
@@ -223,6 +229,7 @@ Surety 有**两个独立域**：
 ### Phase 5: 文档 + 发布
 
 打包形态：**选 A（Bun-only）**。`bin` 直接指向 `src/index.ts`，shebang `#!/usr/bin/env bun`，无 build 步骤，README 明示需要 Bun。
+
 - [x] 选 A（Bun-only，保持 `src/index.ts` 为 bin）
 - [x] `apps/cli/README.md`：安装、配置、完整命令清单、AI 示例
 - [x] 根 `README.md`：CLI 章节改为实际状态（含命令示例，去掉"规划中"）

@@ -36,6 +36,7 @@ bunx drizzle-kit push
 ```
 
 验证表结构：
+
 ```bash
 cd apps/worker && bunx wrangler d1 execute surety-db --remote \
   --command "SELECT name FROM sqlite_master WHERE type='table'"
@@ -62,6 +63,7 @@ cd apps/worker && bunx wrangler d1 execute surety-db --remote --file=<sql_file>
 本地入口域名（Caddy → `:7012`）：**`https://surety.dev.hexly.ai`**（不要用 `localhost:7012` 当日常入口）。
 
 `.env`（用于 Vite dev proxy，根目录）：
+
 ```
 # 三域分离 — 勿混用
 # APP:   https://surety.dev.hexly.ai   本地 SPA（Caddy）
@@ -72,7 +74,6 @@ SURETY_API_URL=https://surety-api.hexly.ai   # 或本地 Worker http://localhost
 SURETY_LOGIN_URL=https://surety.hexly.ai     # 仅 CF Access 域；禁止写成 *.dev.hexly.ai
 SURETY_DEV_API_TOKEN=sk_xxx                  # 从 /api/auth/cli 流程铸造
 ```
-
 
 ## CLI
 
@@ -87,12 +88,12 @@ AI/脚本入口，通过 Bearer token 访问 Worker HTTP API，已替代原 MCP 
 | 全局安装       | `bun add -g @nocoo/surety`                                          |
 
 认证域名模型（易错点）：
+
 - `loginUrl`（默认 `https://surety.hexly.ai`）= CF Access 保护的铸 token 入口，`surety login` 必须打在这个域。
 - `apiUrl`（默认 `https://surety-api.hexly.ai`）= 数据面，纯 Bearer token。
 - 两者配置/env 完全独立（`SURETY_LOGIN_URL` vs `SURETY_API_URL`）。改动 login 流时务必保持分离。
 
 完整命令清单和输出契约见 [apps/cli/README.md](../apps/cli/README.md)。
-
 
 ## Versions
 
