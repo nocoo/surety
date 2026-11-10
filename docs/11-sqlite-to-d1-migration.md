@@ -12,6 +12,7 @@
 ## Overview
 
 将 Surety 的数据库从本地 SQLite 文件迁移到 Cloudflare D1，通过 **Cloudflare Worker proxy** 访问 D1。部署架构（Railway）保持不变。
+
 - **运行时访问**：Next.js → Worker proxy → D1 binding（推荐路径，无需账户级 Token）
 - **管理面访问**：`drizzle-kit` + `d1-http` driver 做 schema push/migrate（账户级 API Token，仅开发时使用）
 
@@ -401,6 +402,7 @@ getDbForRequest(request | targetDb)
 ```
 
 **关键变化**：
+
 - **移除全局可变状态**：不再有 `process.env.SURETY_DB`、`currentDbFile`、全局 `sqlite`/`dbInstance` 变量
 - **Request-scoped**：API route 通过 `getDbForRequest(request)` 获取 db instance
 - **移除**：`resolveDbPath()`, `DATABASE_FILES`, `PROTECTED_FILES`, `getRawSqlite()`, `switchDatabase()`
@@ -586,6 +588,7 @@ try {
 Worker 内部使用 D1 binding 的 `batch()` 方法——这是真正的原子操作（D1 保证 batch 内的所有 statement 要么全部成功，要么全部回滚）。
 
 **`restoreBackup()` 策略**：
+
 1. 通过 Worker `/batch` 端点发送所有 DELETE + INSERT 语句
 2. Worker 内部将这些语句包装为 `env.DB.batch([...])` 执行
 3. 如果任何语句失败，D1 自动回滚整个 batch
@@ -606,6 +609,7 @@ Worker 内部使用 D1 binding 的 `batch()` 方法——这是真正的原子�
 单元测试继续使用本地 `:memory:` SQLite（通过 `bun:sqlite`）。
 
 **实现**：`createTestDb()` 在 test 环境下走 `bun:sqlite` + `drizzle-orm/bun-sqlite` 路径，与 Worker proxy / D1 完全隔离。保持：
+
 - 极速执行（无网络延迟）
 - 无外部依赖
 - 现有 `resetTestDb()` 逻辑不变
@@ -694,6 +698,7 @@ sqlite3 database/surety.example.db .dump > /tmp/surety-example-dump.sql
 ```
 
 **导入前预处理**（critical）：
+
 - `sqlite3 .dump` 输出包含 `BEGIN TRANSACTION` / `COMMIT`——D1 不支持，需移除
 - 大批量 `INSERT` 语句可能超过 D1 单次请求限制（100KB/statement），需拆分
 - `CREATE TABLE` 语句与 `drizzle-kit push` 冲突——如果已 push schema，需从 dump 中移除 DDL（只保留 INSERT）
@@ -731,6 +736,7 @@ wrangler d1 execute surety-db --remote --command="SELECT key FROM settings"
 ### Railway Migration
 
 Railway 环境需要配置新的环境变量并部署新版本代码。
+
 1. 在 Railway 中设置 `SURETY_WORKER_URL` 和 `SURETY_WORKER_SECRET`
 2. 部署新版本代码
 3. 验证线上服务正常（全功能回归）
@@ -746,6 +752,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 1: `feat: add cloudflare worker d1 proxy` ✅
 
 **Files**:
+
 - New: `worker/` 目录 (index.ts, auth.ts, db.ts, routes/query.ts, routes/batch.ts, routes/health.ts)
 - New: `worker/wrangler.toml`
 - New: `worker/package.json`, `worker/tsconfig.json`
@@ -755,6 +762,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 2: `feat: add worker-db-client and sqlite-proxy foundation` ✅
 
 **Files**:
+
 - New: `src/db/worker-db-client.ts`
 - New: `src/db/worker-db-client.test.ts`
 - Update: `.env.example` (add `SURETY_WORKER_URL`, `SURETY_WORKER_SECRET`)
@@ -764,6 +772,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 3: `refactor: rewrite db/index.ts for request-scoped d1 access` ✅
 
 **Files**:
+
 - Rewrite: `src/db/index.ts`
   - Production: `sqlite-proxy` + Worker proxy (request-scoped)
   - Test: `bun:sqlite` + `:memory:` (保留)
@@ -777,6 +786,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 4: `refactor: repo factory pattern (members, insurers, assets)` ✅
 
 **Files**:
+
 - Update: `src/db/repositories/members.ts` — `membersRepo` → `createMembersRepo(db)`, all methods async
 - Update: `src/db/repositories/insurers.ts` — same pattern
 - Update: `src/db/repositories/assets.ts` — same pattern
@@ -787,6 +797,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 5: `refactor: repo factory pattern (policies, beneficiaries, payments)` ✅
 
 **Files**:
+
 - Update: `src/db/repositories/policies.ts` — same factory pattern
 - Update: `src/db/repositories/beneficiaries.ts` — same factory pattern
 - Update: `src/db/repositories/payments.ts` — same factory pattern
@@ -797,6 +808,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 6: `refactor: repo factory pattern (cashValues, coverageItems, settings)` ✅
 
 **Files**:
+
 - Update: `src/db/repositories/cashValues.ts` — same factory pattern
 - Update: `src/db/repositories/coverageItems.ts` — same factory pattern
 - Update: `src/db/repositories/settings.ts` — same factory pattern
@@ -808,6 +820,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 7: `refactor: async api routes (members, policies, assets, insurers)` ✅
 
 **Files**:
+
 - Update: `src/app/api/members/route.ts`, `src/app/api/members/[id]/route.ts`
 - Update: `src/app/api/policies/route.ts`, `src/app/api/policies/[id]/route.ts`
 - Update: `src/app/api/policies/[id]/beneficiaries/route.ts`
@@ -823,6 +836,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 8: `refactor: async api routes (settings, lookup, calendar, live)` ✅
 
 **Files**:
+
 - Update: `src/app/api/settings/route.ts`, `src/app/api/settings/[key]/route.ts`
 - Update: `src/app/api/settings/backy/route.ts`, `.../push/route.ts`, `.../test/route.ts`, `.../history/route.ts`
 - Update: `src/app/api/coverage-lookup/route.ts`
@@ -835,6 +849,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 9: `refactor: async dashboard, totp, auth routes` ✅
 
 **Files**:
+
 - Update: `src/app/page.tsx` (request-scoped DB)
 - Update: `src/lib/dashboard-data.ts` (async repo calls)
 - Update: `src/lib/totp.ts` (TOTP store adapter → async)
@@ -846,6 +861,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 10: `refactor: async backup, health, backy service` ✅
 
 **Files**:
+
 - Rewrite: `src/db/backup.ts` (remove raw SQL → Drizzle ORM + Worker `/batch`)
 - Update: `src/lib/health.ts` → async via Worker `/health`
 - Update: `src/services/backy.ts` → async
@@ -857,6 +873,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 11: `refactor: request-scoped db switching, remove global state` ✅
 
 **Files**:
+
 - Update: `src/proxy.ts` (remove `process.env.SURETY_DB`; pass `targetDb` via request context)
 - Update: `src/lib/api-helpers.ts` (`ensureDbFromRequest()` → `getDbForRequest()`)
 - Update: `src/app/api/database/switch/route.ts` (cookie sets `targetDb` name, no global state)
@@ -867,6 +884,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 12: `refactor: async mcp tools and server` ✅
 
 **Files**:
+
 - Update: `mcp/guard.ts` → `await settingsRepo.get()`
 - Update: `mcp/tools/*.ts` (4 files) → async repo calls
 - Update: `mcp/server.ts` → async tool handlers
@@ -877,6 +895,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 13: `refactor: async seed scripts and e2e utils` ✅
 
 **Files**:
+
 - Update: `src/db/seed.ts` → async
 - Update: `src/db/seed-example.ts` → async
 - Update: `scripts/seed-e2e.ts` → Worker proxy based reset
@@ -889,6 +908,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 14: `chore: update dockerfile, remove native sqlite deps` ✅
 
 **Files**:
+
 - Update: `Dockerfile` (remove python3/make/g++, remove /data volume)
 - Update: `package.json` (remove `better-sqlite3`, `@types/better-sqlite3` from prod deps)
 
@@ -897,6 +917,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 15: `test: update e2e tests for isolated d1 databases` ✅
 
 **Files**:
+
 - Update: `src/__tests__/e2e/*.test.ts` → `SURETY_TARGET_DB=api-e2e`
 - Update: `e2e/tests/*.spec.ts` → `SURETY_TARGET_DB=ui-e2e`
 - Update: `mcp/__tests__/mcp.e2e.test.ts` → `SURETY_TARGET_DB=mcp-e2e`
@@ -906,6 +927,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ### Commit 16: `docs: update project description for self-host + d1 model` ✅
 
 **Files**:
+
 - Update: `README.md` (SQLite → D1, 本地化 → Self-host, architecture diagram)
 - Update: `CLAUDE.md` (技术栈表、常用命令、retrospective)
 - Update: `docs/02-database-design.md` (D1 architecture)
@@ -917,6 +939,7 @@ Railway 环境需要配置新的环境变量并部署新版本代码。
 ## Rollback Plan
 
 如果迁移过程中发现 Worker proxy 延迟不可接受或有未预见的兼容性问题：
+
 1. Git history 中保留迁移前的完整代码（本地 `.db` 文件和脚本已在后续清理中删除）
 2. 可通过 `git revert` 回退到 SQLite 版本
 3. D1 数据可通过 `wrangler d1 export` 导出为 SQL，再导入本地 SQLite

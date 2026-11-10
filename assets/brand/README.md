@@ -27,6 +27,7 @@ One native image request. Azure Foundry `gpt-image-2`, native 2048 × 2048; sele
 The smallest protected-feature clearance is **145.5 px** against the actual 23% rounded outline. Intentional lower neck/shoulder intersections are recorded separately; no expressive feature or accessory is clipped. The selected extraction preserves every fully opaque native RGB pixel. All artwork, background, grain, and shadow layers remain separate in the Hexly study.
 
 The presentation uses **Amber fan relief**, with base `#9b865c`, light `#d1c49b`, shade `#625235`, and motif `#43351e`. Product UI colors remain independent. [source.json](source.json) records exact master hashes and the prior source identity.
+
 - [Individual before/after page](https://hexly.ai/logos/surety)
 - [Complete generation and finishing archive](https://github.com/nocoo/hexly.ai/tree/main/artwork/logo-family/surety/2026-09-07-01)
 - [Local static review](https://index.dev.hexly.ai/artwork/logo-family/surety/2026-09-07-01/review.html)

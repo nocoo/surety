@@ -9,6 +9,7 @@
 Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier 灰阶的 token 体系、"floating island"内容容器、24 色 chart palette、统一的 Sheet/Dialog 模式、`getCategoryConfig` 险种语义化色彩，都说明这不是一个被 AI 套模板拼出来的 dashboard。
 
 但距离"专业、有温度、令人信任的家庭风险管理工具"还有一段路。问题集中在四条线：
+
 1. **页面级信息层次扁平**——dashboard、保单、就诊记录都呈现"标题 + 一行小灰字 + 等权图表/表格阵列"的同质模板，缺乏"今天最该关注什么"的视觉锚点。
 2. **数据密度与决策性不平衡**——表格列数往往超过 10 列（保单 13 列、就诊记录 12 列）触发横向滚动，而 dashboard 8 张图表全部描述性、没有 prescriptive 的"行动建议"。
 3. **品牌温度缺位**——产品定位"家庭保单管理"，目标用户是 40 岁、上有老下有小的开发者；当前 UI 完全是 SaaS 通用范式，没有任何能传递"守护家人"情感的视觉语言（空态/illustration、首屏问候、家庭成员维度的总览）。
@@ -304,6 +305,7 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 下面是个排期建议，方便挑下一轮 sprint 着手：
 
 **第一周（视觉 token 收口、零品牌成本）** — 部分完成 (2026-06-09)
+
 - ✅ 问题 6（AlertDialogAction 收口，8 处统一为 variant="destructive"）
 - ✅ 问题 8（CJK 字体栈显式声明 PingFang/Microsoft YaHei/Noto Sans SC）
 - ✅ 问题 9（settings/cli/visit-sheet/attachment-list 硬编码色 → 语义 token；新增 Notice 组件覆盖 6 处 red/green 状态卡片；medical-visits 症状色 → hash + chart palette；新增 `--success-text` / `--warning-text` / `--info-text` / `--destructive-text` 文本专用 token，覆盖 Notice + visit-sheet + monthly-details + payments-section + policies 的小号状态文字以满足 WCAG AA）
@@ -312,12 +314,14 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 - ⏸ 问题 17（avatar 与 chart palette 对齐）— **撤回**。曾尝试让 avatar 直接使用 `bg-chart-1..16`，但 chart 色板是为填充背景设计、不是为白字前景设计：实测 chart-7 ≈ 1.98:1、chart-6 ≈ 2.15:1、chart-1 ≈ 2.6:1，均远低于 4.5:1，会让头像首字母不可读。已回退到 16 色可读性专用色板（每个槽位都验证 ≥ 4.5:1），并删除了未实际接入 dashboard 的 `getChartColorForName` helper。"同一实体同一颜色"还需要后续单独处理：要么给每个 avatar 槽配一个 chart 槽（颜色不同但语义对应），要么在图表里另外建一套 fill-friendly entity palette。
 
 **第二周（信息密度调整、提升日常使用体验）** — ✅ 全部完成 (2026-06-09)
+
 - ✅ 问题 15（保单详情 4 列等宽 → 7/5 主+边栏布局：左 Meta+Coverage / 右 Timeline+Payments；PolicyDetailSkeleton 同步）
 - ✅ 问题 14（保单页 5 个 Select 抽出 `<PolicyFilters>`：紧凑触发按钮 + 已应用条件以可移除 chip 展示 + Sheet 内编辑面板；保留 5 个 localStorage key 向后兼容；新增 8 个 L1 测试覆盖 `countActiveFilters` / `buildChips`）
 - ✅ 问题 2（保单列表新增密度切换 cards/comfortable/compact，持久化到 localStorage；mobile card 升级为桌面 grid 1/2/3 列；compact 模式行高减少约 30%）
 - ✅ 问题 3（就诊记录新增 Timeline 视图——按月聚合 + 卡片式呈现，`groupVisitsByMonth` 抽出独立模块，7 个 L1 测试；表格视图从 12 列瘦身到 7 列：月龄并入"就诊人"副标，距今/时间合并，医生并入医院，症状/诊断/治疗合并为一列垂直堆叠）
 
 **第三-四周（品牌叙事、做出差异化）** — ✅ 全部完成 (2026-06-09)
+
 - ✅ 问题 4（续保日历新增 12 月 calendar grid 视图：每月一个 Mon-start 小日历，有续保的日子点亮 + 多事件徽标 + tooltip 列每事件 + 点击跳转保单；柱状图退到 `<details>` 二级；`buildMonthGrid` / `bucketEventsByDay` 抽到 **test**，6 个 L1 测试）
 - ✅ 问题 12（保障速查紧急 UI：紧急联系电话块在分类之前优先展示，1/2 列网格 + 18px mono 号码 + `tel:` 链接；header 加"复制全部信息"按钮，输出多行人类可读文本；type switcher 升级为大尺寸 segmented control；PolicyCard 数字 18→20px；`buildEmergencyContacts` / `buildCoverageClipboardText` 纯函数，8 个 L1 测试）
 - ✅ 问题 5（品牌温度：dashboard header 替换"仪表盘/家庭保障概览"为 `{greeting}, {name}` + 家庭维度副标；新增 `<EmptyState>` 共享组件，软渐变品牌色圆 + CTA slot；dashboard 错误态 / policies / members 空态全部接入；`greetingForHour` / `familySubtitle` 纯函数 + 9 个 L1 测试）
@@ -325,6 +329,7 @@ Surety 的设计基础是**克制、扎实、不做作的**。Vermilion + 3-tier
 - ✅ 问题 1（Dashboard 重设计：顶部 5 列布局 = 家庭保障健康度 3 列（保费占年收入比例 + 5..15% 健康区间标尺 + 4 档语义着色 unknown/underinsured/healthy/overspent）+ 未来 30 天行动建议 2 列（按险种聚合即将续费/到期）；8 张图表折叠到 `<details>` 二级；`computeCoverageHealth` / `buildActionItems` 纯函数 + 9 个 L1 测试）
 
 **长期债务** — ✅ 全部完成 (2026-06-10)
+
 - ✅ 问题 7（sidebar 中文分组标题去 `uppercase` + `tracking-wider`，dashboard / palette 中文 eyebrow 同步处理；改用 `text-[11px]` 保持视觉层级）
 - ✅ 问题 21（CLI 入口从"系统"组移到独立"开发者"组，`defaultOpen: false` 默认折叠）
 - ✅ 问题 24（设置页 dirty 检测：`savedSettings` 快照 + `dirty` 信号 → 顶部"未保存的修改" banner + 保存按钮在 !dirty 时 disable + `beforeunload` 拦截；新增"放弃修改"动作回滚到 saved 快照）

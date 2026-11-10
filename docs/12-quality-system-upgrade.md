@@ -10,6 +10,7 @@ Upgrade from legacy "Four-Layer Testing" to the new quality system (3 test layer
 ## Background
 
 The project currently implements the old "四层测试架构" model. The new "质量体系" redefines the taxonomy:
+
 - **Lint is demoted** from a test layer to a quality gate (G1)
 - **L3/L4 merged** into a single System/E2E layer (L3)
 - **G2 Security gate** is added (osv-scanner + gitleaks)
@@ -72,6 +73,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Why**: Currently `bun run lint` in pre-commit scans the entire codebase (~hundreds of files). With lint-staged, only staged files are checked, cutting pre-commit lint time significantly.
 
 **Changes**:
+
 1. Install: `bun add -d lint-staged`
 2. Add `lint-staged` config to `package.json`:
 
@@ -92,6 +94,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Design note — incremental vs full lint**: After this change, pre-commit only lints staged files. There is no automatic full-codebase lint execution point (no CI exists). This is an intentional trade-off for pre-commit speed. Full lint is available on-demand via `bun run lint`. If a full-codebase lint gate is needed in the future, it should be added to a CI pipeline.
 
 **Files modified**:
+
 - `package.json` — add lint-staged dep + config
 - `.husky/pre-commit` — switch to lint-staged
 
@@ -106,6 +109,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Why**: Prevent accidentally committed `.skip()` / `.only()` from silently disabling tests. This is a quality system requirement under G1.
 
 **Changes**:
+
 1. Remove `e2e/**` from `globalIgnores` in `eslint.config.mjs` (currently ignored because Playwright tests are not React code, but we need ESLint to enforce test hygiene rules there)
 2. Add a new ESLint config block to disable React/Next.js rules for `e2e/` (since it's not React code)
 3. Add test hygiene rules targeting all test directories:
@@ -138,6 +142,7 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 ```
 
 **Files modified**:
+
 - `eslint.config.mjs` — remove `e2e/**` from globalIgnores, add React rule override for e2e/, add test hygiene rules
 
 **Verification**: `bun run lint` should pass (no existing .skip/.only found).
@@ -153,11 +158,13 @@ Each step = one atomic commit. Steps ordered by dependency and risk (low first).
 **Why**: The quality system requires dependency vulnerability scanning (osv-scanner) and secret leak detection (gitleaks) in pre-push.
 
 **Prerequisites**: Tools must be installed globally:
+
 ```bash
 brew install osv-scanner gitleaks
 ```
 
 **Changes**:
+
 1. Update `.husky/pre-push`:
 
    ```bash
@@ -217,6 +224,7 @@ brew install osv-scanner gitleaks
    - **gitleaks**: Uses `gitleaks git` subcommand (v8.19.0+; replaces deprecated `detect`/`protect`). For incremental pushes, uses the exact `remote_sha..local_sha` range. For new branches (remote_sha is zero), uses `git merge-base origin/HEAD` as a best-effort approximation — this may over-scan commits already on other remote refs. **Caveat**: if `origin/HEAD` is not set (e.g., bare clone without `git remote set-head`), the new-branch scan is skipped with a warning; this is a known gap traded for not blocking all pushes on misconfigured repos
 
 **Files modified**:
+
 - `.husky/pre-push` — add G2 security scans
 
 **Commit**: `feat: add G2 security gate (osv-scanner + gitleaks) to pre-push`
@@ -230,12 +238,14 @@ brew install osv-scanner gitleaks
 **Why**: Align terminology from "four-layer" to "quality system". Ensure lint script uses `--max-warnings=0` explicitly.
 
 **Changes**:
+
 1. `eslint.config.mjs`:
    - Change comment `// Strict mode: four-layer testing compliance` → `// G1: strict TypeScript rules`
 2. `package.json`:
    - Change `"lint"` script from `"eslint"` to `"eslint --max-warnings=0"` (explicit zero-tolerance)
 
 **Files modified**:
+
 - `eslint.config.mjs` — update comment
 - `package.json` — add --max-warnings=0 to lint script
 
@@ -250,6 +260,7 @@ brew install osv-scanner gitleaks
 **Why**: `docs/06-testing-improvement-plan.md` documents the old four-layer model and is fully completed. Archive it. Update CLAUDE.md test framework table to use the new L1/L2/L3/G1/G2 taxonomy.
 
 **Changes**:
+
 1. Create `docs/archive/` directory
 2. Move `docs/06-testing-improvement-plan.md` → `docs/archive/06-testing-improvement-plan.md`
 3. Update `CLAUDE.md` "四层测试框架" table:
@@ -302,6 +313,7 @@ brew install osv-scanner gitleaks
    - This is the actual gate command with the 90% threshold; `bun test --coverage` only prints coverage without enforcing it
 
 **Files modified**:
+
 - `docs/archive/06-testing-improvement-plan.md` (moved)
 - `CLAUDE.md` — update test framework table + section title + commands section
 - `README.md` — rewrite docs tree (add archive/, 12, README.md)
@@ -320,6 +332,7 @@ brew install osv-scanner gitleaks
 **Changes**:
 
 Create `docs/README.md`:
+
 ```markdown
 # Surety Documentation
 
@@ -343,6 +356,7 @@ Create `docs/README.md`:
 ```
 
 **Files modified**:
+
 - `docs/README.md` (new)
 
 **Commit**: `docs: add docs/README.md index`

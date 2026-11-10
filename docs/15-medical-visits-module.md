@@ -277,6 +277,7 @@ export function createHospitalsRepo(dbInstance: DbInstance) {
 ### API Delete Constraints
 
 Before deleting:
+
 - **Hospital**: Check for linked doctors and visits → 409 Conflict
 - **Doctor**: Check for linked visits → 409 Conflict
 - **Member** (existing, needs modification): Check for linked visits → 409 Conflict

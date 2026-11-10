@@ -32,6 +32,7 @@ Ordered by risk (low risk first) and dependency. Each step = one atomic commit.
 ### Step 1 — Fix Husky hook responsibilities
 
 **Risk**: Zero. **ETA**: 5 min.
+
 - `pre-commit`: `bun run test:coverage && bun run lint`
 - `pre-push`: `bun run test:e2e` (BDD E2E is on-demand via `bun run test:e2e:ui`)
 
@@ -80,11 +81,13 @@ Commit: `test: add e2e tests for live endpoint and backup restore`
 **Risk**: **High** — may produce many new errors. **ETA**: 1-3 hours.
 
 Phase approach:
+
 1. Add strict rules as `"warn"` first, run lint to assess impact
 2. Fix all warnings
 3. Promote to `"error"`
 
 Rules to add:
+
 - `@typescript-eslint/no-explicit-any`: error
 - `@typescript-eslint/no-unused-vars`: error (with `argsIgnorePattern: "^_"`)
 - `@typescript-eslint/strict-boolean-expressions`: warn → error

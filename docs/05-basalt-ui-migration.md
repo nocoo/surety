@@ -91,6 +91,7 @@ chart-13 (orchid)       → chart-18 (cadet)   → chart-24 (gray)
 ```
 
 Includes semantic aliases:
+
 - `chartPositive` = green
 - `chartNegative` = destructive red
 - `chartPrimary` = brand (vermilion in our case)
@@ -125,6 +126,7 @@ Includes semantic aliases:
 ```
 
 Key changes:
+
 - Header: remove `border-b`, keep `h-14`
 - Main wrapper: `flex-1 px-2 pb-2 md:px-3 md:pb-3`
 - Inner container: `rounded-[16px] md:rounded-[20px] bg-card p-3 md:p-5 overflow-y-auto`
@@ -150,6 +152,7 @@ Key changes:
 ## 7. Login Page → BadgeLogin
 
 Replace the current simple Card login with basalt's BadgeLoginPage design:
+
 - Vertical badge card (54:86 aspect ratio)
 - Vermilion header strip with barcode pattern + logo
 - Avatar placeholder area

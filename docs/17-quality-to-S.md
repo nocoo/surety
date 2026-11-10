@@ -144,6 +144,7 @@ L3 UI E2E 决定**直接删除而非迁移**：跑的是即将下线的 Next.js 
 ### L2 HTTP suite
 
 `apps/worker/__tests__/l2-http/`，runner 通过 `bun run scripts/run-l2-http.ts` 启 wrangler dev `--local --persist-to` 后 fetch 127.0.0.1:7017：
+
 - `live.http.test.ts` — `/api/live` 返回 `version` + D1 状态 + `Cache-Control: no-store`
 - `crud.http.test.ts` — members + policies CRUD（POST/GET/PUT/DELETE），守 `typeof id === "number"`
 - `attachments.http.test.ts` — R2 真 binding：multipart upload → list → metadata → file download → DELETE；并验证非 PDF magic bytes 在 application/pdf content-type 下被拒绝

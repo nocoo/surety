@@ -80,6 +80,7 @@ surety members rm 999
 ## JSON input for `add` / `update`
 
 Mutating commands take the payload via one of (in priority order):
+
 1. `--data '<inline json>'`
 2. `--data-file <path>` (use `-` to read from stdin)
 3. piped stdin (when not a TTY)
@@ -99,6 +100,7 @@ Positional JSON arguments are **not** accepted.
 ### Flat entities (CRUD)
 
 All follow the same shape:
+
 - `ls` — list all
 - `get <id>` — fetch one
 - `add --data '<json>'` — create (also `--data-file <path>` / stdin)
@@ -156,6 +158,7 @@ surety policies attachments rm <policyId> <attachmentId>
 ## Current limitations
 
 Current boundaries:
+
 - `PUT/DELETE /api/policies/:id/beneficiaries` — beneficiaries are currently read-only
 - `POST /api/policies/:id/attachments` supports upload in the Worker, but the CLI has no upload subcommand. PDF, JPEG, and PNG are supported, up to 50 MiB per file and 20 files per policy.
 - Attachment `rm` deletes the database record and attempts to remove the R2 file; an R2 deletion failure is not surfaced by the endpoint.

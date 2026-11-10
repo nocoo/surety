@@ -20,6 +20,7 @@ R2 Bucket  surety (prod) / surety (local, via --env dev --local)
 ```
 
 **Key decisions:**
+
 - **No public R2 URL** — 所有文件访问走 Next.js → Worker 双重认证
 - **Buffering strategy** — Next.js `request.formData()` 会在内存中缓冲整个 multipart body（框架限制，无法绕过）。上传路由在调用 `formData()` 之前先检查 `Content-Length` header，对声明超过 51MB 的请求直接返回 413（不分配内存）。这是 advisory guard——`Content-Length` 可被省略或伪造，真正的权威校验是 `formData()` 之后的 `file.size` 检查。对于没有 `Content-Length` 或伪造的恶意请求，仍会先缓冲再拒绝。完全杜绝内存型 DoS 需要放弃 `formData()` 转为流式 multipart 解析，对家庭应用来说过度设计。随后用 `file.stream()` 流式传输到 Worker，避免二次缓冲。总内存占用约 1x 文件大小。Worker 侧真正 end-to-end streaming（`request.body` → `bucket.put()`）。
 - **Browser native PDF viewer** — `<iframe>` + `Content-Disposition: inline`，无需 PDF.js
@@ -113,6 +114,7 @@ export const attachments = sqliteTable("attachments", {
 **New: `src/db/repositories/attachments.ts`** — Factory pattern `createAttachmentsRepo(db)`
 
 Methods:
+
 - `findByPolicyId(policyId)` — 列出保单的所有附件
 - `findByIdAndPolicyId(id, policyId)` — 按 ID 查找并验证归属（防 IDOR）
 - `create(data)` — 新增记录
@@ -184,6 +186,7 @@ export function generateR2Key(policyId: number, filename: string): string;
 **Modify: `src/app/api/policies/[id]/route.ts`**
 
 DELETE handler 步骤：
+
 1. 查询所有 attachments（收集 R2 keys）
 2. 代码显式按顺序删除子表 DB 记录（attachments → beneficiaries → payments → ...），不依赖 SQLite FK cascade action
 3. **DB 删除成功后**，`Promise.allSettled` 清理 R2 objects（**best-effort**: R2 失败不影响已完成的 DB 删除，可能留下 orphan R2 objects）
@@ -211,6 +214,7 @@ PolicyDetailDialog (existing)
 **New: `src/components/attachments/attachment-drop-zone.tsx`**
 
 使用 `react-dropzone`（~9KB, 零子依赖）处理拖拽：
+
 - Drag active 时边框高亮
 - 上传中显示 Progress bar
 - 错误信息展示（类型/大小不合规）
