@@ -10,7 +10,7 @@
 		"test:e2e": "cd ../.. && bun run test:e2e:browser"
 	},
 	"dependencies": {
-		"@nocoo/basalt": "3.2.1",
+		"@nocoo/basalt": "3.2.5",
 		"@surety/api": "workspace:*",
 		"@surety/db": "workspace:*",
 		"class-variance-authority": "^0.7.1",
