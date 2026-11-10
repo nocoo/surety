@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import {
 	AlertCircle,
 	Building2,
@@ -492,66 +493,70 @@ export default function MedicalVisitsPage() {
 	return (
 		<AppShell breadcrumbs={[{ label: "就诊记录" }]}>
 			<div className="space-y-6">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">就诊记录</h1>
-						<p className="text-sm text-muted-foreground">
+				<PageHeader
+					title="就诊记录"
+					description={
+						<>
 							共 {memberFilteredVisits.length} 条记录
 							{temporalFilter !== "all" && ` · 当前显示 ${filteredVisits.length} 条`}
 							{selectedMemberId !== "all" && " (已筛选成员)"}
-						</p>
-					</div>
-					<div className="flex flex-wrap items-center gap-3">
-						<ToggleGroup
-							type="single"
-							value={viewMode}
-							onValueChange={(v) => v && setViewMode(v as "table" | "timeline")}
-							aria-label="视图模式"
-						>
-							<ToggleGroupItem value="table" aria-label="表格视图">
-								<List className="h-4 w-4" />
-							</ToggleGroupItem>
-							<ToggleGroupItem value="timeline" aria-label="时间轴视图">
-								<GalleryVerticalEnd className="h-4 w-4" />
-							</ToggleGroupItem>
-						</ToggleGroup>
-						<ToggleGroup
-							type="single"
-							value={temporalFilter}
-							onValueChange={(v) => v && setTemporalFilter(v as TemporalFilter)}
-							variant="outline"
-							size="sm"
-							aria-label="时间筛选"
-						>
-							<ToggleGroupItem value="all" aria-label={`全部 ${temporalCounts.all}`}>
-								全部 {temporalCounts.all}
-							</ToggleGroupItem>
-							<ToggleGroupItem value="upcoming" aria-label={`待就诊 ${temporalCounts.upcoming}`}>
-								待就诊 {temporalCounts.upcoming}
-							</ToggleGroupItem>
-							<ToggleGroupItem value="past" aria-label={`已发生 ${temporalCounts.past}`}>
-								已发生 {temporalCounts.past}
-							</ToggleGroupItem>
-						</ToggleGroup>
-						<Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-							<SelectTrigger className="w-[150px]">
-								<SelectValue placeholder="全部成员" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">全部成员</SelectItem>
-								{members.map((member) => (
-									<SelectItem key={member.id} value={member.id.toString()}>
-										{member.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						</>
+					}
+					actions={
 						<Button onClick={handleAdd} disabled={!canAddVisit}>
 							<Plus className="mr-2 h-4 w-4" />
 							添加记录
 						</Button>
-					</div>
-				</div>
+					}
+					filters={
+						<div className="flex flex-wrap items-center gap-3">
+							<ToggleGroup
+								type="single"
+								value={viewMode}
+								onValueChange={(v) => v && setViewMode(v as "table" | "timeline")}
+								aria-label="视图模式"
+							>
+								<ToggleGroupItem value="table" aria-label="表格视图">
+									<List className="h-4 w-4" />
+								</ToggleGroupItem>
+								<ToggleGroupItem value="timeline" aria-label="时间轴视图">
+									<GalleryVerticalEnd className="h-4 w-4" />
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<ToggleGroup
+								type="single"
+								value={temporalFilter}
+								onValueChange={(v) => v && setTemporalFilter(v as TemporalFilter)}
+								variant="outline"
+								size="sm"
+								aria-label="时间筛选"
+							>
+								<ToggleGroupItem value="all" aria-label={`全部 ${temporalCounts.all}`}>
+									全部 {temporalCounts.all}
+								</ToggleGroupItem>
+								<ToggleGroupItem value="upcoming" aria-label={`待就诊 ${temporalCounts.upcoming}`}>
+									待就诊 {temporalCounts.upcoming}
+								</ToggleGroupItem>
+								<ToggleGroupItem value="past" aria-label={`已发生 ${temporalCounts.past}`}>
+									已发生 {temporalCounts.past}
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+								<SelectTrigger className="w-[150px]">
+									<SelectValue placeholder="全部成员" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">全部成员</SelectItem>
+									{members.map((member) => (
+										<SelectItem key={member.id} value={member.id.toString()}>
+											{member.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					}
+				/>
 
 				{!canAddVisit ? (
 					<div className="rounded-card bg-secondary p-8 text-center">
