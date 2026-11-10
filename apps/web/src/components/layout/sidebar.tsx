@@ -221,18 +221,7 @@ function SuretySidebarBody({
 						))}
 			</SidebarNav>
 			<SidebarFooter>
-				{railCollapsed ? (
-					<Tooltip delayDuration={0}>
-						<TooltipTrigger asChild>
-							<span className="inline-flex">{avatar}</span>
-						</TooltipTrigger>
-						<TooltipContent side="right" sideOffset={8}>
-							{userName}
-						</TooltipContent>
-					</Tooltip>
-				) : (
-					<SidebarUser name={userName} email={userEmail ?? undefined} avatar={avatar} />
-				)}
+				<SidebarUser name={userName} email={userEmail ?? undefined} avatar={avatar} />
 			</SidebarFooter>
 		</>
 	);
