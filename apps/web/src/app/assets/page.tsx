@@ -1,4 +1,5 @@
 import { Button } from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { Car, FileText, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -15,7 +16,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/ui/page-header";
 import {
 	Table,
 	TableBody,
