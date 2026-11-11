@@ -100,5 +100,24 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await expect(page).toHaveURL(/\/members$/);
 			await expect(page.getByRole("dialog")).toBeHidden();
 		});
+
+		test("mobile drawer dismiss button and first Escape close it", async ({ page }) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.goto("/");
+			const openNavigation = page.getByRole("button", { name: "打开导航菜单", exact: true });
+			await openNavigation.click();
+			const drawer = page.getByRole("dialog");
+			const dismiss = drawer.getByRole("button", { name: "关闭导航菜单", exact: true });
+			await expect(dismiss).toBeVisible();
+			await dismiss.click();
+			await expect(drawer).toBeHidden();
+			await expect(openNavigation).toBeFocused();
+			await openNavigation.click();
+			await dismiss.focus();
+			await expect(page.getByRole("tooltip")).toHaveCount(0);
+			await page.keyboard.press("Escape");
+			await expect(drawer).toBeHidden();
+			await expect(openNavigation).toBeFocused();
+		});
 	});
 }

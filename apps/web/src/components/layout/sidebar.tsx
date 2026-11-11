@@ -119,14 +119,18 @@ interface SidebarProps {
 	/** Desktop shows collapse toggle; mobile drawer stays expanded without resize. */
 	variant?: "desktop" | "mobile";
 	onNavigate?: () => void;
+	/** Mobile drawer: closes the drawer from the brand row. */
+	onDismiss?: () => void;
 }
 
 function SuretySidebarBody({
 	variant,
 	onNavigate,
+	onDismiss,
 }: {
 	variant?: SidebarProps["variant"];
 	onNavigate?: () => void;
+	onDismiss?: () => void;
 }) {
 	const { pathname } = useLocation();
 	const { collapsed, peek, peeking } = useSidebar();
@@ -158,7 +162,13 @@ function SuretySidebarBody({
 					name="surety"
 					version={`v${APP_VERSION}`}
 					action={
-						variant === "mobile" ? undefined : (
+						variant === "mobile" ? (
+							<SidebarToggle
+								mode="dismiss"
+								dismissLabel="关闭导航菜单"
+								{...(onDismiss ? { onDismiss } : {})}
+							/>
+						) : (
 							<SidebarToggle expandLabel="展开侧边栏" collapseLabel="收起侧边栏" />
 						)
 					}
@@ -227,11 +237,15 @@ function SuretySidebarBody({
 	);
 }
 
-export function Sidebar({ ariaLabel, variant = "desktop", onNavigate }: SidebarProps) {
+export function Sidebar({ ariaLabel, variant = "desktop", onNavigate, onDismiss }: SidebarProps) {
 	return (
 		<TooltipProvider delayDuration={0}>
 			<BasaltSidebar aria-label={ariaLabel} resizable={false}>
-				<SuretySidebarBody variant={variant} {...(onNavigate ? { onNavigate } : {})} />
+				<SuretySidebarBody
+					variant={variant}
+					{...(onNavigate ? { onNavigate } : {})}
+					{...(onDismiss ? { onDismiss } : {})}
+				/>
 			</BasaltSidebar>
 		</TooltipProvider>
 	);
