@@ -101,6 +101,21 @@ for (const colorScheme of ["light", "dark"] as const) {
 			await expect(page.getByRole("dialog")).toBeHidden();
 		});
 
+		test("expanded footer signs out through Access and the rail hides it", async ({ page }) => {
+			await page.goto("/");
+			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+			const signOut = sidebar.getByRole("link", { name: "退出登录", exact: true });
+			await expect(signOut).toHaveAttribute(
+				"href",
+				"https://nocoo.cloudflareaccess.com/cdn-cgi/access/logout",
+			);
+			await signOut.hover();
+			await expect(page.getByRole("tooltip", { name: "退出登录" })).toBeVisible();
+			await page.getByRole("button", { name: "收起侧边栏", exact: true }).click();
+			await expect(sidebar).toHaveCSS("width", "68px");
+			await expect(sidebar.getByRole("link", { name: "退出登录", exact: true })).toHaveCount(0);
+		});
+
 		test("mobile drawer dismiss button and first Escape close it", async ({ page }) => {
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.goto("/");

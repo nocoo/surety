@@ -41,6 +41,7 @@ import { useLocation } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMe } from "@/hooks/use-me";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { ACCESS_LOGOUT_URL } from "@/lib/access";
 import {
 	ALL_NAV_ITEMS as ALL_NAV_ITEMS_DEF,
 	isItemActive,
@@ -231,7 +232,13 @@ function SuretySidebarBody({
 						))}
 			</SidebarNav>
 			<SidebarFooter>
-				<SidebarUser name={userName} email={userEmail ?? undefined} avatar={avatar} />
+				<SidebarUser
+					name={userName}
+					email={userEmail ?? undefined}
+					avatar={avatar}
+					signOutHref={ACCESS_LOGOUT_URL}
+					signOutLabel="退出登录"
+				/>
 			</SidebarFooter>
 		</>
 	);
