@@ -42,7 +42,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 			const expanded = await avatar.boundingBox();
 			expect(expanded).not.toBeNull();
 			await testInfo.attach("expanded-sidebar", {
-				body: await sidebar.screenshot(),
+				body: await sidebar.screenshot({ path: testInfo.outputPath("expanded-sidebar.png") }),
 				contentType: "image/png",
 			});
 			await sidebar.getByRole("button", { name: "收起侧边栏", exact: true }).click();
@@ -54,12 +54,13 @@ for (const colorScheme of ["light", "dark"] as const) {
 			expect(collapsed).not.toBeNull();
 			expect(collapsed?.y).toBe(expanded?.y);
 			await expect(sidebar.locator('[data-slot="sidebar-brand-copy"]')).toBeHidden();
+			console.log(JSON.stringify({ colorScheme, expanded, collapsed, emailLineHeight: "16px" }));
 			await testInfo.attach("avatar-geometry", {
 				body: JSON.stringify({ expanded, collapsed, emailLineHeight: "16px" }),
 				contentType: "application/json",
 			});
 			await testInfo.attach("collapsed-sidebar", {
-				body: await sidebar.screenshot(),
+				body: await sidebar.screenshot({ path: testInfo.outputPath("collapsed-sidebar.png") }),
 				contentType: "image/png",
 			});
 		});
@@ -87,7 +88,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 				await expect(drawer).toHaveCSS("padding-left", "0px");
 				await expect(drawer).toHaveCSS("padding-right", "0px");
 				await testInfo.attach("drawer", {
-					body: await page.screenshot(),
+					body: await page.screenshot({ path: testInfo.outputPath("drawer.png") }),
 					contentType: "image/png",
 				});
 			});
