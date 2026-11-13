@@ -1,4 +1,4 @@
-import { ContentIsland, SidebarProvider } from "@nocoo/basalt";
+import { ContentIsland, SidebarDrawer } from "@nocoo/basalt";
 import { AppHeader, AppHeaderMenuButton, ProjectLinks } from "@nocoo/basalt/components/app-header";
 import {
 	AppSkipLink,
@@ -6,15 +6,8 @@ import {
 	AppShell as BasaltAppShell,
 } from "@nocoo/basalt/components/app-shell";
 import { ThemeToggle } from "@nocoo/basalt/components/theme-toggle";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { useLocation } from "react-router";
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CommandPaletteProvider } from "./command-palette";
 import { EnvironmentSelector } from "./environment-selector";
@@ -31,6 +24,7 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 	const { mobileOpen, setMobileOpen } = useMobileNav();
 	const { pathname } = useLocation();
 	const menuButton = useRef<HTMLButtonElement>(null);
+	const drawerId = useId();
 
 	// Close mobile sidebar on route change
 	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname triggers close on route change
@@ -50,30 +44,21 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 				)}
 
 				{isMobile && (
-					<Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-						<SheetContent
-							side="left"
-							className="w-[260px] max-w-[260px] border-0 bg-basalt-background p-0 sm:max-w-[260px]"
-							showCloseButton={false}
-							onCloseAutoFocus={(event) => {
-								event.preventDefault();
-								menuButton.current?.focus();
-							}}
-						>
-							<SheetHeader className="sr-only">
-								<SheetTitle>导航菜单</SheetTitle>
-								<SheetDescription>浏览 Surety 的主要页面</SheetDescription>
-							</SheetHeader>
-							<SidebarProvider collapsed={false} defaultWidth={260}>
-								<Sidebar
-									ariaLabel="主导航抽屉"
-									variant="mobile"
-									onNavigate={() => setMobileOpen(false)}
-									onDismiss={() => setMobileOpen(false)}
-								/>
-							</SidebarProvider>
-						</SheetContent>
-					</Sheet>
+					<SidebarDrawer
+						id={drawerId}
+						open={mobileOpen}
+						onOpenChange={setMobileOpen}
+						returnFocusRef={menuButton}
+						title="导航菜单"
+						description="浏览 Surety 的主要页面"
+					>
+						<Sidebar
+							ariaLabel="主导航抽屉"
+							variant="mobile"
+							onNavigate={() => setMobileOpen(false)}
+							onDismiss={() => setMobileOpen(false)}
+						/>
+					</SidebarDrawer>
 				)}
 
 				<BasaltAppMain>
@@ -83,6 +68,8 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 								<AppHeaderMenuButton
 									ref={menuButton}
 									label="打开导航菜单"
+									aria-controls={drawerId}
+									aria-expanded={mobileOpen}
 									onClick={() => setMobileOpen(true)}
 								/>
 							) : null

@@ -30,6 +30,70 @@ for (const colorScheme of ["light", "dark"] as const) {
 	test.describe(`${colorScheme} sidebar`, () => {
 		test.use({ colorScheme, reducedMotion: "reduce" });
 
+		test("avatar stays 36px at equal y after collapse", async ({ page }, testInfo) => {
+			await page.goto("/");
+			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+			const avatar = sidebar.locator('[data-slot="sidebar-user"] .h-basalt-9');
+			const email = sidebar.locator('[data-slot="sidebar-user"] p').last();
+			await expect(sidebar).toHaveCSS("width", "260px");
+			await expect(avatar).toHaveCSS("width", "36px");
+			await expect(avatar).toHaveCSS("height", "36px");
+			await expect(email).toHaveCSS("line-height", "16px");
+			const expanded = await avatar.boundingBox();
+			expect(expanded).not.toBeNull();
+			await testInfo.attach("expanded-sidebar", {
+				body: await sidebar.screenshot({ path: testInfo.outputPath("expanded-sidebar.png") }),
+				contentType: "image/png",
+			});
+			await sidebar.getByRole("button", { name: "收起侧边栏", exact: true }).click();
+			await page.mouse.move(1000, 100);
+			await expect(sidebar).toHaveCSS("width", "68px");
+			await expect(avatar).toHaveCSS("width", "36px");
+			await expect(avatar).toHaveCSS("height", "36px");
+			const collapsed = await avatar.boundingBox();
+			expect(collapsed).not.toBeNull();
+			expect(collapsed?.y).toBe(expanded?.y);
+			await expect(sidebar.locator('[data-slot="sidebar-brand-copy"]')).toBeHidden();
+			console.log(JSON.stringify({ colorScheme, expanded, collapsed, emailLineHeight: "16px" }));
+			await testInfo.attach("avatar-geometry", {
+				body: JSON.stringify({ expanded, collapsed, emailLineHeight: "16px" }),
+				contentType: "application/json",
+			});
+			await testInfo.attach("collapsed-sidebar", {
+				body: await sidebar.screenshot({ path: testInfo.outputPath("collapsed-sidebar.png") }),
+				contentType: "image/png",
+			});
+		});
+
+		for (const width of [390, 700]) {
+			test(`mobile drawer geometry at ${width}px`, async ({ page }, testInfo) => {
+				await page.setViewportSize({ width, height: 844 });
+				await page.goto("/");
+				const openNavigation = page.getByRole("button", {
+					name: "打开导航菜单",
+					exact: true,
+					includeHidden: true,
+				});
+				await expect(openNavigation).toHaveAttribute("aria-expanded", "false");
+				await openNavigation.click();
+				const drawer = page.locator('[data-slot="sidebar-drawer"]');
+				await expect(drawer).toBeVisible();
+				await expect(openNavigation).toHaveAttribute("aria-expanded", "true");
+				await expect(drawer).toHaveAttribute(
+					"id",
+					(await openNavigation.getAttribute("aria-controls")) ?? "",
+				);
+				await expect(drawer).toHaveCSS("width", "320px");
+				await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "260px");
+				await expect(drawer).toHaveCSS("padding-left", "0px");
+				await expect(drawer).toHaveCSS("padding-right", "0px");
+				await testInfo.attach("drawer", {
+					body: await page.screenshot({ path: testInfo.outputPath("drawer.png") }),
+					contentType: "image/png",
+				});
+			});
+		}
+
 		test("expanded collapse toggle aligns with nav group chevrons", async ({ page }) => {
 			await page.goto("/");
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });

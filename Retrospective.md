@@ -1,5 +1,18 @@
 # Retrospective
 
+## 2026-11-14 — verify published DOM before adding selectors
+
+The first Basalt 3.3.4 sidebar E2E run passed 89 existing cases but failed four
+new cases before geometry assertions: the published Avatar does not expose the
+local wrapper's `data-slot="avatar"`, and a modal hides its background menu button
+from default role queries. Read the published component DOM before selecting its
+root; use an explicitly hidden-inclusive query only when inspecting attributes
+of the intentionally inert opener. Keep geometry and keyboard assertions intact.
+
+The user subsequently approved changing the drawer acceptance from outer 260px
+to outer 320px, with the inner sidebar still 260px. This is an acceptance change,
+not a Basalt fix or a passing result under the original criterion.
+
 Accident narratives belong here. Keep only recurring project rules in `AGENTS.md`; cross-project lessons belong in global rules and deterministic checks in hooks/tests.
 
 Historical Next.js and remote-D1 test migrations below describe earlier implementations. Current automated L2/L3 uses local Wrangler and separate fixture state.
