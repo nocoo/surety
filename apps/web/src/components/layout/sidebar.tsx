@@ -1,4 +1,7 @@
 import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
 	Sidebar as BasaltSidebar,
 	SidebarBrand,
 	SidebarFooter,
@@ -38,7 +41,6 @@ import {
 import type { ReactNode } from "react";
 import { useCallback } from "react";
 import { useLocation } from "react-router";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMe } from "@/hooks/use-me";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { ACCESS_LOGOUT_URL } from "@/lib/access";
@@ -108,7 +110,7 @@ export function PersistedSidebarProvider({ children }: { children: ReactNode }) 
 	);
 
 	return (
-		<SidebarProvider collapsed={collapsed} onCollapsedChange={onCollapsedChange} defaultWidth={260}>
+		<SidebarProvider collapsed={collapsed} onCollapsedChange={onCollapsedChange}>
 			{children}
 		</SidebarProvider>
 	);
@@ -147,7 +149,7 @@ function SuretySidebarBody({
 	} = getDisplayName(user);
 
 	const avatar = (
-		<Avatar className="h-9 w-9">
+		<Avatar>
 			{userAvatar ? <AvatarImage src={userAvatar} alt={userName} /> : null}
 			<AvatarFallback className={cn("text-xs text-white", getAvatarColor(userName))}>
 				{userInitial}
