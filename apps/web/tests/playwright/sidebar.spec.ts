@@ -33,7 +33,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 		test("avatar stays 36px and vertically stable when the rail collapses", async ({ page }) => {
 			await page.goto("/");
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
-			const avatar = sidebar.locator('[data-slot="avatar"]');
+			const avatar = sidebar.locator('[data-slot="sidebar-user"] .h-basalt-9');
 			const email = sidebar.locator('[data-slot="sidebar-user"] p').last();
 			await expect(sidebar).toHaveCSS("width", "260px");
 			await expect(avatar).toHaveCSS("width", "36px");
@@ -55,7 +55,11 @@ for (const colorScheme of ["light", "dark"] as const) {
 		test("mobile SidebarDrawer keeps the standard width and zero padding", async ({ page }) => {
 			await page.setViewportSize({ width: 390, height: 844 });
 			await page.goto("/");
-			const openNavigation = page.getByRole("button", { name: "打开导航菜单", exact: true });
+			const openNavigation = page.getByRole("button", {
+				name: "打开导航菜单",
+				exact: true,
+				includeHidden: true,
+			});
 			await expect(openNavigation).toHaveAttribute("aria-expanded", "false");
 			await openNavigation.click();
 			const drawer = page.locator('[data-slot="sidebar-drawer"]');
@@ -65,7 +69,8 @@ for (const colorScheme of ["light", "dark"] as const) {
 				"id",
 				(await openNavigation.getAttribute("aria-controls")) ?? "",
 			);
-			await expect(drawer).toHaveCSS("width", "260px");
+			await expect(drawer).toHaveCSS("width", "320px");
+			await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "260px");
 			await expect(drawer).toHaveCSS("padding-left", "0px");
 			await expect(drawer).toHaveCSS("padding-right", "0px");
 		});
