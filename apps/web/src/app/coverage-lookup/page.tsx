@@ -166,7 +166,7 @@ export default function CoverageLookupPage() {
 		return (
 			<AppShell breadcrumbs={breadcrumbs}>
 				<div className="flex items-center justify-center h-64">
-					<div className="text-destructive">{error ?? "加载失败"}</div>
+					<div className="text-basalt-destructive">{error ?? "加载失败"}</div>
 				</div>
 			</AppShell>
 		);
@@ -191,7 +191,7 @@ export default function CoverageLookupPage() {
 								disabled={!subjectLabel}
 							>
 								{copied ? (
-									<Check className="h-4 w-4 text-success-text" />
+									<Check className="h-4 w-4 text-basalt-success" />
 								) : (
 									<Copy className="h-4 w-4" />
 								)}
@@ -201,7 +201,7 @@ export default function CoverageLookupPage() {
 					}
 				/>
 				{copyError && (
-					<p className="-mt-4 text-sm text-destructive-text" role="alert">
+					<p className="-mt-4 text-sm text-basalt-destructive" role="alert">
 						{copyError}
 					</p>
 				)}
@@ -211,7 +211,7 @@ export default function CoverageLookupPage() {
 				<div
 					role="tablist"
 					aria-label="选择速查对象"
-					className="inline-flex rounded-card bg-secondary p-1"
+					className="inline-flex rounded-basalt-card bg-basalt-secondary p-1"
 				>
 					<button
 						type="button"
@@ -221,8 +221,8 @@ export default function CoverageLookupPage() {
 						className={cn(
 							"inline-flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-base font-medium transition-colors",
 							selectionType === "member"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
+								? "bg-basalt-background text-basalt-foreground shadow-sm"
+								: "text-basalt-muted-foreground hover:text-basalt-foreground",
 						)}
 					>
 						<Users className="h-5 w-5" />
@@ -237,8 +237,8 @@ export default function CoverageLookupPage() {
 						className={cn(
 							"inline-flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-base font-medium transition-colors",
 							selectionType === "asset"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
+								? "bg-basalt-background text-basalt-foreground shadow-sm"
+								: "text-basalt-muted-foreground hover:text-basalt-foreground",
 						)}
 					>
 						<Building2 className="h-5 w-5" />
@@ -272,22 +272,24 @@ export default function CoverageLookupPage() {
 				{emergencyContacts.length > 0 && (
 					<section
 						aria-label="紧急联系电话"
-						className="rounded-card border border-primary/30 bg-primary/5 p-4 sm:p-5"
+						className="rounded-basalt-card border border-basalt-primary/30 bg-basalt-primary/5 p-4 sm:p-5"
 					>
 						<header className="mb-3 flex items-center gap-2">
-							<Phone className="h-5 w-5 text-primary" />
+							<Phone className="h-5 w-5 text-basalt-primary" />
 							<h2 className="text-base font-semibold">紧急联系电话</h2>
-							<span className="text-xs text-muted-foreground">· 保险公司客服，可直接拨打</span>
+							<span className="text-xs text-basalt-muted-foreground">
+								· 保险公司客服，可直接拨打
+							</span>
 						</header>
 						<ul className="grid gap-2 sm:grid-cols-2">
 							{emergencyContacts.map((c) => (
 								<li key={`${c.insurerName}-${c.phone}`}>
 									<a
 										href={`tel:${c.phone}`}
-										className="flex items-center justify-between gap-3 rounded-widget bg-background px-4 py-3 hover:bg-muted/40 transition-colors"
+										className="flex items-center justify-between gap-3 rounded-basalt-md bg-basalt-background px-4 py-3 hover:bg-basalt-muted/40 transition-colors"
 									>
 										<span className="text-sm font-medium truncate">{c.insurerName}</span>
-										<span className="font-mono text-lg font-semibold tabular-nums text-primary">
+										<span className="font-mono text-lg font-semibold tabular-nums text-basalt-primary">
 											{c.phone}
 										</span>
 									</a>
@@ -310,7 +312,7 @@ export default function CoverageLookupPage() {
 								/>
 								<label
 									htmlFor="show-inactive"
-									className="text-sm text-muted-foreground select-none cursor-pointer"
+									className="text-sm text-basalt-muted-foreground select-none cursor-pointer"
 								>
 									显示已过期/退保 ({inactiveCount})
 								</label>
@@ -327,13 +329,13 @@ export default function CoverageLookupPage() {
 								/>
 							))
 						) : (
-							<div className="text-center py-12 text-muted-foreground">
+							<div className="text-center py-12 text-basalt-muted-foreground">
 								<p>所有保单均已过期或退保</p>
 							</div>
 						)}
 					</div>
 				) : (
-					<div className="text-center py-12 text-muted-foreground">
+					<div className="text-center py-12 text-basalt-muted-foreground">
 						{selectionType === "member" ? (
 							data.selectedMember ? (
 								<p>{data.selectedMember.name} 暂无保单记录</p>

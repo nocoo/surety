@@ -91,20 +91,20 @@ export function DatabaseSettings() {
 	};
 
 	return (
-		<div className="rounded-card bg-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary p-6">
 			<div className="flex items-center gap-3 mb-4">
-				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
-					<Database className="h-5 w-5 text-info" strokeWidth={1.5} />
+				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-info/10">
+					<Database className="h-5 w-5 text-basalt-info" strokeWidth={1.5} />
 				</div>
 				<div>
 					<h2 className="font-semibold">数据管理</h2>
-					<p className="text-sm text-muted-foreground">备份与恢复</p>
+					<p className="text-sm text-basalt-muted-foreground">备份与恢复</p>
 				</div>
 			</div>
 			<Separator className="mb-4" />
 			<div className="space-y-4">
 				<div className="space-y-2">
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-basalt-muted-foreground">
 						导出所有保单、成员、资产等数据为 JSON 文件，可用于备份或迁移。
 					</p>
 					<Button
@@ -122,7 +122,7 @@ export function DatabaseSettings() {
 				<Separator />
 
 				<div className="space-y-2">
-					<p className="text-sm text-muted-foreground">
+					<p className="text-sm text-basalt-muted-foreground">
 						从 JSON 备份文件恢复数据。此操作将覆盖当前所有数据。
 					</p>
 					<input
@@ -164,15 +164,15 @@ export function DatabaseSettings() {
 					<AlertDialogHeader>
 						<AlertDialogTitle>确认导入数据？</AlertDialogTitle>
 						<AlertDialogDescription>
-							此操作将<span className="font-semibold text-foreground">覆盖当前所有数据</span>
+							此操作将<span className="font-semibold text-basalt-foreground">覆盖当前所有数据</span>
 							，不可撤销。 请确认已备份重要数据。
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 
 					{importFile && (
-						<div className="rounded-widget border bg-muted/50 p-3 text-sm">
+						<div className="rounded-basalt-md border bg-basalt-muted/50 p-3 text-sm">
 							<p className="font-medium mb-2">文件: {importFile.name}</p>
-							<div className="grid grid-cols-3 gap-x-4 gap-y-1 text-muted-foreground">
+							<div className="grid grid-cols-3 gap-x-4 gap-y-1 text-basalt-muted-foreground">
 								{Object.entries(importFile.data).map(([key, rows]) => (
 									<span key={key}>
 										{TABLE_LABELS[key] || key}: {Array.isArray(rows) ? rows.length : 0}

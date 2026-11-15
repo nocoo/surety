@@ -153,10 +153,10 @@ export default function DoctorsPage() {
 	if (error) {
 		return (
 			<AppShell breadcrumbs={[{ label: "医生管理" }]}>
-				<div className="rounded-card bg-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
 					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-muted-foreground">{error}</p>
+					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
 				</div>
 			</AppShell>
 		);
@@ -184,7 +184,7 @@ export default function DoctorsPage() {
 					filters={
 						hospitals.length > 0 ? (
 							<div className="flex items-center gap-2">
-								<span className="text-sm text-muted-foreground">医院</span>
+								<span className="text-sm text-basalt-muted-foreground">医院</span>
 								<Select value={filterHospitalId} onValueChange={setFilterHospitalId}>
 									<SelectTrigger className="w-[200px]">
 										<SelectValue placeholder="全部医院" />
@@ -204,15 +204,15 @@ export default function DoctorsPage() {
 				/>
 
 				{hospitals.length === 0 ? (
-					<div className="rounded-card bg-secondary p-8 text-center">
-						<Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+					<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+						<Building2 className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
 						<h3 className="mt-4 text-lg font-medium">请先添加医院</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
+						<p className="mt-2 text-sm text-basalt-muted-foreground">
 							医生需要关联到医院，请先在医院管理中添加医院
 						</p>
 					</div>
 				) : (
-					<div className="rounded-card bg-secondary">
+					<div className="rounded-basalt-card bg-basalt-secondary">
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -230,7 +230,7 @@ export default function DoctorsPage() {
 								{filteredDoctors.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={8} className="h-24 text-center">
-											<div className="text-muted-foreground">
+											<div className="text-basalt-muted-foreground">
 												{doctors.length === 0
 													? "暂无医生，点击上方按钮添加"
 													: "没有符合筛选条件的医生"}
@@ -254,7 +254,7 @@ export default function DoctorsPage() {
 											</TableCell>
 											<TableCell>
 												<div className="flex items-center gap-1.5">
-													<Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+													<Building2 className="h-3.5 w-3.5 text-basalt-muted-foreground" />
 													<span className="whitespace-normal">{doctor.hospitalName}</span>
 												</div>
 											</TableCell>
@@ -262,21 +262,21 @@ export default function DoctorsPage() {
 												{doctor.department ? (
 													<span>{doctor.department}</span>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
 												{doctor.title ? (
 													<Badge variant="outline">{doctor.title}</Badge>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
 												{doctor.specialty ? (
 													<span className="whitespace-normal">{doctor.specialty}</span>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
@@ -285,21 +285,21 @@ export default function DoctorsPage() {
 														href={`tel:${doctor.phone}`}
 														className="inline-flex items-center gap-1.5 hover:underline"
 													>
-														<Phone className="h-3.5 w-3.5 text-primary" />
+														<Phone className="h-3.5 w-3.5 text-basalt-primary" />
 														{doctor.phone}
 													</a>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell className="text-center">
 												{doctor.visitCount && doctor.visitCount > 0 ? (
 													<div className="flex items-center justify-center gap-1">
-														<Stethoscope className="h-3 w-3 text-primary" />
+														<Stethoscope className="h-3 w-3 text-basalt-primary" />
 														<span className="text-sm">{doctor.visitCount}</span>
 													</div>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
@@ -320,7 +320,7 @@ export default function DoctorsPage() {
 																	<Button
 																		variant="ghost"
 																		size="icon"
-																		className="h-8 w-8 text-destructive hover:text-destructive"
+																		className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																		disabled={(doctor.visitCount ?? 0) > 0}
 																		onClick={() => handleDeleteClick(doctor)}
 																		aria-label={
@@ -373,7 +373,7 @@ export default function DoctorsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{deleteError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex items-center gap-2 text-sm text-basalt-destructive">
 							<AlertCircle className="h-4 w-4" />
 							<span>{deleteError}</span>
 						</div>

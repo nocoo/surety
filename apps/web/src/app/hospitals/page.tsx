@@ -140,10 +140,10 @@ export default function HospitalsPage() {
 	if (error) {
 		return (
 			<AppShell breadcrumbs={[{ label: "医院管理" }]}>
-				<div className="rounded-card bg-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
 					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-muted-foreground">{error}</p>
+					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
 				</div>
 			</AppShell>
 		);
@@ -171,7 +171,7 @@ export default function HospitalsPage() {
 					filters={
 						<div className="flex items-center gap-4">
 							<div className="flex items-center gap-2">
-								<span className="text-sm text-muted-foreground">级别</span>
+								<span className="text-sm text-basalt-muted-foreground">级别</span>
 								<Select value={filterLevel} onValueChange={setFilterLevel}>
 									<SelectTrigger className="w-[120px]">
 										<SelectValue placeholder="全部级别" />
@@ -187,7 +187,7 @@ export default function HospitalsPage() {
 								</Select>
 							</div>
 							<div className="flex items-center gap-2">
-								<span className="text-sm text-muted-foreground">性质</span>
+								<span className="text-sm text-basalt-muted-foreground">性质</span>
 								<Select value={filterPublic} onValueChange={setFilterPublic}>
 									<SelectTrigger className="w-[120px]">
 										<SelectValue placeholder="全部性质" />
@@ -203,7 +203,7 @@ export default function HospitalsPage() {
 					}
 				/>
 
-				<div className="rounded-card bg-secondary">
+				<div className="rounded-basalt-card bg-basalt-secondary">
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -220,7 +220,7 @@ export default function HospitalsPage() {
 							{filteredHospitals.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={7} className="h-24 text-center">
-										<div className="text-muted-foreground">
+										<div className="text-basalt-muted-foreground">
 											{hospitals.length === 0
 												? "暂无医院，点击上方按钮添加"
 												: "没有符合筛选条件的医院"}
@@ -246,7 +246,7 @@ export default function HospitalsPage() {
 											{hospital.level ? (
 												<Badge variant="outline">{hospital.level}</Badge>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell>
@@ -257,11 +257,11 @@ export default function HospitalsPage() {
 										<TableCell>
 											{hospital.address ? (
 												<div className="flex items-center gap-1.5">
-													<MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+													<MapPin className="h-3.5 w-3.5 text-basalt-muted-foreground" />
 													<span className="whitespace-normal">{hospital.address}</span>
 												</div>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell>
@@ -270,21 +270,21 @@ export default function HospitalsPage() {
 													href={`tel:${hospital.phone}`}
 													className="inline-flex items-center gap-1.5 hover:underline"
 												>
-													<Phone className="h-3.5 w-3.5 text-primary" />
+													<Phone className="h-3.5 w-3.5 text-basalt-primary" />
 													{hospital.phone}
 												</a>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell className="text-center">
 											{hospital.doctorCount && hospital.doctorCount > 0 ? (
 												<div className="flex items-center justify-center gap-1">
-													<Users className="h-3 w-3 text-primary" />
+													<Users className="h-3 w-3 text-basalt-primary" />
 													<span className="text-sm">{hospital.doctorCount}</span>
 												</div>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell>
@@ -305,7 +305,7 @@ export default function HospitalsPage() {
 																<Button
 																	variant="ghost"
 																	size="icon"
-																	className="h-8 w-8 text-destructive hover:text-destructive"
+																	className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																	disabled={(hospital.doctorCount ?? 0) > 0}
 																	onClick={() => handleDeleteClick(hospital)}
 																	aria-label={
@@ -356,7 +356,7 @@ export default function HospitalsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{deleteError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex items-center gap-2 text-sm text-basalt-destructive">
 							<AlertCircle className="h-4 w-4" />
 							<span>{deleteError}</span>
 						</div>

@@ -56,25 +56,25 @@ function StatCard({ label, value, iconName, sub, index }: StatCardData & { index
 	const Icon = ICON_MAP[iconName];
 	return (
 		<div
-			className="rounded-card bg-secondary p-6 animate-fade-up"
+			className="rounded-basalt-card bg-basalt-secondary p-6 animate-fade-up"
 			style={{ animationDelay: `${index * 80}ms` }}
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted-foreground">{label}</span>
-				<div className="rounded-md bg-background p-2">
-					<Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+				<span className="text-sm text-basalt-muted-foreground">{label}</span>
+				<div className="rounded-md bg-basalt-background p-2">
+					<Icon className="h-4 w-4 text-basalt-primary" strokeWidth={1.5} />
 				</div>
 			</div>
 			<div className="mt-2">
 				<span className="text-2xl font-bold font-display tabular-nums">{value}</span>
 			</div>
 			{sub ? (
-				<p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+				<p className="mt-1 text-xs text-basalt-muted-foreground">{sub}</p>
 			) : (
 				// Reserve the line so cards stay the same height whether the
 				// sub-line is present or not — avoids dancing layout in the
 				// 4-up grid when some categories are empty.
-				<p className="mt-1 text-xs text-muted-foreground">&nbsp;</p>
+				<p className="mt-1 text-xs text-basalt-muted-foreground">&nbsp;</p>
 			)}
 		</div>
 	);
@@ -276,7 +276,10 @@ function CoverageHealthCard({
 
 	return (
 		<article
-			className={cn("rounded-card p-6 h-full flex flex-col gap-4", levelSurface(health.level))}
+			className={cn(
+				"rounded-basalt-card p-6 h-full flex flex-col gap-4",
+				levelSurface(health.level),
+			)}
 		>
 			<header className="flex items-center gap-3">
 				<div
@@ -288,12 +291,12 @@ function CoverageHealthCard({
 					<ShieldCheck className={cn("h-5 w-5", levelIconColor(health.level))} strokeWidth={1.5} />
 				</div>
 				<div>
-					<p className="text-[11px] text-muted-foreground/80">家庭保障健康度</p>
+					<p className="text-[11px] text-basalt-muted-foreground/80">家庭保障健康度</p>
 					<h2 className="font-display text-lg font-semibold">{health.title}</h2>
 				</div>
 			</header>
 
-			<p className="text-sm text-muted-foreground">{health.detail}</p>
+			<p className="text-sm text-basalt-muted-foreground">{health.detail}</p>
 
 			<div className="mt-auto flex flex-wrap items-end justify-between gap-3">
 				<div className="flex flex-col">
@@ -301,10 +304,10 @@ function CoverageHealthCard({
 						<span className="font-display text-3xl font-bold tabular-nums">
 							{formatCurrency(protectionPremium)}
 						</span>
-						<span className="text-xs text-muted-foreground">/ 年保障型保费</span>
+						<span className="text-xs text-basalt-muted-foreground">/ 年保障型保费</span>
 					</div>
 					{savingsPremium > 0 && (
-						<span className="mt-1 text-xs text-muted-foreground">
+						<span className="mt-1 text-xs text-basalt-muted-foreground">
 							另含储蓄型 {formatCurrency(savingsPremium)}（未计入占比）
 						</span>
 					)}
@@ -312,7 +315,7 @@ function CoverageHealthCard({
 				{health.level === "unknown" ? (
 					<Link
 						to="/settings"
-						className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+						className="inline-flex items-center gap-1 text-sm text-basalt-primary hover:underline"
 					>
 						去设置年收入 <ArrowRight className="h-3.5 w-3.5" />
 					</Link>
@@ -331,11 +334,11 @@ function RatioBar({ ratio, level }: { ratio: number; level: CoverageHealth["leve
 	const pos = Math.min(ratio / cap, 1) * 100;
 	return (
 		<div className="w-full max-w-[240px]">
-			<div className="relative h-2 rounded-full bg-muted/60">
+			<div className="relative h-2 rounded-full bg-basalt-muted/60">
 				{/* Healthy band overlay 5..15% (= 20..60% of capped 25%) */}
 				<div
 					aria-hidden="true"
-					className="absolute h-full rounded-full bg-success/30"
+					className="absolute h-full rounded-full bg-basalt-success/30"
 					style={{ left: `${(0.05 / cap) * 100}%`, width: `${((0.15 - 0.05) / cap) * 100}%` }}
 				/>
 				{/* Current marker */}
@@ -345,7 +348,7 @@ function RatioBar({ ratio, level }: { ratio: number; level: CoverageHealth["leve
 					style={{ left: `calc(${pos}% - 2px)` }}
 				/>
 			</div>
-			<div className="mt-1 flex justify-between text-[10px] text-muted-foreground tabular-nums">
+			<div className="mt-1 flex justify-between text-[10px] text-basalt-muted-foreground tabular-nums">
 				<span>0%</span>
 				<span>5%</span>
 				<span>15%</span>
@@ -358,46 +361,46 @@ function RatioBar({ ratio, level }: { ratio: number; level: CoverageHealth["leve
 function levelSurface(level: CoverageHealth["level"]): string {
 	switch (level) {
 		case "healthy":
-			return "border border-success/20 bg-success/5";
+			return "border border-basalt-success/20 bg-basalt-success/5";
 		case "underinsured":
-			return "border border-warning/30 bg-warning/5";
+			return "border border-basalt-warning/30 bg-basalt-warning/5";
 		case "overspent":
-			return "border border-warning/30 bg-warning/5";
+			return "border border-basalt-warning/30 bg-basalt-warning/5";
 		default:
-			return "bg-secondary";
+			return "bg-basalt-secondary";
 	}
 }
 function levelIconBg(level: CoverageHealth["level"]): string {
 	switch (level) {
 		case "healthy":
-			return "bg-success/15";
+			return "bg-basalt-success/15";
 		case "underinsured":
 		case "overspent":
-			return "bg-warning/15";
+			return "bg-basalt-warning/15";
 		default:
-			return "bg-primary/10";
+			return "bg-basalt-primary/10";
 	}
 }
 function levelIconColor(level: CoverageHealth["level"]): string {
 	switch (level) {
 		case "healthy":
-			return "text-success-text";
+			return "text-basalt-success";
 		case "underinsured":
 		case "overspent":
-			return "text-warning-text";
+			return "text-basalt-warning";
 		default:
-			return "text-primary";
+			return "text-basalt-primary";
 	}
 }
 function levelMarker(level: CoverageHealth["level"]): string {
 	switch (level) {
 		case "healthy":
-			return "bg-success";
+			return "bg-basalt-success";
 		case "underinsured":
 		case "overspent":
-			return "bg-warning";
+			return "bg-basalt-warning";
 		default:
-			return "bg-primary";
+			return "bg-basalt-primary";
 	}
 }
 
@@ -418,19 +421,21 @@ function ActionItemsCard({
 	const items = buildActionItems(renewal, expiry);
 
 	return (
-		<article className="rounded-card bg-secondary p-6 h-full">
+		<article className="rounded-basalt-card bg-basalt-secondary p-6 h-full">
 			<header className="flex items-center gap-3 mb-4">
-				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-					<CalendarClock className="h-5 w-5 text-primary" strokeWidth={1.5} />
+				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
+					<CalendarClock className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
 				</div>
 				<div>
-					<p className="text-[11px] text-muted-foreground/80">本月</p>
+					<p className="text-[11px] text-basalt-muted-foreground/80">本月</p>
 					<h2 className="font-display text-lg font-semibold">行动建议</h2>
 				</div>
 			</header>
 
 			{items.length === 0 ? (
-				<p className="text-sm text-muted-foreground">本月没有保单需要续费或到期，可以喘口气</p>
+				<p className="text-sm text-basalt-muted-foreground">
+					本月没有保单需要续费或到期，可以喘口气
+				</p>
 			) : (
 				<ul className="space-y-3">
 					{items.map((item) => (
@@ -438,19 +443,19 @@ function ActionItemsCard({
 							<div
 								className={cn(
 									"mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-									item.tone === "warning" ? "bg-warning/20" : "bg-info/20",
+									item.tone === "warning" ? "bg-basalt-warning/20" : "bg-basalt-info/20",
 								)}
 							>
 								<AlertCircle
 									className={cn(
 										"h-3 w-3",
-										item.tone === "warning" ? "text-warning-text" : "text-info-text",
+										item.tone === "warning" ? "text-basalt-warning" : "text-basalt-info",
 									)}
 								/>
 							</div>
 							<div className="min-w-0">
 								<p className="text-sm font-medium">{item.title}</p>
-								<p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
+								<p className="text-xs text-basalt-muted-foreground mt-0.5">{item.detail}</p>
 							</div>
 						</li>
 					))}
@@ -459,7 +464,7 @@ function ActionItemsCard({
 
 			<Link
 				to="/renewal-calendar"
-				className="mt-5 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+				className="mt-5 inline-flex items-center gap-1 text-sm text-basalt-primary hover:underline"
 			>
 				查看续保日历 <ArrowRight className="h-3.5 w-3.5" />
 			</Link>

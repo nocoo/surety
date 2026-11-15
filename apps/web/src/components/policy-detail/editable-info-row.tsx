@@ -36,7 +36,7 @@ export function EditableInfoRow({
 
 		return (
 			<div className="flex items-center justify-between text-sm gap-2">
-				<span className="text-muted-foreground shrink-0">{label}</span>
+				<span className="text-basalt-muted-foreground shrink-0">{label}</span>
 				{type === "select" && options ? (
 					<Select value={inputValue} onValueChange={onEditChange}>
 						<SelectTrigger className="h-7 w-64">
@@ -65,8 +65,10 @@ export function EditableInfoRow({
 	// Display mode
 	return (
 		<div className="flex items-center justify-between text-sm">
-			<span className="text-muted-foreground">{label}</span>
-			<span className={cn("font-medium", displayValue === "—" && "text-muted-foreground/50")}>
+			<span className="text-basalt-muted-foreground">{label}</span>
+			<span
+				className={cn("font-medium", displayValue === "—" && "text-basalt-muted-foreground/50")}
+			>
 				{displayValue}
 			</span>
 		</div>

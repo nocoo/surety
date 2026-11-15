@@ -89,49 +89,50 @@ export default function CliPage() {
 					title="CLI"
 					description={
 						<>
-							<code className="rounded bg-secondary px-1 py-0.5 text-xs">@nocoo/surety</code> 是 AI
-							助手与脚本访问 Surety 的命令行入口
+							<code className="rounded bg-basalt-secondary px-1 py-0.5 text-xs">@nocoo/surety</code>{" "}
+							是 AI 助手与脚本访问 Surety 的命令行入口
 						</>
 					}
 				/>
 
 				{/* Card 1: Install & Usage */}
-				<div className="rounded-card bg-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary p-6">
 					<div className="flex items-center gap-3 mb-4">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-							<Terminal className="h-5 w-5 text-primary" strokeWidth={1.5} />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
+							<Terminal className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
 						</div>
 						<div>
 							<h2 className="font-semibold">安装与使用</h2>
-							<p className="text-sm text-muted-foreground">只需 Bun 运行时，无需额外配置</p>
+							<p className="text-sm text-basalt-muted-foreground">只需 Bun 运行时，无需额外配置</p>
 						</div>
 					</div>
 					<Separator className="mb-4" />
 					<div className="space-y-4 text-sm">
 						<div>
 							<p className="mb-2 font-medium">1. 安装</p>
-							<pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+							<pre className="overflow-x-auto rounded-md bg-basalt-background p-3 text-xs">
 								<code>bun add -g @nocoo/surety</code>
 							</pre>
-							<p className="mt-1 text-xs text-muted-foreground">
-								或临时使用：<code className="rounded bg-background px-1">bunx @nocoo/surety</code>
+							<p className="mt-1 text-xs text-basalt-muted-foreground">
+								或临时使用：
+								<code className="rounded bg-basalt-background px-1">bunx @nocoo/surety</code>
 							</p>
 						</div>
 						<div>
 							<p className="mb-2 font-medium">2. 登录（浏览器铸 token）</p>
-							<pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+							<pre className="overflow-x-auto rounded-md bg-basalt-background p-3 text-xs">
 								<code>surety login</code>
 							</pre>
 						</div>
 						<div>
 							<p className="mb-2 font-medium">3. 验证身份</p>
-							<pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+							<pre className="overflow-x-auto rounded-md bg-basalt-background p-3 text-xs">
 								<code>surety whoami</code>
 							</pre>
 						</div>
 						<div>
 							<p className="mb-2 font-medium">4. 业务命令</p>
-							<pre className="overflow-x-auto rounded-md bg-background p-3 text-xs">
+							<pre className="overflow-x-auto rounded-md bg-basalt-background p-3 text-xs">
 								<code>{`surety members list
 surety policies list
 surety --help`}</code>
@@ -142,7 +143,7 @@ surety --help`}</code>
 								href="https://www.npmjs.com/package/@nocoo/surety"
 								target="_blank"
 								rel="noreferrer"
-								className="text-primary hover:underline"
+								className="text-basalt-primary hover:underline"
 							>
 								npm 包页面 →
 							</a>
@@ -150,7 +151,7 @@ surety --help`}</code>
 								href="https://github.com/nocoo/surety/blob/main/apps/cli/README.md"
 								target="_blank"
 								rel="noreferrer"
-								className="text-primary hover:underline"
+								className="text-basalt-primary hover:underline"
 							>
 								完整命令清单 →
 							</a>
@@ -159,31 +160,33 @@ surety --help`}</code>
 				</div>
 
 				{/* Card 2: Auth */}
-				<div className="rounded-card bg-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary p-6">
 					<div className="flex items-center gap-3 mb-4">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
-							<Cloud className="h-5 w-5 text-info" strokeWidth={1.5} />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-info/10">
+							<Cloud className="h-5 w-5 text-basalt-info" strokeWidth={1.5} />
 						</div>
 						<div>
 							<h2 className="font-semibold">认证机制</h2>
-							<p className="text-sm text-muted-foreground">双域名分离：登录入口与数据面</p>
+							<p className="text-sm text-basalt-muted-foreground">双域名分离：登录入口与数据面</p>
 						</div>
 					</div>
 					<Separator className="mb-4" />
 					<div className="space-y-4 text-sm">
 						<div>
 							<p className="font-medium">域名职责</p>
-							<ul className="mt-2 space-y-2 text-muted-foreground">
+							<ul className="mt-2 space-y-2 text-basalt-muted-foreground">
 								<li>
-									<code className="rounded bg-background px-1 text-foreground">
+									<code className="rounded bg-basalt-background px-1 text-basalt-foreground">
 										surety.hexly.ai
 									</code>
 									：Cloudflare Access (Google OAuth) 保护的铸 token 入口；
-									<code className="rounded bg-background px-1 text-foreground">surety login</code>{" "}
+									<code className="rounded bg-basalt-background px-1 text-basalt-foreground">
+										surety login
+									</code>{" "}
 									走这里
 								</li>
 								<li>
-									<code className="rounded bg-background px-1 text-foreground">
+									<code className="rounded bg-basalt-background px-1 text-basalt-foreground">
 										surety-api.hexly.ai
 									</code>
 									：纯 Bearer token 数据面，所有 CLI 业务命令打这里
@@ -192,7 +195,7 @@ surety --help`}</code>
 						</div>
 						<div>
 							<p className="font-medium">环境变量（可选覆盖）</p>
-							<pre className="mt-2 overflow-x-auto rounded-md bg-background p-3 text-xs">
+							<pre className="mt-2 overflow-x-auto rounded-md bg-basalt-background p-3 text-xs">
 								<code>{`SURETY_LOGIN_URL=https://surety.hexly.ai
 SURETY_API_URL=https://surety-api.hexly.ai
 SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
@@ -200,8 +203,8 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 						</div>
 						<div>
 							<p className="font-medium">配置文件位置</p>
-							<p className="mt-1 text-muted-foreground">
-								<code className="rounded bg-background px-1 text-foreground">
+							<p className="mt-1 text-basalt-muted-foreground">
+								<code className="rounded bg-basalt-background px-1 text-basalt-foreground">
 									~/.config/surety/config.json
 								</code>{" "}
 								保存默认 API URL 与已铸的 token
@@ -211,35 +214,39 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 				</div>
 
 				{/* Card 3: Token Management */}
-				<div className="rounded-card bg-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary p-6">
 					<div className="flex items-center gap-3 mb-4">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-							<Key className="h-5 w-5 text-warning-text" strokeWidth={1.5} />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-warning/10">
+							<Key className="h-5 w-5 text-basalt-warning" strokeWidth={1.5} />
 						</div>
 						<div>
 							<h2 className="font-semibold">Token 管理</h2>
-							<p className="text-sm text-muted-foreground">查看和撤销当前账号下的所有 API token</p>
+							<p className="text-sm text-basalt-muted-foreground">
+								查看和撤销当前账号下的所有 API token
+							</p>
 						</div>
 					</div>
 					<Separator className="mb-4" />
 
 					{isLoading && (
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<div className="flex items-center gap-2 text-sm text-basalt-muted-foreground">
 							<Loader2 className="h-4 w-4 animate-spin" />
 							加载中…
 						</div>
 					)}
 
 					{error && !isLoading && (
-						<p className="text-sm text-destructive" role="alert">
+						<p className="text-sm text-basalt-destructive" role="alert">
 							加载失败：{error instanceof Error ? error.message : String(error)}
 						</p>
 					)}
 
 					{!isLoading && !error && tokens && tokens.length === 0 && (
-						<div className="rounded-widget border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
+						<div className="rounded-basalt-md border border-dashed bg-basalt-background p-6 text-center text-sm text-basalt-muted-foreground">
 							暂无 token，请在终端运行{" "}
-							<code className="rounded bg-secondary px-1 text-foreground">surety login</code>{" "}
+							<code className="rounded bg-basalt-secondary px-1 text-basalt-foreground">
+								surety login
+							</code>{" "}
 							铸造首个 token
 						</div>
 					)}
@@ -262,15 +269,17 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 										<TableRow key={t.id}>
 											<TableCell>{t.name ?? "—"}</TableCell>
 											<TableCell>
-												<code className="rounded bg-background px-1 text-xs">{t.tokenPrefix}…</code>
+												<code className="rounded bg-basalt-background px-1 text-xs">
+													{t.tokenPrefix}…
+												</code>
 											</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="text-basalt-muted-foreground">
 												{formatDate(t.createdAt)}
 											</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="text-basalt-muted-foreground">
 												{formatDate(t.lastUsedAt)}
 											</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="text-basalt-muted-foreground">
 												{formatDate(t.expiresAt)}
 											</TableCell>
 											<TableCell className="text-right">
@@ -286,9 +295,11 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 						</div>
 					)}
 
-					<p className="mt-4 text-xs text-muted-foreground">
+					<p className="mt-4 text-xs text-basalt-muted-foreground">
 						新 token 通过{" "}
-						<code className="rounded bg-background px-1 text-foreground">surety login</code>{" "}
+						<code className="rounded bg-basalt-background px-1 text-basalt-foreground">
+							surety login
+						</code>{" "}
 						浏览器流自动铸造，本页面不提供创建按钮
 					</p>
 				</div>
@@ -311,7 +322,7 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 							{pendingRevoke && (
 								<span className="mt-2 block">
 									目标：
-									<code className="ml-1 rounded bg-secondary px-1 text-foreground">
+									<code className="ml-1 rounded bg-basalt-secondary px-1 text-basalt-foreground">
 										{pendingRevoke.name ?? `${pendingRevoke.tokenPrefix}…`}
 									</code>
 								</span>
@@ -319,7 +330,7 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{revokeError && (
-						<p className="text-sm text-destructive" role="alert">
+						<p className="text-sm text-basalt-destructive" role="alert">
 							{revokeError}
 						</p>
 					)}

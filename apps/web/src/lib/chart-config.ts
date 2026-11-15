@@ -1,45 +1,18 @@
+import {
+	AXIS_CONFIG as BASALT_AXIS_CONFIG,
+	BAR_RADIUS as BASALT_BAR_RADIUS,
+	RESPONSIVE_CONTAINER_PROPS as BASALT_RESPONSIVE_CONTAINER_PROPS,
+	getChartColor,
+} from "@nocoo/basalt/charts/config";
+
 /**
  * Chart configuration and utilities
  * Provides unified color palette, axis settings, and formatters for recharts
  */
 
-// ── Color palette (CSS custom properties from globals.css) ──
+const PALETTE_COLORS = Array.from({ length: 5 }, (_, index) => getChartColor(index));
 
-/** Helper — wraps a CSS custom property name for inline style usage. */
-const v = (token: string) => `hsl(var(--${token}))`;
-
-const chart = {
-	vermilion: v("chart-1"), // Brand vermilion (= --primary)
-	sky: v("chart-2"),
-	teal: v("chart-3"),
-	jade: v("chart-4"),
-	green: v("chart-5"),
-	lime: v("chart-6"),
-	amber: v("chart-7"),
-	orange: v("chart-8"),
-	blue: v("chart-9"),
-	red: v("chart-10"),
-	rose: v("chart-11"),
-	magenta: v("chart-12"),
-	orchid: v("chart-13"),
-	purple: v("chart-14"),
-	indigo: v("chart-15"),
-	cobalt: v("chart-16"),
-	steel: v("chart-17"),
-	cadet: v("chart-18"),
-	seafoam: v("chart-19"),
-	olive: v("chart-20"),
-	gold: v("chart-21"),
-	tangerine: v("chart-22"),
-	crimson: v("chart-23"),
-	gray: v("chart-24"),
-} as const;
-
-/** Ordered array — use for pie / donut / bar where you need N colors by index. */
-const PALETTE_COLORS = Object.values(chart);
-
-const chartAxis = v("chart-axis");
-const chartMuted = v("chart-muted");
+const chartMuted = "hsl(var(--basalt-chart-muted))";
 
 // ── Public API ──
 
@@ -48,45 +21,37 @@ const chartMuted = v("chart-muted");
  */
 export const CHART_COLORS = {
 	palette: PALETTE_COLORS,
-	primary: PALETTE_COLORS[0] as string, // vermilion
-	success: PALETTE_COLORS[4] as string, // green
-	warning: PALETTE_COLORS[6] as string, // amber
-	danger: PALETTE_COLORS[9] as string, // red
+	primary: PALETTE_COLORS[0] as string,
+	success: PALETTE_COLORS[2] as string,
+	warning: PALETTE_COLORS[3] as string,
+	danger: PALETTE_COLORS[1] as string,
 	muted: chartMuted,
 } as const;
 
 /**
  * Get color from palette by index (wraps around)
  */
-export function getChartColor(index: number): string {
-	return PALETTE_COLORS[index % PALETTE_COLORS.length] as string;
-}
+export { getChartColor };
 
 /**
  * Common axis configuration — uses CSS variable tokens
  */
-export const AXIS_CONFIG = {
-	tick: { fontSize: 12, fill: chartAxis },
-	axisLine: false as const,
-	tickLine: false as const,
-} as const;
+export const AXIS_CONFIG = BASALT_AXIS_CONFIG;
 
 /**
  * Common tooltip styles (for custom tooltip components)
  */
 export const TOOLTIP_STYLES = {
-	container: "rounded-md border bg-popover px-3 py-2 text-sm shadow-md",
+	container:
+		"rounded-basalt-md border border-basalt-border bg-basalt-popover px-basalt-space-md py-basalt-space-sm text-basalt-sm shadow-lg",
 	title: "font-medium",
-	value: "text-muted-foreground",
+	value: "text-basalt-muted-foreground",
 } as const;
 
 /**
  * Common bar radius for rounded corners
  */
-export const BAR_RADIUS = {
-	horizontal: [0, 4, 4, 0] as [number, number, number, number],
-	vertical: [4, 4, 0, 0] as [number, number, number, number],
-} as const;
+export const BAR_RADIUS = BASALT_BAR_RADIUS;
 
 /**
  * Currency formatting is centralised in `@surety/api/lib/format`.
@@ -124,10 +89,8 @@ export function formatPercent(value: number): string {
  *   sidebar collapse/expand animation (also 300ms)
  */
 export const RESPONSIVE_CONTAINER_PROPS = {
-	width: "100%" as const,
+	...BASALT_RESPONSIVE_CONTAINER_PROPS,
 	height: "100%" as const,
-	minWidth: 0,
-	minHeight: 0,
 	initialDimension: { width: 1, height: 1 },
 	debounce: 300,
 } as const;

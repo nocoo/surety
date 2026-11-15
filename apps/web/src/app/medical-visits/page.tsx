@@ -132,27 +132,27 @@ const VISIT_TYPE_COLORS: Record<
 // and the color picks up dark-mode automatically through tokens.
 // Listed verbatim so Tailwind's source detection picks them up.
 const SYMPTOM_BG_CLASSES = [
-	"bg-chart-1/15",
-	"bg-chart-2/15",
-	"bg-chart-3/15",
-	"bg-chart-4/15",
-	"bg-chart-5/15",
-	"bg-chart-6/15",
-	"bg-chart-7/15",
-	"bg-chart-8/15",
-	"bg-chart-9/15",
-	"bg-chart-10/15",
-	"bg-chart-11/15",
-	"bg-chart-12/15",
-	"bg-chart-13/15",
-	"bg-chart-14/15",
-	"bg-chart-15/15",
-	"bg-chart-16/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
 ] as const;
 
 function symptomColorClass(symptom: string): string {
 	const idx = hashString(symptom) % SYMPTOM_BG_CLASSES.length;
-	return SYMPTOM_BG_CLASSES[idx] ?? SYMPTOM_BG_CLASSES[0] ?? "bg-chart-1/15";
+	return SYMPTOM_BG_CLASSES[idx] ?? SYMPTOM_BG_CLASSES[0] ?? "bg-basalt-chart-1/15";
 }
 
 function parseSymptoms(symptoms: string | null | undefined): string[] {
@@ -181,14 +181,14 @@ function formatDate(dateStr: string): string {
 
 /** Row chrome by temporal state — future emphasized, today highlighted, past calm. */
 function temporalRowClass(temporal: VisitTemporal): string {
-	if (temporal === "today") return "bg-primary/5";
+	if (temporal === "today") return "bg-basalt-primary/5";
 	return "";
 }
 
 function temporalRelativeClass(temporal: VisitTemporal): string {
-	if (temporal === "upcoming") return "text-info-text";
-	if (temporal === "today") return "text-warning-text";
-	return "text-muted-foreground";
+	if (temporal === "upcoming") return "text-basalt-info";
+	if (temporal === "today") return "text-basalt-warning";
+	return "text-basalt-muted-foreground";
 }
 
 const TEMPORAL_SECTION_META: {
@@ -230,7 +230,9 @@ function VisitTableRow({
 					</Avatar>
 					<div className="flex flex-col leading-tight">
 						<span className="font-medium">{visit.memberName}</span>
-						{ageLabel !== "-" && <span className="text-xs text-muted-foreground">{ageLabel}</span>}
+						{ageLabel !== "-" && (
+							<span className="text-xs text-basalt-muted-foreground">{ageLabel}</span>
+						)}
 					</div>
 				</div>
 			</TableCell>
@@ -243,7 +245,7 @@ function VisitTableRow({
 			<TableCell>
 				<div className="flex flex-col gap-0.5 leading-tight">
 					<div className="flex items-center gap-1.5">
-						<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+						<Calendar className="h-3.5 w-3.5 text-basalt-muted-foreground" />
 						<span className="font-mono text-sm">{formatDate(visit.visitDate)}</span>
 					</div>
 					<span className={cn("flex items-center gap-1 text-xs", temporalRelativeClass(temporal))}>
@@ -264,11 +266,11 @@ function VisitTableRow({
 			<TableCell>
 				<div className="flex flex-col gap-0.5 leading-tight">
 					<span className="flex items-center gap-1.5 whitespace-normal">
-						<Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+						<Building2 className="h-3.5 w-3.5 text-basalt-muted-foreground shrink-0" />
 						{visit.hospitalName}
 					</span>
 					{visit.doctorName && (
-						<span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+						<span className="flex items-center gap-1.5 text-xs text-basalt-muted-foreground">
 							<UserRound className="h-3 w-3 shrink-0" />
 							{visit.doctorName}
 						</span>
@@ -282,7 +284,7 @@ function VisitTableRow({
 							{symptoms.map((s, i) => (
 								<span
 									key={`${s}-${i}`}
-									className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(s)}`}
+									className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-basalt-foreground ${symptomColorClass(s)}`}
 								>
 									{s}
 								</span>
@@ -291,18 +293,18 @@ function VisitTableRow({
 					)}
 					{visit.diagnosis && (
 						<p className="whitespace-normal">
-							<span className="text-xs text-muted-foreground mr-1">诊断:</span>
+							<span className="text-xs text-basalt-muted-foreground mr-1">诊断:</span>
 							{visit.diagnosis}
 						</p>
 					)}
 					{visit.treatment && (
 						<p className="whitespace-normal">
-							<span className="text-xs text-muted-foreground mr-1">治疗:</span>
+							<span className="text-xs text-basalt-muted-foreground mr-1">治疗:</span>
 							{visit.treatment}
 						</p>
 					)}
 					{symptoms.length === 0 && !visit.diagnosis && !visit.treatment && (
-						<span className="text-muted-foreground">-</span>
+						<span className="text-basalt-muted-foreground">-</span>
 					)}
 				</div>
 			</TableCell>
@@ -315,7 +317,7 @@ function VisitTableRow({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="h-8 w-8 text-destructive hover:text-destructive"
+						className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 						onClick={() => onDelete(visit)}
 					>
 						<Trash2 className="h-4 w-4" />
@@ -481,10 +483,10 @@ export default function MedicalVisitsPage() {
 	if (error) {
 		return (
 			<AppShell breadcrumbs={[{ label: "就诊记录" }]}>
-				<div className="rounded-card bg-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
 					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-muted-foreground">{error}</p>
+					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
 				</div>
 			</AppShell>
 		);
@@ -527,8 +529,6 @@ export default function MedicalVisitsPage() {
 								type="single"
 								value={temporalFilter}
 								onValueChange={(v) => v && setTemporalFilter(v as TemporalFilter)}
-								variant="outline"
-								size="sm"
 								aria-label="时间筛选"
 							>
 								<ToggleGroupItem value="all" aria-label={`全部 ${temporalCounts.all}`}>
@@ -559,10 +559,10 @@ export default function MedicalVisitsPage() {
 				/>
 
 				{!canAddVisit ? (
-					<div className="rounded-card bg-secondary p-8 text-center">
-						<Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+					<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+						<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
 						<h3 className="mt-4 text-lg font-medium">请先添加基础数据</h3>
-						<p className="mt-2 text-sm text-muted-foreground">
+						<p className="mt-2 text-sm text-basalt-muted-foreground">
 							{members.length === 0 && "需要先在家庭成员中添加成员。"}
 							{hospitals.length === 0 && "需要先在医院管理中添加医院。"}
 						</p>
@@ -580,9 +580,9 @@ export default function MedicalVisitsPage() {
 						}}
 					/>
 				) : filteredVisits.length === 0 ? (
-					<div className="rounded-card bg-secondary p-8 text-center">
-						<Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
-						<p className="mt-4 text-sm text-muted-foreground">
+					<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+						<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
+						<p className="mt-4 text-sm text-basalt-muted-foreground">
 							{memberFilteredVisits.length === 0
 								? "暂无就诊记录，点击上方按钮添加"
 								: "当前筛选下没有记录"}
@@ -599,25 +599,25 @@ export default function MedicalVisitsPage() {
 										<h2
 											className={cn(
 												"shrink-0 text-sm font-medium",
-												key === "upcoming" && "text-info-text",
-												key === "today" && "text-warning-text",
-												key === "past" && "text-muted-foreground",
-												key === "unknown" && "text-warning-text",
+												key === "upcoming" && "text-basalt-info",
+												key === "today" && "text-basalt-warning",
+												key === "past" && "text-basalt-muted-foreground",
+												key === "unknown" && "text-basalt-warning",
 											)}
 										>
 											{label}
-											<span className="ml-1.5 tabular-nums text-muted-foreground">
+											<span className="ml-1.5 tabular-nums text-basalt-muted-foreground">
 												{sectionVisits.length}
 											</span>
 										</h2>
-										<div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+										<div aria-hidden="true" className="h-px flex-1 bg-basalt-border/60" />
 										{key === "unknown" && (
-											<span className="text-xs text-muted-foreground">
+											<span className="text-xs text-basalt-muted-foreground">
 												日期为空或格式不合法，请编辑修复
 											</span>
 										)}
 									</div>
-									<div className="rounded-card bg-secondary overflow-hidden">
+									<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
 										<Table>
 											<TableHeader>
 												<TableRow>
@@ -675,7 +675,7 @@ export default function MedicalVisitsPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{deleteError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex items-center gap-2 text-sm text-basalt-destructive">
 							<AlertCircle className="h-4 w-4" />
 							<span>{deleteError}</span>
 						</div>

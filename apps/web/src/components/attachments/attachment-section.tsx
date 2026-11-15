@@ -84,17 +84,17 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
 			<AttachmentDropZone policyId={policyId} onUploadComplete={handleUploadComplete} />
 
 			{loading ? (
-				<p className="text-sm text-muted-foreground text-center py-4">加载中...</p>
+				<p className="text-sm text-basalt-muted-foreground text-center py-4">加载中...</p>
 			) : loadError ? (
-				<div className="rounded-lg bg-destructive/10 p-4 text-center">
-					<p className="text-sm text-destructive">{loadError}</p>
+				<div className="rounded-lg bg-basalt-destructive/10 p-4 text-center">
+					<p className="text-sm text-basalt-destructive">{loadError}</p>
 					<button
 						type="button"
 						onClick={() => {
 							setLoading(true);
 							fetchAttachments();
 						}}
-						className="mt-2 text-sm text-primary hover:underline"
+						className="mt-2 text-sm text-basalt-primary hover:underline"
 					>
 						点击重试
 					</button>
@@ -133,7 +133,7 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
 							确定要删除附件 &quot;{deleteTarget?.filename}&quot; 吗？此操作不可撤销。
 						</AlertDialogDescription>
 					</AlertDialogHeader>
-					{deleteError && <p className="text-sm text-destructive px-6">{deleteError}</p>}
+					{deleteError && <p className="text-sm text-basalt-destructive px-6">{deleteError}</p>}
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
 						<AlertDialogAction onClick={handleDelete} disabled={deleting} variant="destructive">

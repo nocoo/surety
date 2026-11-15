@@ -207,15 +207,15 @@ export function BackySettings() {
 	const backyConfigured = backySettings?.hasApiKey && backySettings.webhookUrl;
 
 	return (
-		<div className="rounded-card bg-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary p-6">
 			<div className="flex items-center gap-3 mb-4">
-				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple/10">
-					<Cloud className="h-5 w-5 text-purple" strokeWidth={1.5} />
+				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-badge-purple/10">
+					<Cloud className="h-5 w-5 text-basalt-badge-purple" strokeWidth={1.5} />
 				</div>
 				<div className="flex items-center gap-2">
 					<div>
 						<h2 className="font-semibold">远程备份</h2>
-						<p className="text-sm text-muted-foreground">推送数据到 Backy 服务</p>
+						<p className="text-sm text-basalt-muted-foreground">推送数据到 Backy 服务</p>
 					</div>
 					<Badge
 						variant={backySettings?.environment === "prod" ? "success" : "warning"}
@@ -359,7 +359,7 @@ export function BackySettings() {
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2">
-								<History className="h-4 w-4 text-muted-foreground" />
+								<History className="h-4 w-4 text-basalt-muted-foreground" />
 								<span className="text-sm font-medium">远程备份记录</span>
 								{backyHistory && <Badge variant="secondary">{backyHistory.total_backups} 份</Badge>}
 							</div>
@@ -378,25 +378,27 @@ export function BackySettings() {
 								{backyHistory.recent_backups.map((entry) => (
 									<div
 										key={entry.id}
-										className="rounded-widget border bg-muted/50 p-3 text-xs space-y-1"
+										className="rounded-basalt-md border bg-basalt-muted/50 p-3 text-xs space-y-1"
 									>
 										<div className="flex items-center justify-between">
 											<Badge variant={entry.environment === "prod" ? "success" : "warning"}>
 												{entry.environment}
 											</Badge>
-											<span className="text-muted-foreground">
+											<span className="text-basalt-muted-foreground">
 												{formatFileSize(entry.file_size)}
 											</span>
 										</div>
-										<p className="text-muted-foreground truncate" title={entry.tag}>
+										<p className="text-basalt-muted-foreground truncate" title={entry.tag}>
 											{entry.tag}
 										</p>
-										<p className="text-muted-foreground">{formatTimeAgo(entry.created_at)}</p>
+										<p className="text-basalt-muted-foreground">
+											{formatTimeAgo(entry.created_at)}
+										</p>
 									</div>
 								))}
 							</div>
 						) : backyHistory && backyHistory.recent_backups.length === 0 ? (
-							<p className="text-xs text-muted-foreground">暂无备份记录</p>
+							<p className="text-xs text-basalt-muted-foreground">暂无备份记录</p>
 						) : null}
 					</div>
 				</>

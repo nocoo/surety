@@ -128,7 +128,9 @@ function InsurerForm({
 							value={formData.phone}
 							onChange={(e) => handleChange("phone", e.target.value)}
 						/>
-						<p className="text-xs text-muted-foreground">填写官方客服热线，紧急情况下可快速拨打</p>
+						<p className="text-xs text-basalt-muted-foreground">
+							填写官方客服热线，紧急情况下可快速拨打
+						</p>
 					</div>
 
 					<div className="space-y-2">
@@ -144,7 +146,7 @@ function InsurerForm({
 				</div>
 
 				{error && (
-					<div className="rounded-widget bg-destructive/10 px-3 py-2 text-sm text-destructive">
+					<div className="rounded-basalt-md bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive">
 						{error}
 					</div>
 				)}

@@ -90,7 +90,7 @@ function isTerminalStatus(s: PolicyStatus): s is "Surrendered" | "Claimed" | "La
 function PersonRow({ name, label, icon }: { name: string; label: string; icon?: React.ReactNode }) {
 	return (
 		<div className="flex items-center justify-between text-sm">
-			<span className="text-muted-foreground">{label}</span>
+			<span className="text-basalt-muted-foreground">{label}</span>
 			<div className="flex items-center gap-2">
 				{icon ?? (
 					<Avatar size="sm">
@@ -184,7 +184,7 @@ function BasicInfoSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">基本信息</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">基本信息</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -199,7 +199,7 @@ function BasicInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -212,7 +212,7 @@ function BasicInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -273,7 +273,7 @@ function BasicInfoSection({
 					}
 				/>
 			</div>
-			{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+			{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 		</div>
 	);
 }
@@ -351,7 +351,7 @@ function CoverageInfoSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">保障信息</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">保障信息</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -366,7 +366,7 @@ function CoverageInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -379,7 +379,7 @@ function CoverageInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -418,7 +418,7 @@ function CoverageInfoSection({
 					onEditChange={isEditing ? (v) => updateField("paymentFrequency", v) : undefined}
 				/>
 			</div>
-			{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+			{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 		</div>
 	);
 }
@@ -498,7 +498,7 @@ function PaymentDetailsSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">缴费详情</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">缴费详情</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -513,7 +513,7 @@ function PaymentDetailsSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -526,7 +526,7 @@ function PaymentDetailsSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -576,7 +576,7 @@ function PaymentDetailsSection({
 					onEditChange={isEditing ? (v) => updateField("nextDueDate", v) : undefined}
 				/>
 			</div>
-			{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+			{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 		</div>
 	);
 }
@@ -660,7 +660,7 @@ function DateInfoSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">时间信息</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">时间信息</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -675,7 +675,7 @@ function DateInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -688,7 +688,7 @@ function DateInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -736,7 +736,7 @@ function DateInfoSection({
 					onEditChange={isEditing ? (v) => updateField("guaranteedRenewalYears", v) : undefined}
 				/>
 			</div>
-			{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+			{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 		</div>
 	);
 }
@@ -835,7 +835,7 @@ function PersonInfoSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">人员信息</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">人员信息</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -850,7 +850,7 @@ function PersonInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -863,7 +863,7 @@ function PersonInfoSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -922,8 +922,8 @@ function PersonInfoSection({
 								name={policy.insuredAssetName}
 								label="保障标的"
 								icon={
-									<div className="flex size-6 items-center justify-center rounded-full bg-muted">
-										<Building2 className="size-3.5 text-muted-foreground" />
+									<div className="flex size-6 items-center justify-center rounded-full bg-basalt-muted">
+										<Building2 className="size-3.5 text-basalt-muted-foreground" />
 									</div>
 								}
 							/>
@@ -931,7 +931,7 @@ function PersonInfoSection({
 					</>
 				)}
 			</div>
-			{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+			{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 		</div>
 	);
 }
@@ -983,7 +983,7 @@ function NotesSection({
 	return (
 		<div className="group">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-muted-foreground">备注</h3>
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">备注</h3>
 				{!isEditing ? (
 					<Button
 						variant="ghost"
@@ -998,7 +998,7 @@ function NotesSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-success hover:text-success"
+							className="h-6 px-2 text-basalt-success hover:text-basalt-success"
 							onClick={handleSave}
 							disabled={isSaving}
 						>
@@ -1011,7 +1011,7 @@ function NotesSection({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-6 px-2 text-destructive hover:text-destructive"
+							className="h-6 px-2 text-basalt-destructive hover:text-basalt-destructive"
 							onClick={handleCancel}
 							disabled={isSaving}
 						>
@@ -1028,12 +1028,12 @@ function NotesSection({
 						rows={3}
 						className="text-sm"
 					/>
-					{error && <p className="text-xs text-destructive mt-2">{error}</p>}
+					{error && <p className="text-xs text-basalt-destructive mt-2">{error}</p>}
 				</div>
 			) : policy.notes ? (
 				<p className="text-sm whitespace-pre-wrap">{policy.notes}</p>
 			) : (
-				<p className="text-sm text-muted-foreground/50">—</p>
+				<p className="text-sm text-basalt-muted-foreground/50">—</p>
 			)}
 		</div>
 	);
@@ -1160,7 +1160,7 @@ function PolicyActions({ policy, onSuccess }: { policy: PolicyDetail; onSuccess:
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{reactivateError && (
-						<p className="text-sm text-destructive" role="alert">
+						<p className="text-sm text-basalt-destructive" role="alert">
 							{reactivateError}
 						</p>
 					)}
@@ -1205,7 +1205,7 @@ export function MetaColumn({
 			{/* Header */}
 			<div className="space-y-2">
 				<div className="flex items-center gap-2">
-					<ShieldCheck className="size-5 text-primary shrink-0" />
+					<ShieldCheck className="size-5 text-basalt-primary shrink-0" />
 					<h2 className="text-lg font-semibold leading-tight">{policy.productName}</h2>
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
@@ -1214,14 +1214,18 @@ export function MetaColumn({
 							{b.label}
 						</Badge>
 					))}
-					<span className="text-sm text-muted-foreground">{policy.policyNumber}</span>
+					<span className="text-sm text-basalt-muted-foreground">{policy.policyNumber}</span>
 					<button
 						type="button"
 						onClick={handleCopy}
-						className="text-muted-foreground hover:text-foreground transition-colors"
+						className="text-basalt-muted-foreground hover:text-basalt-foreground transition-colors"
 						title="复制保单号"
 					>
-						{copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+						{copied ? (
+							<Check className="size-3.5 text-basalt-success" />
+						) : (
+							<Copy className="size-3.5" />
+						)}
 					</button>
 				</div>
 			</div>
@@ -1260,7 +1264,7 @@ export function MetaColumn({
 				<>
 					<Separator />
 					<div>
-						<h3 className="text-sm font-medium text-muted-foreground mb-2">受益人</h3>
+						<h3 className="text-sm font-medium text-basalt-muted-foreground mb-2">受益人</h3>
 						<div className="space-y-2">
 							{beneficiaries.map((b) => (
 								<div key={b.id} className="flex items-center justify-between text-sm">
@@ -1275,7 +1279,7 @@ export function MetaColumn({
 											{b.rankOrder}序
 										</Badge>
 									</div>
-									<span className="text-muted-foreground">{b.sharePercent}%</span>
+									<span className="text-basalt-muted-foreground">{b.sharePercent}%</span>
 								</div>
 							))}
 						</div>

@@ -183,7 +183,7 @@ function PaymentForm({
 	const canSave = form.periodNumber && form.dueDate && form.amount && Number(form.amount) > 0;
 
 	return (
-		<div className="space-y-3 rounded-lg border bg-background p-3">
+		<div className="space-y-3 rounded-lg border bg-basalt-background p-3">
 			<div className="grid grid-cols-2 gap-3">
 				<div className="space-y-1.5">
 					<Label className="text-xs">期数 *</Label>
@@ -470,7 +470,7 @@ export function PaymentsSection({
 	return (
 		<div>
 			<div className="mb-3 flex items-center justify-between">
-				<h3 className="text-sm font-medium text-muted-foreground">
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">
 					<Banknote className="mr-1.5 inline size-4 align-text-bottom" />
 					缴费记录
 					{liveRows.length > 0 && (
@@ -506,7 +506,7 @@ export function PaymentsSection({
 
 			{/* Summary bar — counts/totals ignore obsoleted rows. */}
 			{liveRows.length > 0 && (
-				<div className="mb-3 rounded-lg bg-muted/30 px-3 py-2 text-sm">
+				<div className="mb-3 rounded-lg bg-basalt-muted/30 px-3 py-2 text-sm">
 					已缴{" "}
 					<span className="font-medium">
 						{paidCount} / {totalCount}
@@ -521,7 +521,7 @@ export function PaymentsSection({
 				<p
 					className={cn(
 						"mb-2 text-sm",
-						resultMessage.startsWith("成功") ? "text-success-text" : "text-destructive-text",
+						resultMessage.startsWith("成功") ? "text-basalt-success" : "text-basalt-destructive",
 					)}
 				>
 					{resultMessage}
@@ -546,7 +546,7 @@ export function PaymentsSection({
 									paidOnly={isTerminated}
 								/>
 							) : (
-								<div className="group rounded-lg bg-muted/30 p-3">
+								<div className="group rounded-lg bg-basalt-muted/30 p-3">
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-semibold">
 											第{p.periodNumber}期
@@ -582,7 +582,7 @@ export function PaymentsSection({
 													type="button"
 													variant="ghost"
 													size="icon"
-													className="size-6 text-destructive hover:text-destructive"
+													className="size-6 text-basalt-destructive hover:text-basalt-destructive"
 													onClick={() => setDeleteTarget(p.id)}
 												>
 													<Trash2 className="size-3" />
@@ -593,22 +593,22 @@ export function PaymentsSection({
 
 									<div className="mt-1 space-y-1 text-sm">
 										<div className="flex justify-between">
-											<span className="text-muted-foreground">应缴日期</span>
+											<span className="text-basalt-muted-foreground">应缴日期</span>
 											<span className="font-mono">{p.dueDate}</span>
 										</div>
 										<div className="flex justify-between">
-											<span className="text-muted-foreground">金额</span>
+											<span className="text-basalt-muted-foreground">金额</span>
 											<span>{formatCurrencyFull(p.amount)}</span>
 										</div>
 										{p.status === "Paid" && p.paidDate && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">实缴日期</span>
+												<span className="text-basalt-muted-foreground">实缴日期</span>
 												<span className="font-mono">{p.paidDate}</span>
 											</div>
 										)}
 										{p.status === "Paid" && p.paidAmount != null && p.paidAmount !== p.amount && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">实缴金额</span>
+												<span className="text-basalt-muted-foreground">实缴金额</span>
 												<span>{formatCurrencyFull(p.paidAmount)}</span>
 											</div>
 										)}
@@ -629,7 +629,7 @@ export function PaymentsSection({
 						<CollapsibleTrigger asChild>
 							<button
 								type="button"
-								className="flex w-full items-center gap-1.5 rounded-lg bg-muted/30 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50"
+								className="flex w-full items-center gap-1.5 rounded-lg bg-basalt-muted/30 px-3 py-2 text-sm text-basalt-muted-foreground hover:bg-basalt-muted/50"
 							>
 								{obsoletedExpanded ? (
 									<ChevronDown className="size-3.5" />
@@ -643,7 +643,7 @@ export function PaymentsSection({
 							{sortedObsoleted.map((p) => (
 								<div
 									key={p.id}
-									className="rounded-lg bg-muted/30 p-3 text-sm line-through text-muted-foreground"
+									className="rounded-lg bg-basalt-muted/30 p-3 text-sm line-through text-basalt-muted-foreground"
 								>
 									<div className="flex items-center justify-between">
 										<span className="font-semibold">
@@ -672,8 +672,8 @@ export function PaymentsSection({
 
 			{/* Empty state */}
 			{sortedLive.length === 0 && sortedObsoleted.length === 0 && !addingForm && (
-				<div className="rounded-lg bg-muted/30 p-4 text-center">
-					<p className="text-sm text-muted-foreground">暂无缴费记录</p>
+				<div className="rounded-lg bg-basalt-muted/30 p-4 text-center">
+					<p className="text-sm text-basalt-muted-foreground">暂无缴费记录</p>
 				</div>
 			)}
 

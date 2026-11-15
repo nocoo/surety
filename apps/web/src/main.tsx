@@ -43,17 +43,10 @@ function BasaltLinkAdapter({
 	);
 }
 
-// Ensure default accent is vermilion if not set
-try {
-	if (!localStorage.getItem("basalt-accent")) {
-		localStorage.setItem("basalt-accent", "vermilion");
-	}
-} catch {}
-
 createRoot(root).render(
 	<StrictMode>
 		<ThemeProvider>
-			<AccentProvider>
+			<AccentProvider paletteOverrides={{ primary: { light: "15 85% 52%", dark: "15 65% 48%" } }}>
 				<LinkProvider render={BasaltLinkAdapter}>
 					<RouterProvider router={router} />
 				</LinkProvider>

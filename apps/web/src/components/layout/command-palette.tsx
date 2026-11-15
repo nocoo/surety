@@ -224,8 +224,8 @@ function PaletteContent({ onClose, active }: { onClose: () => void; active: bool
 
 	return (
 		<div className="flex flex-col">
-			<div className="flex items-center gap-2 border-b border-border px-4 py-3">
-				<Search className="h-4 w-4 text-muted-foreground" />
+			<div className="flex items-center gap-2 border-b border-basalt-border px-4 py-3">
+				<Search className="h-4 w-4 text-basalt-muted-foreground" />
 				<input
 					ref={inputRef}
 					value={query}
@@ -235,16 +235,18 @@ function PaletteContent({ onClose, active }: { onClose: () => void; active: bool
 					}}
 					onKeyDown={onKeyDown}
 					placeholder="搜索保单 / 成员 / 医院 / 医生，或输入命令…"
-					className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+					className="flex-1 bg-transparent text-sm outline-none placeholder:text-basalt-muted-foreground"
 				/>
-				<kbd className="hidden sm:inline-flex h-5 select-none items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground">
+				<kbd className="hidden sm:inline-flex h-5 select-none items-center rounded border border-basalt-border bg-basalt-muted px-1.5 font-mono text-[10px] text-basalt-muted-foreground">
 					esc
 				</kbd>
 			</div>
 
 			<div className="max-h-[60vh] overflow-y-auto py-1">
 				{filtered.length === 0 ? (
-					<div className="px-4 py-10 text-center text-sm text-muted-foreground">没有匹配的结果</div>
+					<div className="px-4 py-10 text-center text-sm text-basalt-muted-foreground">
+						没有匹配的结果
+					</div>
 				) : (
 					renderGroups(filtered, selectedIndex, fire, setSelectedIndex)
 				)}
@@ -266,7 +268,7 @@ function renderGroups(
 		return (
 			<div key={cmd.id}>
 				{header && (
-					<div className="px-3 pt-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
+					<div className="px-3 pt-2 pb-1 text-[11px] font-medium text-basalt-muted-foreground/70">
 						{header}
 					</div>
 				)}
@@ -278,13 +280,17 @@ function renderGroups(
 					onClick={() => fire(cmd)}
 					className={cn(
 						"flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors",
-						i === selectedIndex ? "bg-accent text-foreground" : "hover:bg-accent/50",
+						i === selectedIndex
+							? "bg-basalt-accent text-basalt-foreground"
+							: "hover:bg-basalt-accent/50",
 					)}
 				>
-					<cmd.icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+					<cmd.icon className="h-4 w-4 shrink-0 text-basalt-muted-foreground" strokeWidth={1.5} />
 					<div className="flex-1 min-w-0">
 						<p className="truncate">{cmd.label}</p>
-						{cmd.hint && <p className="truncate text-xs text-muted-foreground">{cmd.hint}</p>}
+						{cmd.hint && (
+							<p className="truncate text-xs text-basalt-muted-foreground">{cmd.hint}</p>
+						)}
 					</div>
 				</button>
 			</div>

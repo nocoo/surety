@@ -34,10 +34,10 @@ export function SectionDivider({
   return (
     <section className={cn("space-y-4", className)}>
       <div className="flex items-center gap-3">
-        <h2 className="shrink-0 text-sm font-medium text-muted-foreground">
+        <h2 className="shrink-0 text-sm font-medium text-basalt-muted-foreground">
           {title}
         </h2>
-        <div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+        <div aria-hidden="true" className="h-px flex-1 bg-basalt-border/60" />
         {action && <div className="shrink-0">{action}</div>}
       </div>
       <div className={cn(bodyClassName)}>{children}</div>

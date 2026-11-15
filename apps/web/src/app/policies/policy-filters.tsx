@@ -118,13 +118,13 @@ export function PolicyFilters({ filters, onChange, options }: PolicyFiltersProps
 
 			{chips.map((chip) => (
 				<Badge key={chip.key} variant="outline" className="gap-1.5 pl-2.5 pr-1 py-1 text-xs">
-					<span className="text-muted-foreground">{CHIP_LABELS[chip.key]}:</span>
+					<span className="text-basalt-muted-foreground">{CHIP_LABELS[chip.key]}:</span>
 					<span>{chip.display(filters[chip.key])}</span>
 					<button
 						type="button"
 						onClick={() => clearOne(chip.key)}
 						aria-label={`清除${CHIP_LABELS[chip.key]}筛选`}
-						className="inline-flex items-center justify-center rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+						className="inline-flex items-center justify-center rounded-sm p-0.5 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
 					>
 						<X className="h-3 w-3" />
 					</button>
@@ -260,7 +260,7 @@ export function PolicyFilters({ filters, onChange, options }: PolicyFiltersProps
 function FilterField({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
 		<div className="space-y-1.5">
-			<Label className="text-xs text-muted-foreground">{label}</Label>
+			<Label className="text-xs text-basalt-muted-foreground">{label}</Label>
 			{children}
 		</div>
 	);

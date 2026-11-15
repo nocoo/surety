@@ -244,7 +244,7 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
 
 	return (
 		<div className="space-y-1">
-			<h3 className="text-sm font-medium text-muted-foreground mb-4">
+			<h3 className="text-sm font-medium text-basalt-muted-foreground mb-4">
 				<Clock className="mr-1.5 inline size-4 align-text-bottom" />
 				保单时间线
 			</h3>
@@ -256,20 +256,22 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
 						<div key={`${event.dateStr}-${event.label}`} className="relative pl-8 pb-5 last:pb-0">
 							{/* Icon */}
 							<div className="absolute left-0 top-0 flex items-center justify-center w-4 h-4">
-								{event.type === "past" && <CircleCheck className="h-4 w-4 text-success" />}
-								{event.type === "today" && <CalendarDays className="h-4 w-4 text-primary" />}
-								{event.type === "future" && <Circle className="h-4 w-4 text-muted-foreground/50" />}
+								{event.type === "past" && <CircleCheck className="h-4 w-4 text-basalt-success" />}
+								{event.type === "today" && <CalendarDays className="h-4 w-4 text-basalt-primary" />}
+								{event.type === "future" && (
+									<Circle className="h-4 w-4 text-basalt-muted-foreground/50" />
+								)}
 							</div>
 
 							{/* Vertical line connecting to next event */}
 							{!isLast && (
-								<div className="absolute left-[7px] top-4 bottom-0 border-l-2 border-muted" />
+								<div className="absolute left-[7px] top-4 bottom-0 border-l-2 border-basalt-muted" />
 							)}
 
 							{/* Arrow indicator on last event */}
 							{isLast && events.length > 1 && (
 								<div className="absolute left-0 -bottom-1 flex items-center justify-center w-4">
-									<ArrowDown className="h-3 w-3 text-muted-foreground/50" />
+									<ArrowDown className="h-3 w-3 text-basalt-muted-foreground/50" />
 								</div>
 							)}
 
@@ -278,15 +280,15 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
 								<span
 									className={`text-xs font-mono ${
 										event.type === "today"
-											? "text-primary font-semibold"
+											? "text-basalt-primary font-semibold"
 											: event.type === "past"
-												? "text-muted-foreground"
+												? "text-basalt-muted-foreground"
 												: ""
 									}`}
 								>
 									{event.dateStr}
 									{event.type !== "today" && (
-										<span className="ml-1.5 font-sans text-muted-foreground/70">
+										<span className="ml-1.5 font-sans text-basalt-muted-foreground/70">
 											({formatDaysFromToday(getDaysFromToday(event.dateStr))})
 										</span>
 									)}
@@ -294,9 +296,9 @@ export function TimelineColumn({ policy }: { policy: PolicyDetail }) {
 								<span
 									className={`text-sm ${
 										event.type === "today"
-											? "text-primary font-semibold"
+											? "text-basalt-primary font-semibold"
 											: event.type === "past"
-												? "text-muted-foreground"
+												? "text-basalt-muted-foreground"
 												: ""
 									}`}
 								>

@@ -178,7 +178,7 @@ function MemberForm({
 			<form onSubmit={onSubmit} className="flex-1 space-y-6 overflow-y-auto px-4 py-6">
 				{submitError && (
 					<div
-						className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+						className="rounded-basalt-md border border-basalt-destructive/20 bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive"
 						role="alert"
 					>
 						{submitError}
@@ -287,7 +287,7 @@ function MemberForm({
 										setFormData((prev) => ({ ...prev, hasSocialInsurance: checked }))
 									}
 								/>
-								<span className="ml-2 text-sm text-muted-foreground">
+								<span className="ml-2 text-sm text-basalt-muted-foreground">
 									{formData.hasSocialInsurance ? "有" : "无"}
 								</span>
 							</div>

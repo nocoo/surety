@@ -37,7 +37,7 @@ export default function RenewalCalendarPage() {
 		return (
 			<AppShell breadcrumbs={breadcrumbs}>
 				<div className="flex items-center justify-center h-64">
-					<div className="text-destructive">{error ?? "加载失败"}</div>
+					<div className="text-basalt-destructive">{error ?? "加载失败"}</div>
 				</div>
 			</AppShell>
 		);

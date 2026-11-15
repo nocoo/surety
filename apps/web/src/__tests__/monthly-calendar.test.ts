@@ -115,6 +115,6 @@ describe("monthAccentClasses", () => {
 		const busy = monthAccentClasses(8);
 		expect(busy.border).toContain("border-l-primary");
 		expect(busy.border).not.toContain("/");
-		expect(busy.title).toBe("text-primary");
+		expect(busy.title).toBe("text-basalt-primary");
 	});
 });

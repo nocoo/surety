@@ -10,8 +10,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:image" content="https://surety.hexly.ai/og-image.png" />
     <script>
-      // Apply dark class before first paint to prevent FOUC
-      (()=>{try{const s=localStorage.getItem("theme");const d=window.matchMedia("(prefers-color-scheme:dark)").matches;if(s==="dark"||(s!=="light"&&d))document.documentElement.classList.add("dark")}catch(_e){}})()
+      (()=>{let s=null;try{s=localStorage.getItem("theme")}catch(_e){}const d=window.matchMedia("(prefers-color-scheme:dark)").matches;const dark=s==="dark"||(s!=="light"&&d);document.documentElement.classList.toggle("dark",dark);document.documentElement.classList.toggle("light",!dark);document.documentElement.dataset.mode=dark?"dark":"light"})()
     </script>
   </head>
   <body class="antialiased">

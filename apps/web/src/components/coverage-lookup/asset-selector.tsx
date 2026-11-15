@@ -40,7 +40,7 @@ export function AssetSelector({ assets, selectedAssetId, onSelectAsset }: AssetS
 	};
 
 	if (assets.length === 0) {
-		return <div className="text-center text-muted-foreground py-8">暂无资产</div>;
+		return <div className="text-center text-basalt-muted-foreground py-8">暂无资产</div>;
 	}
 
 	const getAssetIcon = (type: "RealEstate" | "Vehicle") => {
@@ -54,7 +54,7 @@ export function AssetSelector({ assets, selectedAssetId, onSelectAsset }: AssetS
 				<Button
 					variant="outline"
 					size="icon"
-					className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
+					className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-basalt-background"
 					onClick={() => scroll("left")}
 					aria-label="向左滚动资产列表"
 				>
@@ -78,28 +78,32 @@ export function AssetSelector({ assets, selectedAssetId, onSelectAsset }: AssetS
 							key={asset.id}
 							onClick={() => onSelectAsset(asset.id)}
 							className={cn(
-								"flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-card transition-all min-w-[140px]",
+								"flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-basalt-card transition-all min-w-[140px]",
 								isSelected
-									? "bg-primary/5 ring-2 ring-primary/20"
-									: "bg-secondary hover:bg-muted/50",
+									? "bg-basalt-primary/5 ring-2 ring-basalt-primary/20"
+									: "bg-basalt-secondary hover:bg-basalt-muted/50",
 							)}
 						>
 							<div
 								className={cn(
 									"flex items-center justify-center h-12 w-12 rounded-full",
-									isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+									isSelected
+										? "bg-basalt-primary/10 text-basalt-primary"
+										: "bg-basalt-muted text-basalt-muted-foreground",
 								)}
 							>
 								<Icon className="h-6 w-6" />
 							</div>
 							<div className="text-center">
 								<p className="text-sm font-medium">{asset.name}</p>
-								<p className="text-xs text-muted-foreground">{asset.typeLabel}</p>
+								<p className="text-xs text-basalt-muted-foreground">{asset.typeLabel}</p>
 							</div>
 							<div className="text-center">
-								<p className="text-xs text-muted-foreground">{asset.activePolicyCount} 份保单</p>
+								<p className="text-xs text-basalt-muted-foreground">
+									{asset.activePolicyCount} 份保单
+								</p>
 								{asset.totalSumAssured > 0 && (
-									<p className="text-xs font-medium text-primary">
+									<p className="text-xs font-medium text-basalt-primary">
 										保额 {formatSumAssured(asset.totalSumAssured)}
 									</p>
 								)}
@@ -114,7 +118,7 @@ export function AssetSelector({ assets, selectedAssetId, onSelectAsset }: AssetS
 				<Button
 					variant="outline"
 					size="icon"
-					className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-background"
+					className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-basalt-background"
 					onClick={() => scroll("right")}
 					aria-label="向右滚动资产列表"
 				>

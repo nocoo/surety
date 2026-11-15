@@ -139,7 +139,7 @@ export default function AssetsPage() {
 					}
 				/>
 
-				<div className="rounded-card bg-secondary">
+				<div className="rounded-basalt-card bg-basalt-secondary">
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -155,7 +155,9 @@ export default function AssetsPage() {
 							{assets.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={6} className="h-24 text-center">
-										<div className="text-muted-foreground">暂无资产，点击「添加资产」开始记录</div>
+										<div className="text-basalt-muted-foreground">
+											暂无资产，点击「添加资产」开始记录
+										</div>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -178,20 +180,20 @@ export default function AssetsPage() {
 											<TableCell>
 												<Badge className={styleConfig.badgeClass}>{typeLabels[asset.type]}</Badge>
 											</TableCell>
-											<TableCell className="font-mono text-sm text-muted-foreground">
+											<TableCell className="font-mono text-sm text-basalt-muted-foreground">
 												{asset.identifier}
 											</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="text-basalt-muted-foreground">
 												{asset.ownerName ?? "-"}
 											</TableCell>
 											<TableCell className="text-center">
 												{hasPolicies ? (
 													<div className="flex items-center justify-center gap-1">
-														<FileText className="h-3 w-3 text-primary" />
+														<FileText className="h-3 w-3 text-basalt-primary" />
 														<span className="text-sm">{asset.policyCount}</span>
 													</div>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
@@ -212,7 +214,7 @@ export default function AssetsPage() {
 																	<Button
 																		variant="ghost"
 																		size="icon"
-																		className="h-8 w-8 text-destructive hover:text-destructive"
+																		className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																		disabled={hasPolicies}
 																		onClick={() => handleDeleteClick(asset)}
 																		aria-label={

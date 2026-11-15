@@ -16,21 +16,21 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 	const detailsId = `policy-card-details-${policy.id}`;
 
 	return (
-		<div className="rounded-card bg-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
 			{/* Header - always visible */}
 			<button
 				type="button"
 				onClick={() => setExpanded(!expanded)}
 				aria-expanded={expanded}
 				aria-controls={detailsId}
-				className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
+				className="w-full flex items-center justify-between p-4 text-left hover:bg-basalt-muted/50 transition-colors"
 			>
 				<div className="flex items-center gap-3 min-w-0">
 					<div className="shrink-0">
 						{expanded ? (
-							<ChevronDown className="h-4 w-4 text-muted-foreground" />
+							<ChevronDown className="h-4 w-4 text-basalt-muted-foreground" />
 						) : (
-							<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							<ChevronRight className="h-4 w-4 text-basalt-muted-foreground" />
 						)}
 					</div>
 					<div className="min-w-0">
@@ -42,28 +42,31 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 								</Badge>
 							)}
 						</div>
-						<p className="text-sm text-muted-foreground mt-0.5">{policy.insurerName}</p>
+						<p className="text-sm text-basalt-muted-foreground mt-0.5">{policy.insurerName}</p>
 					</div>
 				</div>
 				<div className="text-right shrink-0 ml-4">
 					<p className="text-xl font-semibold tabular-nums">{policy.sumAssuredFormatted}</p>
-					<p className="text-xs text-muted-foreground">保额</p>
+					<p className="text-xs text-basalt-muted-foreground">保额</p>
 				</div>
 			</button>
 
 			{/* Expanded content */}
 			{expanded && (
-				<div id={detailsId} className="border-t border-border bg-muted/20 px-4 py-3 space-y-3">
+				<div
+					id={detailsId}
+					className="border-t border-basalt-border bg-basalt-muted/20 px-4 py-3 space-y-3"
+				>
 					{/* Insurer phone - prominent when available */}
 					{policy.insurerPhone && (
-						<div className="flex items-center justify-between p-3 bg-primary/5 rounded-widget">
+						<div className="flex items-center justify-between p-3 bg-basalt-primary/5 rounded-basalt-md">
 							<div className="flex items-center gap-2">
-								<Phone className="h-4 w-4 text-primary" />
+								<Phone className="h-4 w-4 text-basalt-primary" />
 								<span className="text-sm font-medium">客服电话</span>
 							</div>
 							<a
 								href={`tel:${policy.insurerPhone}`}
-								className="flex items-center gap-1 text-primary font-semibold hover:underline"
+								className="flex items-center gap-1 text-basalt-primary font-semibold hover:underline"
 							>
 								{policy.insurerPhone}
 								<ExternalLink className="h-3 w-3" />
@@ -72,7 +75,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 					)}
 
 					{!policy.insurerPhone && (
-						<div className="flex items-center gap-2 p-3 bg-muted/50 rounded-widget text-muted-foreground text-sm">
+						<div className="flex items-center gap-2 p-3 bg-basalt-muted/50 rounded-basalt-md text-basalt-muted-foreground text-sm">
 							<Phone className="h-4 w-4" />
 							<span>暂无客服电话</span>
 						</div>
@@ -81,33 +84,33 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 					{/* Policy details */}
 					<div className="grid grid-cols-2 gap-3 text-sm">
 						<div>
-							<p className="text-muted-foreground text-xs">年保费</p>
+							<p className="text-basalt-muted-foreground text-xs">年保费</p>
 							<p className="font-medium">{policy.premiumFormatted}</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs">状态</p>
+							<p className="text-basalt-muted-foreground text-xs">状态</p>
 							<p className="font-medium">{policy.statusLabel}</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs">生效日期</p>
+							<p className="text-basalt-muted-foreground text-xs">生效日期</p>
 							<p className="font-medium">{policy.effectiveDate}</p>
 						</div>
 						<div>
-							<p className="text-muted-foreground text-xs">到期日期</p>
+							<p className="text-basalt-muted-foreground text-xs">到期日期</p>
 							<p className="font-medium">{policy.expiryDate ?? "终身"}</p>
 						</div>
 					</div>
 
 					{/* Sub-category if exists */}
 					{policy.subCategory && (
-						<div className="text-xs text-muted-foreground">类型: {policy.subCategory}</div>
+						<div className="text-xs text-basalt-muted-foreground">类型: {policy.subCategory}</div>
 					)}
 
 					{/* View detail link */}
 					<button
 						type="button"
 						onClick={() => navigate(`/policies/${policy.id}`)}
-						className="flex items-center gap-1.5 text-xs text-primary hover:underline pt-1"
+						className="flex items-center gap-1.5 text-xs text-basalt-primary hover:underline pt-1"
 					>
 						<FileText className="h-3.5 w-3.5" />
 						查看保单详情
@@ -136,7 +139,7 @@ export function CategorySection({ category, policies, totalSumAssured }: Categor
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<Badge variant={config.variant}>{config.label}</Badge>
-					<span className="text-sm text-muted-foreground">({policies.length})</span>
+					<span className="text-sm text-basalt-muted-foreground">({policies.length})</span>
 				</div>
 				<span className="text-sm font-medium">总保额 {formatCurrency(totalSumAssured)}</span>
 			</div>

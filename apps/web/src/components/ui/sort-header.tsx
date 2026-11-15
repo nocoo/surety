@@ -35,7 +35,7 @@ export function SortHeader({
   return (
     <th
       className={cn(
-        "px-2 py-3 text-left align-middle text-xs font-medium text-muted-foreground whitespace-nowrap",
+        "px-2 py-3 text-left align-middle text-xs font-medium text-basalt-muted-foreground whitespace-nowrap",
         className,
       )}
       aria-sort={ariaSort}
@@ -43,8 +43,8 @@ export function SortHeader({
       <button
         onClick={() => onSort(sortKey)}
         className={cn(
-          "inline-flex items-center gap-1 transition-colors hover:text-foreground",
-          isActive && "text-foreground",
+          "inline-flex items-center gap-1 transition-colors hover:text-basalt-foreground",
+          isActive && "text-basalt-foreground",
           className?.includes("text-right") && "w-full justify-end",
         )}
       >

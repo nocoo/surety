@@ -94,7 +94,7 @@ function CoverageForm({
 		onChange({ ...form, [field]: value });
 
 	return (
-		<div className="space-y-3 rounded-lg border bg-background p-3">
+		<div className="space-y-3 rounded-lg border bg-basalt-background p-3">
 			<div className="space-y-1.5">
 				<Label className="text-xs">保障名称 *</Label>
 				<Input
@@ -282,7 +282,7 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 	return (
 		<div>
 			<div className="mb-3 flex items-center justify-between">
-				<h3 className="text-sm font-medium text-muted-foreground">
+				<h3 className="text-sm font-medium text-basalt-muted-foreground">
 					<Shield className="mr-1.5 inline size-4 align-text-bottom" />
 					保障明细
 					{items.length > 0 && (
@@ -300,7 +300,7 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 			</div>
 
 			{/* Error message */}
-			{errorMessage && <p className="mb-2 text-sm text-destructive">{errorMessage}</p>}
+			{errorMessage && <p className="mb-2 text-sm text-basalt-destructive">{errorMessage}</p>}
 
 			{/* Item list */}
 			{sorted.length > 0 && (
@@ -317,7 +317,7 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 									saveLabel="保存"
 								/>
 							) : (
-								<div className="group rounded-lg bg-muted/30 p-3">
+								<div className="group rounded-lg bg-basalt-muted/30 p-3">
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-semibold">
 											{item.name}
@@ -341,7 +341,7 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 												type="button"
 												variant="ghost"
 												size="icon"
-												className="size-6 text-destructive hover:text-destructive"
+												className="size-6 text-basalt-destructive hover:text-basalt-destructive"
 												onClick={() => setDeleteTarget(item.id)}
 											>
 												<Trash2 className="size-3" />
@@ -352,31 +352,33 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 									<div className="mt-1 space-y-1 text-sm">
 										{item.periodLimit !== null && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">年度限额</span>
+												<span className="text-basalt-muted-foreground">年度限额</span>
 												<span>{formatCurrency(item.periodLimit)}</span>
 											</div>
 										)}
 										{item.lifetimeLimit !== null && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">终身限额</span>
+												<span className="text-basalt-muted-foreground">终身限额</span>
 												<span>{formatCurrency(item.lifetimeLimit)}</span>
 											</div>
 										)}
 										{item.deductible !== null && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">免赔额</span>
+												<span className="text-basalt-muted-foreground">免赔额</span>
 												<span>{formatCurrency(item.deductible)}</span>
 											</div>
 										)}
 										{item.coveragePercent !== null && (
 											<div className="flex justify-between">
-												<span className="text-muted-foreground">赔付比例</span>
+												<span className="text-basalt-muted-foreground">赔付比例</span>
 												<span>{item.coveragePercent}%</span>
 											</div>
 										)}
 									</div>
 
-									{item.notes && <p className="mt-1 text-xs text-muted-foreground">{item.notes}</p>}
+									{item.notes && (
+										<p className="mt-1 text-xs text-basalt-muted-foreground">{item.notes}</p>
+									)}
 								</div>
 							)}
 						</div>
@@ -386,8 +388,8 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 
 			{/* Empty state */}
 			{sorted.length === 0 && !addingForm && (
-				<div className="rounded-lg bg-muted/30 p-4 text-center">
-					<p className="text-sm text-muted-foreground">暂无保障明细</p>
+				<div className="rounded-lg bg-basalt-muted/30 p-4 text-center">
+					<p className="text-sm text-basalt-muted-foreground">暂无保障明细</p>
 					<Button type="button" variant="ghost" size="sm" className="mt-2" onClick={startAdd}>
 						<Plus className="mr-1 size-3.5" />
 						添加保障项目

@@ -99,37 +99,39 @@ export function AttachmentDropZone({ policyId, onUploadComplete }: AttachmentDro
 				className={cn(
 					"border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
 					isDragActive
-						? "border-primary bg-primary/5"
-						: "border-muted-foreground/25 hover:border-primary/50",
+						? "border-basalt-primary bg-basalt-primary/5"
+						: "border-basalt-muted-foreground/25 hover:border-basalt-primary/50",
 					uploading && "opacity-50 cursor-not-allowed",
 				)}
 			>
 				<input {...getInputProps()} />
 				{uploading ? (
 					<div className="space-y-2">
-						<p className="text-sm text-muted-foreground">
+						<p className="text-sm text-basalt-muted-foreground">
 							上传中 ({currentFile}/{totalFiles})...
 						</p>
-						<div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+						<div className="w-full h-2 bg-basalt-secondary rounded-full overflow-hidden">
 							<div
-								className="h-full bg-primary rounded-full transition-all duration-300"
+								className="h-full bg-basalt-primary rounded-full transition-all duration-300"
 								style={{ width: `${progress}%` }}
 							/>
 						</div>
-						<p className="text-xs text-muted-foreground">{progress}%</p>
+						<p className="text-xs text-basalt-muted-foreground">{progress}%</p>
 					</div>
 				) : (
 					<>
-						<Upload className="mx-auto h-8 w-8 text-muted-foreground/50" />
-						<p className="mt-2 text-sm text-muted-foreground">
+						<Upload className="mx-auto h-8 w-8 text-basalt-muted-foreground/50" />
+						<p className="mt-2 text-sm text-basalt-muted-foreground">
 							{isDragActive ? "松开鼠标上传文件" : "拖拽 PDF 或图片到此处，或点击选择文件"}
 						</p>
-						<p className="text-xs text-muted-foreground/70 mt-1">支持 PDF、JPG、PNG，最大 50MB</p>
+						<p className="text-xs text-basalt-muted-foreground/70 mt-1">
+							支持 PDF、JPG、PNG，最大 50MB
+						</p>
 					</>
 				)}
 			</div>
 			{error && (
-				<div className="mt-2 flex items-start gap-1 text-destructive text-sm">
+				<div className="mt-2 flex items-start gap-1 text-basalt-destructive text-sm">
 					<AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
 					<span className="whitespace-pre-line">{error}</span>
 				</div>

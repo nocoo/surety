@@ -16,22 +16,22 @@ interface StatCardProps {
 
 function StatCard({ label, value, subValue, icon: Icon, variant = "default" }: StatCardProps) {
 	const iconColors = {
-		default: "text-primary",
-		savings: "text-warning-text",
-		protection: "text-success-text",
+		default: "text-basalt-primary",
+		savings: "text-basalt-warning",
+		protection: "text-basalt-success",
 	};
 
 	return (
-		<div className="rounded-card bg-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary p-6">
 			<div className="flex items-center justify-between">
-				<span className="text-sm text-muted-foreground">{label}</span>
-				<div className="rounded-md bg-background p-2">
+				<span className="text-sm text-basalt-muted-foreground">{label}</span>
+				<div className="rounded-md bg-basalt-background p-2">
 					<Icon className={`h-4 w-4 ${iconColors[variant]}`} strokeWidth={1.5} />
 				</div>
 			</div>
 			<div className="mt-2">
 				<span className="text-2xl font-bold font-display tabular-nums">{value}</span>
-				{subValue && <span className="ml-2 text-sm text-muted-foreground">{subValue}</span>}
+				{subValue && <span className="ml-2 text-sm text-basalt-muted-foreground">{subValue}</span>}
 			</div>
 		</div>
 	);

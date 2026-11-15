@@ -164,7 +164,7 @@ function HospitalForm({
 					<div className="flex items-center justify-between">
 						<div className="space-y-0.5">
 							<Label htmlFor="isPublic">公立医院</Label>
-							<p className="text-xs text-muted-foreground">公立医院通常医保报销比例更高</p>
+							<p className="text-xs text-basalt-muted-foreground">公立医院通常医保报销比例更高</p>
 						</div>
 						<Switch
 							id="isPublic"
@@ -207,7 +207,7 @@ function HospitalForm({
 				</div>
 
 				{error && (
-					<div className="rounded-widget bg-destructive/10 px-3 py-2 text-sm text-destructive">
+					<div className="rounded-basalt-md bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive">
 						{error}
 					</div>
 				)}

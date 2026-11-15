@@ -198,7 +198,7 @@ export default function SettingsPage() {
 				{dirty && (
 					<div
 						role="status"
-						className="flex items-center justify-between gap-3 rounded-widget border border-warning/30 bg-warning/10 px-4 py-2.5 text-sm text-warning-text"
+						className="flex items-center justify-between gap-3 rounded-basalt-md border border-basalt-warning/30 bg-basalt-warning/10 px-4 py-2.5 text-sm text-basalt-warning"
 					>
 						<span className="flex items-center gap-2">
 							<AlertCircle className="h-4 w-4 shrink-0" />
@@ -216,14 +216,14 @@ export default function SettingsPage() {
 
 				<div className="grid gap-6 lg:grid-cols-2">
 					{/* Family Finance Settings */}
-					<div className="rounded-card bg-secondary p-6">
+					<div className="rounded-basalt-card bg-basalt-secondary p-6">
 						<div className="flex items-center gap-3 mb-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-								<Shield className="h-5 w-5 text-primary" strokeWidth={1.5} />
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
+								<Shield className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
 							</div>
 							<div>
 								<h2 className="font-semibold">家庭财务</h2>
-								<p className="text-sm text-muted-foreground">用于计算保费占比等指标</p>
+								<p className="text-sm text-basalt-muted-foreground">用于计算保费占比等指标</p>
 							</div>
 						</div>
 						<Separator className="mb-4" />
@@ -237,7 +237,9 @@ export default function SettingsPage() {
 									value={settings.annualIncome}
 									onChange={(e) => handleChange("annualIncome", e.target.value)}
 								/>
-								<p className="text-xs text-muted-foreground">建议保费支出控制在年收入的 10-15%</p>
+								<p className="text-xs text-basalt-muted-foreground">
+									建议保费支出控制在年收入的 10-15%
+								</p>
 							</div>
 
 							<div className="space-y-2">
@@ -260,14 +262,14 @@ export default function SettingsPage() {
 					</div>
 
 					{/* Reminder Settings */}
-					<div className="rounded-card bg-secondary p-6">
+					<div className="rounded-basalt-card bg-basalt-secondary p-6">
 						<div className="flex items-center gap-3 mb-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-								<Bell className="h-5 w-5 text-warning-text" strokeWidth={1.5} />
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-warning/10">
+								<Bell className="h-5 w-5 text-basalt-warning" strokeWidth={1.5} />
 							</div>
 							<div>
 								<h2 className="font-semibold">提醒设置</h2>
-								<p className="text-sm text-muted-foreground">保单到期和缴费提醒</p>
+								<p className="text-sm text-basalt-muted-foreground">保单到期和缴费提醒</p>
 							</div>
 						</div>
 						<Separator className="mb-4" />
@@ -288,7 +290,9 @@ export default function SettingsPage() {
 										<SelectItem value="60">60 天</SelectItem>
 									</SelectContent>
 								</Select>
-								<p className="text-xs text-muted-foreground">在保单到期或缴费日前多少天开始提醒</p>
+								<p className="text-xs text-basalt-muted-foreground">
+									在保单到期或缴费日前多少天开始提醒
+								</p>
 							</div>
 						</div>
 					</div>
@@ -302,7 +306,7 @@ export default function SettingsPage() {
 
 				<div className="flex flex-col items-end gap-2">
 					{saveError && (
-						<p className="text-sm text-destructive" role="alert">
+						<p className="text-sm text-basalt-destructive" role="alert">
 							{saveError}
 						</p>
 					)}

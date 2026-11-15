@@ -15,13 +15,13 @@ export function SiteFooter({
 }: SiteFooterProps) {
 	return (
 		<footer className="py-4 text-center">
-			<p className="text-xs text-muted-foreground">
+			<p className="text-xs text-basalt-muted-foreground">
 				Powered by{" "}
 				<a
 					href={projectUrl}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="text-primary hover:text-primary/80 transition-colors"
+					className="text-basalt-primary hover:text-basalt-primary/80 transition-colors"
 				>
 					{projectName}
 				</a>

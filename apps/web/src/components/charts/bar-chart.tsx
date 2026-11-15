@@ -302,7 +302,7 @@ export function StackedTimelineChart({
 	if (!hasData) {
 		return (
 			<ChartCard title={title} icon={icon}>
-				<div className="flex items-center justify-center h-full text-muted-foreground">
+				<div className="flex items-center justify-center h-full text-basalt-muted-foreground">
 					{emptyMessage}
 				</div>
 			</ChartCard>

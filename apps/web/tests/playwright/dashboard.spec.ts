@@ -18,7 +18,7 @@ test.describe("dashboard page", () => {
 		// animate-fade-up is the StatCard-specific entrance animation; without it
 		// the selector also picks up the action-items / health cards in the same
 		// row family.
-		const statCards = page.locator(".rounded-card.bg-secondary.p-6.animate-fade-up");
+		const statCards = page.locator(".rounded-basalt-card.bg-basalt-secondary.p-6.animate-fade-up");
 		await expect(statCards.first()).toBeVisible({ timeout: 10_000 });
 
 		// Should have 4 stat cards

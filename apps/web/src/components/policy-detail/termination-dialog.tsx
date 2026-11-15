@@ -211,7 +211,7 @@ export function TerminationDialog({
 						/>
 					</div>
 					{error && (
-						<p className="text-sm text-destructive" role="alert">
+						<p className="text-sm text-basalt-destructive" role="alert">
 							{error}
 						</p>
 					)}

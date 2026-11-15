@@ -16,8 +16,8 @@ describe("SectionDivider", () => {
 	it("renders the divider line and the section is a semantic <section>", () => {
 		const html = renderToStaticMarkup(<SectionDivider title="x">y</SectionDivider>);
 		expect(html).toMatch(/<section/);
-		// The thin divider line is the bg-border/60 element.
-		expect(html).toContain("bg-border/60");
+		// The thin divider line is the bg-basalt-border/60 element.
+		expect(html).toContain("bg-basalt-border/60");
 	});
 
 	it("renders the action slot when provided", () => {

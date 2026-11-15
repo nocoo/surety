@@ -27,7 +27,7 @@ export function EnvironmentSelector() {
 				}}
 			/>
 			{error && (
-				<span role="alert" className="text-xs text-destructive">
+				<span role="alert" className="text-xs text-basalt-destructive">
 					{error}
 				</span>
 			)}

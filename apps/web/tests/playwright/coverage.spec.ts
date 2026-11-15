@@ -27,7 +27,7 @@ test.describe("coverage-lookup page", () => {
 
 		// Seeded policy is Health category — should show coverage section
 		// Wait for data to load and render
-		await expect(page.locator("[class*='rounded-card']").first()).toBeVisible({
+		await expect(page.locator("[class*='rounded-basalt-card']").first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});

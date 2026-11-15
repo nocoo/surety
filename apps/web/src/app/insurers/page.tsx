@@ -109,7 +109,7 @@ export default function InsurersPage() {
 					}
 				/>
 
-				<div className="rounded-card bg-secondary">
+				<div className="rounded-basalt-card bg-basalt-secondary">
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -124,7 +124,9 @@ export default function InsurersPage() {
 							{insurers.length === 0 ? (
 								<TableRow>
 									<TableCell colSpan={5} className="h-24 text-center">
-										<div className="text-muted-foreground">暂无保险公司，点击上方按钮添加</div>
+										<div className="text-basalt-muted-foreground">
+											暂无保险公司，点击上方按钮添加
+										</div>
 									</TableCell>
 								</TableRow>
 							) : (
@@ -139,11 +141,11 @@ export default function InsurersPage() {
 													href={`tel:${insurer.phone}`}
 													className="inline-flex items-center gap-1.5 hover:underline"
 												>
-													<Phone className="h-3.5 w-3.5 text-primary" />
+													<Phone className="h-3.5 w-3.5 text-basalt-primary" />
 													{insurer.phone}
 												</a>
 											) : (
-												<Badge variant="outline" className="text-muted-foreground">
+												<Badge variant="outline" className="text-basalt-muted-foreground">
 													未设置
 												</Badge>
 											)}
@@ -156,21 +158,21 @@ export default function InsurersPage() {
 													rel="noopener noreferrer"
 													className="inline-flex items-center gap-1.5 hover:underline"
 												>
-													<Globe className="h-3.5 w-3.5 text-primary" />
+													<Globe className="h-3.5 w-3.5 text-basalt-primary" />
 													{new URL(insurer.website).hostname}
 												</a>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell className="text-center">
 											{insurer.policyCount && insurer.policyCount > 0 ? (
 												<div className="flex items-center justify-center gap-1">
-													<FileText className="h-3 w-3 text-primary" />
+													<FileText className="h-3 w-3 text-basalt-primary" />
 													<span className="text-sm">{insurer.policyCount}</span>
 												</div>
 											) : (
-												<span className="text-muted-foreground">-</span>
+												<span className="text-basalt-muted-foreground">-</span>
 											)}
 										</TableCell>
 										<TableCell>
@@ -191,7 +193,7 @@ export default function InsurersPage() {
 																<Button
 																	variant="ghost"
 																	size="icon"
-																	className="h-8 w-8 text-destructive hover:text-destructive"
+																	className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																	disabled={(insurer.policyCount ?? 0) > 0}
 																	onClick={() => handleDeleteClick(insurer)}
 																	aria-label={

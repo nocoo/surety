@@ -56,27 +56,27 @@ const VISIT_TYPE_COLORS: Record<
 };
 
 const SYMPTOM_BG_CLASSES = [
-	"bg-chart-1/15",
-	"bg-chart-2/15",
-	"bg-chart-3/15",
-	"bg-chart-4/15",
-	"bg-chart-5/15",
-	"bg-chart-6/15",
-	"bg-chart-7/15",
-	"bg-chart-8/15",
-	"bg-chart-9/15",
-	"bg-chart-10/15",
-	"bg-chart-11/15",
-	"bg-chart-12/15",
-	"bg-chart-13/15",
-	"bg-chart-14/15",
-	"bg-chart-15/15",
-	"bg-chart-16/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
+	"bg-basalt-chart-2/15",
+	"bg-basalt-chart-3/15",
+	"bg-basalt-chart-4/15",
+	"bg-basalt-chart-5/15",
+	"bg-basalt-chart-1/15",
 ] as const;
 
 function symptomColorClass(symptom: string): string {
 	const idx = hashString(symptom) % SYMPTOM_BG_CLASSES.length;
-	return SYMPTOM_BG_CLASSES[idx] ?? "bg-chart-1/15";
+	return SYMPTOM_BG_CLASSES[idx] ?? "bg-basalt-chart-1/15";
 }
 
 function parseSymptoms(symptoms: string | null | undefined): string[] {
@@ -96,14 +96,14 @@ function parseSymptoms(symptoms: string | null | undefined): string[] {
 }
 
 function temporalCardClass(temporal: VisitTemporal): string {
-	if (temporal === "today") return "bg-primary/5";
+	if (temporal === "today") return "bg-basalt-primary/5";
 	return "";
 }
 
 function temporalRelativeClass(temporal: VisitTemporal): string {
-	if (temporal === "upcoming") return "text-info-text";
-	if (temporal === "today") return "text-warning-text";
-	return "text-muted-foreground";
+	if (temporal === "upcoming") return "text-basalt-info";
+	if (temporal === "today") return "text-basalt-warning";
+	return "text-basalt-muted-foreground";
 }
 
 interface VisitTimelineProps {
@@ -117,18 +117,18 @@ const TEMPORAL_SECTIONS: {
 	label: string;
 	titleClass: string;
 }[] = [
-	{ key: "upcoming", label: "即将到来", titleClass: "text-info-text" },
-	{ key: "today", label: "今天", titleClass: "text-warning-text" },
-	{ key: "past", label: "已发生", titleClass: "text-muted-foreground" },
-	{ key: "unknown", label: "日期未识别", titleClass: "text-warning-text" },
+	{ key: "upcoming", label: "即将到来", titleClass: "text-basalt-info" },
+	{ key: "today", label: "今天", titleClass: "text-basalt-warning" },
+	{ key: "past", label: "已发生", titleClass: "text-basalt-muted-foreground" },
+	{ key: "unknown", label: "日期未识别", titleClass: "text-basalt-warning" },
 ];
 
 export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) {
 	if (visits.length === 0) {
 		return (
-			<div className="rounded-card bg-secondary p-8 text-center">
-				<Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
-				<p className="mt-4 text-sm text-muted-foreground">暂无就诊记录</p>
+			<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+				<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
+				<p className="mt-4 text-sm text-basalt-muted-foreground">暂无就诊记录</p>
 			</div>
 		);
 	}
@@ -154,13 +154,13 @@ export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) 
 						<div className="mb-4 flex items-center gap-3">
 							<h2 className={cn("shrink-0 text-base font-semibold", titleClass)}>
 								{label}
-								<span className="ml-1.5 tabular-nums text-sm font-normal text-muted-foreground">
+								<span className="ml-1.5 tabular-nums text-sm font-normal text-basalt-muted-foreground">
 									{sectionVisits.length}
 								</span>
 							</h2>
-							<div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+							<div aria-hidden="true" className="h-px flex-1 bg-basalt-border/60" />
 							{key === "unknown" && (
-								<span className="text-xs text-muted-foreground">
+								<span className="text-xs text-basalt-muted-foreground">
 									这些记录的就诊日期为空或格式不合法，请编辑修复
 								</span>
 							)}
@@ -179,16 +179,16 @@ export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) 
 										<div className="mb-3 flex items-center gap-3">
 											<h3
 												className={cn(
-													"font-display text-sm font-semibold tabular-nums text-muted-foreground",
-													bucket.key === UNKNOWN_DATE_KEY && "text-warning-text",
+													"font-display text-sm font-semibold tabular-nums text-basalt-muted-foreground",
+													bucket.key === UNKNOWN_DATE_KEY && "text-basalt-warning",
 												)}
 											>
 												{bucket.label}
 											</h3>
-											<span className="text-xs text-muted-foreground">
+											<span className="text-xs text-basalt-muted-foreground">
 												{bucket.visits.length} 条
 											</span>
-											<div className="flex-1 border-t border-border/60" />
+											<div className="flex-1 border-t border-basalt-border/60" />
 										</div>
 										<div className="space-y-3">
 											{bucket.visits.map((visit) => (
@@ -226,7 +226,9 @@ function VisitCard({
 	const daysAgo = calculateDaysAgo(visit.visitDate);
 
 	return (
-		<article className={cn("rounded-card bg-secondary p-4", temporalCardClass(temporal))}>
+		<article
+			className={cn("rounded-basalt-card bg-basalt-secondary p-4", temporalCardClass(temporal))}
+		>
 			<header className="flex items-start justify-between gap-3">
 				<div className="flex items-center gap-3 min-w-0">
 					<Avatar className="h-8 w-8 shrink-0">
@@ -246,7 +248,7 @@ function VisitCard({
 								<Badge variant={temporalBadge.variant}>{temporalBadge.label}</Badge>
 							)}
 						</div>
-						<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+						<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-basalt-muted-foreground">
 							<span className="inline-flex items-center gap-1">
 								<Calendar className="h-3 w-3" />
 								{formatVisitDate(visit.visitDate)}
@@ -286,7 +288,7 @@ function VisitCard({
 					<Button
 						variant="ghost"
 						size="icon"
-						className="h-8 w-8 text-destructive hover:text-destructive"
+						className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 						onClick={() => onDelete(visit.id)}
 					>
 						<Trash2 className="h-4 w-4" />
@@ -298,19 +300,19 @@ function VisitCard({
 			<dl className="mt-3 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-[6rem_1fr]">
 				{visit.visitReason && (
 					<>
-						<dt className="text-muted-foreground">就诊原因</dt>
+						<dt className="text-basalt-muted-foreground">就诊原因</dt>
 						<dd>{visit.visitReason}</dd>
 					</>
 				)}
 				{symptoms.length > 0 && (
 					<>
-						<dt className="text-muted-foreground">症状</dt>
+						<dt className="text-basalt-muted-foreground">症状</dt>
 						<dd>
 							<div className="flex flex-wrap gap-1">
 								{symptoms.map((s, i) => (
 									<span
 										key={`${s}-${i}`}
-										className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-foreground ${symptomColorClass(s)}`}
+										className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-basalt-foreground ${symptomColorClass(s)}`}
 									>
 										{s}
 									</span>
@@ -321,13 +323,13 @@ function VisitCard({
 				)}
 				{visit.diagnosis && (
 					<>
-						<dt className="text-muted-foreground">诊断</dt>
+						<dt className="text-basalt-muted-foreground">诊断</dt>
 						<dd className="whitespace-pre-wrap">{visit.diagnosis}</dd>
 					</>
 				)}
 				{visit.treatment && (
 					<>
-						<dt className="text-muted-foreground">治疗方案</dt>
+						<dt className="text-basalt-muted-foreground">治疗方案</dt>
 						<dd className="whitespace-pre-wrap">{visit.treatment}</dd>
 					</>
 				)}

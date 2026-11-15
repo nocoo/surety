@@ -7,22 +7,18 @@ describe("Notice", () => {
 		const html = renderToStaticMarkup(<Notice>hello</Notice>);
 		expect(html).toContain("hello");
 		expect(html).toContain('role="status"');
-		expect(html).toContain("border-info/30");
-		expect(html).toContain("bg-info/10");
-		expect(html).toContain("text-info-text");
+		expect(html).toContain("border-basalt-info/30");
+		expect(html).toContain("bg-basalt-info/10");
+		expect(html).toContain("text-basalt-info");
 	});
 
 	it("applies semantic-token classes for each variant", () => {
 		const variants = ["info", "success", "warning", "destructive"] as const;
 		for (const v of variants) {
 			const html = renderToStaticMarkup(<Notice variant={v}>x</Notice>);
-			expect(html).toContain(`border-${v}/30`);
-			expect(html).toContain(`bg-${v}/10`);
-			// Body color uses the dedicated *-text token (not the fill token),
-			// because fill tokens fail WCAG AA when used as foreground on
-			// body backgrounds.
-			expect(html).toContain(`text-${v}-text`);
-			expect(html).not.toMatch(new RegExp(`text-${v}(?!-text)\\b`));
+			expect(html).toContain(`border-basalt-${v}/30`);
+			expect(html).toContain(`bg-basalt-${v}/10`);
+			expect(html).toContain(`text-basalt-${v}`);
 		}
 	});
 

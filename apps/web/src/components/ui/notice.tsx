@@ -14,15 +14,15 @@ import { cn } from "@/lib/utils";
  * for non-modal status messages only.
  */
 const noticeVariants = cva(
-  "rounded-widget border p-3 text-sm",
+  "rounded-basalt-md border p-3 text-sm",
   {
     variants: {
       variant: {
-        info: "border-info/30 bg-info/10 text-info-text",
-        success: "border-success/30 bg-success/10 text-success-text",
-        warning: "border-warning/30 bg-warning/10 text-warning-text",
+        info: "border-basalt-info/30 bg-basalt-info/10 text-basalt-info",
+        success: "border-basalt-success/30 bg-basalt-success/10 text-basalt-success",
+        warning: "border-basalt-warning/30 bg-basalt-warning/10 text-basalt-warning",
         destructive:
-          "border-destructive/30 bg-destructive/10 text-destructive-text",
+          "border-basalt-destructive/30 bg-basalt-destructive/10 text-basalt-destructive",
       },
     },
     defaultVariants: {

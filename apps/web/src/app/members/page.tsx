@@ -165,10 +165,10 @@ export default function MembersPage() {
 	if (error) {
 		return (
 			<AppShell breadcrumbs={[{ label: "家庭成员" }]}>
-				<div className="rounded-card bg-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
 					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-muted-foreground">{error}</p>
+					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
 				</div>
 			</AppShell>
 		);
@@ -201,7 +201,7 @@ export default function MembersPage() {
 						}
 					/>
 				) : (
-					<div className="rounded-card bg-secondary">
+					<div className="rounded-basalt-card bg-basalt-secondary">
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -238,48 +238,50 @@ export default function MembersPage() {
 													{relationLabels[member.relation]}
 												</Badge>
 											</TableCell>
-											<TableCell className="text-muted-foreground">
+											<TableCell className="text-basalt-muted-foreground">
 												{member.gender === "M" ? "男" : member.gender === "F" ? "女" : "-"}
 											</TableCell>
 											<TableCell>
 												{age !== null ? (
 													<>
 														<span className="font-medium">{age.years}</span>
-														<span className="text-muted-foreground"> 岁</span>
+														<span className="text-basalt-muted-foreground"> 岁</span>
 														{age.years < 5 && age.months > 0 && (
 															<>
 																<span className="font-medium">{age.months}</span>
-																<span className="text-muted-foreground"> 个月</span>
+																<span className="text-basalt-muted-foreground"> 个月</span>
 															</>
 														)}
 													</>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
-											<TableCell className="font-mono text-sm text-muted-foreground">
+											<TableCell className="font-mono text-sm text-basalt-muted-foreground">
 												{member.birthDate ?? "-"}
 											</TableCell>
-											<TableCell className="text-muted-foreground">{member.phone ?? "-"}</TableCell>
+											<TableCell className="text-basalt-muted-foreground">
+												{member.phone ?? "-"}
+											</TableCell>
 											<TableCell className="text-center">
 												{member.hasSocialInsurance === true ? (
 													<Badge variant="success" className="text-xs">
 														有
 													</Badge>
 												) : member.hasSocialInsurance === false ? (
-													<span className="text-muted-foreground text-xs">无</span>
+													<span className="text-basalt-muted-foreground text-xs">无</span>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell className="text-center">
 												{member.policyCount && member.policyCount > 0 ? (
 													<div className="flex items-center justify-center gap-1">
-														<Shield className="h-3 w-3 text-success" />
+														<Shield className="h-3 w-3 text-basalt-success" />
 														<span className="text-sm">{member.policyCount}</span>
 													</div>
 												) : (
-													<span className="text-muted-foreground">-</span>
+													<span className="text-basalt-muted-foreground">-</span>
 												)}
 											</TableCell>
 											<TableCell>
@@ -300,7 +302,7 @@ export default function MembersPage() {
 																	<Button
 																		variant="ghost"
 																		size="icon"
-																		className="h-8 w-8 text-destructive hover:text-destructive"
+																		className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																		disabled={member.relation === "Self"}
 																		onClick={() => handleDeleteClick(member)}
 																		aria-label={
@@ -350,7 +352,7 @@ export default function MembersPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{deleteError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex items-center gap-2 text-sm text-basalt-destructive">
 							<AlertCircle className="h-4 w-4" />
 							<span>{deleteError}</span>
 						</div>

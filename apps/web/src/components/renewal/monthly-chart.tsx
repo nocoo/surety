@@ -61,7 +61,7 @@ function ChartTooltip({
 					</p>
 				))}
 			</div>
-			<p className="text-sm font-medium mt-2 pt-1 border-t border-border">
+			<p className="text-sm font-medium mt-2 pt-1 border-t border-basalt-border">
 				合计: {formatCurrency(total)}
 			</p>
 		</div>

@@ -248,7 +248,7 @@ function DoctorForm({
 				</div>
 
 				{error && (
-					<div className="rounded-widget bg-destructive/10 px-3 py-2 text-sm text-destructive">
+					<div className="rounded-basalt-md bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive">
 						{error}
 					</div>
 				)}

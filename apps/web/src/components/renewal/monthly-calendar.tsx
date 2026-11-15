@@ -73,14 +73,16 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
 
 	if (data.length === 0) {
 		return (
-			<div className="rounded-card bg-secondary p-6">
-				<p className="text-muted-foreground text-sm text-center">未来一年内没有需要续保的保单</p>
+			<div className="rounded-basalt-card bg-basalt-secondary p-6">
+				<p className="text-basalt-muted-foreground text-sm text-center">
+					未来一年内没有需要续保的保单
+				</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="rounded-card bg-secondary p-3 sm:p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary p-3 sm:p-4">
 			<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
 				{data.map((month) => (
 					<MonthCalendar
@@ -107,21 +109,21 @@ function MonthCalendar({ month, onPickDay }: MonthCalendarProps) {
 	const accent = monthAccentClasses(month.count);
 
 	return (
-		<article className={cn("rounded-widget bg-card p-3 border-l-2", accent.border)}>
+		<article className={cn("rounded-basalt-md bg-basalt-card p-3 border-l-2", accent.border)}>
 			<header className="mb-2 flex items-baseline justify-between gap-2">
 				<h3 className={cn("font-display text-sm font-semibold tabular-nums", accent.title)}>
 					{month.monthLabel}
 				</h3>
 				{month.count > 0 ? (
-					<span className="text-[11px] text-muted-foreground tabular-nums">
+					<span className="text-[11px] text-basalt-muted-foreground tabular-nums">
 						{month.count} 次 · {formatCurrency(month.totalPremium)}
 					</span>
 				) : (
-					<span className="text-[11px] text-muted-foreground/60">无续保</span>
+					<span className="text-[11px] text-basalt-muted-foreground/60">无续保</span>
 				)}
 			</header>
 
-			<div className="grid grid-cols-7 gap-x-0.5 text-center text-[10px] text-muted-foreground">
+			<div className="grid grid-cols-7 gap-x-0.5 text-center text-[10px] text-basalt-muted-foreground">
 				{WEEKDAY_LABELS.map((d) => (
 					<span key={d} className="leading-none">
 						{d}
@@ -150,10 +152,10 @@ function MonthCalendar({ month, onPickDay }: MonthCalendarProps) {
  */
 function monthAccentClasses(count: number): { border: string; title: string } {
 	if (count === 0)
-		return { border: "border-l-muted-foreground/15", title: "text-muted-foreground" };
-	if (count <= 2) return { border: "border-l-primary/30", title: "text-foreground" };
-	if (count <= 5) return { border: "border-l-primary/60", title: "text-foreground" };
-	return { border: "border-l-primary", title: "text-primary" };
+		return { border: "border-l-muted-foreground/15", title: "text-basalt-muted-foreground" };
+	if (count <= 2) return { border: "border-l-primary/30", title: "text-basalt-foreground" };
+	if (count <= 5) return { border: "border-l-primary/60", title: "text-basalt-foreground" };
+	return { border: "border-l-primary", title: "text-basalt-primary" };
 }
 
 const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -211,7 +213,7 @@ function DayCell({
 
 	if (events.length === 0) {
 		return (
-			<span className="aspect-square flex items-center justify-center text-[11px] text-muted-foreground/70 tabular-nums">
+			<span className="aspect-square flex items-center justify-center text-[11px] text-basalt-muted-foreground/70 tabular-nums">
 				{day}
 			</span>
 		);
@@ -240,13 +242,13 @@ function DayCell({
 			aria-label={ariaLabel}
 			className={cn(
 				"relative aspect-square flex items-center justify-center rounded-sm tabular-nums text-[11px]",
-				"bg-primary/15 text-foreground font-medium",
-				"hover:bg-primary/25 transition-colors",
+				"bg-basalt-primary/15 text-basalt-foreground font-medium",
+				"hover:bg-basalt-primary/25 transition-colors",
 			)}
 		>
 			{day}
 			{events.length > 1 && (
-				<span className="absolute -top-0.5 -right-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-medium text-primary-foreground leading-none">
+				<span className="absolute -top-0.5 -right-0.5 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-basalt-primary px-0.5 text-[9px] font-medium text-basalt-primary-foreground leading-none">
 					{events.length}
 				</span>
 			)}
@@ -285,7 +287,7 @@ function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<CalendarDays className="h-5 w-5 text-primary" />
+						<CalendarDays className="h-5 w-5 text-basalt-primary" />
 						{active ? active.date : ""}
 					</DialogTitle>
 					<DialogDescription>
@@ -321,7 +323,7 @@ function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
 											});
 											onClose();
 										}}
-										className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left hover:bg-muted/40 rounded transition-colors"
+										className="flex w-full items-center justify-between gap-3 px-1 py-3 text-left hover:bg-basalt-muted/40 rounded transition-colors"
 									>
 										<div className="min-w-0 space-y-1">
 											<div className="flex items-center gap-2 flex-wrap">
@@ -330,7 +332,9 @@ function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
 													{category.label}
 												</Badge>
 											</div>
-											<p className="text-xs text-muted-foreground">{event.insuredMemberName}</p>
+											<p className="text-xs text-basalt-muted-foreground">
+												{event.insuredMemberName}
+											</p>
 										</div>
 										<span className="text-sm font-semibold tabular-nums shrink-0">
 											{formatCurrency(event.premium)}

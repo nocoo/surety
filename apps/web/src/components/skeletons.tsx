@@ -50,7 +50,7 @@ function SectionDividerSkeleton({ titleWidth = "w-20" }: { titleWidth?: string }
 	return (
 		<div className="flex items-center gap-3">
 			<Skeleton className={`h-4 ${titleWidth} shrink-0`} />
-			<div aria-hidden="true" className="h-px flex-1 bg-border/60" />
+			<div aria-hidden="true" className="h-px flex-1 bg-basalt-border/60" />
 		</div>
 	);
 }
@@ -58,12 +58,12 @@ function SectionDividerSkeleton({ titleWidth = "w-20" }: { titleWidth?: string }
 /** A boxed chart (title + body) used by the dashboard chart grid. */
 function ChartCardSkeleton({ height = "h-[280px]" }: { height?: string }) {
 	return (
-		<div className="rounded-card bg-secondary p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary p-4">
 			<div className="mb-4 flex items-center gap-2">
 				<Skeleton className="h-4 w-4" />
 				<Skeleton className="h-5 w-24" />
 			</div>
-			<Skeleton className={`${height} w-full rounded-widget`} />
+			<Skeleton className={`${height} w-full rounded-basalt-md`} />
 		</div>
 	);
 }
@@ -71,7 +71,7 @@ function ChartCardSkeleton({ height = "h-[280px]" }: { height?: string }) {
 /** A single stat card (label + icon + value + optional sub-line). */
 function StatCardSkeleton({ withSub = true }: { withSub?: boolean }) {
 	return (
-		<div className="rounded-card bg-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary p-6">
 			<div className="flex items-center justify-between">
 				<Skeleton className="h-4 w-20" />
 				<Skeleton className="h-8 w-8 rounded-md" />
@@ -91,7 +91,7 @@ function TableSkeleton({ columns, rows }: { columns: number; rows: number }) {
 	const headerWidths = ["w-16", "w-20", "w-14", "w-12", "w-20", "w-16", "w-12"];
 	const cellWidths = ["w-32", "w-24", "w-28", "w-20", "w-24", "w-16", "w-12"];
 	return (
-		<div className="rounded-card bg-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
 			<div className="flex items-center gap-6 border-b px-4 py-3">
 				{Array.from({ length: columns }).map((_, i) => (
 					<Skeleton key={i} className={`h-4 ${headerWidths[i % headerWidths.length]}`} />
@@ -100,7 +100,7 @@ function TableSkeleton({ columns, rows }: { columns: number; rows: number }) {
 			{Array.from({ length: rows }).map((_, r) => (
 				<div
 					key={r}
-					className="flex items-center gap-6 border-b border-border/50 px-4 py-3.5 last:border-0"
+					className="flex items-center gap-6 border-b border-basalt-border/50 px-4 py-3.5 last:border-0"
 				>
 					{Array.from({ length: columns }).map((_, c) => (
 						<Skeleton key={c} className={`h-5 ${cellWidths[(r + c) % cellWidths.length]}`} />
@@ -144,7 +144,7 @@ export function DashboardSkeleton() {
 			<div className="space-y-4">
 				<SectionDividerSkeleton titleWidth="w-20" />
 				<div className="grid gap-6 lg:grid-cols-5">
-					<div className="lg:col-span-3 rounded-card bg-secondary p-6">
+					<div className="lg:col-span-3 rounded-basalt-card bg-basalt-secondary p-6">
 						<div className="flex items-center gap-3">
 							<Skeleton className="h-10 w-10 rounded-lg" />
 							<div className="flex-1">
@@ -156,7 +156,7 @@ export function DashboardSkeleton() {
 						<Skeleton className="mt-2 h-4 w-3/4" />
 						<Skeleton className="mt-6 h-9 w-32" />
 					</div>
-					<div className="lg:col-span-2 rounded-card bg-secondary p-6">
+					<div className="lg:col-span-2 rounded-basalt-card bg-basalt-secondary p-6">
 						<div className="mb-4 flex items-center gap-3">
 							<Skeleton className="h-10 w-10 rounded-lg" />
 							<div>
@@ -264,7 +264,7 @@ export function RenewalCalendarSkeleton() {
 				<SectionDividerSkeleton titleWidth="w-16" />
 				<div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
 					{Array.from({ length: 12 }).map((_, i) => (
-						<div key={i} className="rounded-card bg-secondary p-4">
+						<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
 							<Skeleton className="h-4 w-12" />
 							<Skeleton className="mt-2 h-7 w-16" />
 							<Skeleton className="mt-1 h-3 w-20" />
@@ -276,8 +276,8 @@ export function RenewalCalendarSkeleton() {
 			{/* 按月柱状图 */}
 			<div className="space-y-4">
 				<SectionDividerSkeleton titleWidth="w-20" />
-				<div className="rounded-card bg-secondary p-4">
-					<Skeleton className="h-[300px] w-full rounded-widget" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-4">
+					<Skeleton className="h-[300px] w-full rounded-basalt-md" />
 				</div>
 			</div>
 
@@ -286,7 +286,7 @@ export function RenewalCalendarSkeleton() {
 				<SectionDividerSkeleton titleWidth="w-16" />
 				<div className="space-y-3">
 					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i} className="rounded-card bg-secondary p-4">
+						<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
 							<div className="flex items-center justify-between">
 								<Skeleton className="h-5 w-20" />
 								<Skeleton className="h-4 w-16" />
@@ -322,7 +322,7 @@ export function CoverageLookupSkeleton() {
 			/>
 
 			{/* Segmented tabs (member / asset) */}
-			<div className="inline-flex rounded-card bg-secondary p-1 gap-1">
+			<div className="inline-flex rounded-basalt-card bg-basalt-secondary p-1 gap-1">
 				<Skeleton className="h-10 w-32 rounded-[10px]" />
 				<Skeleton className="h-10 w-24 rounded-[10px]" />
 			</div>
@@ -330,7 +330,7 @@ export function CoverageLookupSkeleton() {
 			{/* Subject selector cards (members or assets) */}
 			<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
-					<div key={i} className="rounded-card bg-secondary p-4">
+					<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
 						<div className="flex items-center gap-3">
 							<Skeleton className="h-10 w-10 rounded-full" />
 							<div className="flex-1">
@@ -345,14 +345,14 @@ export function CoverageLookupSkeleton() {
 			{/* Category groups (badge + count + policy rows) */}
 			<div className="space-y-4">
 				{Array.from({ length: 3 }).map((_, i) => (
-					<div key={i} className="rounded-card bg-secondary p-4">
+					<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
 						<div className="mb-3 flex items-center gap-2">
 							<Skeleton className="h-5 w-16 rounded-full" />
 							<Skeleton className="h-4 w-12" />
 						</div>
 						<div className="space-y-2">
-							<Skeleton className="h-14 w-full rounded-widget" />
-							<Skeleton className="h-14 w-full rounded-widget" />
+							<Skeleton className="h-14 w-full rounded-basalt-md" />
+							<Skeleton className="h-14 w-full rounded-basalt-md" />
 						</div>
 					</div>
 				))}
@@ -380,7 +380,7 @@ export function PolicyDetailSkeleton() {
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 				{/* col 1 — Meta (longest) */}
-				<div className="rounded-card bg-secondary p-5 space-y-5">
+				<div className="rounded-basalt-card bg-basalt-secondary p-5 space-y-5">
 					<div className="space-y-2">
 						<Skeleton className="h-6 w-40" />
 						<Skeleton className="h-4 w-32" />
@@ -398,11 +398,11 @@ export function PolicyDetailSkeleton() {
 				</div>
 
 				{/* col 2 — Coverage */}
-				<div className="rounded-card bg-secondary p-5">
+				<div className="rounded-basalt-card bg-basalt-secondary p-5">
 					<Skeleton className="h-5 w-24 mb-4" />
 					<div className="space-y-2">
 						{Array.from({ length: 4 }).map((_, i) => (
-							<div key={i} className="rounded-widget bg-background/60 p-3">
+							<div key={i} className="rounded-basalt-md bg-basalt-background/60 p-3">
 								<div className="flex justify-between">
 									<Skeleton className="h-4 w-32" />
 									<Skeleton className="h-4 w-16" />
@@ -415,7 +415,7 @@ export function PolicyDetailSkeleton() {
 
 				{/* col 3 — Timeline + Payments */}
 				<div className="space-y-6">
-					<div className="rounded-card bg-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary p-5">
 						<Skeleton className="h-5 w-20 mb-4" />
 						<div className="space-y-3">
 							{Array.from({ length: 5 }).map((_, i) => (
@@ -427,11 +427,11 @@ export function PolicyDetailSkeleton() {
 							))}
 						</div>
 					</div>
-					<div className="rounded-card bg-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary p-5">
 						<Skeleton className="h-5 w-20 mb-4" />
 						<div className="space-y-2">
 							{Array.from({ length: 4 }).map((_, i) => (
-								<div key={i} className="rounded-widget bg-background/60 p-3">
+								<div key={i} className="rounded-basalt-md bg-basalt-background/60 p-3">
 									<div className="flex justify-between">
 										<Skeleton className="h-4 w-16" />
 										<Skeleton className="h-4 w-12" />

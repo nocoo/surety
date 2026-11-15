@@ -22,9 +22,9 @@ function formatDate(date: Date | string): string {
 
 function AttachmentIcon({ contentType }: { contentType: string }) {
 	if (isImageContentType(contentType)) {
-		return <ImageIcon className="h-5 w-5 text-info shrink-0" />;
+		return <ImageIcon className="h-5 w-5 text-basalt-info shrink-0" />;
 	}
-	return <FileText className="h-5 w-5 text-destructive shrink-0" />;
+	return <FileText className="h-5 w-5 text-basalt-destructive shrink-0" />;
 }
 
 export function AttachmentList({
@@ -34,7 +34,7 @@ export function AttachmentList({
 	onDelete,
 }: AttachmentListProps) {
 	if (attachments.length === 0) {
-		return <p className="text-sm text-muted-foreground py-4 text-center">暂无附件</p>;
+		return <p className="text-sm text-basalt-muted-foreground py-4 text-center">暂无附件</p>;
 	}
 
 	return (
@@ -44,7 +44,7 @@ export function AttachmentList({
 					<AttachmentIcon contentType={attachment.contentType} />
 					<div className="flex-1 min-w-0">
 						<p className="text-sm font-medium truncate">{attachment.filename}</p>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-xs text-basalt-muted-foreground">
 							{formatBytes(attachment.size)} · {formatDate(attachment.createdAt)}
 						</p>
 					</div>
@@ -72,7 +72,7 @@ export function AttachmentList({
 							size="icon"
 							onClick={() => onDelete(attachment)}
 							title="删除"
-							className="h-8 w-8 text-destructive hover:text-destructive"
+							className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 						>
 							<Trash2 className="h-4 w-4" />
 						</Button>

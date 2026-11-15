@@ -121,7 +121,7 @@ export default function PolicyDetailPage() {
 		return (
 			<AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: "错误" }]}>
 				<div className="flex flex-col items-center justify-center py-20 gap-4">
-					<p className="text-muted-foreground">{error ?? "保单不存在"}</p>
+					<p className="text-basalt-muted-foreground">{error ?? "保单不存在"}</p>
 					<Button variant="outline" onClick={goBack}>
 						<ArrowLeft className="h-4 w-4 mr-2" />
 						{back.label}
@@ -156,7 +156,7 @@ export default function PolicyDetailPage() {
 			 * fields) into unreadable strips.
 			 */}
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<div className="rounded-card bg-secondary p-5">
+				<div className="rounded-basalt-card bg-basalt-secondary p-5">
 					<MetaColumn
 						policy={policy}
 						beneficiaries={beneficiaries}
@@ -170,7 +170,7 @@ export default function PolicyDetailPage() {
 					/>
 				</div>
 
-				<div className="rounded-card bg-secondary p-5">
+				<div className="rounded-basalt-card bg-basalt-secondary p-5">
 					<CoverageSection
 						policyId={policy.id}
 						items={coverageItems}
@@ -182,11 +182,11 @@ export default function PolicyDetailPage() {
 				</div>
 
 				<div className="space-y-6">
-					<div className="rounded-card bg-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary p-5">
 						<TimelineColumn policy={policy} />
 					</div>
 
-					<div className="rounded-card bg-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary p-5">
 						<PaymentsSection
 							policyId={policy.id}
 							payments={payments}

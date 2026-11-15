@@ -116,7 +116,7 @@ function PolicyMobileCard({
 	const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
 
 	return (
-		<div className="rounded-card bg-secondary p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary p-4">
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
@@ -126,11 +126,11 @@ function PolicyMobileCard({
 					<button
 						type="button"
 						onClick={() => onViewDetail(policy)}
-						className="text-left font-medium leading-6 hover:text-primary hover:underline"
+						className="text-left font-medium leading-6 hover:text-basalt-primary hover:underline"
 					>
 						{policy.productName}
 					</button>
-					<div className="text-sm text-muted-foreground">{policy.insurerName}</div>
+					<div className="text-sm text-basalt-muted-foreground">{policy.insurerName}</div>
 				</div>
 				<Button
 					variant="ghost"
@@ -139,13 +139,17 @@ function PolicyMobileCard({
 					onClick={() => onCopyPolicyNumber(policy)}
 					aria-label={copied ? "已复制保单号" : "复制保单号"}
 				>
-					{copied ? <Check className="h-4 w-4 text-success" /> : <Info className="h-4 w-4" />}
+					{copied ? (
+						<Check className="h-4 w-4 text-basalt-success" />
+					) : (
+						<Info className="h-4 w-4" />
+					)}
 				</Button>
 			</div>
 
 			<div className="mt-4 grid grid-cols-2 gap-3 text-sm">
 				<div>
-					<div className="text-muted-foreground">被保人</div>
+					<div className="text-basalt-muted-foreground">被保人</div>
 					<div className="mt-1 flex items-center gap-2">
 						<Avatar className="h-6 w-6">
 							<AvatarFallback
@@ -158,30 +162,30 @@ function PolicyMobileCard({
 					</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">投保人</div>
+					<div className="text-basalt-muted-foreground">投保人</div>
 					<div className="mt-1">{policy.applicantName}</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">保额</div>
+					<div className="text-basalt-muted-foreground">保额</div>
 					<div className="mt-1 font-medium">
 						{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
 					</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">年保费</div>
+					<div className="text-basalt-muted-foreground">年保费</div>
 					<div className="mt-1">{policy.premium > 0 ? formatCurrency(policy.premium) : "-"}</div>
 				</div>
 				<div>
-					<div className="text-muted-foreground">下次缴费</div>
+					<div className="text-basalt-muted-foreground">下次缴费</div>
 					<div className="mt-1 space-y-0.5">
 						<div className="font-mono text-xs">{policy.nextDueDate ?? "-"}</div>
 						{policy.nextDueDate && (
 							<div
 								className={cn(
 									"text-xs",
-									dueState.variant === "warning" && "text-warning-text",
-									dueState.variant === "destructive" && "text-destructive-text",
-									dueState.variant === "default" && "text-muted-foreground",
+									dueState.variant === "warning" && "text-basalt-warning",
+									dueState.variant === "destructive" && "text-basalt-destructive",
+									dueState.variant === "default" && "text-basalt-muted-foreground",
 								)}
 							>
 								{dueState.text}
@@ -199,7 +203,7 @@ function PolicyMobileCard({
 				<Button
 					variant="outline"
 					size="sm"
-					className="text-destructive hover:text-destructive"
+					className="text-basalt-destructive hover:text-basalt-destructive"
 					onClick={() => onDelete(policy)}
 				>
 					<Trash2 className="mr-1.5 h-4 w-4" />
@@ -538,10 +542,10 @@ export default function PoliciesPage() {
 	if (error) {
 		return (
 			<AppShell breadcrumbs={[{ label: "保单" }]}>
-				<div className="rounded-card bg-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-destructive/50" />
+				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
 					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-muted-foreground">{error}</p>
+					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
 				</div>
 			</AppShell>
 		);
@@ -679,7 +683,7 @@ export default function PoliciesPage() {
 
 								<div
 									className={cn(
-										"hidden rounded-card bg-secondary sm:block",
+										"hidden rounded-basalt-card bg-basalt-secondary sm:block",
 										listDensity === "compact" && "[&_td]:py-1 [&_th]:h-9",
 									)}
 								>
@@ -780,7 +784,7 @@ export default function PoliciesPage() {
 																<button
 																	type="button"
 																	onClick={() => handleViewDetail(policy)}
-																	className="font-medium hover:text-primary hover:underline transition-colors text-left"
+																	className="font-medium hover:text-basalt-primary hover:underline transition-colors text-left"
 																>
 																	{policy.productName}
 																</button>
@@ -791,10 +795,10 @@ export default function PoliciesPage() {
 																				<button
 																					type="button"
 																					onClick={() => handleCopyPolicyNumber(policy)}
-																					className="inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+																					className="inline-flex items-center justify-center rounded p-1 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
 																				>
 																					{copiedId === policy.id ? (
-																						<Check className="h-3 w-3 text-success" />
+																						<Check className="h-3 w-3 text-basalt-success" />
 																					) : (
 																						<Info className="h-3 w-3" />
 																					)}
@@ -807,7 +811,9 @@ export default function PoliciesPage() {
 																						: `保单号: ${policy.policyNumber}`}
 																				</p>
 																				{copiedId !== policy.id && (
-																					<p className="text-xs text-muted-foreground">点击复制</p>
+																					<p className="text-xs text-basalt-muted-foreground">
+																						点击复制
+																					</p>
 																				)}
 																			</TooltipContent>
 																		</Tooltip>
@@ -815,7 +821,7 @@ export default function PoliciesPage() {
 																)}
 															</div>
 														</TableCell>
-														<TableCell className="text-muted-foreground">
+														<TableCell className="text-basalt-muted-foreground">
 															{policy.insurerName}
 														</TableCell>
 														<TableCell>
@@ -851,13 +857,13 @@ export default function PoliciesPage() {
 														<TableCell className="text-right font-medium">
 															{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
 														</TableCell>
-														<TableCell className="text-right text-muted-foreground">
+														<TableCell className="text-right text-basalt-muted-foreground">
 															{policy.premium > 0 ? formatCurrency(policy.premium) : "-"}
 														</TableCell>
 														<TableCell>
 															<div className="flex flex-col">
 																<span className="font-mono text-sm">{policy.effectiveDate}</span>
-																<span className="text-xs text-muted-foreground">
+																<span className="text-xs text-basalt-muted-foreground">
 																	{formatDaysFromToday(getDaysFromToday(policy.effectiveDate)) ??
 																		""}
 																</span>
@@ -876,9 +882,9 @@ export default function PoliciesPage() {
 																			<span
 																				className={cn(
 																					"text-xs",
-																					variant === "warning" && "text-warning-text",
-																					variant === "destructive" && "text-destructive-text",
-																					variant === "default" && "text-muted-foreground",
+																					variant === "warning" && "text-basalt-warning",
+																					variant === "destructive" && "text-basalt-destructive",
+																					variant === "default" && "text-basalt-muted-foreground",
 																				)}
 																			>
 																				{text}
@@ -890,11 +896,11 @@ export default function PoliciesPage() {
 														</TableCell>
 														<TableCell className="hidden xl:table-cell">
 															{policy.notes ? (
-																<span className="text-sm text-muted-foreground whitespace-normal">
+																<span className="text-sm text-basalt-muted-foreground whitespace-normal">
 																	{policy.notes}
 																</span>
 															) : (
-																<span className="text-muted-foreground/40">—</span>
+																<span className="text-basalt-muted-foreground/40">—</span>
 															)}
 														</TableCell>
 														<TableCell>
@@ -905,7 +911,7 @@ export default function PoliciesPage() {
 																			<button
 																				type="button"
 																				onClick={() => handlePreviewAttachment(policy)}
-																				className="inline-flex items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+																				className="inline-flex items-center justify-center rounded p-1 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
 																			>
 																				<Paperclip className="h-4 w-4" />
 																			</button>
@@ -945,7 +951,7 @@ export default function PoliciesPage() {
 																			<Button
 																				variant="ghost"
 																				size="icon"
-																				className="h-8 w-8 text-destructive hover:text-destructive"
+																				className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																				onClick={() => handleDeleteClick(policy)}
 																			>
 																				<Trash2 className="h-4 w-4" />
@@ -981,8 +987,8 @@ export default function PoliciesPage() {
 								const totalSumAssured = groupPolicies.reduce((sum, p) => sum + p.sumAssured, 0);
 
 								return (
-									<div key={groupKey} className="rounded-card bg-secondary">
-										<div className="flex items-center justify-between px-4 py-3 border-b border-border">
+									<div key={groupKey} className="rounded-basalt-card bg-basalt-secondary">
+										<div className="flex items-center justify-between px-4 py-3 border-b border-basalt-border">
 											<div className="flex items-center gap-3">
 												{viewMode === "byInsured" && (
 													<Avatar className="h-8 w-8">
@@ -995,18 +1001,18 @@ export default function PoliciesPage() {
 												)}
 												<div>
 													<h3 className="font-medium">{groupLabel}</h3>
-													<p className="text-xs text-muted-foreground">
+													<p className="text-xs text-basalt-muted-foreground">
 														{groupPolicies.length} 份保单
 													</p>
 												</div>
 											</div>
 											<div className="flex items-center gap-6 text-sm">
 												<div className="text-right">
-													<div className="text-muted-foreground">总保额</div>
+													<div className="text-basalt-muted-foreground">总保额</div>
 													<div className="font-medium">{formatCurrency(totalSumAssured)}</div>
 												</div>
 												<div className="text-right">
-													<div className="text-muted-foreground">年保费</div>
+													<div className="text-basalt-muted-foreground">年保费</div>
 													<div className="font-medium">{formatCurrency(totalPremium)}</div>
 												</div>
 											</div>
@@ -1018,7 +1024,7 @@ export default function PoliciesPage() {
 												return (
 													<div
 														key={policy.id}
-														className="flex items-center justify-between px-4 py-3 hover:bg-background/50 transition-colors"
+														className="flex items-center justify-between px-4 py-3 hover:bg-basalt-background/50 transition-colors"
 													>
 														<div className="flex items-center gap-4">
 															<Badge variant={status.variant}>{status.label}</Badge>
@@ -1039,7 +1045,7 @@ export default function PoliciesPage() {
 																			{policy.insuredName?.[0] ?? "?"}
 																		</AvatarFallback>
 																	</Avatar>
-																	<span className="text-sm text-muted-foreground">
+																	<span className="text-sm text-basalt-muted-foreground">
 																		{policy.insuredName}
 																	</span>
 																</div>
@@ -1048,11 +1054,11 @@ export default function PoliciesPage() {
 																<button
 																	type="button"
 																	onClick={() => handleViewDetail(policy)}
-																	className="font-medium hover:text-primary hover:underline transition-colors text-left"
+																	className="font-medium hover:text-basalt-primary hover:underline transition-colors text-left"
 																>
 																	{policy.productName}
 																</button>
-																<div className="text-xs text-muted-foreground">
+																<div className="text-xs text-basalt-muted-foreground">
 																	{policy.insurerName}
 																</div>
 															</div>
@@ -1062,7 +1068,7 @@ export default function PoliciesPage() {
 																<div className="font-medium">
 																	{formatCurrency(policy.sumAssured)}
 																</div>
-																<div className="text-xs text-muted-foreground">
+																<div className="text-xs text-basalt-muted-foreground">
 																	{formatCurrency(policy.premium)}/年
 																</div>
 															</div>
@@ -1070,7 +1076,7 @@ export default function PoliciesPage() {
 																<Button
 																	variant="ghost"
 																	size="icon"
-																	className="h-8 w-8 text-destructive hover:text-destructive"
+																	className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
 																	onClick={() => handleDeleteClick(policy)}
 																>
 																	<Trash2 className="h-4 w-4" />
@@ -1090,7 +1096,7 @@ export default function PoliciesPage() {
 
 				{actionError && (
 					<div
-						className="rounded-widget border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+						className="rounded-basalt-md border border-basalt-destructive/20 bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive"
 						role="alert"
 					>
 						{actionError}
@@ -1113,7 +1119,7 @@ export default function PoliciesPage() {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{actionError && (
-						<div className="flex items-center gap-2 text-sm text-destructive">
+						<div className="flex items-center gap-2 text-sm text-basalt-destructive">
 							<AlertCircle className="h-4 w-4" />
 							<span>{actionError}</span>
 						</div>
@@ -1160,7 +1166,7 @@ export default function PoliciesPage() {
 							<li key={att.id}>
 								<button
 									type="button"
-									className="flex w-full items-center gap-3 px-2 py-3 hover:bg-background/50 rounded transition-colors text-left"
+									className="flex w-full items-center gap-3 px-2 py-3 hover:bg-basalt-background/50 rounded transition-colors text-left"
 									onClick={() => {
 										setPreviewPolicyId(pickerPolicyId);
 										setPreviewAttachment(att);
@@ -1169,13 +1175,13 @@ export default function PoliciesPage() {
 									}}
 								>
 									{isImageContentType(att.contentType) ? (
-										<ImageIcon className="h-5 w-5 text-info shrink-0" />
+										<ImageIcon className="h-5 w-5 text-basalt-info shrink-0" />
 									) : (
-										<FileText className="h-5 w-5 text-destructive shrink-0" />
+										<FileText className="h-5 w-5 text-basalt-destructive shrink-0" />
 									)}
 									<div className="flex-1 min-w-0">
 										<p className="text-sm font-medium truncate">{att.filename}</p>
-										<p className="text-xs text-muted-foreground">{formatBytes(att.size)}</p>
+										<p className="text-xs text-basalt-muted-foreground">{formatBytes(att.size)}</p>
 									</div>
 								</button>
 							</li>

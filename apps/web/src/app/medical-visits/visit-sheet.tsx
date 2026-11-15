@@ -75,14 +75,14 @@ function TagInput({
 	}, [inputValue, addTag]);
 
 	return (
-		<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border hover:border-foreground/20 bg-secondary px-3 py-2 min-h-9 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+		<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-basalt-border hover:border-basalt-foreground/20 bg-basalt-secondary px-3 py-2 min-h-9 focus-within:ring-2 focus-within:ring-basalt-ring focus-within:ring-offset-2">
 			{value.map((tag, index) => (
 				<Badge key={index} variant="secondary" className="h-6 gap-1 pl-2 pr-1 py-0">
 					{tag}
 					<button
 						type="button"
 						onClick={() => removeTag(index)}
-						className="inline-flex h-4 w-4 items-center justify-center rounded-sm hover:bg-muted-foreground/20"
+						className="inline-flex h-4 w-4 items-center justify-center rounded-sm hover:bg-basalt-muted-foreground/20"
 					>
 						<X className="h-3 w-3" />
 						<span className="sr-only">删除 {tag}</span>
@@ -96,7 +96,7 @@ function TagInput({
 				onKeyDown={handleKeyDown}
 				onBlur={handleBlur}
 				placeholder={value.length === 0 ? placeholder : "继续输入..."}
-				className="flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-muted-foreground"
+				className="flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-basalt-muted-foreground"
 			/>
 		</div>
 	);
@@ -502,7 +502,7 @@ function VisitForm({
 							onChange={(tags) => handleChange("symptoms", tags)}
 							placeholder="输入症状后按回车，如：发烧、咳嗽"
 						/>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-xs text-basalt-muted-foreground">
 							输入后按回车或逗号添加，按 Backspace 删除
 						</p>
 					</div>
@@ -558,7 +558,7 @@ function VisitForm({
 					</div>
 
 					{costMismatch && (
-						<div className="rounded-widget bg-warning/10 border border-warning/30 px-3 py-2 text-sm text-warning-text">
+						<div className="rounded-basalt-md bg-basalt-warning/10 border border-basalt-warning/30 px-3 py-2 text-sm text-basalt-warning">
 							费用不一致：医保({costMismatch.sum.toFixed(2)}) ≠ 总费用(
 							{costMismatch.total.toFixed(2)})，差额 {costMismatch.diff.toFixed(2)} 元
 						</div>
@@ -588,7 +588,7 @@ function VisitForm({
 				</div>
 
 				{error && (
-					<div className="rounded-widget bg-destructive/10 px-3 py-2 text-sm text-destructive">
+					<div className="rounded-basalt-md bg-basalt-destructive/10 px-3 py-2 text-sm text-basalt-destructive">
 						{error}
 					</div>
 				)}

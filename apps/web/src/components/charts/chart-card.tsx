@@ -13,9 +13,9 @@ interface ChartCardProps {
  */
 export function ChartCard({ title, icon: Icon, children, height = "h-[280px]" }: ChartCardProps) {
 	return (
-		<LayerCard className="rounded-card bg-secondary p-4">
+		<LayerCard className="rounded-basalt-card bg-basalt-secondary p-4">
 			<div className="flex items-center gap-2 mb-4">
-				<Icon className="h-4 w-4 text-primary" strokeWidth={1.5} />
+				<Icon className="h-4 w-4 text-basalt-primary" strokeWidth={1.5} />
 				<h3 className="text-base font-semibold">{title}</h3>
 			</div>
 			<div className={`${height} w-full min-w-0`}>{children}</div>

@@ -47,7 +47,7 @@ export function DonutChart({ data, title, icon, emptyMessage = "暂无数据" }:
 	if (!hasData) {
 		return (
 			<ChartCard title={title} icon={icon}>
-				<div className="flex items-center justify-center h-full text-muted-foreground">
+				<div className="flex items-center justify-center h-full text-basalt-muted-foreground">
 					{emptyMessage}
 				</div>
 			</ChartCard>
@@ -102,7 +102,7 @@ export function DonutChart({ data, title, icon, emptyMessage = "暂无数据" }:
 										style={{ backgroundColor: getChartColor(index) }}
 										aria-hidden="true"
 									/>
-									<span className="truncate text-muted-foreground">{entry.name}</span>
+									<span className="truncate text-basalt-muted-foreground">{entry.name}</span>
 								</div>
 								<span className="shrink-0 font-medium">
 									{formatPercent(total === 0 ? 0 : entry.value / total)}

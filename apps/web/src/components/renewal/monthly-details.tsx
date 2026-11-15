@@ -21,7 +21,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 	const categoryConfig = getCategoryConfig(item.category);
 
 	return (
-		<div className="flex items-center gap-3 py-3 pl-10 pr-4 hover:bg-muted/50 border-b border-border/50 last:border-0">
+		<div className="flex items-center gap-3 py-3 pl-10 pr-4 hover:bg-basalt-muted/50 border-b border-basalt-border/50 last:border-0">
 			{/* Member Avatar */}
 			<Avatar size="sm">
 				<AvatarFallback className={cn(bgClass, "text-white")}>
@@ -35,7 +35,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 					<button
 						type="button"
 						onClick={() => navigate(`/policies/${item.id}`)}
-						className="text-sm font-medium truncate text-primary hover:underline text-left"
+						className="text-sm font-medium truncate text-basalt-primary hover:underline text-left"
 					>
 						{item.productName}
 					</button>
@@ -48,13 +48,13 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 						</Badge>
 					)}
 				</div>
-				<p className="text-xs text-muted-foreground mt-0.5">{item.insuredMemberName}</p>
+				<p className="text-xs text-basalt-muted-foreground mt-0.5">{item.insuredMemberName}</p>
 			</div>
 
 			{/* Amount and date */}
 			<div className="text-right shrink-0">
 				<p className="text-sm font-semibold">{formatCurrency(item.premium)}</p>
-				<p className="text-xs text-muted-foreground mt-0.5">{item.nextDueDate}</p>
+				<p className="text-xs text-basalt-muted-foreground mt-0.5">{item.nextDueDate}</p>
 			</div>
 		</div>
 	);
@@ -65,12 +65,12 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 	const isEmpty = month.count === 0;
 
 	return (
-		<div className="border-b border-border last:border-0">
+		<div className="border-b border-basalt-border last:border-0">
 			<button
 				type="button"
 				onClick={() => !isEmpty && setExpanded(!expanded)}
 				className={`w-full flex items-center justify-between p-4 transition-colors ${
-					isEmpty ? "cursor-default" : "hover:bg-muted/50"
+					isEmpty ? "cursor-default" : "hover:bg-basalt-muted/50"
 				}`}
 				disabled={isEmpty}
 			>
@@ -78,27 +78,29 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 					{isEmpty ? (
 						<div className="h-4 w-4" /> // Spacer for alignment
 					) : expanded ? (
-						<ChevronDown className="h-4 w-4 text-muted-foreground" />
+						<ChevronDown className="h-4 w-4 text-basalt-muted-foreground" />
 					) : (
-						<ChevronRight className="h-4 w-4 text-muted-foreground" />
+						<ChevronRight className="h-4 w-4 text-basalt-muted-foreground" />
 					)}
-					<span className={`font-medium ${isEmpty ? "text-muted-foreground" : ""}`}>
+					<span className={`font-medium ${isEmpty ? "text-basalt-muted-foreground" : ""}`}>
 						{month.monthLabel}
 					</span>
-					{!isEmpty && <span className="text-xs text-muted-foreground">({month.count} 次)</span>}
+					{!isEmpty && (
+						<span className="text-xs text-basalt-muted-foreground">({month.count} 次)</span>
+					)}
 				</div>
 				<div className="flex items-center gap-4 text-sm">
 					{isEmpty ? (
-						<span className="text-muted-foreground">无续保</span>
+						<span className="text-basalt-muted-foreground">无续保</span>
 					) : (
 						<>
 							{month.savingsPremium > 0 && (
-								<span className="text-warning-text">
+								<span className="text-basalt-warning">
 									储蓄 {formatCurrency(month.savingsPremium)}
 								</span>
 							)}
 							{month.protectionPremium > 0 && (
-								<span className="text-success-text">
+								<span className="text-basalt-success">
 									保障 {formatCurrency(month.protectionPremium)}
 								</span>
 							)}
@@ -108,7 +110,7 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 				</div>
 			</button>
 			{expanded && !isEmpty && (
-				<div className="bg-muted/20 border-t border-border/50">
+				<div className="bg-basalt-muted/20 border-t border-basalt-border/50">
 					{month.items.map((item, idx) => (
 						<RenewalRow key={`${item.id}-${item.nextDueDate}-${idx}`} item={item} />
 					))}
@@ -121,14 +123,16 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 export function MonthlyDetails({ data }: MonthlyDetailsProps) {
 	if (data.length === 0) {
 		return (
-			<div className="rounded-card bg-secondary p-6">
-				<p className="text-muted-foreground text-sm text-center">未来一年内没有需要续保的保单</p>
+			<div className="rounded-basalt-card bg-basalt-secondary p-6">
+				<p className="text-basalt-muted-foreground text-sm text-center">
+					未来一年内没有需要续保的保单
+				</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="rounded-card bg-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
 			{data.map((month) => (
 				<MonthSection key={month.month} month={month} />
 			))}
