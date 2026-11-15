@@ -1,6 +1,5 @@
 import { Button } from "@nocoo/basalt";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { Car, FileText, Home, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout";
@@ -52,14 +51,14 @@ const typeIcons: Record<AssetType, typeof Home> = {
 	Vehicle: Car,
 };
 
-const typeStyleConfig: Record<AssetType, { badgeClass: string; iconClass: string }> = {
+const typeStyleConfig: Record<AssetType, { variant: "teal" | "warning"; iconClass: string }> = {
 	RealEstate: {
-		badgeClass: getCategoryConfig("Property").accentSoftClass,
-		iconClass: getCategoryConfig("Property").accentSoftClass,
+		variant: "teal",
+		iconClass: "bg-basalt-badge-teal/10 text-basalt-badge-teal",
 	},
 	Vehicle: {
-		badgeClass: getCategoryConfig("Accident").accentSoftClass,
-		iconClass: getCategoryConfig("Accident").accentSoftClass,
+		variant: "warning",
+		iconClass: "bg-basalt-warning-tint text-basalt-warning",
 	},
 };
 
@@ -178,7 +177,7 @@ export default function AssetsPage() {
 												</div>
 											</TableCell>
 											<TableCell>
-												<Badge className={styleConfig.badgeClass}>{typeLabels[asset.type]}</Badge>
+												<Badge variant={styleConfig.variant}>{typeLabels[asset.type]}</Badge>
 											</TableCell>
 											<TableCell className="font-mono text-sm text-basalt-muted-foreground">
 												{asset.identifier}

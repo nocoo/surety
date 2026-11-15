@@ -110,5 +110,19 @@ test.describe
 			expect(realEstateClass).toBeTruthy();
 			expect(vehicleClass).toBeTruthy();
 			expect(realEstateClass).not.toBe(vehicleClass);
+
+			const realEstateStyle = await realEstateBadge.evaluate((element) => {
+				const style = getComputedStyle(element);
+				return { background: style.backgroundColor, color: style.color };
+			});
+			const vehicleStyle = await vehicleBadge.evaluate((element) => {
+				const style = getComputedStyle(element);
+				return { background: style.backgroundColor, color: style.color };
+			});
+			expect(realEstateStyle.background).not.toBe("rgba(0, 0, 0, 0)");
+			expect(vehicleStyle.background).not.toBe("rgba(0, 0, 0, 0)");
+			expect(realEstateStyle.background).not.toBe(vehicleStyle.background);
+			expect(realEstateStyle.color).not.toBe("rgba(0, 0, 0, 0)");
+			expect(vehicleStyle.color).not.toBe("rgba(0, 0, 0, 0)");
 		});
 	});

@@ -26,6 +26,12 @@ if (!root) throw new Error("Root element not found");
 // inside <App/> stay unchanged.
 const router = createBrowserRouter([{ path: "*", element: <App /> }]);
 
+try {
+	if (localStorage.getItem("basalt-accent") === "vermilion") {
+		localStorage.setItem("basalt-accent", "primary");
+	}
+} catch {}
+
 function BasaltLinkAdapter({
 	href,
 	className,
@@ -46,7 +52,10 @@ function BasaltLinkAdapter({
 createRoot(root).render(
 	<StrictMode>
 		<ThemeProvider>
-			<AccentProvider paletteOverrides={{ primary: { light: "15 85% 52%", dark: "15 65% 48%" } }}>
+			<AccentProvider
+				defaultAccent="primary"
+				paletteOverrides={{ primary: { light: "15 85% 52%", dark: "15 65% 48%" } }}
+			>
 				<LinkProvider render={BasaltLinkAdapter}>
 					<RouterProvider router={router} />
 				</LinkProvider>

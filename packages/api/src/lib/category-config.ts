@@ -31,44 +31,44 @@ export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
 	Life: {
 		label: "定期寿",
 		variant: "info",
-		accentClass: "text-info",
-		accentSoftClass: "bg-info/10 text-info",
+		accentClass: "text-basalt-info",
+		accentSoftClass: "bg-basalt-info-tint text-basalt-info",
 	},
 	WholeLife: {
 		label: "终身寿",
 		variant: "indigo",
-		accentClass: "text-indigo",
-		accentSoftClass: "bg-indigo/10 text-indigo",
+		accentClass: "text-basalt-badge-purple",
+		accentSoftClass: "bg-basalt-badge-purple/10 text-basalt-badge-purple",
 	},
 	CriticalIllness: {
 		label: "重疾险",
 		variant: "destructive",
-		accentClass: "text-destructive",
-		accentSoftClass: "bg-destructive/10 text-destructive",
+		accentClass: "text-basalt-destructive",
+		accentSoftClass: "bg-basalt-destructive/10 text-basalt-destructive",
 	},
 	Medical: {
 		label: "医疗险",
 		variant: "success",
-		accentClass: "text-success",
-		accentSoftClass: "bg-success/10 text-success",
+		accentClass: "text-basalt-success",
+		accentSoftClass: "bg-basalt-success/10 text-basalt-success",
 	},
 	Accident: {
 		label: "意外险",
 		variant: "warning",
-		accentClass: "text-warning",
-		accentSoftClass: "bg-warning/15 text-warning",
+		accentClass: "text-basalt-warning",
+		accentSoftClass: "bg-basalt-warning-tint text-basalt-warning",
 	},
 	Annuity: {
 		label: "年金险",
 		variant: "purple",
-		accentClass: "text-purple",
-		accentSoftClass: "bg-purple/10 text-purple",
+		accentClass: "text-basalt-badge-purple",
+		accentSoftClass: "bg-basalt-badge-purple/10 text-basalt-badge-purple",
 	},
 	Property: {
 		label: "财产险",
 		variant: "teal",
-		accentClass: "text-teal",
-		accentSoftClass: "bg-teal/10 text-teal",
+		accentClass: "text-basalt-badge-teal",
+		accentSoftClass: "bg-basalt-badge-teal/10 text-basalt-badge-teal",
 	},
 };
 
@@ -81,8 +81,8 @@ export function getCategoryConfig(category: string): CategoryConfig {
 		CATEGORY_CONFIG[category as PolicyCategory] ?? {
 			label: category,
 			variant: "secondary" as const,
-			accentClass: "text-muted-foreground",
-			accentSoftClass: "bg-muted text-muted-foreground",
+			accentClass: "text-basalt-muted-foreground",
+			accentSoftClass: "bg-basalt-muted text-basalt-muted-foreground",
 		}
 	);
 }
@@ -92,14 +92,14 @@ export function getCategoryConfig(category: string): CategoryConfig {
  * A set of distinct colors for member avatars
  */
 export const MEMBER_AVATAR_COLORS = [
-	{ bg: "bg-info", text: "text-info-foreground" },
-	{ bg: "bg-success", text: "text-success-foreground" },
-	{ bg: "bg-warning", text: "text-warning-foreground" },
-	{ bg: "bg-purple", text: "text-purple-foreground" },
-	{ bg: "bg-badge-red", text: "text-badge-red-foreground" },
-	{ bg: "bg-teal", text: "text-teal-foreground" },
-	{ bg: "bg-primary", text: "text-primary-foreground" },
-	{ bg: "bg-muted-foreground", text: "text-background" },
+	{ bg: "bg-basalt-info", text: "text-basalt-info-foreground" },
+	{ bg: "bg-basalt-badge-green", text: "text-basalt-badge-green-foreground" },
+	{ bg: "bg-basalt-warning", text: "text-basalt-warning-foreground" },
+	{ bg: "bg-basalt-badge-purple", text: "text-basalt-badge-purple-foreground" },
+	{ bg: "bg-basalt-danger", text: "text-basalt-danger-foreground" },
+	{ bg: "bg-basalt-badge-teal", text: "text-basalt-badge-teal-foreground" },
+	{ bg: "bg-basalt-primary", text: "text-basalt-primary-foreground" },
+	{ bg: "bg-basalt-muted-foreground", text: "text-basalt-background" },
 ] as const;
 
 /**

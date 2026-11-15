@@ -12,14 +12,14 @@ describe("statusStripeClass", () => {
 	});
 
 	it("maps semantic variants to the matching border color", () => {
-		expect(statusStripeClass("Active")).toBe("border-l-2 border-l-success");
-		expect(statusStripeClass("Expired")).toBe("border-l-2 border-l-destructive");
-		expect(statusStripeClass("Surrendered")).toBe("border-l-2 border-l-warning");
-		expect(statusStripeClass("Claimed")).toBe("border-l-2 border-l-purple");
+		expect(statusStripeClass("Active")).toBe("border-l-2 border-l-basalt-success");
+		expect(statusStripeClass("Expired")).toBe("border-l-2 border-l-basalt-destructive");
+		expect(statusStripeClass("Surrendered")).toBe("border-l-2 border-l-basalt-warning");
+		expect(statusStripeClass("Claimed")).toBe("border-l-2 border-l-basalt-badge-purple");
 	});
 
 	it("falls back to muted border for outline (default) variant", () => {
-		expect(statusStripeClass("Lapsed")).toBe("border-l-2 border-l-muted-foreground/30");
+		expect(statusStripeClass("Lapsed")).toBe("border-l-2 border-l-basalt-muted-foreground/30");
 	});
 });
 

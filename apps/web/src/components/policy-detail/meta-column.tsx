@@ -1106,7 +1106,7 @@ function PolicyActions({ policy, onSuccess }: { policy: PolicyDetail; onSuccess:
 						<Button
 							variant="link"
 							size="sm"
-							className="text-[hsl(var(--badge-red))] hover:text-[hsl(var(--badge-red))]"
+							className="text-basalt-danger hover:text-basalt-danger"
 							onClick={() => setPlannedOpen(true)}
 						>
 							<Clock className="size-3.5" />

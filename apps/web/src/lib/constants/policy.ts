@@ -61,15 +61,15 @@ export function renderPolicyStatusBadges(policy: {
 export function statusStripeClass(status: PolicyStatus): string {
 	switch (statusConfig[status].variant) {
 		case "success":
-			return "border-l-2 border-l-success";
+			return "border-l-2 border-l-basalt-success";
 		case "destructive":
-			return "border-l-2 border-l-destructive";
+			return "border-l-2 border-l-basalt-destructive";
 		case "warning":
-			return "border-l-2 border-l-warning";
+			return "border-l-2 border-l-basalt-warning";
 		case "purple":
-			return "border-l-2 border-l-purple";
+			return "border-l-2 border-l-basalt-badge-purple";
 		default:
-			return "border-l-2 border-l-muted-foreground/30";
+			return "border-l-2 border-l-basalt-muted-foreground/30";
 	}
 }
 
