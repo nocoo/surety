@@ -21,6 +21,27 @@ test.describe
 			});
 		});
 
+		test("narrow viewport can scroll to table action columns", async ({ page }) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.goto("/medical-visits");
+
+			const tableContainer = page.locator('[data-slot="table-container"]').first();
+			const table = page.getByRole("table");
+			await expect(table).toBeVisible({ timeout: 10_000 });
+
+			const overflow = await tableContainer.evaluate((element) => ({
+				clientWidth: element.clientWidth,
+				scrollWidth: element.scrollWidth,
+			}));
+			expect(overflow.scrollWidth).toBeGreaterThan(overflow.clientWidth);
+
+			await table.getByRole("columnheader", { name: "操作" }).scrollIntoViewIfNeeded();
+			const row = page.getByRole("row", { name: /L3种子就诊/ });
+			await row.getByRole("button", { name: "编辑" }).scrollIntoViewIfNeeded();
+			await expect(row.getByRole("button", { name: "编辑" })).toBeVisible();
+			await expect(row.getByRole("button", { name: "删除" })).toBeVisible();
+		});
+
 		test("create a new visit via VisitSheet", async ({ page }) => {
 			await page.goto("/medical-visits");
 			await expect(page.getByRole("table")).toBeVisible({ timeout: 10_000 });
