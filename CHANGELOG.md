@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.15
+
+### Changed
+
+- Upgrade `@nocoo/basalt` to `^3.5.1`, replace local UI shims with Basalt components, icons and chart chrome, and align the application shell, cards, tables, motion and responsive navigation with Basalt 3.5 polish contracts.
+
 ## v2.3.14
 
 ### Changed
