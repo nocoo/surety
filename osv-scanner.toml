@@ -1,8 +1,9 @@
-# OSV-Scanner configuration — suppress known indirect dependency vulnerabilities.
-# These are transitive deps pulled by eslint and other indirect dependencies.
-# Direct upgrades are not possible; waiting on upstream.
-#
-# Review and re-evaluate on the ignoreUntil date.
-#
-# No entries currently — all previously-listed transitives have been resolved
-# upstream. Keep this file as-is so future ignores have a documented home.
+# OSV-Scanner configuration
+# https://google.github.io/osv-scanner/configuration/
+
+# Dev-only tooling waiver: picomatch 4.0.7 has no fixed version in npm.
+# Review GHSA-fc5q-39xc-vjpf before 2026-12-18 and remove this entry when fixed.
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2026-12-18
+reason = "picomatch 4.0.7 has no upstream fix; dev-only tooling path, 30-day waiver"
