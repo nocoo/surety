@@ -271,7 +271,7 @@ function formatChangelogSection(version: string, sections: ChangelogSections): s
 		const items = sections[key];
 		if (items.length > 0) {
 			lines.push("");
-			lines.push(`### ${heading}`);
+			lines.push(`### ${heading}`, "");
 			for (const item of items) {
 				lines.push(`- ${item}`);
 			}

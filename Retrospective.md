@@ -1,5 +1,12 @@
 # Retrospective
 
+## 2026-11-18 — release-generated Markdown must pass formatting gates
+
+The `v2.3.15` release attempt generated `###` headings without the blank line
+required by Biome, so the normal pre-commit hook rejected the release commit and
+no tag was created. Release generation must produce the same check-only format
+as committed Markdown instead of relying on a later formatter step.
+
 ## 2026-11-14 — verify published DOM before adding selectors
 
 The first Basalt 3.3.4 sidebar E2E run passed 89 existing cases but failed four
