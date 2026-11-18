@@ -29,6 +29,7 @@ import { resolve as pathResolve } from "node:path";
 
 const PROJECT_ROOT = pathResolve(import.meta.dirname as string, "..");
 const PACKAGE_JSON = pathResolve(PROJECT_ROOT, "package.json");
+const CLI_PACKAGE_JSON = pathResolve(PROJECT_ROOT, "apps/cli/package.json");
 const CHANGELOG_MD = pathResolve(PROJECT_ROOT, "CHANGELOG.md");
 
 const BUMP_TYPES = ["patch", "minor", "major"] as const;
@@ -167,15 +168,20 @@ function readCurrentVersion(): string {
 }
 
 function updatePackageVersion(oldVersion: string, newVersion: string): void {
-	const content = readFileSync(PACKAGE_JSON, "utf-8");
 	const pattern = `"version": "${oldVersion}"`;
 	const replacement = `"version": "${newVersion}"`;
-	if (!content.includes(pattern)) {
-		console.error(`❌ Version pattern not found in package.json: ${pattern}`);
-		process.exit(1);
+	for (const [file, label] of [
+		[PACKAGE_JSON, "package.json"],
+		[CLI_PACKAGE_JSON, "apps/cli/package.json"],
+	] as const) {
+		const content = readFileSync(file, "utf-8");
+		if (!content.includes(pattern)) {
+			console.error(`❌ Version pattern not found in ${label}: ${pattern}`);
+			process.exit(1);
+		}
+		writeFileSync(file, content.replace(pattern, replacement), "utf-8");
+		console.log(`  ✓ ${label}`);
 	}
-	writeFileSync(PACKAGE_JSON, content.replace(pattern, replacement), "utf-8");
-	console.log("  ✓ package.json");
 }
 
 // ---------------------------------------------------------------------------
