@@ -401,7 +401,7 @@ async function main(): Promise<void> {
 	// --- Phase 3: Commit ---
 	console.log("💾 Phase 3: Committing...\n");
 
-	const filesToStage = ["package.json", "bun.lock", "CHANGELOG.md"];
+	const filesToStage = ["package.json", "apps/cli/package.json", "bun.lock", "CHANGELOG.md"];
 
 	if (isDryRun) {
 		console.log(`   [dry-run] Would commit: release: v${newVersion}`);
