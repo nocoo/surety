@@ -1,8 +1,7 @@
 import { Button } from "@nocoo/basalt";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@nocoo/basalt/icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
-import { AppShell } from "@/components/layout";
 import { CoverageSection } from "@/components/policy-detail/coverage-section";
 import { MetaColumn } from "@/components/policy-detail/meta-column";
 import { PaymentsSection } from "@/components/policy-detail/payments-section";
@@ -110,31 +109,23 @@ export default function PolicyDetailPage() {
 	}, [policyId]);
 
 	if (loading) {
-		return (
-			<AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: "加载中..." }]}>
-				<PolicyDetailSkeleton />
-			</AppShell>
-		);
+		return <PolicyDetailSkeleton />;
 	}
 
 	if (error || !policy) {
 		return (
-			<AppShell breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: "错误" }]}>
-				<div className="flex flex-col items-center justify-center py-20 gap-4">
-					<p className="text-basalt-muted-foreground">{error ?? "保单不存在"}</p>
-					<Button variant="outline" onClick={goBack}>
-						<ArrowLeft className="h-4 w-4 mr-2" />
-						{back.label}
-					</Button>
-				</div>
-			</AppShell>
+			<div className="flex flex-col items-center justify-center py-20 gap-4">
+				<p className="text-basalt-muted-foreground">{error ?? "保单不存在"}</p>
+				<Button variant="outline" onClick={goBack}>
+					<ArrowLeft className="h-4 w-4 mr-2" />
+					{back.label}
+				</Button>
+			</div>
 		);
 	}
 
 	return (
-		<AppShell
-			breadcrumbs={[{ label: "保单管理", href: "/policies" }, { label: policy.productName }]}
-		>
+		<>
 			<div className="mb-4">
 				<Button variant="ghost" size="sm" onClick={goBack}>
 					<ArrowLeft className="h-4 w-4 mr-1.5" />
@@ -156,7 +147,7 @@ export default function PolicyDetailPage() {
 			 * fields) into unreadable strips.
 			 */}
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-				<div className="rounded-basalt-card bg-basalt-secondary p-5">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
 					<MetaColumn
 						policy={policy}
 						beneficiaries={beneficiaries}
@@ -170,7 +161,7 @@ export default function PolicyDetailPage() {
 					/>
 				</div>
 
-				<div className="rounded-basalt-card bg-basalt-secondary p-5">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
 					<CoverageSection
 						policyId={policy.id}
 						items={coverageItems}
@@ -182,11 +173,11 @@ export default function PolicyDetailPage() {
 				</div>
 
 				<div className="space-y-6">
-					<div className="rounded-basalt-card bg-basalt-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
 						<TimelineColumn policy={policy} />
 					</div>
 
-					<div className="rounded-basalt-card bg-basalt-secondary p-5">
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
 						<PaymentsSection
 							policyId={policy.id}
 							payments={payments}
@@ -201,6 +192,6 @@ export default function PolicyDetailPage() {
 					</div>
 				</div>
 			</div>
-		</AppShell>
+		</>
 	);
 }

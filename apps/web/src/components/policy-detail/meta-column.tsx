@@ -1,6 +1,19 @@
-import { Button } from "@nocoo/basalt";
-import { formatCurrency } from "@surety/api/lib/format";
-import { formatDateWithDays } from "@surety/db/lib/date-utils";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	Avatar,
+	AvatarFallback,
+	Badge,
+	Button,
+	Separator,
+} from "@nocoo/basalt";
+import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
 import {
 	BadgeCheck,
 	Building2,
@@ -13,23 +26,11 @@ import {
 	Pencil,
 	RotateCcw,
 	ShieldCheck,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
+import { formatCurrency } from "@surety/api/lib/format";
+import { formatDateWithDays } from "@surety/db/lib/date-utils";
 import { useState } from "react";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import {
 	categoryLabels,
@@ -93,7 +94,7 @@ function PersonRow({ name, label, icon }: { name: string; label: string; icon?: 
 			<span className="text-basalt-muted-foreground">{label}</span>
 			<div className="flex items-center gap-2">
 				{icon ?? (
-					<Avatar size="sm">
+					<Avatar className="size-basalt-6">
 						<AvatarFallback className={cn(getAvatarColor(name), "text-white")}>
 							{name[0]}
 						</AvatarFallback>
@@ -1269,7 +1270,7 @@ export function MetaColumn({
 							{beneficiaries.map((b) => (
 								<div key={b.id} className="flex items-center justify-between text-sm">
 									<div className="flex items-center gap-2">
-										<Avatar size="sm">
+										<Avatar className="size-basalt-6">
 											<AvatarFallback className={cn(getAvatarColor(b.name), "text-white")}>
 												{b.name[0]}
 											</AvatarFallback>

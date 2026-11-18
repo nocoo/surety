@@ -29,6 +29,17 @@ test("every primary route renders its H1", async ({ page }) => {
 	}
 });
 
+test("the app shell stays mounted across route changes", async ({ page }) => {
+	await page.goto("/");
+	const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
+	const sidebarNode = await sidebar.elementHandle();
+	expect(sidebarNode).not.toBeNull();
+
+	await sidebar.getByRole("link", { name: "家庭成员", exact: true }).click();
+	await expect(page).toHaveURL(/\/members$/);
+	expect(await sidebarNode?.evaluate((node) => node.isConnected)).toBe(true);
+});
+
 test("skip link becomes visible upon keyboard focus", async ({ page }) => {
 	await page.goto("/");
 	const skipLink = page.getByRole("link", { name: "跳至主要内容" });

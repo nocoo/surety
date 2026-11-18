@@ -1,10 +1,10 @@
+import { ArrowDown, CalendarDays, Circle, CircleCheck, Clock } from "@nocoo/basalt/icons";
 import {
 	formatDaysFromToday,
 	formatLocalDate,
 	getDaysFromToday,
 	parseLocalDate,
 } from "@surety/db/lib/date-utils";
-import { ArrowDown, CalendarDays, Circle, CircleCheck, Clock } from "lucide-react";
 import { useMemo } from "react";
 import type { PolicyDetail } from "@/lib/types/policy";
 

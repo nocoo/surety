@@ -1,8 +1,5 @@
-/* biome-ignore-all lint/correctness/noInvalidPositionAtImportRule: Basalt 3.3.6 requires @source before imports. */
-@source "../node_modules/@nocoo/basalt/dist/**/*.{js,jsx,ts,tsx}";
-@import "@nocoo/basalt/styles/tailwind";
+@import "@nocoo/basalt/styles";
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

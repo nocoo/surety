@@ -1,5 +1,5 @@
+import { CalendarDays } from "@nocoo/basalt/icons";
 import type { MonthlyRenewal } from "@surety/api/renewal-calendar";
-import { CalendarDays } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard } from "@/components/charts";
 import {

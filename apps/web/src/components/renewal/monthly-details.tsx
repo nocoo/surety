@@ -1,10 +1,9 @@
+import { Avatar, AvatarFallback, Badge } from "@nocoo/basalt";
+import { ChevronDown, ChevronRight } from "@nocoo/basalt/icons";
 import { getCategoryConfig, getNameInitial } from "@surety/api/lib/category-config";
 import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/chart-config";
 import { cn, getAvatarColor } from "@/lib/utils";
 
@@ -23,7 +22,7 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 	return (
 		<div className="flex items-center gap-3 py-3 pl-10 pr-4 hover:bg-basalt-muted/50 border-b border-basalt-border/50 last:border-0">
 			{/* Member Avatar */}
-			<Avatar size="sm">
+			<Avatar className="size-basalt-6">
 				<AvatarFallback className={cn(bgClass, "text-white")}>
 					{getNameInitial(item.insuredMemberName)}
 				</AvatarFallback>
@@ -123,7 +122,7 @@ function MonthSection({ month }: { month: MonthlyRenewal }) {
 export function MonthlyDetails({ data }: MonthlyDetailsProps) {
 	if (data.length === 0) {
 		return (
-			<div className="rounded-basalt-card bg-basalt-secondary p-6">
+			<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 				<p className="text-basalt-muted-foreground text-sm text-center">
 					未来一年内没有需要续保的保单
 				</p>
@@ -132,7 +131,7 @@ export function MonthlyDetails({ data }: MonthlyDetailsProps) {
 	}
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card overflow-hidden">
 			{data.map((month) => (
 				<MonthSection key={month.month} month={month} />
 			))}

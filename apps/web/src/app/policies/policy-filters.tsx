@@ -1,24 +1,24 @@
-import { Button } from "@nocoo/basalt";
-import { getCategoryConfig } from "@surety/api/lib/category-config";
-import { ListFilter, X } from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
+	Badge,
+	Button,
+	Label,
 	Sheet,
 	SheetClose,
 	SheetContent,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
+} from "@nocoo/basalt";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import { ListFilter, X } from "@nocoo/basalt/icons";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
+import { useState } from "react";
 import { statusConfig } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 

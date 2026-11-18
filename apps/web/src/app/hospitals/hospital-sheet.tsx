@@ -1,24 +1,24 @@
-import { Button } from "@nocoo/basalt";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
+	Button,
+	Input,
+	Label,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+	Switch,
+} from "@nocoo/basalt";
+import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import { useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const HOSPITAL_LEVELS = ["三甲", "三乙", "二甲", "二乙", "一级", "社区", "诊所", "未评级"];

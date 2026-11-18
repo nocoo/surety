@@ -1,11 +1,11 @@
-import { Input } from "@/components/ui/input";
+import { Input } from "@nocoo/basalt";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@nocoo/basalt/components/select";
 import { cn } from "@/lib/utils";
 
 type InputType = "text" | "number" | "date" | "select";

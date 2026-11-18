@@ -1,19 +1,15 @@
-import { Button } from "@nocoo/basalt";
+import { Button, Input, Label, Separator } from "@nocoo/basalt";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { AlertCircle, Bell, Save, Shield } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useBlocker } from "react-router";
-import { AppShell } from "@/components/layout";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+} from "@nocoo/basalt/components/select";
+import { AlertCircle, Bell, Save, Shield } from "@nocoo/basalt/icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useBlocker } from "react-router";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 import { BackySettings, DatabaseSettings } from "./components";
@@ -191,135 +187,133 @@ export default function SettingsPage() {
 	};
 
 	return (
-		<AppShell breadcrumbs={[{ label: "设置" }]}>
-			<div className="space-y-6">
-				<PageHeader title="设置" description="管理应用偏好和家庭财务参数" />
+		<div className="space-y-6">
+			<PageHeader title="设置" description="管理应用偏好和家庭财务参数" />
 
-				{dirty && (
-					<div
-						role="status"
-						className="flex items-center justify-between gap-3 rounded-basalt-md border border-basalt-warning/30 bg-basalt-warning/10 px-4 py-2.5 text-sm text-basalt-warning"
+			{dirty && (
+				<div
+					role="status"
+					className="flex items-center justify-between gap-3 rounded-basalt-md border border-basalt-warning/30 bg-basalt-warning/10 px-4 py-2.5 text-sm text-basalt-warning"
+				>
+					<span className="flex items-center gap-2">
+						<AlertCircle className="h-4 w-4 shrink-0" />
+						有未保存的修改
+					</span>
+					<button
+						type="button"
+						onClick={handleDiscard}
+						className="text-xs underline hover:no-underline"
 					>
-						<span className="flex items-center gap-2">
-							<AlertCircle className="h-4 w-4 shrink-0" />
-							有未保存的修改
-						</span>
-						<button
-							type="button"
-							onClick={handleDiscard}
-							className="text-xs underline hover:no-underline"
-						>
-							放弃修改
-						</button>
-					</div>
-				)}
+						放弃修改
+					</button>
+				</div>
+			)}
 
-				<div className="grid gap-6 lg:grid-cols-2">
-					{/* Family Finance Settings */}
-					<div className="rounded-basalt-card bg-basalt-secondary p-6">
-						<div className="flex items-center gap-3 mb-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
-								<Shield className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
-							</div>
-							<div>
-								<h2 className="font-semibold">家庭财务</h2>
-								<p className="text-sm text-basalt-muted-foreground">用于计算保费占比等指标</p>
-							</div>
+			<div className="grid gap-6 lg:grid-cols-2">
+				{/* Family Finance Settings */}
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
+					<div className="flex items-center gap-3 mb-4">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
+							<Shield className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
 						</div>
-						<Separator className="mb-4" />
-						<div className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="annualIncome">家庭年收入 (元)</Label>
-								<Input
-									id="annualIncome"
-									type="number"
-									placeholder="600000"
-									value={settings.annualIncome}
-									onChange={(e) => handleChange("annualIncome", e.target.value)}
-								/>
-								<p className="text-xs text-basalt-muted-foreground">
-									建议保费支出控制在年收入的 10-15%
-								</p>
-							</div>
-
-							<div className="space-y-2">
-								<Label>货币单位</Label>
-								<Select
-									value={settings.currency}
-									onValueChange={(value) => handleChange("currency", value)}
-								>
-									<SelectTrigger className="w-[200px]">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="CNY">人民币 (CNY)</SelectItem>
-										<SelectItem value="USD">美元 (USD)</SelectItem>
-										<SelectItem value="HKD">港币 (HKD)</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+						<div>
+							<h2 className="font-semibold">家庭财务</h2>
+							<p className="text-sm text-basalt-muted-foreground">用于计算保费占比等指标</p>
 						</div>
 					</div>
-
-					{/* Reminder Settings */}
-					<div className="rounded-basalt-card bg-basalt-secondary p-6">
-						<div className="flex items-center gap-3 mb-4">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-warning/10">
-								<Bell className="h-5 w-5 text-basalt-warning" strokeWidth={1.5} />
-							</div>
-							<div>
-								<h2 className="font-semibold">提醒设置</h2>
-								<p className="text-sm text-basalt-muted-foreground">保单到期和缴费提醒</p>
-							</div>
+					<Separator className="mb-4" />
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="annualIncome">家庭年收入 (元)</Label>
+							<Input
+								id="annualIncome"
+								type="number"
+								placeholder="600000"
+								value={settings.annualIncome}
+								onChange={(e) => handleChange("annualIncome", e.target.value)}
+							/>
+							<p className="text-xs text-basalt-muted-foreground">
+								建议保费支出控制在年收入的 10-15%
+							</p>
 						</div>
-						<Separator className="mb-4" />
-						<div className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="reminderDays">提前提醒天数</Label>
-								<Select
-									value={settings.reminderDays}
-									onValueChange={(value) => handleChange("reminderDays", value)}
-								>
-									<SelectTrigger className="w-[200px]">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="7">7 天</SelectItem>
-										<SelectItem value="14">14 天</SelectItem>
-										<SelectItem value="30">30 天</SelectItem>
-										<SelectItem value="60">60 天</SelectItem>
-									</SelectContent>
-								</Select>
-								<p className="text-xs text-basalt-muted-foreground">
-									在保单到期或缴费日前多少天开始提醒
-								</p>
-							</div>
+
+						<div className="space-y-2">
+							<Label>货币单位</Label>
+							<Select
+								value={settings.currency}
+								onValueChange={(value) => handleChange("currency", value)}
+							>
+								<SelectTrigger className="w-[200px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="CNY">人民币 (CNY)</SelectItem>
+									<SelectItem value="USD">美元 (USD)</SelectItem>
+									<SelectItem value="HKD">港币 (HKD)</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 					</div>
-
-					{/* Database Settings (backup/restore) */}
-					<DatabaseSettings />
-
-					{/* Backy Remote Backup */}
-					<BackySettings />
 				</div>
 
-				<div className="flex flex-col items-end gap-2">
-					{saveError && (
-						<p className="text-sm text-basalt-destructive" role="alert">
-							{saveError}
-						</p>
-					)}
-					<Button
-						onClick={() => void handleSave()}
-						disabled={saving || !dirty}
-						aria-disabled={saving || !dirty}
-					>
-						<Save className="mr-2 h-4 w-4" />
-						{saving ? "保存中..." : savedFlash ? "已保存" : "保存设置"}
-					</Button>
+				{/* Reminder Settings */}
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
+					<div className="flex items-center gap-3 mb-4">
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-warning/10">
+							<Bell className="h-5 w-5 text-basalt-warning" strokeWidth={1.5} />
+						</div>
+						<div>
+							<h2 className="font-semibold">提醒设置</h2>
+							<p className="text-sm text-basalt-muted-foreground">保单到期和缴费提醒</p>
+						</div>
+					</div>
+					<Separator className="mb-4" />
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="reminderDays">提前提醒天数</Label>
+							<Select
+								value={settings.reminderDays}
+								onValueChange={(value) => handleChange("reminderDays", value)}
+							>
+								<SelectTrigger className="w-[200px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="7">7 天</SelectItem>
+									<SelectItem value="14">14 天</SelectItem>
+									<SelectItem value="30">30 天</SelectItem>
+									<SelectItem value="60">60 天</SelectItem>
+								</SelectContent>
+							</Select>
+							<p className="text-xs text-basalt-muted-foreground">
+								在保单到期或缴费日前多少天开始提醒
+							</p>
+						</div>
+					</div>
 				</div>
+
+				{/* Database Settings (backup/restore) */}
+				<DatabaseSettings />
+
+				{/* Backy Remote Backup */}
+				<BackySettings />
 			</div>
-		</AppShell>
+
+			<div className="flex flex-col items-end gap-2">
+				{saveError && (
+					<p className="text-sm text-basalt-destructive" role="alert">
+						{saveError}
+					</p>
+				)}
+				<Button
+					onClick={() => void handleSave()}
+					disabled={saving || !dirty}
+					aria-disabled={saving || !dirty}
+				>
+					<Save className="mr-2 h-4 w-4" />
+					{saving ? "保存中..." : savedFlash ? "已保存" : "保存设置"}
+				</Button>
+			</div>
+		</div>
 	);
 }

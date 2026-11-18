@@ -1,6 +1,6 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@nocoo/basalt";
 import { isImageContentType } from "@surety/api/lib/attachment-validation";
 import type { Attachment } from "@surety/db/schema";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiUrl } from "@/hooks/local-environment";
 
 interface AttachmentPreviewDialogProps {

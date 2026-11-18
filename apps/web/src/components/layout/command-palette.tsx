@@ -1,3 +1,4 @@
+import { Dialog, DialogContent, DialogTitle } from "@nocoo/basalt";
 import {
 	Building2,
 	CalendarClock,
@@ -13,7 +14,7 @@ import {
 	Stethoscope,
 	UserRound,
 	Users,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import {
 	createContext,
 	type ReactNode,
@@ -27,7 +28,6 @@ import {
 import { useNavigate } from "react-router";
 import useSWR from "swr";
 import { fetchAPI } from "@/api";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -74,7 +74,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 		<CommandPaletteOpenContext.Provider value={openPalette}>
 			{children}
 			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogContent className="overflow-hidden p-0 sm:max-w-xl" showCloseButton={false}>
+				<DialogContent className="overflow-hidden p-0 sm:max-w-xl">
 					<DialogTitle className="sr-only">命令面板</DialogTitle>
 					<PaletteContent onClose={() => setOpen(false)} active={open} />
 				</DialogContent>

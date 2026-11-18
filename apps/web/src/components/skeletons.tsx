@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
 
 /**
  * Page-level loading skeletons.
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Cross-cutting choices:
  * - Page header is `h-8` (matches `text-2xl font-semibold` h1) plus a
  *   muted `h-4` subtitle.
- * - Section banners (SectionDivider) render a small `h-4 w-20` label
+ * - Section banners (SectionDivider) render a small `h-4 !w-20` label
  *   plus a thin separator line.
  * - List rows match the real Table column count + alignment when
  *   possible (header cells use `h-4`, body cells use `h-5` for a beat
@@ -26,8 +26,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /** Page header that pairs an h1 with a one-line subtitle. */
 function PageHeaderSkeleton({
-	titleWidth = "w-28",
-	subtitleWidth = "w-32",
+	titleWidth = "!w-28",
+	subtitleWidth = "!w-32",
 	action,
 }: {
 	titleWidth?: string;
@@ -46,7 +46,7 @@ function PageHeaderSkeleton({
 }
 
 /** Mirrors <SectionDivider>: small label + horizontal line. */
-function SectionDividerSkeleton({ titleWidth = "w-20" }: { titleWidth?: string }) {
+function SectionDividerSkeleton({ titleWidth = "!w-20" }: { titleWidth?: string }) {
 	return (
 		<div className="flex items-center gap-3">
 			<Skeleton className={`h-4 ${titleWidth} shrink-0`} />
@@ -58,12 +58,12 @@ function SectionDividerSkeleton({ titleWidth = "w-20" }: { titleWidth?: string }
 /** A boxed chart (title + body) used by the dashboard chart grid. */
 function ChartCardSkeleton({ height = "h-[280px]" }: { height?: string }) {
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4">
 			<div className="mb-4 flex items-center gap-2">
-				<Skeleton className="h-4 w-4" />
-				<Skeleton className="h-5 w-24" />
+				<Skeleton className="h-4 !w-4" />
+				<Skeleton className="h-5 !w-24" />
 			</div>
-			<Skeleton className={`${height} w-full rounded-basalt-md`} />
+			<Skeleton className={`${height} !w-full rounded-basalt-md`} />
 		</div>
 	);
 }
@@ -71,13 +71,13 @@ function ChartCardSkeleton({ height = "h-[280px]" }: { height?: string }) {
 /** A single stat card (label + icon + value + optional sub-line). */
 function StatCardSkeleton({ withSub = true }: { withSub?: boolean }) {
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 			<div className="flex items-center justify-between">
-				<Skeleton className="h-4 w-20" />
-				<Skeleton className="h-8 w-8 rounded-md" />
+				<Skeleton className="h-4 !w-20" />
+				<Skeleton className="h-8 !w-8 rounded-md" />
 			</div>
-			<Skeleton className="mt-2 h-8 w-28" />
-			{withSub && <Skeleton className="mt-1 h-3 w-24" />}
+			<Skeleton className="mt-2 h-8 !w-28" />
+			{withSub && <Skeleton className="mt-1 h-3 !w-24" />}
 		</div>
 	);
 }
@@ -88,10 +88,10 @@ function StatCardSkeleton({ withSub = true }: { withSub?: boolean }) {
  * suspiciously uniform mosaic.
  */
 function TableSkeleton({ columns, rows }: { columns: number; rows: number }) {
-	const headerWidths = ["w-16", "w-20", "w-14", "w-12", "w-20", "w-16", "w-12"];
-	const cellWidths = ["w-32", "w-24", "w-28", "w-20", "w-24", "w-16", "w-12"];
+	const headerWidths = ["!w-16", "!w-20", "!w-14", "!w-12", "!w-20", "!w-16", "!w-12"];
+	const cellWidths = ["!w-32", "!w-24", "!w-28", "!w-20", "!w-24", "!w-16", "!w-12"];
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card overflow-hidden">
 			<div className="flex items-center gap-6 border-b px-4 py-3">
 				{Array.from({ length: columns }).map((_, i) => (
 					<Skeleton key={i} className={`h-4 ${headerWidths[i % headerWidths.length]}`} />
@@ -126,13 +126,13 @@ export function DashboardSkeleton() {
 		<div className="space-y-8">
 			{/* Greeting header */}
 			<div>
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="mt-1.5 h-4 w-56" />
+				<Skeleton className="h-8 !w-48" />
+				<Skeleton className="mt-1.5 h-4 !w-56" />
 			</div>
 
 			{/* 家庭概览 — 4 stat cards */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-20" />
+				<SectionDividerSkeleton titleWidth="!w-20" />
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 					{Array.from({ length: 4 }).map((_, i) => (
 						<StatCardSkeleton key={i} />
@@ -142,34 +142,34 @@ export function DashboardSkeleton() {
 
 			{/* 保障状态 — health card (3/5) + action items (2/5) */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-20" />
+				<SectionDividerSkeleton titleWidth="!w-20" />
 				<div className="grid gap-6 lg:grid-cols-5">
-					<div className="lg:col-span-3 rounded-basalt-card bg-basalt-secondary p-6">
+					<div className="lg:col-span-3 rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 						<div className="flex items-center gap-3">
-							<Skeleton className="h-10 w-10 rounded-lg" />
+							<Skeleton className="h-10 !w-10 rounded-lg" />
 							<div className="flex-1">
-								<Skeleton className="h-3 w-20" />
-								<Skeleton className="mt-1.5 h-5 w-48" />
+								<Skeleton className="h-3 !w-20" />
+								<Skeleton className="mt-1.5 h-5 !w-48" />
 							</div>
 						</div>
-						<Skeleton className="mt-4 h-4 w-full" />
-						<Skeleton className="mt-2 h-4 w-3/4" />
-						<Skeleton className="mt-6 h-9 w-32" />
+						<Skeleton className="mt-4 h-4 !w-full" />
+						<Skeleton className="mt-2 h-4 !w-3/4" />
+						<Skeleton className="mt-6 h-9 !w-32" />
 					</div>
-					<div className="lg:col-span-2 rounded-basalt-card bg-basalt-secondary p-6">
+					<div className="lg:col-span-2 rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 						<div className="mb-4 flex items-center gap-3">
-							<Skeleton className="h-10 w-10 rounded-lg" />
+							<Skeleton className="h-10 !w-10 rounded-lg" />
 							<div>
-								<Skeleton className="h-3 w-16" />
-								<Skeleton className="mt-1.5 h-5 w-24" />
+								<Skeleton className="h-3 !w-16" />
+								<Skeleton className="mt-1.5 h-5 !w-24" />
 							</div>
 						</div>
 						{Array.from({ length: 3 }).map((_, i) => (
 							<div key={i} className="mb-3 flex items-start gap-3">
-								<Skeleton className="h-5 w-5 rounded-full" />
+								<Skeleton className="h-5 !w-5 rounded-full" />
 								<div className="flex-1">
-									<Skeleton className="h-4 w-full" />
-									<Skeleton className="mt-1 h-3 w-1/2" />
+									<Skeleton className="h-4 !w-full" />
+									<Skeleton className="mt-1 h-3 !w-1/2" />
 								</div>
 							</div>
 						))}
@@ -179,7 +179,7 @@ export function DashboardSkeleton() {
 
 			{/* 分布详情 — 5 rows × 2 chart cards */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-20" />
+				<SectionDividerSkeleton titleWidth="!w-20" />
 				{Array.from({ length: 5 }).map((_, i) => (
 					<div key={i} className="grid gap-6 lg:grid-cols-2">
 						<ChartCardSkeleton />
@@ -213,15 +213,15 @@ export function TablePageSkeleton({
 	return (
 		<div className="space-y-6">
 			<PageHeaderSkeleton
-				titleWidth="w-28"
-				subtitleWidth="w-32"
-				action={<Skeleton className="h-9 w-24 rounded-md" />}
+				titleWidth="!w-28"
+				subtitleWidth="!w-32"
+				action={<Skeleton className="h-9 !w-24 rounded-md" />}
 			/>
 			{withFilters && (
 				<div className="flex flex-wrap items-center gap-3">
-					<Skeleton className="h-9 w-32 rounded-md" />
-					<Skeleton className="h-9 w-24 rounded-md" />
-					<Skeleton className="h-9 w-28 rounded-md ml-auto" />
+					<Skeleton className="h-9 !w-32 rounded-md" />
+					<Skeleton className="h-9 !w-24 rounded-md" />
+					<Skeleton className="h-9 !w-28 rounded-md ml-auto" />
 				</div>
 			)}
 			<TableSkeleton columns={columns} rows={rows} />
@@ -250,7 +250,7 @@ export function AssetsPageSkeleton() {
 export function RenewalCalendarSkeleton() {
 	return (
 		<div className="space-y-8">
-			<PageHeaderSkeleton titleWidth="w-24" subtitleWidth="w-48" />
+			<PageHeaderSkeleton titleWidth="!w-24" subtitleWidth="!w-48" />
 
 			{/* Summary cards (matches SummaryCards: 4-up grid, label + icon + value). */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -261,13 +261,16 @@ export function RenewalCalendarSkeleton() {
 
 			{/* 日历视图 — 12-month grid */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-16" />
+				<SectionDividerSkeleton titleWidth="!w-16" />
 				<div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
 					{Array.from({ length: 12 }).map((_, i) => (
-						<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
-							<Skeleton className="h-4 w-12" />
-							<Skeleton className="mt-2 h-7 w-16" />
-							<Skeleton className="mt-1 h-3 w-20" />
+						<div
+							key={i}
+							className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4"
+						>
+							<Skeleton className="h-4 !w-12" />
+							<Skeleton className="mt-2 h-7 !w-16" />
+							<Skeleton className="mt-1 h-3 !w-20" />
 						</div>
 					))}
 				</div>
@@ -275,25 +278,28 @@ export function RenewalCalendarSkeleton() {
 
 			{/* 按月柱状图 */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-20" />
-				<div className="rounded-basalt-card bg-basalt-secondary p-4">
-					<Skeleton className="h-[300px] w-full rounded-basalt-md" />
+				<SectionDividerSkeleton titleWidth="!w-20" />
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4">
+					<Skeleton className="h-[300px] !w-full rounded-basalt-md" />
 				</div>
 			</div>
 
 			{/* 月度明细 */}
 			<div className="space-y-4">
-				<SectionDividerSkeleton titleWidth="w-16" />
+				<SectionDividerSkeleton titleWidth="!w-16" />
 				<div className="space-y-3">
 					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
+						<div
+							key={i}
+							className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4"
+						>
 							<div className="flex items-center justify-between">
-								<Skeleton className="h-5 w-20" />
-								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-5 !w-20" />
+								<Skeleton className="h-4 !w-16" />
 							</div>
 							<div className="mt-3 space-y-2">
-								<Skeleton className="h-4 w-full" />
-								<Skeleton className="h-4 w-3/4" />
+								<Skeleton className="h-4 !w-full" />
+								<Skeleton className="h-4 !w-3/4" />
 							</div>
 						</div>
 					))}
@@ -316,26 +322,29 @@ export function CoverageLookupSkeleton() {
 	return (
 		<div className="space-y-5">
 			<PageHeaderSkeleton
-				titleWidth="w-24"
-				subtitleWidth="w-72"
-				action={<Skeleton className="h-9 w-32 rounded-md" />}
+				titleWidth="!w-24"
+				subtitleWidth="!w-72"
+				action={<Skeleton className="h-9 !w-32 rounded-md" />}
 			/>
 
 			{/* Segmented tabs (member / asset) */}
-			<div className="inline-flex rounded-basalt-card bg-basalt-secondary p-1 gap-1">
-				<Skeleton className="h-10 w-32 rounded-[10px]" />
-				<Skeleton className="h-10 w-24 rounded-[10px]" />
+			<div className="inline-flex rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-1 gap-1">
+				<Skeleton className="h-10 !w-32 rounded-[10px]" />
+				<Skeleton className="h-10 !w-24 rounded-[10px]" />
 			</div>
 
 			{/* Subject selector cards (members or assets) */}
 			<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 				{Array.from({ length: 4 }).map((_, i) => (
-					<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
+					<div
+						key={i}
+						className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4"
+					>
 						<div className="flex items-center gap-3">
-							<Skeleton className="h-10 w-10 rounded-full" />
+							<Skeleton className="h-10 !w-10 rounded-full" />
 							<div className="flex-1">
-								<Skeleton className="h-4 w-16" />
-								<Skeleton className="mt-1 h-3 w-12" />
+								<Skeleton className="h-4 !w-16" />
+								<Skeleton className="mt-1 h-3 !w-12" />
 							</div>
 						</div>
 					</div>
@@ -345,14 +354,17 @@ export function CoverageLookupSkeleton() {
 			{/* Category groups (badge + count + policy rows) */}
 			<div className="space-y-4">
 				{Array.from({ length: 3 }).map((_, i) => (
-					<div key={i} className="rounded-basalt-card bg-basalt-secondary p-4">
+					<div
+						key={i}
+						className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4"
+					>
 						<div className="mb-3 flex items-center gap-2">
-							<Skeleton className="h-5 w-16 rounded-full" />
-							<Skeleton className="h-4 w-12" />
+							<Skeleton className="h-5 !w-16 rounded-full" />
+							<Skeleton className="h-4 !w-12" />
 						</div>
 						<div className="space-y-2">
-							<Skeleton className="h-14 w-full rounded-basalt-md" />
-							<Skeleton className="h-14 w-full rounded-basalt-md" />
+							<Skeleton className="h-14 !w-full rounded-basalt-md" />
+							<Skeleton className="h-14 !w-full rounded-basalt-md" />
 						</div>
 					</div>
 				))}
@@ -376,38 +388,38 @@ export function PolicyDetailSkeleton() {
 	return (
 		<div className="space-y-6">
 			{/* Back button */}
-			<Skeleton className="h-7 w-28 rounded-md" />
+			<Skeleton className="h-7 !w-28 rounded-md" />
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 				{/* col 1 — Meta (longest) */}
-				<div className="rounded-basalt-card bg-basalt-secondary p-5 space-y-5">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5 space-y-5">
 					<div className="space-y-2">
-						<Skeleton className="h-6 w-40" />
-						<Skeleton className="h-4 w-32" />
+						<Skeleton className="h-6 !w-40" />
+						<Skeleton className="h-4 !w-32" />
 					</div>
 					{Array.from({ length: 3 }).map((_, section) => (
 						<div key={section}>
-							<Skeleton className="mb-2 h-4 w-16" />
+							<Skeleton className="mb-2 h-4 !w-16" />
 							<div className="space-y-2">
-								<Skeleton className="h-4 w-full" />
-								<Skeleton className="h-4 w-4/5" />
-								<Skeleton className="h-4 w-2/3" />
+								<Skeleton className="h-4 !w-full" />
+								<Skeleton className="h-4 !w-4/5" />
+								<Skeleton className="h-4 !w-2/3" />
 							</div>
 						</div>
 					))}
 				</div>
 
 				{/* col 2 — Coverage */}
-				<div className="rounded-basalt-card bg-basalt-secondary p-5">
-					<Skeleton className="h-5 w-24 mb-4" />
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
+					<Skeleton className="h-5 !w-24 mb-4" />
 					<div className="space-y-2">
 						{Array.from({ length: 4 }).map((_, i) => (
 							<div key={i} className="rounded-basalt-md bg-basalt-background/60 p-3">
 								<div className="flex justify-between">
-									<Skeleton className="h-4 w-32" />
-									<Skeleton className="h-4 w-16" />
+									<Skeleton className="h-4 !w-32" />
+									<Skeleton className="h-4 !w-16" />
 								</div>
-								<Skeleton className="mt-1.5 h-3 w-24" />
+								<Skeleton className="mt-1.5 h-3 !w-24" />
 							</div>
 						))}
 					</div>
@@ -415,28 +427,28 @@ export function PolicyDetailSkeleton() {
 
 				{/* col 3 — Timeline + Payments */}
 				<div className="space-y-6">
-					<div className="rounded-basalt-card bg-basalt-secondary p-5">
-						<Skeleton className="h-5 w-20 mb-4" />
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
+						<Skeleton className="h-5 !w-20 mb-4" />
 						<div className="space-y-3">
 							{Array.from({ length: 5 }).map((_, i) => (
 								<div key={i} className="flex items-center gap-3">
-									<Skeleton className="h-3 w-3 rounded-full" />
-									<Skeleton className="h-4 w-20" />
-									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-3 !w-3 rounded-full" />
+									<Skeleton className="h-4 !w-20" />
+									<Skeleton className="h-4 !w-24" />
 								</div>
 							))}
 						</div>
 					</div>
-					<div className="rounded-basalt-card bg-basalt-secondary p-5">
-						<Skeleton className="h-5 w-20 mb-4" />
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-5">
+						<Skeleton className="h-5 !w-20 mb-4" />
 						<div className="space-y-2">
 							{Array.from({ length: 4 }).map((_, i) => (
 								<div key={i} className="rounded-basalt-md bg-basalt-background/60 p-3">
 									<div className="flex justify-between">
-										<Skeleton className="h-4 w-16" />
-										<Skeleton className="h-4 w-12" />
+										<Skeleton className="h-4 !w-16" />
+										<Skeleton className="h-4 !w-12" />
 									</div>
-									<Skeleton className="mt-1 h-3 w-24" />
+									<Skeleton className="mt-1 h-3 !w-24" />
 								</div>
 							))}
 						</div>

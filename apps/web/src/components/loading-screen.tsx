@@ -4,9 +4,8 @@
  */
 export default function LoadingScreen() {
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-basalt-background animate-in fade-in duration-300">
-			{/* Logo with orbital spinner */}
-			<div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500">
+		<div className="flex min-h-basalt-80 flex-1 items-center justify-center motion-safe:animate-fade-up">
+			<div className="relative">
 				<div className="flex h-72 w-72 items-center justify-center rounded-full bg-basalt-secondary dark:bg-[#171717] ring-1 ring-basalt-border overflow-hidden p-6">
 					<img
 						src="/logo-256.png"

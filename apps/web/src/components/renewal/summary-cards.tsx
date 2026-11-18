@@ -1,5 +1,5 @@
+import { Calendar, PiggyBank, Shield, Wallet } from "@nocoo/basalt/icons";
 import type { RenewalSummary } from "@surety/api/renewal-calendar";
-import { Calendar, PiggyBank, Shield, Wallet } from "lucide-react";
 import { formatCurrency } from "@/lib/chart-config";
 
 interface SummaryCardsProps {
@@ -22,7 +22,7 @@ function StatCard({ label, value, subValue, icon: Icon, variant = "default" }: S
 	};
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 			<div className="flex items-center justify-between">
 				<span className="text-sm text-basalt-muted-foreground">{label}</span>
 				<div className="rounded-md bg-basalt-background p-2">

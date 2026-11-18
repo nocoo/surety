@@ -1,7 +1,3 @@
-import { Button } from "@nocoo/basalt";
-import { formatCurrency } from "@surety/api/lib/format";
-import { Pencil, Plus, Save, Shield, Trash2, X } from "lucide-react";
-import { useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -11,11 +7,15 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+	Badge,
+	Button,
+	Input,
+	Label,
+	Switch,
+} from "@nocoo/basalt";
+import { Pencil, Plus, Save, Shield, Trash2, X } from "@nocoo/basalt/icons";
+import { formatCurrency } from "@surety/api/lib/format";
+import { useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { CoverageItem } from "@/lib/types/policy";
 import { cn } from "@/lib/utils";
@@ -426,7 +426,6 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 					<AlertDialogFooter>
 						<AlertDialogCancel>取消</AlertDialogCancel>
 						<AlertDialogAction
-							variant="destructive"
 							onClick={() => {
 								if (deleteTarget !== null) void handleDelete(deleteTarget);
 							}}

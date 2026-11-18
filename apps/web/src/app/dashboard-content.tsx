@@ -1,4 +1,5 @@
 import { PageHeader } from "@nocoo/basalt/components/page-header";
+import { SectionRule as SectionDivider } from "@nocoo/basalt/components/section-rule";
 import {
 	AlertCircle,
 	ArrowRight,
@@ -14,7 +15,7 @@ import {
 	TrendingUp,
 	Users,
 	Wallet,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { useMemo } from "react";
 import { Link } from "react-router";
 import useSWR from "swr";
@@ -27,7 +28,6 @@ import {
 	StackedTimelineChart,
 	StackedValueChart,
 } from "@/components/charts";
-import { SectionDivider } from "@/components/ui/section-divider";
 import { useMe } from "@/hooks/use-me";
 import { CHART_COLORS, formatCurrency } from "@/lib/chart-config";
 import {
@@ -56,7 +56,7 @@ function StatCard({ label, value, iconName, sub, index }: StatCardData & { index
 	const Icon = ICON_MAP[iconName];
 	return (
 		<div
-			className="rounded-basalt-card bg-basalt-secondary p-6 animate-fade-up"
+			className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6 animate-fade-up"
 			style={{ animationDelay: `${index * 80}ms` }}
 		>
 			<div className="flex items-center justify-between">
@@ -421,7 +421,7 @@ function ActionItemsCard({
 	const items = buildActionItems(renewal, expiry);
 
 	return (
-		<article className="rounded-basalt-card bg-basalt-secondary p-6 h-full">
+		<article className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6 h-full">
 			<header className="flex items-center gap-3 mb-4">
 				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
 					<CalendarClock className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />

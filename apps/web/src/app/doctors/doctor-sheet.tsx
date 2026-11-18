@@ -1,23 +1,23 @@
-import { Button } from "@nocoo/basalt";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
+	Button,
+	Input,
+	Label,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
+} from "@nocoo/basalt";
+import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import { useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const DOCTOR_TITLES = ["主任医师", "副主任医师", "主治医师", "住院医师", "其他"];

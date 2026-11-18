@@ -1,5 +1,6 @@
 import { LayerCard } from "@nocoo/basalt";
-import type { LucideIcon } from "lucide-react";
+import { ChartFrame } from "@nocoo/basalt/components/chart";
+import type { LucideIcon } from "@nocoo/basalt/icons";
 
 interface ChartCardProps {
 	title: string;
@@ -13,12 +14,14 @@ interface ChartCardProps {
  */
 export function ChartCard({ title, icon: Icon, children, height = "h-[280px]" }: ChartCardProps) {
 	return (
-		<LayerCard className="rounded-basalt-card bg-basalt-secondary p-4">
-			<div className="flex items-center gap-2 mb-4">
-				<Icon className="h-4 w-4 text-basalt-primary" strokeWidth={1.5} />
-				<h3 className="text-base font-semibold">{title}</h3>
+		<LayerCard className="p-basalt-card">
+			<div className="mb-basalt-space-lg flex items-center gap-basalt-space-lg">
+				<Icon className="size-basalt-icon text-basalt-primary" strokeWidth={1.5} />
+				<h3 className="text-basalt-md font-semibold">{title}</h3>
 			</div>
-			<div className={`${height} w-full min-w-0`}>{children}</div>
+			<ChartFrame ariaLabel={title} size={`${height} w-full`}>
+				{children}
+			</ChartFrame>
 		</LayerCard>
 	);
 }

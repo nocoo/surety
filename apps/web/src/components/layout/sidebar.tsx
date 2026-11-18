@@ -14,15 +14,12 @@ import {
 	SidebarSearch,
 	SidebarToggle,
 	SidebarUser,
-} from "@nocoo/basalt";
-import { useSidebar } from "@nocoo/basalt/components/sidebar";
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
-} from "@nocoo/basalt/components/tooltip";
-import { APP_VERSION } from "@surety/api/lib/version";
+} from "@nocoo/basalt";
+import { useSidebar } from "@nocoo/basalt/components/sidebar";
 import {
 	Building2,
 	CalendarClock,
@@ -37,10 +34,11 @@ import {
 	Terminal,
 	UserRound,
 	Users,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
+import { APP_VERSION } from "@surety/api/lib/version";
 import type { ReactNode } from "react";
 import { useCallback } from "react";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useMe } from "@/hooks/use-me";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { ACCESS_LOGOUT_URL } from "@/lib/access";
@@ -161,7 +159,11 @@ function SuretySidebarBody({
 		<>
 			<SidebarHeader>
 				<SidebarBrand
-					logo={<img src="/logo-80.png" alt="" width={24} height={24} />}
+					logo={
+						<Link to="/" aria-label="Surety 首页">
+							<img src="/logo-80.png" alt="" />
+						</Link>
+					}
 					name="surety"
 					version={`v${APP_VERSION}`}
 					action={
@@ -201,6 +203,7 @@ function SuretySidebarBody({
 											onClick={onNavigate}
 										>
 											<Icon className="h-4 w-4" strokeWidth={1.5} />
+											<span className="sr-only">{item.label}</span>
 										</SidebarIconItem>
 									</TooltipTrigger>
 									<TooltipContent side="right" sideOffset={8}>

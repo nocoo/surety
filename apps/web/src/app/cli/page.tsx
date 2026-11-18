@@ -1,10 +1,3 @@
-import { Button } from "@nocoo/basalt";
-import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { Cloud, Key, Loader2, Terminal, Trash2 } from "lucide-react";
-import { useState } from "react";
-import useSWR from "swr";
-import { fetchAPI } from "@/api";
-import { AppShell } from "@/components/layout";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,8 +7,10 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Separator } from "@/components/ui/separator";
+	Button,
+	Separator,
+} from "@nocoo/basalt";
+import { PageHeader } from "@nocoo/basalt/components/page-header";
 import {
 	Table,
 	TableBody,
@@ -23,7 +18,11 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
+} from "@nocoo/basalt/components/table";
+import { Cloud, Key, Loader2, Terminal, Trash2 } from "@nocoo/basalt/icons";
+import { useState } from "react";
+import useSWR from "swr";
+import { fetchAPI } from "@/api";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 interface ApiToken {
@@ -83,7 +82,7 @@ export default function CliPage() {
 	};
 
 	return (
-		<AppShell breadcrumbs={[{ label: "CLI" }]}>
+		<>
 			<div className="space-y-6">
 				<PageHeader
 					title="CLI"
@@ -96,7 +95,7 @@ export default function CliPage() {
 				/>
 
 				{/* Card 1: Install & Usage */}
-				<div className="rounded-basalt-card bg-basalt-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 					<div className="flex items-center gap-3 mb-4">
 						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-primary/10">
 							<Terminal className="h-5 w-5 text-basalt-primary" strokeWidth={1.5} />
@@ -160,7 +159,7 @@ surety --help`}</code>
 				</div>
 
 				{/* Card 2: Auth */}
-				<div className="rounded-basalt-card bg-basalt-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 					<div className="flex items-center gap-3 mb-4">
 						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-info/10">
 							<Cloud className="h-5 w-5 text-basalt-info" strokeWidth={1.5} />
@@ -214,7 +213,7 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 				</div>
 
 				{/* Card 3: Token Management */}
-				<div className="rounded-basalt-card bg-basalt-secondary p-6">
+				<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 					<div className="flex items-center gap-3 mb-4">
 						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-warning/10">
 							<Key className="h-5 w-5 text-basalt-warning" strokeWidth={1.5} />
@@ -253,45 +252,47 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 
 					{!isLoading && !error && tokens && tokens.length > 0 && (
 						<div className="overflow-x-auto">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>名称</TableHead>
-										<TableHead>前缀</TableHead>
-										<TableHead>创建时间</TableHead>
-										<TableHead>最后使用</TableHead>
-										<TableHead>过期时间</TableHead>
-										<TableHead className="text-right">操作</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{tokens.map((t) => (
-										<TableRow key={t.id}>
-											<TableCell>{t.name ?? "—"}</TableCell>
-											<TableCell>
-												<code className="rounded bg-basalt-background px-1 text-xs">
-													{t.tokenPrefix}…
-												</code>
-											</TableCell>
-											<TableCell className="text-basalt-muted-foreground">
-												{formatDate(t.createdAt)}
-											</TableCell>
-											<TableCell className="text-basalt-muted-foreground">
-												{formatDate(t.lastUsedAt)}
-											</TableCell>
-											<TableCell className="text-basalt-muted-foreground">
-												{formatDate(t.expiresAt)}
-											</TableCell>
-											<TableCell className="text-right">
-												<Button variant="ghost" size="sm" onClick={() => setPendingRevoke(t)}>
-													<Trash2 className="h-4 w-4" />
-													<span className="sr-only">撤销 token</span>
-												</Button>
-											</TableCell>
+							<div data-slot="table-container" className="overflow-x-auto">
+								<Table className="min-w-[660px]">
+									<TableHeader>
+										<TableRow>
+											<TableHead>名称</TableHead>
+											<TableHead>前缀</TableHead>
+											<TableHead>创建时间</TableHead>
+											<TableHead>最后使用</TableHead>
+											<TableHead>过期时间</TableHead>
+											<TableHead className="text-right">操作</TableHead>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
+									</TableHeader>
+									<TableBody>
+										{tokens.map((t) => (
+											<TableRow key={t.id}>
+												<TableCell>{t.name ?? "—"}</TableCell>
+												<TableCell>
+													<code className="rounded bg-basalt-background px-1 text-xs">
+														{t.tokenPrefix}…
+													</code>
+												</TableCell>
+												<TableCell className="text-basalt-muted-foreground">
+													{formatDate(t.createdAt)}
+												</TableCell>
+												<TableCell className="text-basalt-muted-foreground">
+													{formatDate(t.lastUsedAt)}
+												</TableCell>
+												<TableCell className="text-basalt-muted-foreground">
+													{formatDate(t.expiresAt)}
+												</TableCell>
+												<TableCell className="text-right">
+													<Button variant="ghost" size="sm" onClick={() => setPendingRevoke(t)}>
+														<Trash2 className="h-4 w-4" />
+														<span className="sr-only">撤销 token</span>
+													</Button>
+												</TableCell>
+											</TableRow>
+										))}
+									</TableBody>
+								</Table>
+							</div>
 						</div>
 					)}
 
@@ -337,7 +338,6 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={revoking}>取消</AlertDialogCancel>
 						<AlertDialogAction
-							variant="destructive"
 							onClick={(e) => {
 								e.preventDefault();
 								void handleRevoke();
@@ -350,6 +350,6 @@ SURETY_API_TOKEN=sk_xxx   # 跳过 surety login 直接注入`}</code>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-		</AppShell>
+		</>
 	);
 }

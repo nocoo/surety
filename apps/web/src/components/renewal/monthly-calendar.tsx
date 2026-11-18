@@ -1,16 +1,16 @@
-import { getCategoryConfig } from "@surety/api/lib/category-config";
-import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
-import { CalendarDays } from "lucide-react";
-import { useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import { Badge } from "@/components/ui/badge";
 import {
+	Badge,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
+} from "@nocoo/basalt";
+import { CalendarDays } from "@nocoo/basalt/icons";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
+import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
+import { useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { formatCurrency } from "@/lib/chart-config";
 import { cn } from "@/lib/utils";
 
@@ -73,7 +73,7 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
 
 	if (data.length === 0) {
 		return (
-			<div className="rounded-basalt-card bg-basalt-secondary p-6">
+			<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 				<p className="text-basalt-muted-foreground text-sm text-center">
 					未来一年内没有需要续保的保单
 				</p>
@@ -82,7 +82,7 @@ export function MonthlyCalendar({ data }: MonthlyCalendarProps) {
 	}
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-3 sm:p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-3 sm:p-4">
 			<div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
 				{data.map((month) => (
 					<MonthCalendar

@@ -1,6 +1,6 @@
 import { Button } from "@nocoo/basalt";
+import { Car, ChevronLeft, ChevronRight, Home } from "@nocoo/basalt/icons";
 import { type AssetCoverageCard, formatSumAssured } from "@surety/api/coverage-lookup";
-import { Car, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 

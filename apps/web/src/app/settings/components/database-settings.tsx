@@ -1,6 +1,3 @@
-import { Button } from "@nocoo/basalt";
-import { AlertTriangle, Database, Download, Loader2, Upload } from "lucide-react";
-import { useRef, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -10,9 +7,12 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Notice } from "@/components/ui/notice";
-import { Separator } from "@/components/ui/separator";
+	Button,
+	Separator,
+} from "@nocoo/basalt";
+import { AlertTriangle, Database, Download, Loader2, Upload } from "@nocoo/basalt/icons";
+import { useRef, useState } from "react";
+import { Notice } from "@/components/notice";
 import { apiUrl, apiFetch as fetch } from "@/hooks/local-environment";
 
 // Table display names for import preview
@@ -91,7 +91,7 @@ export function DatabaseSettings() {
 	};
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 			<div className="flex items-center gap-3 mb-4">
 				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-info/10">
 					<Database className="h-5 w-5 text-basalt-info" strokeWidth={1.5} />
@@ -184,11 +184,7 @@ export function DatabaseSettings() {
 
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={importing}>取消</AlertDialogCancel>
-						<AlertDialogAction
-							variant="destructive"
-							onClick={handleImportConfirm}
-							disabled={importing}
-						>
+						<AlertDialogAction onClick={handleImportConfirm} disabled={importing}>
 							{importing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							确认覆盖导入
 						</AlertDialogAction>

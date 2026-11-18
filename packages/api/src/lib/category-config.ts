@@ -16,7 +16,7 @@ export interface CategoryConfig {
 		| "info"
 		| "purple"
 		| "teal"
-		| "indigo"
+		| "blue"
 		| "destructive";
 	/** Semantic accent classes for icon and lightweight surfaces */
 	accentClass: string;
@@ -36,7 +36,7 @@ export const CATEGORY_CONFIG: Record<PolicyCategory, CategoryConfig> = {
 	},
 	WholeLife: {
 		label: "终身寿",
-		variant: "indigo",
+		variant: "blue",
 		accentClass: "text-basalt-badge-purple",
 		accentSoftClass: "bg-basalt-badge-purple/10 text-basalt-badge-purple",
 	},

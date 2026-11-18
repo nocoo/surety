@@ -1,25 +1,25 @@
-import { Button } from "@nocoo/basalt";
-import { X } from "lucide-react";
-import { type KeyboardEvent, useCallback, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
+	Badge,
+	Button,
+	Input,
+	Label,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
+} from "@nocoo/basalt";
+import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import { X } from "@nocoo/basalt/icons";
+import { type KeyboardEvent, useCallback, useMemo, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 const VISIT_TYPES = ["门诊", "急诊", "体检", "疫苗", "复查", "预约", "儿保"];

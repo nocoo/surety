@@ -17,7 +17,7 @@ export type StatusBadgeVariant =
 	| "warning"
 	| "purple"
 	| "destructive"
-	| "rose";
+	| "red";
 
 export interface PolicyStatusBadge {
 	label: string;
@@ -47,7 +47,7 @@ export function renderPolicyStatusBadges(policy: {
 	const planned = policy.plannedSurrenderAt;
 	const showPlanned = !!planned && (policy.status === "Active" || policy.status === "Expired");
 	if (!showPlanned) return [primary];
-	return [primary, { label: `拟退保 ${planned}`, variant: "rose" }];
+	return [primary, { label: `拟退保 ${planned}`, variant: "red" }];
 }
 
 /**

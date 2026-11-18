@@ -1,9 +1,8 @@
-import { Button } from "@nocoo/basalt";
+import { Avatar, AvatarFallback, Button } from "@nocoo/basalt";
+import { ChevronLeft, ChevronRight } from "@nocoo/basalt/icons";
 import { formatSumAssured, type MemberCoverageCard } from "@surety/api/coverage-lookup";
 import { getNameInitial } from "@surety/api/lib/category-config";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn, getAvatarColor } from "@/lib/utils";
 
 interface MemberSelectorProps {
@@ -86,7 +85,7 @@ export function MemberSelector({ members, selectedMemberId, onSelectMember }: Me
 									: "bg-basalt-secondary hover:bg-basalt-muted/50",
 							)}
 						>
-							<Avatar size="lg">
+							<Avatar className="size-basalt-10">
 								<AvatarFallback className={cn(bgClass, "text-white")}>
 									{getNameInitial(member.name)}
 								</AvatarFallback>

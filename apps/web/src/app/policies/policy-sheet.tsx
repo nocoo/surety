@@ -1,22 +1,22 @@
-import { Button } from "@nocoo/basalt";
-import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
+	Button,
+	Input,
+	Label,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
+} from "@nocoo/basalt";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import { useEffect, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import { categoryLabels, paymentFrequencyLabels } from "@/lib/constants/policy";
 

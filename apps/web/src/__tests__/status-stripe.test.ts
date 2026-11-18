@@ -36,7 +36,7 @@ describe("renderPolicyStatusBadges", () => {
 		]);
 	});
 
-	it("appends a rose secondary badge when Active and plannedSurrenderAt set", () => {
+	it("appends a red secondary badge when Active and plannedSurrenderAt set", () => {
 		expect(
 			renderPolicyStatusBadges({
 				status: "Active",
@@ -44,11 +44,11 @@ describe("renderPolicyStatusBadges", () => {
 			}),
 		).toEqual([
 			{ label: "生效中", variant: "success" },
-			{ label: "拟退保 2030-01-01", variant: "rose" },
+			{ label: "拟退保 2030-01-01", variant: "red" },
 		]);
 	});
 
-	it("appends a rose secondary badge when Expired and plannedSurrenderAt set", () => {
+	it("appends a red secondary badge when Expired and plannedSurrenderAt set", () => {
 		expect(
 			renderPolicyStatusBadges({
 				status: "Expired",
@@ -56,19 +56,19 @@ describe("renderPolicyStatusBadges", () => {
 			}),
 		).toEqual([
 			{ label: "已过期", variant: "destructive" },
-			{ label: "拟退保 2030-01-01", variant: "rose" },
+			{ label: "拟退保 2030-01-01", variant: "red" },
 		]);
 	});
 
 	it.each(["Surrendered", "Claimed", "Lapsed"] as const)(
-		"does NOT append rose badge for terminal status %s even when plannedSurrenderAt is set",
+		"does NOT append red badge for terminal status %s even when plannedSurrenderAt is set",
 		(status) => {
 			const badges = renderPolicyStatusBadges({
 				status,
 				plannedSurrenderAt: "2030-01-01",
 			});
 			expect(badges.length).toBe(1);
-			expect(badges[0]?.variant).not.toBe("rose");
+			expect(badges[0]?.variant).not.toBe("red");
 		},
 	);
 

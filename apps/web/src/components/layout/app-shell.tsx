@@ -14,15 +14,37 @@ import { EnvironmentSelector } from "./environment-selector";
 import { MobileNavProvider, useMobileNav } from "./mobile-nav-context";
 import { PersistedSidebarProvider, Sidebar } from "./sidebar";
 
-interface AppShellProps {
+interface AppFrameProps {
 	children: React.ReactNode;
-	breadcrumbs?: { label: string; href?: string }[];
 }
 
-function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
+const PAGE_BREADCRUMBS: Record<string, { label: string; href?: string }[]> = {
+	"/": [],
+	"/members": [{ label: "家庭成员" }],
+	"/policies": [{ label: "保单" }],
+	"/insurers": [{ label: "保险公司" }],
+	"/assets": [{ label: "资产管理" }],
+	"/hospitals": [{ label: "医院管理" }],
+	"/doctors": [{ label: "医生管理" }],
+	"/medical-visits": [{ label: "就诊记录" }],
+	"/coverage-lookup": [{ label: "保障速查" }],
+	"/renewal-calendar": [{ label: "续保日历" }],
+	"/settings": [{ label: "设置" }],
+	"/cli": [{ label: "CLI" }],
+};
+
+function getBreadcrumbs(pathname: string) {
+	if (pathname.startsWith("/policies/")) {
+		return [{ label: "保单管理", href: "/policies" }, { label: "保单详情" }];
+	}
+	return PAGE_BREADCRUMBS[pathname] ?? [];
+}
+
+function AppFrameInner({ children }: AppFrameProps) {
 	const isMobile = useIsMobile();
 	const { mobileOpen, setMobileOpen } = useMobileNav();
 	const { pathname } = useLocation();
+	const breadcrumbs = getBreadcrumbs(pathname);
 	const menuButton = useRef<HTMLButtonElement>(null);
 	const drawerId = useId();
 
@@ -91,7 +113,7 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 						}
 					/>
 
-					<div className="flex min-h-0 flex-1 flex-col px-2 pb-2 md:px-3 md:pb-3">
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col px-basalt-space-lg pb-basalt-space-lg md:px-basalt-layout-sm md:pb-basalt-layout-sm">
 						<ContentIsland>{children}</ContentIsland>
 					</div>
 				</BasaltAppMain>
@@ -100,10 +122,10 @@ function AppShellInner({ children, breadcrumbs = [] }: AppShellProps) {
 	);
 }
 
-export function AppShell({ children, breadcrumbs = [] }: AppShellProps) {
+export function AppFrame({ children }: AppFrameProps) {
 	return (
 		<MobileNavProvider>
-			<AppShellInner breadcrumbs={breadcrumbs}>{children}</AppShellInner>
+			<AppFrameInner>{children}</AppFrameInner>
 		</MobileNavProvider>
 	);
 }

@@ -1,7 +1,5 @@
-import { Button } from "@nocoo/basalt";
-import { Building2, Calendar, Clock, Pencil, Trash2, UserRound } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, Badge, Button } from "@nocoo/basalt";
+import { Building2, Calendar, Clock, Pencil, Trash2, UserRound } from "@nocoo/basalt/icons";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
 import {
 	calculateDaysAgo,
@@ -126,7 +124,7 @@ const TEMPORAL_SECTIONS: {
 export function VisitTimeline({ visits, onEdit, onDelete }: VisitTimelineProps) {
 	if (visits.length === 0) {
 		return (
-			<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+			<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-8 text-center">
 				<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
 				<p className="mt-4 text-sm text-basalt-muted-foreground">暂无就诊记录</p>
 			</div>
@@ -227,7 +225,10 @@ function VisitCard({
 
 	return (
 		<article
-			className={cn("rounded-basalt-card bg-basalt-secondary p-4", temporalCardClass(temporal))}
+			className={cn(
+				"rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4",
+				temporalCardClass(temporal),
+			)}
 		>
 			<header className="flex items-start justify-between gap-3">
 				<div className="flex items-center gap-3 min-w-0">

@@ -35,7 +35,7 @@ for (const colorScheme of ["light", "dark"] as const) {
 			const sidebar = page.getByRole("complementary", { name: "主导航", exact: true });
 			const avatar = sidebar.locator('[data-slot="sidebar-user"] .h-basalt-9');
 			const email = sidebar.locator('[data-slot="sidebar-user"] p').last();
-			await expect(sidebar).toHaveCSS("width", "260px");
+			await expect(sidebar).toHaveCSS("width", "240px");
 			await expect(avatar).toHaveCSS("width", "36px");
 			await expect(avatar).toHaveCSS("height", "36px");
 			await expect(email).toHaveCSS("line-height", "16px");
@@ -83,8 +83,8 @@ for (const colorScheme of ["light", "dark"] as const) {
 					"id",
 					(await openNavigation.getAttribute("aria-controls")) ?? "",
 				);
-				await expect(drawer).toHaveCSS("width", "260px");
-				await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "260px");
+				await expect(drawer).toHaveCSS("width", "240px");
+				await expect(drawer.locator("[data-basalt-sidebar]")).toHaveCSS("width", "240px");
 				await expect(drawer).toHaveCSS("padding-left", "0px");
 				await expect(drawer).toHaveCSS("padding-right", "0px");
 				await testInfo.attach("drawer", {

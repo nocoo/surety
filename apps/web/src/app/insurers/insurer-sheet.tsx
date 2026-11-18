@@ -1,15 +1,15 @@
-import { Button } from "@nocoo/basalt";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
+	Button,
+	Input,
+	Label,
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
+} from "@nocoo/basalt";
+import { useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 interface InsurerFormData {

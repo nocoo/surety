@@ -1,5 +1,3 @@
-import type { Attachment } from "@surety/db/schema";
-import { useCallback, useEffect, useState } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -9,7 +7,9 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@nocoo/basalt";
+import type { Attachment } from "@surety/db/schema";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import { AttachmentDropZone } from "./attachment-drop-zone";
 import { AttachmentList } from "./attachment-list";
@@ -136,7 +136,7 @@ export function AttachmentSection({ policyId }: AttachmentSectionProps) {
 					{deleteError && <p className="text-sm text-basalt-destructive px-6">{deleteError}</p>}
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
-						<AlertDialogAction onClick={handleDelete} disabled={deleting} variant="destructive">
+						<AlertDialogAction onClick={handleDelete} disabled={deleting}>
 							{deleting ? "删除中..." : "删除"}
 						</AlertDialogAction>
 					</AlertDialogFooter>

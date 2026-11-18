@@ -1,10 +1,36 @@
-import { Button } from "@nocoo/basalt";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	Avatar,
+	AvatarFallback,
+	Badge,
+	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@nocoo/basalt";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
-import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
-import { getCategoryConfig } from "@surety/api/lib/category-config";
-import { formatCurrency } from "@surety/api/lib/format";
-import { formatDaysFromToday, getDaysFromToday } from "@surety/db/lib/date-utils";
-import type { Attachment } from "@surety/db/schema";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	TableSortableHeader,
+} from "@nocoo/basalt/components/table";
+import { ToggleGroup, ToggleGroupItem } from "@nocoo/basalt/components/toggle-group";
 import {
 	AlertCircle,
 	Check,
@@ -21,37 +47,17 @@ import {
 	Shield,
 	Trash2,
 	Users,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
+import { formatBytes, isImageContentType } from "@surety/api/lib/attachment-validation";
+import { getCategoryConfig } from "@surety/api/lib/category-config";
+import { formatCurrency } from "@surety/api/lib/format";
+import { formatDaysFromToday, getDaysFromToday } from "@surety/db/lib/date-utils";
+import type { Attachment } from "@surety/db/schema";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
-import { AppShell } from "@/components/layout";
+import { EmptyState } from "@/components/empty-state";
 import { TablePageSkeleton } from "@/components/skeletons";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui/empty-state";
-import { SortHeader } from "@/components/ui/sort-header";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -116,7 +122,7 @@ function PolicyMobileCard({
 	const dueState = formatDaysUntil(getDaysUntil(policy.nextDueDate));
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-4">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-4">
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
@@ -532,27 +538,21 @@ export default function PoliciesPage() {
 	};
 
 	if (loading) {
-		return (
-			<AppShell breadcrumbs={[{ label: "保单" }]}>
-				<TablePageSkeleton rows={10} columns={9} />
-			</AppShell>
-		);
+		return <TablePageSkeleton rows={10} columns={9} />;
 	}
 
 	if (error) {
 		return (
-			<AppShell breadcrumbs={[{ label: "保单" }]}>
-				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
-					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
-				</div>
-			</AppShell>
+			<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-8 text-center">
+				<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
+				<h3 className="mt-4 text-lg font-medium">加载失败</h3>
+				<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
+			</div>
 		);
 	}
 
 	return (
-		<AppShell breadcrumbs={[{ label: "保单" }]}>
+		<>
 			<div className="space-y-6">
 				<PageHeader
 					title="全部保单"
@@ -683,293 +683,378 @@ export default function PoliciesPage() {
 
 								<div
 									className={cn(
-										"hidden rounded-basalt-card bg-basalt-secondary sm:block",
+										"hidden rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card sm:block",
 										listDensity === "compact" && "[&_td]:py-1 [&_th]:h-9",
 									)}
 								>
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<SortHeader
-													label="类型"
-													sortKey="category"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-													className="w-[110px]"
-												/>
-												<SortHeader
-													label="产品名称"
-													sortKey="productName"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<SortHeader
-													label="保险公司"
-													sortKey="insurerName"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<SortHeader
-													label="投保人"
-													sortKey="applicantName"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<SortHeader
-													label="被保人"
-													sortKey="insuredName"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<SortHeader
-													label="保额"
-													sortKey="sumAssured"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-													className="text-right"
-												/>
-												<SortHeader
-													label="年保费"
-													sortKey="premium"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-													className="text-right"
-												/>
-												<SortHeader
-													label="生效日期"
-													sortKey="effectiveDate"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<SortHeader
-													label="下次缴费"
-													sortKey="nextDueDate"
-													currentSort={sortField}
-													currentDir={sortDirection}
-													onSort={handleSort}
-												/>
-												<TableHead className="hidden xl:table-cell">备注</TableHead>
-												<TableHead className="w-[50px]">附件</TableHead>
-												<TableHead className="w-[100px]">操作</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{filteredPolicies.map((policy) => {
-												const status = statusConfig[policy.status];
-												const categoryConfig = getCategoryConfig(policy.category);
-												return (
-													<TableRow key={policy.id} title={`状态: ${status.label}`}>
-														<TableCell>
-															{/*
-															 * Status is conveyed by the row's left-border
-															 * stripe (color), and by the title attribute
-															 * (mouse-only). Add an sr-only text node so
-															 * keyboard / touch / screen-reader users get
-															 * the same information without depending on
-															 * color or hover.
-															 */}
-															<span className="sr-only">状态: {status.label}.</span>
-															<Badge variant={categoryConfig.variant}>{categoryConfig.label}</Badge>
-														</TableCell>
-														<TableCell>
-															<div className="flex items-center gap-1">
-																<button
-																	type="button"
-																	onClick={() => handleViewDetail(policy)}
-																	className="font-medium hover:text-basalt-primary hover:underline transition-colors text-left"
-																>
-																	{policy.productName}
-																</button>
-																{policy.policyNumber && (
+									<div data-slot="table-container" className="overflow-x-auto">
+										<Table className="min-w-[660px]">
+											<TableHeader>
+												<TableRow>
+													<TableHead
+														className="w-[110px]"
+														aria-sort={
+															sortField === "category"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "category" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("category")}
+														>
+															类型
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "productName"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "productName" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("productName")}
+														>
+															产品名称
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "insurerName"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "insurerName" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("insurerName")}
+														>
+															保险公司
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "applicantName"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "applicantName" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("applicantName")}
+														>
+															投保人
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "insuredName"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "insuredName" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("insuredName")}
+														>
+															被保人
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "sumAssured"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "sumAssured" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("sumAssured")}
+															textAlign="end"
+														>
+															保额
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "premium"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "premium" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("premium")}
+															textAlign="end"
+														>
+															年保费
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "effectiveDate"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "effectiveDate" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("effectiveDate")}
+														>
+															生效日期
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead
+														aria-sort={
+															sortField === "nextDueDate"
+																? sortDirection === "asc"
+																	? "ascending"
+																	: "descending"
+																: "none"
+														}
+													>
+														<TableSortableHeader
+															{...(sortField === "nextDueDate" ? { sorted: sortDirection } : {})}
+															onClick={() => handleSort("nextDueDate")}
+														>
+															下次缴费
+														</TableSortableHeader>
+													</TableHead>
+													<TableHead className="hidden xl:table-cell">备注</TableHead>
+													<TableHead className="w-[50px]">附件</TableHead>
+													<TableHead className="w-[100px]">操作</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{filteredPolicies.map((policy) => {
+													const status = statusConfig[policy.status];
+													const categoryConfig = getCategoryConfig(policy.category);
+													return (
+														<TableRow key={policy.id} title={`状态: ${status.label}`}>
+															<TableCell>
+																{/*
+																 * Status is conveyed by the row's left-border
+																 * stripe (color), and by the title attribute
+																 * (mouse-only). Add an sr-only text node so
+																 * keyboard / touch / screen-reader users get
+																 * the same information without depending on
+																 * color or hover.
+																 */}
+																<span className="sr-only">状态: {status.label}.</span>
+																<Badge variant={categoryConfig.variant}>
+																	{categoryConfig.label}
+																</Badge>
+															</TableCell>
+															<TableCell>
+																<div className="flex items-center gap-1">
+																	<button
+																		type="button"
+																		onClick={() => handleViewDetail(policy)}
+																		className="font-medium hover:text-basalt-primary hover:underline transition-colors text-left"
+																	>
+																		{policy.productName}
+																	</button>
+																	{policy.policyNumber && (
+																		<TooltipProvider delayDuration={0}>
+																			<Tooltip>
+																				<TooltipTrigger asChild>
+																					<button
+																						type="button"
+																						onClick={() => handleCopyPolicyNumber(policy)}
+																						className="inline-flex items-center justify-center rounded p-1 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
+																					>
+																						{copiedId === policy.id ? (
+																							<Check className="h-3 w-3 text-basalt-success" />
+																						) : (
+																							<Info className="h-3 w-3" />
+																						)}
+																					</button>
+																				</TooltipTrigger>
+																				<TooltipContent>
+																					<p className="text-xs">
+																						{copiedId === policy.id
+																							? "已复制!"
+																							: `保单号: ${policy.policyNumber}`}
+																					</p>
+																					{copiedId !== policy.id && (
+																						<p className="text-xs text-basalt-muted-foreground">
+																							点击复制
+																						</p>
+																					)}
+																				</TooltipContent>
+																			</Tooltip>
+																		</TooltipProvider>
+																	)}
+																</div>
+															</TableCell>
+															<TableCell className="text-basalt-muted-foreground">
+																{policy.insurerName}
+															</TableCell>
+															<TableCell>
+																<div className="flex items-center gap-2">
+																	<Avatar className="h-6 w-6">
+																		<AvatarFallback
+																			className={cn(
+																				"text-xs text-white",
+																				getAvatarColor(policy.applicantName ?? ""),
+																			)}
+																		>
+																			{policy.applicantName?.[0] ?? "?"}
+																		</AvatarFallback>
+																	</Avatar>
+																	<span className="text-sm">{policy.applicantName}</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																<div className="flex items-center gap-2">
+																	<Avatar className="h-6 w-6">
+																		<AvatarFallback
+																			className={cn(
+																				"text-xs text-white",
+																				getAvatarColor(policy.insuredName ?? ""),
+																			)}
+																		>
+																			{policy.insuredName?.[0] ?? "?"}
+																		</AvatarFallback>
+																	</Avatar>
+																	<span className="text-sm">{policy.insuredName}</span>
+																</div>
+															</TableCell>
+															<TableCell className="text-right font-medium">
+																{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
+															</TableCell>
+															<TableCell className="text-right text-basalt-muted-foreground">
+																{policy.premium > 0 ? formatCurrency(policy.premium) : "-"}
+															</TableCell>
+															<TableCell>
+																<div className="flex flex-col">
+																	<span className="font-mono text-sm">{policy.effectiveDate}</span>
+																	<span className="text-xs text-basalt-muted-foreground">
+																		{formatDaysFromToday(getDaysFromToday(policy.effectiveDate)) ??
+																			""}
+																	</span>
+																</div>
+															</TableCell>
+															<TableCell>
+																{(() => {
+																	const days = getDaysUntil(policy.nextDueDate);
+																	const { text, variant } = formatDaysUntil(days);
+																	return (
+																		<div className="flex flex-col">
+																			<span className="font-mono text-sm">
+																				{policy.nextDueDate ?? "-"}
+																			</span>
+																			{policy.nextDueDate && (
+																				<span
+																					className={cn(
+																						"text-xs",
+																						variant === "warning" && "text-basalt-warning",
+																						variant === "destructive" && "text-basalt-destructive",
+																						variant === "default" && "text-basalt-muted-foreground",
+																					)}
+																				>
+																					{text}
+																				</span>
+																			)}
+																		</div>
+																	);
+																})()}
+															</TableCell>
+															<TableCell className="hidden xl:table-cell">
+																{policy.notes ? (
+																	<span className="text-sm text-basalt-muted-foreground whitespace-normal">
+																		{policy.notes}
+																	</span>
+																) : (
+																	<span className="text-basalt-muted-foreground/40">—</span>
+																)}
+															</TableCell>
+															<TableCell>
+																{policy.attachmentCount > 0 && (
 																	<TooltipProvider delayDuration={0}>
 																		<Tooltip>
 																			<TooltipTrigger asChild>
 																				<button
 																					type="button"
-																					onClick={() => handleCopyPolicyNumber(policy)}
+																					onClick={() => handlePreviewAttachment(policy)}
 																					className="inline-flex items-center justify-center rounded p-1 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
 																				>
-																					{copiedId === policy.id ? (
-																						<Check className="h-3 w-3 text-basalt-success" />
-																					) : (
-																						<Info className="h-3 w-3" />
-																					)}
+																					<Paperclip className="h-4 w-4" />
 																				</button>
 																			</TooltipTrigger>
 																			<TooltipContent>
 																				<p className="text-xs">
-																					{copiedId === policy.id
-																						? "已复制!"
-																						: `保单号: ${policy.policyNumber}`}
+																					{policy.attachmentCount} 个附件，点击预览
 																				</p>
-																				{copiedId !== policy.id && (
-																					<p className="text-xs text-basalt-muted-foreground">
-																						点击复制
-																					</p>
-																				)}
 																			</TooltipContent>
 																		</Tooltip>
 																	</TooltipProvider>
 																)}
-															</div>
-														</TableCell>
-														<TableCell className="text-basalt-muted-foreground">
-															{policy.insurerName}
-														</TableCell>
-														<TableCell>
-															<div className="flex items-center gap-2">
-																<Avatar className="h-6 w-6">
-																	<AvatarFallback
-																		className={cn(
-																			"text-xs text-white",
-																			getAvatarColor(policy.applicantName ?? ""),
-																		)}
-																	>
-																		{policy.applicantName?.[0] ?? "?"}
-																	</AvatarFallback>
-																</Avatar>
-																<span className="text-sm">{policy.applicantName}</span>
-															</div>
-														</TableCell>
-														<TableCell>
-															<div className="flex items-center gap-2">
-																<Avatar className="h-6 w-6">
-																	<AvatarFallback
-																		className={cn(
-																			"text-xs text-white",
-																			getAvatarColor(policy.insuredName ?? ""),
-																		)}
-																	>
-																		{policy.insuredName?.[0] ?? "?"}
-																	</AvatarFallback>
-																</Avatar>
-																<span className="text-sm">{policy.insuredName}</span>
-															</div>
-														</TableCell>
-														<TableCell className="text-right font-medium">
-															{policy.sumAssured > 0 ? formatCurrency(policy.sumAssured) : "-"}
-														</TableCell>
-														<TableCell className="text-right text-basalt-muted-foreground">
-															{policy.premium > 0 ? formatCurrency(policy.premium) : "-"}
-														</TableCell>
-														<TableCell>
-															<div className="flex flex-col">
-																<span className="font-mono text-sm">{policy.effectiveDate}</span>
-																<span className="text-xs text-basalt-muted-foreground">
-																	{formatDaysFromToday(getDaysFromToday(policy.effectiveDate)) ??
-																		""}
-																</span>
-															</div>
-														</TableCell>
-														<TableCell>
-															{(() => {
-																const days = getDaysUntil(policy.nextDueDate);
-																const { text, variant } = formatDaysUntil(days);
-																return (
-																	<div className="flex flex-col">
-																		<span className="font-mono text-sm">
-																			{policy.nextDueDate ?? "-"}
-																		</span>
-																		{policy.nextDueDate && (
-																			<span
-																				className={cn(
-																					"text-xs",
-																					variant === "warning" && "text-basalt-warning",
-																					variant === "destructive" && "text-basalt-destructive",
-																					variant === "default" && "text-basalt-muted-foreground",
-																				)}
-																			>
-																				{text}
-																			</span>
-																		)}
-																	</div>
-																);
-															})()}
-														</TableCell>
-														<TableCell className="hidden xl:table-cell">
-															{policy.notes ? (
-																<span className="text-sm text-basalt-muted-foreground whitespace-normal">
-																	{policy.notes}
-																</span>
-															) : (
-																<span className="text-basalt-muted-foreground/40">—</span>
-															)}
-														</TableCell>
-														<TableCell>
-															{policy.attachmentCount > 0 && (
-																<TooltipProvider delayDuration={0}>
-																	<Tooltip>
-																		<TooltipTrigger asChild>
-																			<button
-																				type="button"
-																				onClick={() => handlePreviewAttachment(policy)}
-																				className="inline-flex items-center justify-center rounded p-1 text-basalt-muted-foreground hover:bg-basalt-muted hover:text-basalt-foreground transition-colors"
-																			>
-																				<Paperclip className="h-4 w-4" />
-																			</button>
-																		</TooltipTrigger>
-																		<TooltipContent>
-																			<p className="text-xs">
-																				{policy.attachmentCount} 个附件，点击预览
-																			</p>
-																		</TooltipContent>
-																	</Tooltip>
-																</TooltipProvider>
-															)}
-														</TableCell>
-														<TableCell>
-															<div className="flex items-center gap-1">
-																<TooltipProvider delayDuration={0}>
-																	<Tooltip>
-																		<TooltipTrigger asChild>
-																			<Button
-																				variant="ghost"
-																				size="icon"
-																				className="h-8 w-8"
-																				onClick={() => handleViewDetail(policy)}
-																			>
-																				<Info className="h-4 w-4" />
-																				<span className="sr-only">查看详情</span>
-																			</Button>
-																		</TooltipTrigger>
-																		<TooltipContent>
-																			<p className="text-xs">查看详情</p>
-																		</TooltipContent>
-																	</Tooltip>
-																</TooltipProvider>
-																<TooltipProvider delayDuration={0}>
-																	<Tooltip>
-																		<TooltipTrigger asChild>
-																			<Button
-																				variant="ghost"
-																				size="icon"
-																				className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
-																				onClick={() => handleDeleteClick(policy)}
-																			>
-																				<Trash2 className="h-4 w-4" />
-																				<span className="sr-only">删除</span>
-																			</Button>
-																		</TooltipTrigger>
-																		<TooltipContent>
-																			<p className="text-xs">删除</p>
-																		</TooltipContent>
-																	</Tooltip>
-																</TooltipProvider>
-															</div>
-														</TableCell>
-													</TableRow>
-												);
-											})}
-										</TableBody>
-									</Table>
+															</TableCell>
+															<TableCell>
+																<div className="flex items-center gap-1">
+																	<TooltipProvider delayDuration={0}>
+																		<Tooltip>
+																			<TooltipTrigger asChild>
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="h-8 w-8"
+																					onClick={() => handleViewDetail(policy)}
+																				>
+																					<Info className="h-4 w-4" />
+																					<span className="sr-only">查看详情</span>
+																				</Button>
+																			</TooltipTrigger>
+																			<TooltipContent>
+																				<p className="text-xs">查看详情</p>
+																			</TooltipContent>
+																		</Tooltip>
+																	</TooltipProvider>
+																	<TooltipProvider delayDuration={0}>
+																		<Tooltip>
+																			<TooltipTrigger asChild>
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="h-8 w-8 text-basalt-destructive hover:text-basalt-destructive"
+																					onClick={() => handleDeleteClick(policy)}
+																				>
+																					<Trash2 className="h-4 w-4" />
+																					<span className="sr-only">删除</span>
+																				</Button>
+																			</TooltipTrigger>
+																			<TooltipContent>
+																				<p className="text-xs">删除</p>
+																			</TooltipContent>
+																		</Tooltip>
+																	</TooltipProvider>
+																</div>
+															</TableCell>
+														</TableRow>
+													);
+												})}
+											</TableBody>
+										</Table>
+									</div>
 								</div>
 							</>
 						)}
@@ -987,7 +1072,10 @@ export default function PoliciesPage() {
 								const totalSumAssured = groupPolicies.reduce((sum, p) => sum + p.sumAssured, 0);
 
 								return (
-									<div key={groupKey} className="rounded-basalt-card bg-basalt-secondary">
+									<div
+										key={groupKey}
+										className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card"
+									>
 										<div className="flex items-center justify-between px-4 py-3 border-b border-basalt-border">
 											<div className="flex items-center gap-3">
 												{viewMode === "byInsured" && (
@@ -1126,9 +1214,7 @@ export default function PoliciesPage() {
 					)}
 					<AlertDialogFooter>
 						<AlertDialogCancel>取消</AlertDialogCancel>
-						<AlertDialogAction onClick={handleDeleteConfirm} variant="destructive">
-							删除
-						</AlertDialogAction>
+						<AlertDialogAction onClick={handleDeleteConfirm}>删除</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
@@ -1189,6 +1275,6 @@ export default function PoliciesPage() {
 					</ul>
 				</DialogContent>
 			</Dialog>
-		</AppShell>
+		</>
 	);
 }

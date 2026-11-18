@@ -1,10 +1,10 @@
+import { Badge } from "@nocoo/basalt";
+import { ChevronDown, ChevronRight, ExternalLink, FileText, Phone } from "@nocoo/basalt/icons";
 import type { PolicyCoverageCard } from "@surety/api/coverage-lookup";
 import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
-import { ChevronDown, ChevronRight, ExternalLink, FileText, Phone } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Badge } from "@/components/ui/badge";
 
 interface PolicyCardProps {
 	policy: PolicyCoverageCard;
@@ -16,7 +16,7 @@ export function PolicyCard({ policy }: PolicyCardProps) {
 	const detailsId = `policy-card-details-${policy.id}`;
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card overflow-hidden">
 			{/* Header - always visible */}
 			<button
 				type="button"

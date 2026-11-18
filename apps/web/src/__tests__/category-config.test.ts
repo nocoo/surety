@@ -23,7 +23,7 @@ describe("category label invariant", () => {
 			"info",
 			"purple",
 			"teal",
-			"indigo",
+			"blue",
 			"destructive",
 		]);
 		for (const key of Object.keys(categoryLabels)) {

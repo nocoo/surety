@@ -1,16 +1,16 @@
-import { Button } from "@nocoo/basalt";
-import { formatLocalDate, parseLocalDate } from "@surety/db/lib/date-utils";
-import { useEffect, useState } from "react";
 import {
+	Button,
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+	Input,
+	Label,
+} from "@nocoo/basalt";
+import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import { formatLocalDate, parseLocalDate } from "@surety/db/lib/date-utils";
+import { useEffect, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { PolicyDetail } from "@/lib/types/policy";
 

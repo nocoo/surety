@@ -1,7 +1,27 @@
-import { Button } from "@nocoo/basalt";
-import { formatCurrencyFull } from "@surety/api/lib/format";
-import { todayStr } from "@surety/db/lib/date-utils";
-import { isObsoletedByTermination } from "@surety/db/types";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	Badge,
+	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	Input,
+	Label,
+} from "@nocoo/basalt";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
 import {
 	Banknote,
 	Check,
@@ -12,29 +32,11 @@ import {
 	Trash2,
 	Wand2,
 	X,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
+import { formatCurrencyFull } from "@surety/api/lib/format";
+import { todayStr } from "@surety/db/lib/date-utils";
+import { isObsoletedByTermination } from "@surety/db/types";
 import { useState } from "react";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import type { Payment, PolicyStatus } from "@/lib/types/policy";
 import { cn } from "@/lib/utils";
@@ -724,7 +726,6 @@ export function PaymentsSection({
 					<AlertDialogFooter>
 						<AlertDialogCancel>取消</AlertDialogCancel>
 						<AlertDialogAction
-							variant="destructive"
 							onClick={() => {
 								if (deleteTarget !== null) void handleDelete(deleteTarget);
 							}}

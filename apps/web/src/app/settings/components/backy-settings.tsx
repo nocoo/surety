@@ -1,11 +1,16 @@
-import { Button } from "@nocoo/basalt";
-import { AlertTriangle, Cloud, History, Loader2, Plug, RefreshCw, Save, Send } from "lucide-react";
+import { Badge, Button, Input, Label, Separator } from "@nocoo/basalt";
+import {
+	AlertTriangle,
+	Cloud,
+	History,
+	Loader2,
+	Plug,
+	RefreshCw,
+	Save,
+	Send,
+} from "@nocoo/basalt/icons";
 import { useCallback, useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Notice } from "@/components/ui/notice";
-import { Separator } from "@/components/ui/separator";
+import { Notice } from "@/components/notice";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 
 // ── Backy types ──
@@ -207,7 +212,7 @@ export function BackySettings() {
 	const backyConfigured = backySettings?.hasApiKey && backySettings.webhookUrl;
 
 	return (
-		<div className="rounded-basalt-card bg-basalt-secondary p-6">
+		<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-6">
 			<div className="flex items-center gap-3 mb-4">
 				<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-basalt-badge-purple/10">
 					<Cloud className="h-5 w-5 text-basalt-badge-purple" strokeWidth={1.5} />

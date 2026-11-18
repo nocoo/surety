@@ -1,6 +1,6 @@
+import { SectionRule as SectionDivider } from "@nocoo/basalt/components/section-rule";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { SectionDivider } from "@/components/ui/section-divider";
 
 describe("SectionDivider", () => {
 	it("renders the title and children", () => {
@@ -16,13 +16,13 @@ describe("SectionDivider", () => {
 	it("renders the divider line and the section is a semantic <section>", () => {
 		const html = renderToStaticMarkup(<SectionDivider title="x">y</SectionDivider>);
 		expect(html).toMatch(/<section/);
-		// The thin divider line is the bg-basalt-border/60 element.
-		expect(html).toContain("bg-basalt-border/60");
+		// The thin divider line is the border-dashed element.
+		expect(html).toContain("border-dashed");
 	});
 
 	it("renders the action slot when provided", () => {
 		const html = renderToStaticMarkup(
-			<SectionDivider title="x" action={<button type="button">更多</button>}>
+			<SectionDivider title="x" actions={<button type="button">更多</button>}>
 				body
 			</SectionDivider>,
 		);

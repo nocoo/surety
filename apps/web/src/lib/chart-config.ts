@@ -3,7 +3,7 @@ import {
 	BAR_RADIUS as BASALT_BAR_RADIUS,
 	RESPONSIVE_CONTAINER_PROPS as BASALT_RESPONSIVE_CONTAINER_PROPS,
 	getChartColor,
-} from "@nocoo/basalt/charts/config";
+} from "@nocoo/basalt/components/chart";
 
 /**
  * Chart configuration and utilities

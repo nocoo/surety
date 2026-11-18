@@ -1,5 +1,34 @@
-import { Button } from "@nocoo/basalt";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	Avatar,
+	AvatarFallback,
+	Badge,
+	Button,
+} from "@nocoo/basalt";
 import { PageHeader } from "@nocoo/basalt/components/page-header";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@nocoo/basalt/components/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@nocoo/basalt/components/table";
+import { ToggleGroup, ToggleGroupItem } from "@nocoo/basalt/components/toggle-group";
 import {
 	AlertCircle,
 	Building2,
@@ -11,38 +40,9 @@ import {
 	Plus,
 	Trash2,
 	UserRound,
-} from "lucide-react";
+} from "@nocoo/basalt/icons";
 import { useEffect, useMemo, useState } from "react";
-import { AppShell } from "@/components/layout";
 import { TablePageSkeleton } from "@/components/skeletons";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import { useLocalDateKey } from "@/hooks/use-local-date-key";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
@@ -473,27 +473,21 @@ export default function MedicalVisitsPage() {
 	const canAddVisit = members.length > 0 && hospitals.length > 0;
 
 	if (loading) {
-		return (
-			<AppShell breadcrumbs={[{ label: "就诊记录" }]}>
-				<TablePageSkeleton rows={8} columns={7} />
-			</AppShell>
-		);
+		return <TablePageSkeleton rows={8} columns={7} />;
 	}
 
 	if (error) {
 		return (
-			<AppShell breadcrumbs={[{ label: "就诊记录" }]}>
-				<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
-					<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
-					<h3 className="mt-4 text-lg font-medium">加载失败</h3>
-					<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
-				</div>
-			</AppShell>
+			<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-8 text-center">
+				<AlertCircle className="mx-auto h-12 w-12 text-basalt-destructive/50" />
+				<h3 className="mt-4 text-lg font-medium">加载失败</h3>
+				<p className="mt-2 text-sm text-basalt-muted-foreground">{error}</p>
+			</div>
 		);
 	}
 
 	return (
-		<AppShell breadcrumbs={[{ label: "就诊记录" }]}>
+		<>
 			<div className="space-y-6">
 				<PageHeader
 					title="就诊记录"
@@ -559,7 +553,7 @@ export default function MedicalVisitsPage() {
 				/>
 
 				{!canAddVisit ? (
-					<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-8 text-center">
 						<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
 						<h3 className="mt-4 text-lg font-medium">请先添加基础数据</h3>
 						<p className="mt-2 text-sm text-basalt-muted-foreground">
@@ -580,7 +574,7 @@ export default function MedicalVisitsPage() {
 						}}
 					/>
 				) : filteredVisits.length === 0 ? (
-					<div className="rounded-basalt-card bg-basalt-secondary p-8 text-center">
+					<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card p-8 text-center">
 						<Calendar className="mx-auto h-12 w-12 text-basalt-muted-foreground/50" />
 						<p className="mt-4 text-sm text-basalt-muted-foreground">
 							{memberFilteredVisits.length === 0
@@ -617,30 +611,32 @@ export default function MedicalVisitsPage() {
 											</span>
 										)}
 									</div>
-									<div className="rounded-basalt-card bg-basalt-secondary overflow-hidden">
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead>就诊人</TableHead>
-													<TableHead className="w-[80px]">类型</TableHead>
-													<TableHead>时间</TableHead>
-													<TableHead>就诊原因</TableHead>
-													<TableHead>医院 / 医生</TableHead>
-													<TableHead>症状 / 诊断 / 治疗</TableHead>
-													<TableHead className="w-[100px]">操作</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{sectionVisits.map((visit) => (
-													<VisitTableRow
-														key={visit.id}
-														visit={visit}
-														onEdit={handleEdit}
-														onDelete={handleDeleteClick}
-													/>
-												))}
-											</TableBody>
-										</Table>
+									<div className="rounded-basalt-card bg-basalt-secondary ring-1 ring-basalt-border/80 shadow-basalt-card overflow-hidden">
+										<div data-slot="table-container" className="overflow-x-auto">
+											<Table className="min-w-[660px]">
+												<TableHeader>
+													<TableRow>
+														<TableHead>就诊人</TableHead>
+														<TableHead className="w-[80px]">类型</TableHead>
+														<TableHead>时间</TableHead>
+														<TableHead>就诊原因</TableHead>
+														<TableHead>医院 / 医生</TableHead>
+														<TableHead>症状 / 诊断 / 治疗</TableHead>
+														<TableHead className="w-[100px]">操作</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{sectionVisits.map((visit) => (
+														<VisitTableRow
+															key={visit.id}
+															visit={visit}
+															onEdit={handleEdit}
+															onDelete={handleDeleteClick}
+														/>
+													))}
+												</TableBody>
+											</Table>
+										</div>
 									</div>
 								</section>
 							);
@@ -682,12 +678,10 @@ export default function MedicalVisitsPage() {
 					)}
 					<AlertDialogFooter>
 						<AlertDialogCancel>取消</AlertDialogCancel>
-						<AlertDialogAction onClick={handleDeleteConfirm} variant="destructive">
-							删除
-						</AlertDialogAction>
+						<AlertDialogAction onClick={handleDeleteConfirm}>删除</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-		</AppShell>
+		</>
 	);
 }

@@ -189,18 +189,13 @@ test.describe
 				await page.goto("/medical-visits");
 				await expect(page.getByRole("table")).toBeVisible({ timeout: 10_000 });
 
-				const menZhenBadge = page.locator('[data-slot="badge"]', { hasText: "门诊" }).first();
-				const jiZhenBadge = page.locator('[data-slot="badge"]', { hasText: "急诊" }).first();
+				const menZhenBadge = page.getByText("门诊", { exact: true }).first();
+				const jiZhenBadge = page.getByText("急诊", { exact: true }).first();
 
 				await expect(menZhenBadge).toBeVisible({ timeout: 10_000 });
 				await expect(jiZhenBadge).toBeVisible({ timeout: 10_000 });
-
-				const menZhenVariant = await menZhenBadge.getAttribute("data-variant");
-				const jiZhenVariant = await jiZhenBadge.getAttribute("data-variant");
-
-				expect(menZhenVariant).toBe("default");
-				expect(jiZhenVariant).toBe("destructive");
-				expect(menZhenVariant).not.toBe(jiZhenVariant);
+				await expect(menZhenBadge).toHaveClass(/bg-basalt-primary/);
+				await expect(jiZhenBadge).toHaveClass(/bg-basalt-destructive/);
 			} finally {
 				const body = (await created.json()) as { id: number };
 				await request.delete(`/api/medical-visits/${body.id}`);

@@ -1,5 +1,5 @@
+import { AlertCircle, Upload } from "@nocoo/basalt/icons";
 import { ALLOWED_CONTENT_TYPES, MAX_FILE_SIZE } from "@surety/api/lib/attachment-validation";
-import { AlertCircle, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { uploadWithProgress } from "@/lib/upload-with-progress";
