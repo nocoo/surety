@@ -1,104 +1,63 @@
 # Surety
 
-Private family insurance, assets and medical records in a self-hosted Worker with web and CLI clients.
-Profile: ts-worker-web + ts CLI.
-Human overview: [README.md](README.md). Direction: [design overview](docs/01-design-overview.md). Frameworks must preserve this handbook. Maintain this root `AGENTS.md` as the only project handbook; do not create a `CLAUDE.md` alias, copy or import.
-
-## Sources of Truth
-
-This file is the quality contract; hooks, CI and config are enforcement. Close implementation gaps without lowering the contract. Historical test results are not evidence of a current passing run.
-
-| Fact                    | Where                                                                                   |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| Product / boundaries    | [README.md](README.md), [development](docs/20-development.md)                           |
-| CLI / operations        | [CLI contract](apps/cli/README.md), [agent operations](docs/21-agent-operations.md)     |
-| Version / schema        | root `package.json`, shared version export, `packages/db/src/schema.ts`                 |
-| Enforcement / isolation | `vitest.config.ts`, `scripts/pre-*.ts`, `scripts/run-local-tests.ts`, Playwright and CI |
-| Accidents               | [Retrospective.md](Retrospective.md)                                                    |
-| Machine workflow        | global `AGENTS.md` and Git rules                                                        |
-
-## Project Invariants
-
-- One instance serves a shared family dataset, not per-email tenants. Web and CLI use HTTP only; the Worker owns D1/R2. Keep request-scoped repository factories.
-- Keep business rules in shared API functions where applicable and entity routing in Worker; preserve policy state transitions, attachment limits and same-origin write checks.
-- Separate APP dev hostname, Access-protected login hostname and Bearer API hostname. `SURETY_LOGIN_URL` never points at the dev host; API and login config remain independent.
-- Local startup defaults to persistent synthetic Demo. Only explicit/saved interactive Prod uses `SURETY_DEV_API_TOKEN`; automated launchers force isolated E2E and never inherit Production credentials. See [local environments](docs/22-local-environments.md).
-- JSON backup excludes R2 files and API tokens and may contain sensitive settings; current D1 restore is incomplete. Never present an export as a verified full restore.
-- Use numbered docs, keep the README structure current, and preserve runtime boundaries: Bun-only APIs belong in Bun processes, not Worker/browser code.
-
-## Stack / Layout
-
-| Component        | Path / choice                                                            |
-| ---------------- | ------------------------------------------------------------------------ |
-| UI / Worker      | `apps/web` Vite/React/Basalt → `apps/worker` Hono + SPA assets           |
-| Logic / database | `packages/api`, `packages/db`; D1 binding/Drizzle, in-memory test driver |
-| CLI              | `apps/cli`, Bun-only `@nocoo/surety`, Bearer auth                        |
+Private family insurance, assets, and medical records on a self-hosted Cloudflare Worker (`apps/worker`: Hono API + Vite/React/Basalt SPA from `apps/web`), shared `packages/api` & `packages/db` (Drizzle/D1 + in-memory test driver), and Bun-only CLI (`apps/cli`, `@nocoo/surety`).
+Docs: [README.md](README.md) · [Design](docs/01-design-overview.md) · [Development](docs/20-development.md) · [Operations](docs/21-agent-operations.md) · [Local Environments](docs/22-local-environments.md) · [Quality Gates](docs/23-quality-gates.md) · [CLI](apps/cli/README.md) · [Retrospective](Retrospective.md)
 
 ## Commands
 
-Run from root with Bun, Node 22.12+, gitleaks, OSV and installed Playwright Chromium. Unit tests use in-memory SQLite; managed HTTP/browser runners seed only local D1/R2. Use the root local launcher; workspace dev/preview commands delegate to it.
+Run from root with Bun, Node 22.12+, `gitleaks`, `osv-scanner`, and installed Playwright Chromium. Local env names live in `.env.example`. Unit tests use in-memory SQLite; managed HTTP/browser runners seed only local D1/R2. Use the root local launcher; workspace dev/preview scripts delegate to it.
 
-```bash
+```sh
 bun install --frozen-lockfile
-bun run dev --mode demo
-bun run dev --mode e2e
-bun run demo:reset
-bun run test:environments
-bun run typecheck
-bun run lint
-bun run build
-bun run test:coverage
-bun run test:l1:gate
-bun test apps/worker/__tests__/e2e --path-ignore-patterns __none__
-bun run test:l2:http
-bun run test:e2e:browser
-bun run test:cli
+bun run dev --mode demo          # https://surety.dev.hexly.ai -> 127.0.0.1:7012 (default persistent Demo)
+bun run dev --mode e2e           # interactive E2E, freely switchable
+bun run demo:reset               # stop launcher first; resets owned Demo only
+bun run test:environments        # local isolation, switching, and disposable captures
+bun run typecheck                # S1 (root + web + cli + worker)
+bun run lint                     # S2 Biome check-only, 0 warnings
+bun run build                    # B1 SPA -> apps/worker/static (CLI has no build)
+bun run test:coverage            # L1 Vitest >= 95.5% (4 metrics on configured scope)
+bun run test:l1:gate             # L1 pre-commit rejection probes in disposable worktrees
+bun test apps/worker/__tests__/e2e --path-ignore-patterns __none__  # in-process Hono route units (not HTTP proof)
+bun run test:l2:http             # L3 real HTTP against fresh local Wrangler D1/R2
+bun run test:e2e:browser         # L4 Chromium against built SPA + native local Worker
+bun run test:cli                 # CLI unit suite
 ```
 
-## Verification
+## Invariants
 
-Quality slots are enforced via `.github/workflows/quality-slots.yml` (`quality / Z1: Gate`, System1 v1.3.0 / `nocoo/base-ci v2026.15`). Status: `enforced`, `planned`, `manual`, or `N/A`; partial enforcement below does not certify the full required bar.
-L1 requires statements, branches, functions and lines each ≥95%, with no skipped/focused tests; preserve any stricter package threshold. Native tools must identify unmeasured metrics as gaps. L1 also includes check-only strict analysis/formatting with zero errors/warnings (the former G1 contract). G2 requires dependency and secret scans, with missing required scanners failing.
+- **Shared family dataset**: One instance serves one shared family dataset, not per-email tenants. Web and CLI use HTTP only; the Worker owns D1/R2 via request-scoped repository factories.
+- **Domain & write safety**: Keep business rules in `packages/api`, entity routing in `apps/worker`; preserve policy transitions, attachment limits (PDF/JPEG/PNG <=50 MiB, <=20/policy), and same-origin writes.
+- **Three-domain auth**: Keep APP dev (`surety.dev.hexly.ai`), Access login (`surety.hexly.ai`), and Bearer API (`surety-api.hexly.ai`) separate; `SURETY_LOGIN_URL` never points at the dev host.
+- **Local credentials**: Dev defaults to persistent synthetic Demo; only explicit/saved interactive Prod uses `SURETY_DEV_API_TOKEN`. Automated launchers force isolated E2E without Prod credentials.
+- **Backup & restore**: JSON backup excludes R2 files and API tokens and may expose sensitive settings; current D1 restore is incomplete. Never present a JSON export as a verified full restore.
+- **Runtime & authority**: Keep Bun-only APIs out of Worker/browser code. Root `package.json` (`APP_VERSION`), `packages/db/src/schema.ts`, and `apps/worker/migrations/` are authoritative; sync CLI version.
+- **Database & drivers**: Name columns explicitly in cross-DB imports (never trust `.dump` order). Verify Drizzle driver contracts (D1 vs `bun-sqlite`; `sqlite-proxy` get=flat row, all=rows).
+- **CLI auth quirks**: `logout` output does not prove token revocation, and `SURETY_CLI_DEV` only switches the config file (`config.dev.json`), not the API URL.
+- **Docs & infra**: Use numbered docs in `docs/` and keep `README.md` current. Add safety test guards before removing old infrastructure; never bypass hooks or use autofix in checks.
+- **Remote migrations**: `bun run db:migrate` applies remote D1 migrations and is never a startup/test step; inspect remote schema/history with authorization first. Schema must be ready before deploy.
+- **Releases & deploy**: Releases (`bun run release`), Worker deploys, and CLI publishes require authorization; inspect `bun.lock` for mirror URL drift first. See [Operations](docs/21-agent-operations.md).
 
-| Dimension                              | Status   | Required proof and current evidence/gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L1 TypeScript (incl. former G1 static) | enforced | Vitest four-metric floors stay 95.5% on the configured scope (`vitest.config.mts` excludes Worker routes, most TSX/Views/hooks by design). **Measured pre-commit** (2026-11-09, `python3 -B scripts/pre-commit.py` on index snapshot): cold ~8.9s, warm ~8.3–8.7s (&lt;30s); steps gitleaks→lint→typecheck→`test:coverage` exit 0; coverage **98.85 / 97.84 / 97.76 / 99.41** (statements/branches/functions/lines); 412/412 tests, 0 skipped/focused. **Rejection probes**: `bun run test:l1:gate` (`scripts/l1-gate-self-test.py`) in disposable worktrees — UT fail, each coverage metric, lint error/warning, type error, focus/skip, index-vs-worktree mismatch, missing gitleaks, timeout, SIGINT; helper malformed report cases in `scripts/pre-commit.py --self-test`. CI job `L1: pre-commit gate probes`. |
-| L2 Worker / CLI                        | planned  | Separate Bun in-process route units and real HTTP local D1/R2 lanes run before push. Require 100% endpoint/auth/error coverage and real CLI command workflows; in-process Hono calls are not HTTP proof.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| L3 browser / CLI                       | planned  | CI runs Chromium against built SPA/native local Worker on dynamic ports. All-page and CLI system proof remains incomplete; token login/revocation and real restore need explicit acceptance.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| G2                                     | planned  | OSV runs before push and CI scans secrets/deps, but local pre-push gitleaks scans only the staged index, missing already committed push contents.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| D1                                     | planned  | Managed L2/L3 use unique native stores, NODE_ENV=test, allowlisted child env, signed fixture identities, canonical-path/UID/marker checks and owned cleanup. Environment verification covers manual switching, lock enforcement and foreign cleanup refusal. Abrupt SIGKILL recovery remains manual.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+## Quality & Local Gates
 
-Pre-commit exports the index to an isolated temporary snapshot, links dependencies and runs staged gitleaks, lint, typecheck and coverage check-only in that order, with no autofix; pre-commit uses fresh isolated temporary cache dirs and never short-circuits via a result cache. Pre-push runs units, in-process route units, real local HTTP, OSV and staged gitleaks in parallel. CI independently builds, checks coverage/types/security, HTTP and browser lanes.
+Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
 
-Target hooks: pre-commit checks unified L1 (types, check-only lint, coverage) against the index snapshot (`git checkout-index`) in <30s; pre-push checks L2 and G2 in parallel against every stdin push ref/commit in <3min, plus build where applicable. L3 runs in CI or an explicit manual lane.
-Never bypass commit/push hooks, force-push, or use autofix in checks. Documentation changes do not authorize deploying or implementing new gates.
+- **L1 scope & probes**: `vitest.config.mts` enforces 95.5% four-metric floors (0 skipped/focused), excluding Worker routes, TSX/hooks, CLI CRUD wrappers, and `auth.ts`; CI runs `L1: pre-commit gate probes`.
+- **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` (`@nocoo/surety` tarball check) is `planned`.
+- **Coverage gaps**: `L3` and `L4` are `enforced` in CI, while 100% endpoint/error permutations and full CLI system proof remain `planned`; Access login/revocation and real D1 restore remain `manual`.
+- **Pre-commit**: Installed via `bun run prepare` (`.husky/`); `scripts/pre-commit.py` runs `gitleaks`, `lint`, `typecheck`, and `test:coverage` on an isolated index snapshot with fresh caches and no autofix.
+- **Pre-push**: `scripts/pre-push.ts` runs `osv-scanner`, staged `gitleaks`, Vitest, route units, and `test:l2:http` in parallel (`planned`: check all stdin push refs, committed secrets, and `B1 Build`).
 
-## Resources / Isolation
+## Resources & Isolation
 
-Dev: trusted `https://surety.dev.hexly.ai` → local launcher 7012. Worker and automated
-frontend ports are dynamic. Demo persists under `.surety-local/demo`; each E2E
-owns `.surety-local/runs/<uuid>`. Only `--automated` locks switching. Test/capture
-verification uses separate owned Demo storage and never resets daily Demo.
-Commands and feature/fixture matrix: [local environments](docs/22-local-environments.md).
-Never remote test provisioning or production seed.
+| Lane        | Endpoint / State                                                                | Boundary                                                                                               |
+| ----------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Dev (Demo)  | `https://surety.dev.hexly.ai` -> `127.0.0.1:7012`, `.surety-local/demo`         | Persistent synthetic Demo; dynamic Worker port; preserve daily store                                   |
+| Tests (E2E) | Dynamic ports, `.surety-local/runs/<uuid>`, `NODE_ENV=test`                     | Fresh native D1/R2, allowlisted env, signed fixture JWTs, owned cleanup; `SIGKILL` recovery `manual`   |
+| Prod        | `surety.hexly.ai` (SPA/Access), `surety-api.hexly.ai` (Bearer), Worker `surety` | Read-only unless authorized; D1 `surety-db`, R2 `surety`, `ASSETS`, `@nocoo/surety`; never remote-seed |
 
-## Operations / Release
-
-The explicit `db:migrate` command applies the shared SQL migrations remotely and is not a startup/test step; inspect existing schema/history before the first authorized baseline application. Schema must be ready before an authorized Worker release. Follow [operations](docs/21-agent-operations.md) and current release workflow: build SPA, synchronize root version/changelog/lockfile, then release. Inspect mirror URL drift before publishing; CLI has no separate build.
-
-| Area                   | Facts                                                                                                                                                                                                                                                                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Release                | `bun run build` (SPA → `apps/worker/static`); `bun run release [-- patch\|minor\|major\|X.Y.Z\|--dry-run]` (`scripts/release.ts`: root version, `bun.lock`, CHANGELOG, commit, tag, GitHub release); keep `apps/cli/package.json` version in sync. Manual Worker deploy only when authorized: `bun run --cwd apps/worker deploy` (`wrangler deploy`). |
-| CLI publish            | `@nocoo/surety` from `apps/cli`, published from 哥's MacBook (2FA in Chrome); verify/install via `https://registry.npmmirror.com`.                                                                                                                                                                                                                    |
-| CI (`ci.yml`)          | `quality-slots.yml` (`quality / Z1: Gate`): `bun run build`, `bun run typecheck`, `bun run test:coverage`, L3 `bun run test:l2:http`, L4 `bun run test:e2e:browser` (chromium).                                                                                                                                                                       |
-| Deploy (`release.yml`) | `Deploy Worker` on green CI on `main`, `v*.*.*` tag or dispatch; builds, wrangler deploy from `apps/worker`, verifies `https://surety.hexly.ai/api/live` version.                                                                                                                                                                                     |
-| Targets                | Worker `surety`, custom domains `surety.hexly.ai` (SPA + Access login) and `surety-api.hexly.ai` (Bearer API); D1 `DB` → `surety-db`; R2 `ATTACHMENTS` → `surety`; assets `ASSETS`; npm `@nocoo/surety`.                                                                                                                                              |
+Only `--automated` locks mode switching; test/capture runs use separate Demo storage and never reset daily Demo. See [Local Environments](docs/22-local-environments.md).
 
 ## Retrospective
 
-Move accident narratives to [Retrospective.md](Retrospective.md); keep at most about ten concise recurring project rules here. Put architecture and operational detail in linked docs.
-
-- Cross-database imports must name columns explicitly; never depend on SQLite `.dump` column order.
-- Drizzle sqlite-proxy get returns a flat row; all returns a row array. Verify actual driver contracts.
-- `logout` output does not prove token revocation, and `SURETY_CLI_DEV` only changes the config file.
-- Set up test guards before removing old infrastructure; keep historical remote-test instructions in the retrospective.
+Record incident narratives in [Retrospective.md](Retrospective.md); promote recurring project constraints to `Invariants` above and enforceable safeguards to tests/hooks.

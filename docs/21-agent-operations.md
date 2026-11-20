@@ -14,15 +14,25 @@ Worker 源码在 `apps/worker/`，部署到 Cloudflare Workers。单 Worker 同�
 | Worker URL          | `https://surety.<your-account>.workers.dev`                 |
 | Custom Domain (UI)  | `https://surety.hexly.ai` (CF Access 保护)                  |
 | Custom Domain (API) | `https://surety-api.hexly.ai` (Bearer token)                |
-| D1 Database         | `surety-db` (`<your-database-id>`)                          |
+| D1 Database         | binding `DB` → `surety-db` (`<your-database-id>`)           |
+| R2 Bucket           | binding `ATTACHMENTS` → `surety`                            |
+| Static Assets       | binding `ASSETS` → `apps/worker/static`                     |
+| npm CLI Package     | `@nocoo/surety` (`apps/cli`, 无独立 build 步骤)             |
 | Liveness            | `GET /api/live` (no auth, no cache, 返回 version + D1 状态) |
 
-### 部署命令
+### 发布、部署与远程迁移
+
+- **远程 D1 迁移**：`bun run db:migrate`（`cd apps/worker && wrangler d1 migrations apply surety-db --remote`）将 `apps/worker/migrations/` 中的共享 SQL 迁移应用到远程 D1。它不是启动或测试步骤，执行前必须先取得授权并检查远程 schema 与迁移历史；授权部署 Worker 前 schema 必须已就绪。
+- **版本发布**：先运行 `bun run build`（SPA 输出至 `apps/worker/static`），再按授权执行 `bun run release [-- patch|minor|major|X.Y.Z|--dry-run]`（`scripts/release.ts` 同步根 `package.json`、`apps/cli/package.json`、`bun.lock`、`CHANGELOG.md`，并创建 commit、tag 与 GitHub release）。发布前核对 `bun.lock`，防止本机镜像 URL 泄露。
+- **CI 自动部署（`.github/workflows/release.yml`）**：`Deploy Worker` 在 `main` 分支 `CI`（`quality / Z1: Gate`）绿灯、`v*.*.*` tag 或手动 `workflow_dispatch` 时触发；构建 SPA、在 `apps/worker` 执行 `wrangler deploy`，并校验 `https://surety.hexly.ai/api/live`（HTTP 200，tag/dispatch 路径同时比对版本）。
+- **手动部署 Worker（仅在授权时执行）**：
 
 ```bash
 bun run build                         # 从仓库根目录构建 SPA
-bun run --cwd apps/worker deploy       # 仅在授权部署时执行
+bun run --cwd apps/worker deploy      # 仅在授权部署时执行（wrangler deploy）
 ```
+
+- **CLI 发版**：`@nocoo/surety` 从 `apps/cli` 发布（无单独构建步骤），需在哥的 MacBook 上通过 Chrome 2FA 发布；发布后通过 `https://registry.npmmirror.com` 验证与安装，确保 `apps/cli/package.json` 与根 `package.json` 版本一致。
 
 ### Schema 推送 (D1)
 
