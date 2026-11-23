@@ -194,8 +194,8 @@ test.describe
 
 				await expect(menZhenBadge).toBeVisible({ timeout: 10_000 });
 				await expect(jiZhenBadge).toBeVisible({ timeout: 10_000 });
-				await expect(menZhenBadge).toHaveClass(/bg-basalt-primary/);
-				await expect(jiZhenBadge).toHaveClass(/bg-basalt-destructive/);
+				await expect(menZhenBadge).toHaveClass(/bg-basalt-foreground/);
+				await expect(jiZhenBadge).toHaveClass(/bg-basalt-danger-tint/);
 			} finally {
 				const body = (await created.json()) as { id: number };
 				await request.delete(`/api/medical-visits/${body.id}`);
