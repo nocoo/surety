@@ -47,6 +47,7 @@ import { apiFetch as fetch } from "@/hooks/local-environment";
 import { useLocalDateKey } from "@/hooks/use-local-date-key";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { BADGE_PROPS_MAP } from "@/lib/constants/policy";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
 import {
 	calculateAgeInMonths,
@@ -238,8 +239,10 @@ function VisitTableRow({
 			</TableCell>
 			<TableCell>
 				<div className="flex flex-wrap items-center gap-1">
-					<Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>{visit.visitType}</Badge>
-					{temporalBadge && <Badge variant={temporalBadge.variant}>{temporalBadge.label}</Badge>}
+					<Badge {...BADGE_PROPS_MAP[VISIT_TYPE_COLORS[visit.visitType] ?? "outline"]}>
+						{visit.visitType}
+					</Badge>
+					{temporalBadge && <Badge tone={temporalBadge.variant}>{temporalBadge.label}</Badge>}
 				</div>
 			</TableCell>
 			<TableCell>

@@ -1,4 +1,4 @@
-import { SkeletonLine as Skeleton } from "@nocoo/basalt/components/skeleton-line";
+import { Skeleton } from "@nocoo/basalt/components/skeleton";
 
 /**
  * Page-level loading skeletons.

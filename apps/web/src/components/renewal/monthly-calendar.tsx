@@ -12,6 +12,7 @@ import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { formatCurrency } from "@/lib/chart-config";
+import { BADGE_PROPS_MAP } from "@/lib/constants/policy";
 import { cn } from "@/lib/utils";
 
 interface MonthlyCalendarProps {
@@ -328,7 +329,7 @@ function DayEventsDialog({ active, onClose }: DayEventsDialogProps) {
 										<div className="min-w-0 space-y-1">
 											<div className="flex items-center gap-2 flex-wrap">
 												<span className="text-sm font-medium truncate">{event.productName}</span>
-												<Badge variant={category.variant} className="shrink-0">
+												<Badge {...BADGE_PROPS_MAP[category.variant]} className="shrink-0">
 													{category.label}
 												</Badge>
 											</div>

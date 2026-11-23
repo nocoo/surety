@@ -8,7 +8,7 @@ import {
 	Input,
 	Label,
 } from "@nocoo/basalt";
-import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import { Textarea } from "@nocoo/basalt/components/textarea";
 import { formatLocalDate, parseLocalDate } from "@surety/db/lib/date-utils";
 import { useEffect, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";

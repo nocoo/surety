@@ -223,7 +223,7 @@ export function BackySettings() {
 						<p className="text-sm text-basalt-muted-foreground">推送数据到 Backy 服务</p>
 					</div>
 					<Badge
-						variant={backySettings?.environment === "prod" ? "success" : "warning"}
+						tone={backySettings?.environment === "prod" ? "success" : "warning"}
 						className="ml-1"
 					>
 						{backySettings?.environment ?? "…"}
@@ -366,7 +366,7 @@ export function BackySettings() {
 							<div className="flex items-center gap-2">
 								<History className="h-4 w-4 text-basalt-muted-foreground" />
 								<span className="text-sm font-medium">远程备份记录</span>
-								{backyHistory && <Badge variant="secondary">{backyHistory.total_backups} 份</Badge>}
+								{backyHistory && <Badge>{backyHistory.total_backups} 份</Badge>}
 							</div>
 							<Button
 								variant="ghost"
@@ -386,7 +386,7 @@ export function BackySettings() {
 										className="rounded-basalt-md border bg-basalt-muted/50 p-3 text-xs space-y-1"
 									>
 										<div className="flex items-center justify-between">
-											<Badge variant={entry.environment === "prod" ? "success" : "warning"}>
+											<Badge tone={entry.environment === "prod" ? "success" : "warning"}>
 												{entry.environment}
 											</Badge>
 											<span className="text-basalt-muted-foreground">

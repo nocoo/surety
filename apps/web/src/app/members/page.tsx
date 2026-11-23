@@ -57,11 +57,17 @@ const relationLabels: Record<Relation, string> = {
 	Parent: "父母",
 };
 
-const relationVariants: Record<Relation, "default" | "info" | "success" | "purple"> = {
-	Self: "default",
-	Spouse: "info",
-	Child: "success",
-	Parent: "purple",
+const relationVariants: Record<
+	Relation,
+	{
+		tone?: "neutral" | "info" | "success";
+		variant?: "solid" | "soft";
+	}
+> = {
+	Self: { tone: "neutral", variant: "solid" },
+	Spouse: { tone: "info" },
+	Child: { tone: "success" },
+	Parent: { tone: "info" },
 };
 
 function calculateAge(birthDate: string | null): { years: number; months: number } | null {
@@ -232,7 +238,7 @@ export default function MembersPage() {
 													</div>
 												</TableCell>
 												<TableCell>
-													<Badge variant={relationVariants[member.relation]}>
+													<Badge {...relationVariants[member.relation]}>
 														{relationLabels[member.relation]}
 													</Badge>
 												</TableCell>
@@ -263,7 +269,7 @@ export default function MembersPage() {
 												</TableCell>
 												<TableCell className="text-center">
 													{member.hasSocialInsurance === true ? (
-														<Badge variant="success" className="text-xs">
+														<Badge tone="success" className="text-xs">
 															有
 														</Badge>
 													) : member.hasSocialInsurance === false ? (

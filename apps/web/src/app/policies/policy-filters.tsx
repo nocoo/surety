@@ -110,7 +110,7 @@ export function PolicyFilters({ filters, onChange, options }: PolicyFiltersProps
 				<ListFilter className="h-4 w-4" />
 				筛选
 				{activeCount > 0 && (
-					<Badge variant="default" className="ml-1 h-5 px-1.5 text-xs">
+					<Badge variant="solid" className="ml-1 h-5 px-1.5 text-xs">
 						{activeCount}
 					</Badge>
 				)}

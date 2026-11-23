@@ -61,7 +61,7 @@ import { TablePageSkeleton } from "@/components/skeletons";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import { useOpenSheetOnNewParam } from "@/hooks/use-open-sheet-on-new-param";
 import { usePersistedState } from "@/hooks/use-persisted-state";
-import { statusConfig } from "@/lib/constants/policy";
+import { BADGE_PROPS_MAP, statusConfig } from "@/lib/constants/policy";
 import type { PolicyStatus } from "@/lib/types/policy";
 import { cn, getAvatarColor } from "@/lib/utils";
 import { countActiveFilters, type PolicyFilterState, PolicyFilters } from "./policy-filters";
@@ -126,8 +126,8 @@ function PolicyMobileCard({
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-2">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant={status.variant}>{status.label}</Badge>
-						<Badge variant={categoryConfig.variant}>{categoryConfig.label}</Badge>
+						<Badge {...BADGE_PROPS_MAP[status.variant]}>{status.label}</Badge>
+						<Badge {...BADGE_PROPS_MAP[categoryConfig.variant]}>{categoryConfig.label}</Badge>
 					</div>
 					<button
 						type="button"
@@ -859,7 +859,7 @@ export default function PoliciesPage() {
 																 * color or hover.
 																 */}
 																<span className="sr-only">状态: {status.label}.</span>
-																<Badge variant={categoryConfig.variant}>
+																<Badge {...BADGE_PROPS_MAP[categoryConfig.variant]}>
 																	{categoryConfig.label}
 																</Badge>
 															</TableCell>
@@ -1115,9 +1115,9 @@ export default function PoliciesPage() {
 														className="flex items-center justify-between px-4 py-3 hover:bg-basalt-background/50 transition-colors"
 													>
 														<div className="flex items-center gap-4">
-															<Badge variant={status.variant}>{status.label}</Badge>
+															<Badge {...BADGE_PROPS_MAP[status.variant]}>{status.label}</Badge>
 															{viewMode === "byInsured" && (
-																<Badge variant={categoryConfig.variant}>
+																<Badge {...BADGE_PROPS_MAP[categoryConfig.variant]}>
 																	{categoryConfig.label}
 																</Badge>
 															)}

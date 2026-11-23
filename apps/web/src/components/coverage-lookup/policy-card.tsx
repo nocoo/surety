@@ -5,6 +5,7 @@ import { getCategoryConfig } from "@surety/api/lib/category-config";
 import { formatCurrency } from "@surety/api/lib/format";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { BADGE_PROPS_MAP } from "@/lib/constants/policy";
 
 interface PolicyCardProps {
 	policy: PolicyCoverageCard;
@@ -138,7 +139,7 @@ export function CategorySection({ category, policies, totalSumAssured }: Categor
 		<div className="space-y-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Badge variant={config.variant}>{config.label}</Badge>
+					<Badge {...BADGE_PROPS_MAP[config.variant]}>{config.label}</Badge>
 					<span className="text-sm text-basalt-muted-foreground">({policies.length})</span>
 				</div>
 				<span className="text-sm font-medium">总保额 {formatCurrency(totalSumAssured)}</span>

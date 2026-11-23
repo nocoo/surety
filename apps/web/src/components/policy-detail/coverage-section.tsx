@@ -285,11 +285,7 @@ export function CoverageSection({ policyId, items, onItemsChange }: CoverageSect
 				<h3 className="text-sm font-medium text-basalt-muted-foreground">
 					<Shield className="mr-1.5 inline size-4 align-text-bottom" />
 					保障明细
-					{items.length > 0 && (
-						<Badge variant="secondary" className="ml-2 text-xs">
-							{items.length}
-						</Badge>
-					)}
+					{items.length > 0 && <Badge className="ml-2 text-xs">{items.length}</Badge>}
 				</h3>
 				{!addingForm && editingId === null && (
 					<Button type="button" variant="ghost" size="sm" onClick={startAdd}>

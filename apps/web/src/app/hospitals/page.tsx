@@ -248,7 +248,7 @@ export default function HospitalsPage() {
 												)}
 											</TableCell>
 											<TableCell>
-												<Badge variant={hospital.isPublic ? "default" : "secondary"}>
+												<Badge variant={hospital.isPublic ? "solid" : "soft"}>
 													{hospital.isPublic ? "公立" : "私立"}
 												</Badge>
 											</TableCell>

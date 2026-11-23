@@ -5,6 +5,7 @@ import type { MonthlyRenewal, RenewalItem } from "@surety/api/renewal-calendar";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { formatCurrency } from "@/lib/chart-config";
+import { BADGE_PROPS_MAP } from "@/lib/constants/policy";
 import { cn, getAvatarColor } from "@/lib/utils";
 
 interface MonthlyDetailsProps {
@@ -38,11 +39,11 @@ function RenewalRow({ item }: { item: RenewalItem }) {
 					>
 						{item.productName}
 					</button>
-					<Badge variant={categoryConfig.variant} className="shrink-0">
+					<Badge {...BADGE_PROPS_MAP[categoryConfig.variant]} className="shrink-0">
 						{categoryConfig.label}
 					</Badge>
 					{item.isSavings && (
-						<Badge variant="warning" className="shrink-0">
+						<Badge tone="warning" className="shrink-0">
 							储蓄
 						</Badge>
 					)}

@@ -53,13 +53,13 @@ const typeIcons: Record<AssetType, typeof Home> = {
 	Vehicle: Car,
 };
 
-const typeStyleConfig: Record<AssetType, { variant: "teal" | "warning"; iconClass: string }> = {
+const typeStyleConfig: Record<AssetType, { tone: "success" | "warning"; iconClass: string }> = {
 	RealEstate: {
-		variant: "teal",
+		tone: "success",
 		iconClass: "bg-basalt-badge-teal/10 text-basalt-badge-teal",
 	},
 	Vehicle: {
-		variant: "warning",
+		tone: "warning",
 		iconClass: "bg-basalt-warning-tint text-basalt-warning",
 	},
 };
@@ -176,7 +176,7 @@ export default function AssetsPage() {
 													</div>
 												</TableCell>
 												<TableCell>
-													<Badge variant={styleConfig.variant}>{typeLabels[asset.type]}</Badge>
+													<Badge tone={styleConfig.tone}>{typeLabels[asset.type]}</Badge>
 												</TableCell>
 												<TableCell className="font-mono text-sm text-basalt-muted-foreground">
 													{asset.identifier}

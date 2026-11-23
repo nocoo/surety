@@ -272,9 +272,9 @@ function PaymentForm({
 function StatusBadge({ status }: { status: Payment["status"] }) {
 	switch (status) {
 		case "Paid":
-			return <Badge variant="success">已缴</Badge>;
+			return <Badge tone="success">已缴</Badge>;
 		case "Overdue":
-			return <Badge variant="destructive">逾期</Badge>;
+			return <Badge tone="danger">逾期</Badge>;
 		default:
 			return <Badge variant="outline">待缴</Badge>;
 	}
@@ -475,11 +475,7 @@ export function PaymentsSection({
 				<h3 className="text-sm font-medium text-basalt-muted-foreground">
 					<Banknote className="mr-1.5 inline size-4 align-text-bottom" />
 					缴费记录
-					{liveRows.length > 0 && (
-						<Badge variant="secondary" className="ml-2 text-xs">
-							{liveRows.length}
-						</Badge>
-					)}
+					{liveRows.length > 0 && <Badge className="ml-2 text-xs">{liveRows.length}</Badge>}
 				</h3>
 				<div className="flex gap-2">
 					{!isTerminated && paymentFrequency !== "Single" && (

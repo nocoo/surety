@@ -19,6 +19,39 @@ export type StatusBadgeVariant =
 	| "destructive"
 	| "red";
 
+export type LegacyBadgeVariant =
+	| "default"
+	| "secondary"
+	| "success"
+	| "warning"
+	| "info"
+	| "destructive"
+	| "outline"
+	| "purple"
+	| "teal"
+	| "blue"
+	| "red";
+
+export const BADGE_PROPS_MAP: Record<
+	LegacyBadgeVariant,
+	{
+		tone?: "neutral" | "info" | "success" | "warning" | "danger";
+		variant?: "soft" | "solid" | "outline";
+	}
+> = {
+	default: { tone: "neutral", variant: "solid" },
+	secondary: { tone: "neutral", variant: "soft" },
+	outline: { tone: "neutral", variant: "outline" },
+	success: { tone: "success", variant: "soft" },
+	warning: { tone: "warning", variant: "soft" },
+	info: { tone: "info", variant: "soft" },
+	destructive: { tone: "danger", variant: "soft" },
+	red: { tone: "danger", variant: "soft" },
+	purple: { tone: "info", variant: "soft" },
+	teal: { tone: "success", variant: "soft" },
+	blue: { tone: "info", variant: "soft" },
+};
+
 export interface PolicyStatusBadge {
 	label: string;
 	variant: StatusBadgeVariant;

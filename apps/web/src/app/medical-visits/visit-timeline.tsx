@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, Badge, Button } from "@nocoo/basalt";
 import { Building2, Calendar, Clock, Pencil, Trash2, UserRound } from "@nocoo/basalt/icons";
+import { BADGE_PROPS_MAP } from "@/lib/constants/policy";
 import { cn, getAvatarColor, hashString } from "@/lib/utils";
 import {
 	calculateDaysAgo,
@@ -242,12 +243,10 @@ function VisitCard({
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
 							<span className="font-medium">{visit.memberName}</span>
-							<Badge variant={VISIT_TYPE_COLORS[visit.visitType] ?? "outline"}>
+							<Badge {...BADGE_PROPS_MAP[VISIT_TYPE_COLORS[visit.visitType] ?? "outline"]}>
 								{visit.visitType}
 							</Badge>
-							{temporalBadge && (
-								<Badge variant={temporalBadge.variant}>{temporalBadge.label}</Badge>
-							)}
+							{temporalBadge && <Badge tone={temporalBadge.variant}>{temporalBadge.label}</Badge>}
 						</div>
 						<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-basalt-muted-foreground">
 							<span className="inline-flex items-center gap-1">

@@ -9,7 +9,6 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@nocoo/basalt";
-import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
 import {
 	Select,
 	SelectContent,
@@ -17,6 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@nocoo/basalt/components/select";
+import { Textarea } from "@nocoo/basalt/components/textarea";
 import { useEffect, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 

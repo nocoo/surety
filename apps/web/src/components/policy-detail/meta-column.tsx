@@ -13,7 +13,7 @@ import {
 	Button,
 	Separator,
 } from "@nocoo/basalt";
-import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
+import { Textarea } from "@nocoo/basalt/components/textarea";
 import {
 	BadgeCheck,
 	Building2,
@@ -33,6 +33,7 @@ import { useState } from "react";
 import { AttachmentSection } from "@/components/attachments/attachment-section";
 import { apiFetch as fetch } from "@/hooks/local-environment";
 import {
+	BADGE_PROPS_MAP,
 	categoryLabels,
 	paymentFrequencyLabels,
 	renderPolicyStatusBadges,
@@ -266,7 +267,7 @@ function BasicInfoSection({
 					value={
 						<div className="flex flex-wrap items-center gap-1.5">
 							{renderPolicyStatusBadges(policy).map((b) => (
-								<Badge key={b.label} variant={b.variant}>
+								<Badge key={b.label} {...BADGE_PROPS_MAP[b.variant]}>
 									{b.label}
 								</Badge>
 							))}
@@ -1211,7 +1212,7 @@ export function MetaColumn({
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					{statusBadges.map((b) => (
-						<Badge key={b.label} variant={b.variant}>
+						<Badge key={b.label} {...BADGE_PROPS_MAP[b.variant]}>
 							{b.label}
 						</Badge>
 					))}

@@ -10,7 +10,6 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@nocoo/basalt";
-import { InputArea as Textarea } from "@nocoo/basalt/components/input-area";
 import {
 	Select,
 	SelectContent,
@@ -18,6 +17,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@nocoo/basalt/components/select";
+import { Textarea } from "@nocoo/basalt/components/textarea";
 import { X } from "@nocoo/basalt/icons";
 import { type KeyboardEvent, useCallback, useMemo, useState } from "react";
 import { apiFetch as fetch } from "@/hooks/local-environment";
@@ -77,7 +77,7 @@ function TagInput({
 	return (
 		<div className="flex flex-wrap items-center gap-1.5 rounded-md border border-basalt-border hover:border-basalt-foreground/20 bg-basalt-secondary px-3 py-2 min-h-9 focus-within:ring-2 focus-within:ring-basalt-ring focus-within:ring-offset-2">
 			{value.map((tag, index) => (
-				<Badge key={index} variant="secondary" className="h-6 gap-1 pl-2 pr-1 py-0">
+				<Badge key={index} className="h-6 gap-1 pl-2 pr-1 py-0">
 					{tag}
 					<button
 						type="button"
