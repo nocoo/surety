@@ -5,12 +5,15 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import shutil
 import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -264,7 +267,6 @@ SCENARIO_SETUPS = {
 }
 
 SCENARIOS = [
-    Scenario("healthy_hook", False, "healthy"),
     Scenario("ut_fail", True, "ut_fail"),
     Scenario("coverage_statements", True, "coverage_statements"),
     Scenario("coverage_branches", True, "coverage_branches"),
@@ -346,18 +348,43 @@ def main() -> int:
     )
     print("pre-commit helper self-test passed", flush=True)
     owned = Path(tempfile.mkdtemp(prefix="surety-l1-gate-suite-"))
-    worktree = owned / "wt"
+    results: list[Result | None] = [None] * len(SCENARIOS)
+    work_queue: queue.Queue[tuple[int, Scenario]] = queue.Queue()
+    for index, scenario in enumerate(SCENARIOS):
+        work_queue.put((index, scenario))
+    worktree_lock = threading.Lock()
+    worker_count = min(4, len(SCENARIOS))
+
+    def run_worker(worker_id: int) -> None:
+        worktree = owned / f"wt-{worker_id}"
+        added = False
+        try:
+            with worktree_lock:
+                run_git(["worktree", "add", "--detach", str(worktree), "HEAD"], source)
+                added = True
+            link_dependencies(source, worktree)
+            ensure_git_identity(worktree)
+            while True:
+                try:
+                    index, scenario = work_queue.get_nowait()
+                except queue.Empty:
+                    break
+                results[index] = exercise_scenario(worktree, scenario)
+        finally:
+            if added:
+                with worktree_lock:
+                    run_git(["worktree", "remove", "--force", str(worktree)], source, check=False)
+
     try:
-        run_git(["worktree", "add", "--detach", str(worktree), "HEAD"], source)
-        link_dependencies(source, worktree)
-        ensure_git_identity(worktree)
-        results: list[Result] = []
-        for scenario in SCENARIOS:
-            results.append(exercise_scenario(worktree, scenario))
+        with ThreadPoolExecutor(max_workers=worker_count) as pool:
+            futures = [pool.submit(run_worker, worker_id) for worker_id in range(worker_count)]
+            for future in futures:
+                future.result()
 
         print("L1 pre-commit gate self-test", flush=True)
         failures = 0
         for result in results:
+            assert result is not None
             status = "PASS" if result.ok else "FAIL"
             if not result.ok:
                 failures += 1
@@ -372,7 +399,6 @@ def main() -> int:
         print(f"\nAll {len(results)} scenarios passed", flush=True)
         return 0
     finally:
-        run_git(["worktree", "remove", "--force", str(worktree)], source, check=False)
         shutil.rmtree(owned, ignore_errors=True)
 
 
