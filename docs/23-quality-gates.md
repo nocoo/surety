@@ -16,12 +16,12 @@ Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical test runs 
 | `G1 Secrets`      | `enforced` | `gitleaks detect` in CI; `gitleaks protect --staged` in pre-commit and pre-push (missing scanner fails the gate).                                                                                                                                    |
 | `G2 Dependencies` | `enforced` | `osv-scanner --config osv-scanner.toml --lockfile=bun.lock` in CI and pre-push; local pre-push reads worktree lockfile instead of per-ref OIDs (`planned` gap).                                                                                      |
 | `B1 Build`        | `enforced` | `bun run build` writes SPA to `apps/worker/static` in CI; adding `B1` to local pre-push is `planned`.                                                                                                                                                |
-| `L1 Unit`         | `enforced` | `bun run test:coverage` enforces 95.5% floors across statements, branches, functions, and lines with 0 skipped/focused tests on the `vitest.config.mts` scope; CI also runs `L1: pre-commit gate probes`.                                            |
+| `L1 Unit`         | `enforced` | `bun run test:coverage` enforces 95.5% floors across statements, branches, functions, and lines with 0 skipped/focused tests on the `vitest.config.mts` scope; CI also runs `L1: Unit (Pre-commit Gate)`.                                            |
 | `L2 Runtime`      | `N/A`      | Cloudflare Worker runtime bindings are exercised via `L3`/`L4`. In-process Hono route tests (`bun test apps/worker/__tests__/e2e --path-ignore-patterns __none__`) run in pre-push as unit-level evidence only, not HTTP proof.                      |
 | `L3 Integration`  | `enforced` | `bun run test:l2:http` runs real HTTP against local Wrangler with fresh native D1/R2 on dynamic ports (CI + pre-push). Expanding to 100% endpoint/auth/error permutations and real CLI command workflows remains `planned`.                          |
 | `L4 E2E`          | `enforced` | `bun run test:e2e:browser` runs Playwright Chromium against built SPA + native local Worker on dynamic ports in CI. Full all-page/CLI system proof remains `planned`; interactive Access login/token revocation and real D1 restore remain `manual`. |
 | `P1 Package`      | `planned`  | `@nocoo/surety` npm tarball install and import check (`vars.ENABLE_P1_PACKAGE == 'true'` placeholder in CI).                                                                                                                                         |
-| `Z1 Gate`         | `enforced` | `quality / Z1: Gate` requires `S1`, `S2`, `S3`, `G1`, `G2`, `B1`, `L1`, `L3`, `L4`, and `L1: pre-commit gate probes` on `main`.                                                                                                                      |
+| `Z1 Gate`         | `enforced` | `quality / Z1: Gate` requires `S1`, `S2`, `S3`, `G1`, `G2`, `B1`, `L1`, `L3`, `L4`, and `L1: Unit (Pre-commit Gate)` on `main`.                                                                                                                      |
 
 ### L1 Coverage Scope (`vitest.config.mts`)
 
@@ -53,7 +53,7 @@ Recorded reference run of `python3 -B scripts/pre-commit.py` on an index snapsho
 
 ### Rejection Probes (`bun run test:l1:gate`)
 
-`scripts/l1-gate-self-test.py` (CI job `L1: pre-commit gate probes`) verifies that the pre-commit gate rejects failures in disposable Git worktrees:
+`scripts/l1-gate-self-test.py` (CI job `L1: Unit (Pre-commit Gate)`) verifies that the pre-commit gate rejects failures in disposable Git worktrees:
 
 - Unit test failure
 - Each individual coverage metric falling below 95.5% (statements, branches, functions, lines)

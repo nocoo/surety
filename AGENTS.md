@@ -42,7 +42,7 @@ bun run test:cli                 # CLI unit suite
 
 Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
 
-- **L1 scope & probes**: `vitest.config.mts` enforces 95.5% four-metric floors (0 skipped/focused), excluding Worker routes, TSX/hooks, CLI CRUD wrappers, and `auth.ts`; CI runs `L1: pre-commit gate probes`.
+- **L1 scope & probes**: `vitest.config.mts` enforces 95.5% four-metric floors (0 skipped/focused), excluding Worker routes, TSX/hooks, CLI CRUD wrappers, and `auth.ts`; CI runs `L1: Unit (Pre-commit Gate)`.
 - **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` (`@nocoo/surety` tarball check) is `planned`.
 - **Coverage gaps**: `L3` and `L4` are `enforced` in CI, while 100% endpoint/error permutations and full CLI system proof remain `planned`; Access login/revocation and real D1 restore remain `manual`.
 - **Pre-commit**: Installed via `bun run prepare` (`.husky/`); `scripts/pre-commit.py` runs `gitleaks`, `lint`, `typecheck`, and `test:coverage` on an isolated index snapshot with fresh caches and no autofix.
