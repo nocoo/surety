@@ -11,13 +11,17 @@ portProbe.stop(true);
 const base = `http://127.0.0.1:${port}`;
 const evidence = resolve(ROOT, "test-results", `local-${lane}-${crypto.randomUUID()}`);
 await mkdir(evidence, { recursive: true });
-const build = Bun.spawn(["bun", "--no-env-file", "run", "build"], {
-	cwd: ROOT,
-	env,
-	stdout: "inherit",
-	stderr: "inherit",
-});
-if (await build.exited) throw new Error("Build failed");
+if (process.env.SURETY_SKIP_BUILD !== "true") {
+	const build = Bun.spawn(["bun", "--no-env-file", "run", "build"], {
+		cwd: ROOT,
+		env,
+		stdout: "inherit",
+		stderr: "inherit",
+	});
+	if (await build.exited) throw new Error("Build failed");
+} else if (!(await Bun.file(resolve(ROOT, "apps/worker/static/index.html")).exists())) {
+	throw new Error("SURETY_SKIP_BUILD=true requires built apps/worker/static/index.html");
+}
 const runtime = Bun.spawn(
 	[
 		"bun",

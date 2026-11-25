@@ -43,7 +43,7 @@ bun run test:cli                 # CLI unit suite
 Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
 
 - **L1 scope & probes**: `vitest.config.mts` enforces 80% four-metric floors (0 skipped/focused), excluding Worker routes, Views/TSX/hooks, CLI CRUD wrappers, and `auth.ts`.
-- **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` (`@nocoo/surety` tarball check) is `planned`.
+- **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` is `enforced` in CI via `wrangler deploy --dry-run` on the `B1` Worker/SPA bundle (`@nocoo/surety` CLI tarball check remains `planned`).
 - **Coverage gaps**: `L3` and `L4` are `enforced` in CI, while 100% endpoint/error permutations and full CLI system proof remain `planned`; Access login/revocation and real D1 restore remain `manual`.
 - **Pre-commit**: Installed via `bun run prepare` (`.husky/`); `scripts/pre-commit.py` runs `gitleaks`, `lint`, `typecheck`, and `test:coverage` on an isolated index snapshot with fresh caches and no autofix.
 - **Pre-push**: `scripts/pre-push.ts` runs `osv-scanner`, staged `gitleaks`, Vitest, route units, and `test:l2:http` in parallel (`planned`: check all stdin push refs, committed secrets, and `B1 Build`).
