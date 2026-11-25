@@ -16,7 +16,7 @@ bun run test:environments        # local isolation, switching, and disposable ca
 bun run typecheck                # S1 (root + web + cli + worker)
 bun run lint                     # S2 Biome check-only, 0 warnings
 bun run build                    # B1 SPA -> apps/worker/static (CLI has no build)
-bun run test:coverage            # L1 Vitest >= 95.5% (4 metrics on configured scope)
+bun run test:coverage            # L1 Vitest >= 80% (4 metrics on configured scope)
 bun run test:l1:gate             # L1 pre-commit rejection probes in disposable worktrees
 bun test apps/worker/__tests__/e2e --path-ignore-patterns __none__  # in-process Hono route units (not HTTP proof)
 bun run test:l2:http             # L3 real HTTP against fresh local Wrangler D1/R2
@@ -42,7 +42,7 @@ bun run test:cli                 # CLI unit suite
 
 Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
 
-- **L1 scope & probes**: `vitest.config.mts` enforces 95.5% four-metric floors (0 skipped/focused), excluding Worker routes, TSX/hooks, CLI CRUD wrappers, and `auth.ts`; CI runs `L1: Unit (Pre-commit Gate)`.
+- **L1 scope & probes**: `vitest.config.mts` enforces 80% four-metric floors (0 skipped/focused), excluding Worker routes, Views/TSX/hooks, CLI CRUD wrappers, and `auth.ts`.
 - **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` (`@nocoo/surety` tarball check) is `planned`.
 - **Coverage gaps**: `L3` and `L4` are `enforced` in CI, while 100% endpoint/error permutations and full CLI system proof remain `planned`; Access login/revocation and real D1 restore remain `manual`.
 - **Pre-commit**: Installed via `bun run prepare` (`.husky/`); `scripts/pre-commit.py` runs `gitleaks`, `lint`, `typecheck`, and `test:coverage` on an isolated index snapshot with fresh caches and no autofix.

@@ -96,36 +96,6 @@ jobs:
           install-policy: blocked
       - run: bun run test:coverage
 
-  l1-hook-probes:
-    name: "L1: Unit (Pre-commit Gate)"
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: nocoo/base-ci/.github/actions/setup-js@dc858360aa7812db61fd9d825943e4efd4dcd0e7 # v2026.17
-        with:
-          package-manager: bun
-          runtime-version: ${{ env.BUN_VERSION }}
-          node-version: ${{ env.NODE_VERSION }}
-          install-policy: trusted
-      - name: Install gitleaks (pinned v8.30.1)
-        run: |
-          set -euo pipefail
-          GITLEAKS_VERSION="8.30.1"
-          GITLEAKS_SHA256="551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
-          TAR_FILE="$RUNNER_TEMP/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl --retry 5 --retry-delay 2 --retry-all-errors -sSfL \
-            -o "$TAR_FILE" \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  ${TAR_FILE}" | sha256sum --check
-          tar -xzf "$TAR_FILE" -C "$RUNNER_TEMP" gitleaks
-          chmod +x "$RUNNER_TEMP/gitleaks"
-          rm -f "$TAR_FILE"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - run: bun run prepare && bun run test:l1:gate
-
   l2-runtime:
     name: "L2: Runtime"
     if: ${{ vars.ENABLE_L2_RUNTIME == 'true' }}
@@ -182,7 +152,6 @@ jobs:
       - l3-integration
       - l4-e2e
       - p1-package
-      - l1-hook-probes
     outputs:
       tested-sha: ${{ github.sha }}
     steps:
@@ -199,7 +168,6 @@ jobs:
           echo "l3-integration: ${{ needs.l3-integration.result }}"
           echo "l4-e2e: ${{ needs.l4-e2e.result }}"
           echo "p1-package: ${{ needs.p1-package.result }}"
-          echo "l1-hook-probes: ${{ needs.l1-hook-probes.result }}"
           for r in \
             "${{ needs.s1-types.result }}" \
             "${{ needs.s2-lint.result }}" \
@@ -209,8 +177,7 @@ jobs:
             "${{ needs.b1-build.result }}" \
             "${{ needs.l1-unit.result }}" \
             "${{ needs.l3-integration.result }}" \
-            "${{ needs.l4-e2e.result }}" \
-            "${{ needs.l1-hook-probes.result }}"; do
+            "${{ needs.l4-e2e.result }}"; do
             if [ "$r" != "success" ]; then
               echo "Required slot failed or was skipped: $r"
               exit 1

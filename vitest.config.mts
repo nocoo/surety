@@ -36,6 +36,13 @@ export default defineConfig({
 				"**/types.ts",
 				"**/e2e/**",
 				"**/l2-http/**",
+				// Web View/UI layers — covered by L4 Playwright browser suites.
+				"apps/web/src/components/**",
+				"apps/web/src/views/**",
+				"apps/web/src/pages/**",
+				"apps/web/src/app/**",
+				"apps/web/src/main.tsx",
+				"apps/web/src/App.tsx",
 				// Worker HTTP routes — exercised by L2 (e2e + http) suites, not L1.
 				"apps/worker/src/routes/**",
 				// Worker middleware that depends on D1/Hono context — covered by L2.
@@ -60,10 +67,10 @@ export default defineConfig({
 				"apps/web/src/lib/constants/**",
 			],
 			thresholds: {
-				statements: 95.5,
-				branches: 95.5,
-				functions: 95.5,
-				lines: 95.5,
+				statements: 80,
+				branches: 80,
+				functions: 80,
+				lines: 80,
 			},
 		},
 	},

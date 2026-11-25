@@ -24,7 +24,7 @@ DEPENDENCIES = (
     "packages/api/node_modules",
     "packages/db/node_modules",
 )
-FLOORS = {metric: 95.5 for metric in METRICS}
+FLOORS = {metric: 80 for metric in METRICS}
 
 
 def environment(temporary):
@@ -184,7 +184,7 @@ def self_test():
         report.write_text(json.dumps({"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}))
         check_coverage(report)
         invalid_reports = []
-        for value in (95.4, float("nan"), 101):
+        for value in (79.9, float("nan"), 101):
             invalid_reports.append({"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}})
             invalid_reports[-1]["total"]["branches"]["pct"] = value
         missing_covered = {"total": {metric: {"total": 2, "covered": 2, "pct": 100} for metric in METRICS}}

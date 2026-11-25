@@ -6,7 +6,7 @@
  * cannot execute Vitest-only suites and reported misleading failures after
  * the vitest migration. Now it is a thin wrapper around
  * `vitest run --coverage`, whose thresholds live in vitest.config.mts
- * (statements/branches/functions/lines ≥ 95.5).
+ * (statements/branches/functions/lines ≥ 80).
  */
 
 import { spawnSync } from "node:child_process";

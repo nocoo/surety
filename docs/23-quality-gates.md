@@ -16,16 +16,16 @@ Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical test runs 
 | `G1 Secrets`      | `enforced` | `gitleaks detect` in CI; `gitleaks protect --staged` in pre-commit and pre-push (missing scanner fails the gate).                                                                                                                                    |
 | `G2 Dependencies` | `enforced` | `osv-scanner --config osv-scanner.toml --lockfile=bun.lock` in CI and pre-push; local pre-push reads worktree lockfile instead of per-ref OIDs (`planned` gap).                                                                                      |
 | `B1 Build`        | `enforced` | `bun run build` writes SPA to `apps/worker/static` in CI; adding `B1` to local pre-push is `planned`.                                                                                                                                                |
-| `L1 Unit`         | `enforced` | `bun run test:coverage` enforces 95.5% floors across statements, branches, functions, and lines with 0 skipped/focused tests on the `vitest.config.mts` scope; CI also runs `L1: Unit (Pre-commit Gate)`.                                            |
+| `L1 Unit`         | `enforced` | `bun run test:coverage` enforces 80% floors across statements, branches, functions, and lines with 0 skipped/focused tests on the `vitest.config.mts` scope.                                                                                         |
 | `L2 Runtime`      | `N/A`      | Cloudflare Worker runtime bindings are exercised via `L3`/`L4`. In-process Hono route tests (`bun test apps/worker/__tests__/e2e --path-ignore-patterns __none__`) run in pre-push as unit-level evidence only, not HTTP proof.                      |
 | `L3 Integration`  | `enforced` | `bun run test:l2:http` runs real HTTP against local Wrangler with fresh native D1/R2 on dynamic ports (CI + pre-push). Expanding to 100% endpoint/auth/error permutations and real CLI command workflows remains `planned`.                          |
 | `L4 E2E`          | `enforced` | `bun run test:e2e:browser` runs Playwright Chromium against built SPA + native local Worker on dynamic ports in CI. Full all-page/CLI system proof remains `planned`; interactive Access login/token revocation and real D1 restore remain `manual`. |
 | `P1 Package`      | `planned`  | `@nocoo/surety` npm tarball install and import check (`vars.ENABLE_P1_PACKAGE == 'true'` placeholder in CI).                                                                                                                                         |
-| `Z1 Gate`         | `enforced` | `quality / Z1: Gate` requires `S1`, `S2`, `S3`, `G1`, `G2`, `B1`, `L1`, `L3`, `L4`, and `L1: Unit (Pre-commit Gate)` on `main`.                                                                                                                      |
+| `Z1 Gate`         | `enforced` | `quality / Z1: Gate` requires `S1`, `S2`, `S3`, `G1`, `G2`, `B1`, `L1`, `L3`, and `L4` on `main`.                                                                                                                                                    |
 
 ### L1 Coverage Scope (`vitest.config.mts`)
 
-Vitest measures `apps/web/src/**`, `apps/worker/src/**`, and `apps/cli/src/**` with 95.5% floors on statements, branches, functions, and lines. By design, `vitest.config.mts` excludes:
+Vitest measures `apps/web/src/**`, `apps/worker/src/**`, and `apps/cli/src/**` with 80% floors on statements, branches, functions, and lines. By design, `vitest.config.mts` excludes:
 
 - Worker HTTP routes (`apps/worker/src/routes/**`) and D1 Hono middleware (`apps/worker/src/middleware/db.ts`) — covered by `L3`.
 - Build-time `bun:sqlite` stub (`apps/worker/src/lib/bun-sqlite-stub.ts`).
@@ -40,7 +40,7 @@ Vitest measures `apps/web/src/**`, `apps/worker/src/**`, and `apps/cli/src/**` w
 2. Symlinks workspace `node_modules` into the snapshot, rewriting local workspace symlinks so imports resolve inside the snapshot rather than the working tree.
 3. Creates fresh isolated `TMPDIR`, `XDG_CACHE_HOME`, and `BUN_INSTALL_CACHE_DIR` per run; never short-circuits via a result cache and never runs autofix.
 4. Runs under a 170s total deadline in strict order: `scripts/pre-commit.py --self-test` -> `gitleaks protect --staged` -> `bun run lint` -> `bun run typecheck` -> `bun run test:coverage --allowOnly=false`.
-5. Validates Vitest JSON test output (non-empty, 0 failed/pending/todo) and `coverage-summary.json` (all 4 metrics finite and >= 95.5%).
+5. Validates Vitest JSON test output (non-empty, 0 failed/pending/todo) and `coverage-summary.json` (all 4 metrics finite and >= 80%).
 
 ### Measured Pre-commit Baseline (2026-11-09)
 
@@ -53,10 +53,10 @@ Recorded reference run of `python3 -B scripts/pre-commit.py` on an index snapsho
 
 ### Rejection Probes (`bun run test:l1:gate`)
 
-`scripts/l1-gate-self-test.py` (CI job `L1: Unit (Pre-commit Gate)`) verifies that the pre-commit gate rejects failures in disposable Git worktrees:
+`scripts/l1-gate-self-test.py` (local probe runner) verifies that the pre-commit gate rejects failures in disposable Git worktrees:
 
 - Unit test failure
-- Each individual coverage metric falling below 95.5% (statements, branches, functions, lines)
+- Each individual coverage metric falling below 80% (statements, branches, functions, lines)
 - Lint error and lint warning
 - TypeScript type error
 - Focused (`.only`) and skipped (`.skip`) tests
