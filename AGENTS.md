@@ -36,11 +36,11 @@ bun run test:cli                 # CLI unit suite
 - **CLI auth quirks**: `logout` output does not prove token revocation, and `SURETY_CLI_DEV` only switches the config file (`config.dev.json`), not the API URL.
 - **Docs & infra**: Use numbered docs in `docs/` and keep `README.md` current. Add safety test guards before removing old infrastructure; never bypass hooks or use autofix in checks.
 - **Remote migrations**: `bun run db:migrate` applies remote D1 migrations and is never a startup/test step; inspect remote schema/history with authorization first. Schema must be ready before deploy.
-- **Releases & deploy**: Releases (`bun run release`), Worker deploys, and CLI publishes require authorization; inspect `bun.lock` for mirror URL drift first. See [Operations](docs/21-agent-operations.md).
+- **Releases & deploy**: `main` push CI auto-deploys (`D1`–`D5` Worker deploy in [.github/workflows/pipeline.yml](.github/workflows/pipeline.yml), reusing `worker-static`; `workflow_dispatch` requires `deploy=true`). Manual releases (`bun run release`), Worker deploys, and CLI publishes require authorization; inspect `bun.lock` for mirror URL drift first. See [Operations](docs/21-agent-operations.md).
 
 ## Quality & Local Gates
 
-Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision live in `.github/workflows/quality-slots.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
+Follows `system1-quality`; CI slot definitions and pinned `base-ci` revision (`3703a073693d598159e87f77f99587e586c14cfe`, `v2026.24`) live in `.github/workflows/quality-slots.yml`, invoked by `.github/workflows/pipeline.yml` (`quality / Z1: Gate` required on `main`). Status vocabulary: `enforced`, `planned`, `manual`, `N/A`. Historical runs are not current pass evidence; details and measured baselines live in [Quality Gates](docs/23-quality-gates.md).
 
 - **L1 scope & probes**: `vitest.config.mts` enforces 80% four-metric floors (0 skipped/focused), excluding Worker routes, Views/TSX/hooks, CLI CRUD wrappers, and `auth.ts`.
 - **Exceptions / gaps**: `L2 Runtime` is `N/A` (Worker covered by `L3`/`L4`; in-process route tests are unit-only). `P1 Package` is `enforced` in CI via `wrangler deploy --dry-run` on the `B1` Worker/SPA bundle (`@nocoo/surety` CLI tarball check remains `planned`).
