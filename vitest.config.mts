@@ -17,9 +17,9 @@ export default defineConfig({
 		pool: "threads",
 		globals: true,
 		include: [
-			"apps/*/src/__tests__/**/*.test.{ts,tsx}",
-			"apps/*/__tests__/**/*.test.{ts,tsx}",
-			"packages/*/src/__tests__/**/*.test.{ts,tsx}",
+			"apps/*/src/__tests__/**/*.test.ts",
+			"apps/*/__tests__/**/*.test.ts",
+			"packages/*/src/__tests__/**/*.test.ts",
 		],
 		exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**", "**/l2-http/**"],
 		coverage: {
@@ -28,7 +28,6 @@ export default defineConfig({
 			include: ["apps/web/src/**", "apps/worker/src/**", "apps/cli/src/**"],
 			exclude: [
 				"**/*.test.ts",
-				"**/*.test.tsx",
 				"**/*.d.ts",
 				"**/*.tsx",
 				"**/__tests__/**",
@@ -67,10 +66,10 @@ export default defineConfig({
 				"apps/web/src/lib/constants/**",
 			],
 			thresholds: {
-				statements: 80,
-				branches: 80,
-				functions: 80,
-				lines: 80,
+				statements: 90,
+				branches: 85,
+				functions: 90,
+				lines: 90,
 			},
 		},
 	},
